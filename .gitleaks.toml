@@ -1,0 +1,10 @@
+# gitleaks: the default rules, with the made-up credentials of the redaction tests allowed. Each entry names the exact
+# fake value, so a real key next to them is still found.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake credentials the runtime's redaction and privacy tests feed in"
+regexes = [
+  '''sk-(gold|fail|wait)secret123''',
+]

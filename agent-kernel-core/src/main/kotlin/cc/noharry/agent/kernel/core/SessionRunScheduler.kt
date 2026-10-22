@@ -483,7 +483,9 @@ class SessionRunScheduler(
         }
         closed = true
         val queuedIdentities = ArrayList<SessionRunQueuedIdentity>()
-        for (lane in lanes.values) {
+        // Over a copy: reverting an unclaimed grant completes it, which removes its lane once idle, and removing from
+        // the map being iterated threw ConcurrentModificationException whenever another lane came after it.
+        for (lane in lanes.values.toList()) {
             lane.drainLease = null
             revertUnclaimedOwnerLocked(lane, signals)
             collectCloseTargets(lane, attachedJobs, waitingOwnerLeases)

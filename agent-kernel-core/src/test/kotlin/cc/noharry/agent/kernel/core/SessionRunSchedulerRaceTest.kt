@@ -38,6 +38,32 @@ class SessionRunSchedulerRaceTest {
     }
 
     @Test
+    fun closeRevertingAnUnclaimedGrantWithAnotherLaneQueuedBehindItRejectsBoth() = runSchedulerTest {
+        val scheduler = scheduler(maxActive = 1)
+        val started = mutableListOf<String>()
+        val a1 = holdOrdinary(scheduler, SESSION_A, RUN_A1, started)
+        a1.started.await()
+
+        scheduler.beforeClaimGrantedForTest = { scheduler.close() }
+        val first = CompletableDeferred<SessionRunAdmission>()
+        val second = CompletableDeferred<SessionRunAdmission>()
+        val waiters = listOf(
+            launch(Dispatchers.Default) { first.complete(scheduler.admitOrdinary(SESSION_B, RUN_B1)) },
+            launch(Dispatchers.Default) {
+                awaitSnapshot(scheduler) { it.queuedCount == 1 }
+                second.complete(scheduler.admitOrdinary(SESSION_C, RUN_C1))
+            },
+        )
+        awaitSnapshot(scheduler) { it.queuedCount == 2 }
+        // B is granted when A ends; closing before B claims it reverts the grant and drops B's lane while C's follows.
+        a1.releaseAndJoin()
+
+        assertEquals(SessionRunAdmissionReason.CLOSED, (first.await() as SessionRunAdmission.Rejected).reason)
+        assertEquals(SessionRunAdmissionReason.CLOSED, (second.await() as SessionRunAdmission.Rejected).reason)
+        waiters.forEach { it.join() }
+    }
+
+    @Test
     fun closeRacingAttachKeepsJobInsideSnapshotOrRejects() = runSchedulerTest {
         val scheduler = scheduler()
         val granted = scheduler.admitOrdinary(SESSION_A, RUN_A1) as SessionRunAdmission.Granted
