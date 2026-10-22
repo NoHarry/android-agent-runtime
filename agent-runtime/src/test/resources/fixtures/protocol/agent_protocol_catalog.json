@@ -1,0 +1,1016 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "agent-runtime-protocol-candidate-v1",
+  "ownerReviewNotes": [
+    "This report is candidate evidence only; it is not API freeze or owner sign-off.",
+    "ProtocolRequest close-loop method and DTO names still require SDK Owner approval.",
+    "AgentEvent.Failed.code and RuntimeBlocker.code remain string error-code surfaces.",
+    "RuntimeErrorCode is a candidate taxonomy; owner review is still required before API freeze.",
+    "AgentRequest, hook/policy, ModelRequest, ModelEvent and RuntimeResult fields are candidate surfaces; drift requires owner review.",
+    "ModelRequest.promptCacheKey and ModelRequest.toolChoice are experimental candidate fields; they are not frozen stable API.",
+    "Kernel plugin, Minimal Agent, and SessionEventLog surfaces are Phase 0 candidates; host-packaged code only and no API freeze is implied."
+  ],
+  "inventory": {
+    "AgentRuntime methods": [
+      "cancelPendingConfirmation",
+      "cancelRuntimeProtocolRequest",
+      "close",
+      "getOpenConfusion",
+      "getPendingConfirmation",
+      "getPendingProtocolRequests",
+      "getRunState",
+      "getRuntimeEvidence",
+      "getRuntimeHandoff",
+      "getRuntimeResult",
+      "getRuntimeTraceEvents",
+      "getSessionEventLogHealth",
+      "postUserInput",
+      "querySessionEvents",
+      "rejectRuntimeProtocolRequest",
+      "replaySessionEvents",
+      "resolveRuntimeProtocolRequest",
+      "resumeConfirmation",
+      "resumeUserInput",
+      "run",
+      "subscribeSessionEvents"
+    ],
+    "AgentRuntimeBuilder methods": [
+      "agentsMd",
+      "build",
+      "buildAsync",
+      "contextProvider",
+      "contextWindow",
+      "create",
+      "defaultWorkspace",
+      "deferredBackendTools",
+      "disabledNativeTools",
+      "execEngine",
+      "hook",
+      "hookTimeoutMillis",
+      "imageInput",
+      "loopBudget",
+      "modelClient",
+      "modelConcurrency",
+      "modelRetry",
+      "nativeDeferredTools",
+      "nativeWebFetchEnabled",
+      "networkConfirmationPolicy",
+      "nowEpochMillis",
+      "plugin",
+      "policyConfig",
+      "policyConfigJson",
+      "policyConfigPath",
+      "policyRule",
+      "profile",
+      "runContext",
+      "runContextAsSystem",
+      "runtimeEvidence",
+      "sceneAgentsMd",
+      "sessionActivationInheritance",
+      "sessionConcurrency",
+      "sessionEventLog",
+      "sessionEventLogRoot",
+      "sessionHistory",
+      "sessionStore",
+      "sessionToolActivations",
+      "skill",
+      "subagents",
+      "systemPrompt",
+      "toolConcurrency",
+      "toolProvider",
+      "toolProviders",
+      "turnObserver",
+      "virtualWorkspace",
+      "webFetchFallback",
+      "webSearch",
+      "workspace",
+      "workspaceRoot"
+    ],
+    "AgentPlugin methods": [
+      "getDescriptor",
+      "getId",
+      "install"
+    ],
+    "AgentPluginScope methods": [
+      "own",
+      "provide",
+      "resolve",
+      "resolveAll"
+    ],
+    "CapabilityCardinality tokens": [
+      "SINGLE",
+      "MULTIPLE"
+    ],
+    "CapabilityKey fields": [
+      "cardinality",
+      "name"
+    ],
+    "AgentCapabilities fields": [
+      "EXEC_ENGINE",
+      "MODEL_CLIENT",
+      "RUNTIME_CONTEXT_PROVIDER",
+      "RUNTIME_HOOK",
+      "RUNTIME_TURN_OBSERVER",
+      "SESSION_EVENT_LOG",
+      "TOOL_PROVIDER",
+      "WORKSPACE"
+    ],
+    "AgentProfile fields": [
+      "id",
+      "kernelApiVersion"
+    ],
+    "AgentPluginDescriptor fields": [
+      "id",
+      "kernelApiRange",
+      "optionalRequires",
+      "pluginVersion",
+      "provides",
+      "requires"
+    ],
+    "PluginVersion fields": [
+      "major",
+      "minor",
+      "patch"
+    ],
+    "KernelApiVersion fields": [
+      "major",
+      "minor"
+    ],
+    "KernelApiRange fields": [
+      "maxInclusive",
+      "min"
+    ],
+    "KernelApiRange methods": [
+      "contains"
+    ],
+    "SessionCapabilityContext fields": [
+      "sessionId"
+    ],
+    "SessionCapabilityFactory methods": [
+      "create"
+    ],
+    "SessionEventLog methods": [
+      "append",
+      "durability",
+      "health",
+      "putAttachment",
+      "query",
+      "readAttachment",
+      "replay",
+      "subscribe"
+    ],
+    "SessionEventLogHealth fields": [
+      "appendedCount",
+      "attemptedCount",
+      "backendDurability",
+      "failedCount",
+      "firstFailureCode",
+      "lastAcceptedSequence",
+      "lastPersistedSequence",
+      "recorderCoverageVersion",
+      "status"
+    ],
+    "SessionEventLogHealthStatus tokens": [
+      "COMPLETE",
+      "DEGRADED",
+      "UNAVAILABLE",
+      "VOLATILE",
+      "UNKNOWN"
+    ],
+    "SessionEventLogDurability tokens": [
+      "DURABLE",
+      "VOLATILE",
+      "UNKNOWN"
+    ],
+    "SessionEvent fields": [
+      "eventId",
+      "payload",
+      "recordedAtEpochMillis",
+      "requestId",
+      "runId",
+      "schemaVersion",
+      "sequence",
+      "sessionId",
+      "sourceEventSequences",
+      "type"
+    ],
+    "SessionEventAppend fields": [
+      "payload",
+      "requestId",
+      "runId",
+      "sessionId",
+      "sourceEventSequences",
+      "type"
+    ],
+    "SessionEventQuery fields": [
+      "afterSequenceExclusive",
+      "limit",
+      "requestId",
+      "runId",
+      "sessionId",
+      "types"
+    ],
+    "SessionEventPayload kinds": [
+      "AssistantChunk",
+      "AssistantMessage",
+      "Empty",
+      "ModelCallFinished",
+      "ModelRequest",
+      "ModelResponseMetadata",
+      "RunLifecycle",
+      "ToolCall",
+      "ToolResult",
+      "Usage",
+      "UserInteraction",
+      "UserMessage"
+    ],
+    "SessionEventPayload fields": [
+      "AssistantChunk:kind,metadata,signature,text",
+      "AssistantMessage:finishReason,sourceChunkSequences,text,toolCalls,usage",
+      "ModelCallFinished:callId,durationMs,errorCode,eventCount,messageCount,modelRef,source,status,toolCount",
+      "ModelRequest:attachments,messages,modelRef,options,promptCacheKey,systemPrompt,toolChoice,tools",
+      "ModelResponseMetadata:fields",
+      "RunLifecycle:errorCode,modelRef,phase,scene,status,todoCompletion",
+      "ToolCall:arguments,name,schemaRef,source,todoCompletion,toolCallId",
+      "ToolResult:attachments,code,name,ok,result,retryable,source,status,todoCompletion,toolCallId",
+      "Usage:cacheReadTokens,cacheWriteTokens,extras,inputTokens,outputTokens,reasoningTokens",
+      "UserInteraction:inputRequestId,kind,options,questionId,reason,state,text",
+      "UserMessage:attachments,text"
+    ],
+    "SessionJson kinds": [
+      "Array",
+      "Bool",
+      "Null",
+      "Number",
+      "Object",
+      "Text"
+    ],
+    "SessionJson fields": [
+      "Array:values",
+      "Bool:value",
+      "Number:literal",
+      "Object:values",
+      "Text:value"
+    ],
+    "SessionAttachmentRef fields": [
+      "byteSize",
+      "logicalName",
+      "mediaType",
+      "sha256"
+    ],
+    "SessionEventType tokens": [
+      "RUN_STARTED",
+      "USER_MESSAGE",
+      "USER_INTERACTION",
+      "MODEL_REQUEST",
+      "ASSISTANT_CHUNK",
+      "ASSISTANT_MESSAGE",
+      "MODEL_TOOL_CALL",
+      "TOOL_STARTED",
+      "TOOL_RESULT",
+      "USAGE",
+      "MODEL_RESPONSE_METADATA",
+      "MODEL_CALL_FINISHED",
+      "RUN_STATUS",
+      "RUN_FINISHED"
+    ],
+    "MinimalAgent methods": [
+      "build",
+      "builder"
+    ],
+    "AgentRequest fields": [
+      "currentStateKeys",
+      "input",
+      "modelRef",
+      "requestId",
+      "resumeRunId",
+      "scene",
+      "sessionId",
+      "sessionRunConflictPolicy",
+      "workspaceId"
+    ],
+    "SessionRunConflictPolicy tokens": [
+      "RESUME_CURRENT",
+      "QUEUE_NEW",
+      "CANCEL_AND_REPLACE"
+    ],
+    "RuntimeWorkspaceRef fields": [
+      "fileSystem",
+      "workspaceId"
+    ],
+    "ExperimentalAgentRuntimeApi annotations": [
+      "AgentCapabilities",
+      "AgentPlugin",
+      "AgentPluginDescriptor",
+      "AgentPluginScope",
+      "AgentProfile",
+      "AgentRuntime.getSessionEventLogHealth",
+      "AgentRuntime.querySessionEvents",
+      "AgentRuntime.replaySessionEvents",
+      "AgentRuntime.subscribeSessionEvents",
+      "AgentRuntimeBuilder.contextProvider",
+      "AgentRuntimeBuilder.deferredBackendTools",
+      "AgentRuntimeBuilder.execEngine",
+      "AgentRuntimeBuilder.hook",
+      "AgentRuntimeBuilder.hookTimeoutMillis",
+      "AgentRuntimeBuilder.nativeDeferredTools",
+      "AgentRuntimeBuilder.nowEpochMillis",
+      "AgentRuntimeBuilder.plugin",
+      "AgentRuntimeBuilder.profile",
+      "AgentRuntimeBuilder.runContext",
+      "AgentRuntimeBuilder.runContextAsSystem",
+      "AgentRuntimeBuilder.runtimeEvidence",
+      "AgentRuntimeBuilder.sessionEventLog",
+      "AgentRuntimeBuilder.sessionEventLogRoot",
+      "AgentRuntimeBuilder.sessionHistory",
+      "AgentRuntimeBuilder.sessionStore",
+      "AgentRuntimeBuilder.sessionToolActivations",
+      "AgentRuntimeBuilder.subagents",
+      "AgentRuntimeBuilder.turnObserver",
+      "AgentRuntimeBuilder.webFetchFallback",
+      "AgentRuntimeBuilder.webSearch",
+      "CapabilityCardinality",
+      "CapabilityKey",
+      "ExecEngine",
+      "ExecRequest",
+      "ExecResult",
+      "ExecToolBridge",
+      "HookDecision",
+      "HookFailurePolicy",
+      "KernelApiRange",
+      "KernelApiVersion",
+      "KernelApiVersions",
+      "MinimalAgent",
+      "ModelMessage.toolAdditions",
+      "ModelRequest.promptCacheKey",
+      "ModelRequest.toolChoice",
+      "ModelTool.deferred",
+      "PluginVersion",
+      "ProbeEmitterRegistration",
+      "ProviderConcurrencyDeclaration",
+      "ProviderConcurrencyMode",
+      "RuntimeContextProvider",
+      "RuntimeHook",
+      "RuntimeHookRegistration",
+      "RuntimeProbeEmitterHub",
+      "RuntimeProbeStageEmitter",
+      "RuntimeObserverActionPreflight",
+      "RuntimeTurnObserver",
+      "SessionAttachmentRef",
+      "SessionCapabilityContext",
+      "SessionCapabilityFactory",
+      "SessionEvent",
+      "SessionEventAppend",
+      "SessionEventLog",
+      "SessionEventLogDurability",
+      "SessionEventLogHealth",
+      "SessionEventLogHealthStatus",
+      "SessionEventPayload",
+      "SessionEventQuery",
+      "SessionEventType",
+      "SessionJson",
+      "ToolMatcher",
+      "WorkspaceCallContext",
+      "WorkspaceExecutionResult",
+      "WorkspaceExecutionTelemetry",
+      "WorkspacePort"
+    ],
+    "WorkspacePort methods": [
+      "execute"
+    ],
+    "WorkspaceCallContext fields": [
+      "modelRef",
+      "requestId",
+      "runId",
+      "scene",
+      "sessionId"
+    ],
+    "WorkspaceExecutionResult fields": [
+      "resultJson",
+      "telemetry"
+    ],
+    "WorkspaceExecutionTelemetry fields": [
+      "batchResultWaitDurationMs",
+      "batchWaitDurationMs",
+      "executeDurationMs",
+      "materializeDurationMs",
+      "prepareDurationMs",
+      "publicFinishDurationMs",
+      "resolveDurationMs",
+      "scanDurationMs",
+      "schemaCacheHit",
+      "serializeDurationMs",
+      "summaryDurationMs"
+    ],
+    "ModelClientException fields": [
+      "code",
+      "message",
+      "recoverable"
+    ],
+    "RuntimeProbeEmitterHub methods": [
+      "emitterFor",
+      "install",
+      "uninstall",
+      "uninstallAllForRuntime"
+    ],
+    "ProbeEmitterRegistration fields": [
+      "runId",
+      "runtimeId"
+    ],
+    "RuntimeContextRequest fields": [
+      "currentStateKeys",
+      "deadlineEpochMillis",
+      "input",
+      "referenceTimeEpochMillis",
+      "requestId",
+      "runId",
+      "runtimeInstanceId",
+      "scene",
+      "sessionId"
+    ],
+    "RuntimeTurnInput fields": [
+      "deadlineEpochMillis",
+      "input",
+      "referenceTimeEpochMillis",
+      "requestId",
+      "runId",
+      "runtimeInstanceId",
+      "scene",
+      "sessionId"
+    ],
+    "RuntimeTurnObserver methods": [
+      "close",
+      "onTurnFinished",
+      "onTurnInput",
+      "preflightTurnInput"
+    ],
+    "RuntimeObserverActionPreflight fields": [
+      "actionName",
+      "argumentDigest",
+      "completionImpact",
+      "effectKind",
+      "effectKeyDigest",
+      "observerId"
+    ],
+    "RuntimeCompletedTurn fields": [
+      "completionOutcome",
+      "inputDigest",
+      "referenceTimeEpochMillis",
+      "requestId",
+      "runId",
+      "runtimeInstanceId",
+      "scene",
+      "sessionId",
+      "terminalStatus"
+    ],
+    "ExecEngine methods": [
+      "getProviderConcurrency",
+      "run"
+    ],
+    "ModelClient methods": [
+      "complete",
+      "getProviderConcurrency"
+    ],
+    "McpClientProvider methods": [
+      "getProviderId",
+      "getServerId"
+    ],
+    "ToolProvider methods": [
+      "callTool",
+      "getDisplayName",
+      "getProviderConcurrency",
+      "getProviderId",
+      "initialize",
+      "listPrompts",
+      "listResources",
+      "listTools"
+    ],
+    "ToolCatalogCacheIdentity methods": [
+      "getCatalogCacheIdentity"
+    ],
+    "ToolProviderStatus tokens": [
+      "INITIALIZING",
+      "CONNECTED",
+      "DISCONNECTED",
+      "FAILED"
+    ],
+    "ToolInitializeContext fields": [
+      "requestId",
+      "runId",
+      "sessionId"
+    ],
+    "ToolInitializeResult fields": [
+      "message",
+      "status"
+    ],
+    "ToolDescriptor fields": [
+      "completionImpact",
+      "description",
+      "effectKind",
+      "inputSchemaJson",
+      "name",
+      "outputSchemaJson",
+      "title"
+    ],
+    "ToolCallContext fields": [
+      "requestId",
+      "runId",
+      "sessionId"
+    ],
+    "ToolCallResult fields": [
+      "images",
+      "resultJson",
+      "retryable",
+      "success",
+      "trace"
+    ],
+    "ToolCallTrace fields": [
+      "validationCode",
+      "validationMessage",
+      "validationOk",
+      "validationSchemaPath"
+    ],
+    "ToolResourceDescriptor fields": [
+      "description",
+      "name",
+      "uri"
+    ],
+    "ToolPromptDescriptor fields": [
+      "description",
+      "name"
+    ],
+    "ProviderConcurrencyMode tokens": [
+      "RUNTIME_SHARED_THREAD_SAFE",
+      "RUNTIME_SHARED_SERIALIZED",
+      "SESSION_FACTORY"
+    ],
+    "ProviderConcurrencyDeclaration fields": [
+      "maxConcurrentCalls",
+      "mode"
+    ],
+    "ProviderConcurrencyDeclaration methods": [
+      "serialized",
+      "sessionFactory",
+      "threadSafe"
+    ],
+    "ExecRequest fields": [
+      "code",
+      "outputTokenBudget",
+      "runId",
+      "timeoutMillis"
+    ],
+    "ExecToolBridge methods": [
+      "callTool",
+      "emitOutput"
+    ],
+    "ExecResult fields": [
+      "errorCode",
+      "message",
+      "ok",
+      "output"
+    ],
+    "RuntimeHook methods": [
+      "onPostToolUse",
+      "onPreToolUse",
+      "onRunFinished",
+      "onRunStarted"
+    ],
+    "RuntimeHookRegistration fields": [
+      "failurePolicy",
+      "hook",
+      "matcher",
+      "timeoutMillis"
+    ],
+    "HookFailurePolicy tokens": [
+      "FAIL_CLOSED",
+      "FAIL_OPEN"
+    ],
+    "ToolMatcher methods": [
+      "matches"
+    ],
+    "ToolUse fields": [
+      "argumentsJson",
+      "source",
+      "toolCallId",
+      "toolName"
+    ],
+    "ToolSource tokens": [
+      "INTERACTION",
+      "NATIVE_READ",
+      "NATIVE_WRITE",
+      "NETWORK",
+      "EXEC",
+      "NATIVE_TODO",
+      "BACKEND",
+      "TERMINAL"
+    ],
+    "ToolUseResult fields": [
+      "code",
+      "ok",
+      "resultJson",
+      "retryable"
+    ],
+    "HookContext fields": [
+      "approvedConfirmation",
+      "requestId",
+      "runId",
+      "sessionId"
+    ],
+    "HookDecision variants": [
+      "Allow",
+      "BlockAndContinue",
+      "Deny",
+      "RequireConfirmation"
+    ],
+    "HookDecision fields": [
+      "Allow:updatedArgumentsJson",
+      "BlockAndContinue:prompt,reason",
+      "Deny:code,reason",
+      "RequireConfirmation:prompt,reason"
+    ],
+    "PolicyRule methods": [
+      "check"
+    ],
+    "PolicyAction variants": [
+      "Call"
+    ],
+    "PolicyAction fields": [
+      "Call:arguments,source,toolName"
+    ],
+    "PolicyContext fields": [
+      "approvedConfirmation",
+      "approvedStepIndex",
+      "requestId",
+      "runId",
+      "sessionId"
+    ],
+    "PolicyDecision variants": [
+      "Allow",
+      "Deny",
+      "RequireConfirmation"
+    ],
+    "PolicyDecision fields": [
+      "Deny:code,reason",
+      "RequireConfirmation:prompt,reason"
+    ],
+    "ModelRequest fields": [
+      "messages",
+      "modelRef",
+      "promptCacheKey",
+      "system",
+      "toolChoice",
+      "tools"
+    ],
+    "AgentEvent variants": [
+      "BudgetWarning",
+      "CompactionApplied",
+      "ConfirmationRequired",
+      "EmptyCompletionObserved",
+      "ExecOutputDelta",
+      "Failed",
+      "Finished",
+      "NativeToolCallFinished",
+      "NativeToolCallStarted",
+      "NetworkToolActivity",
+      "ResultAvailable",
+      "RetryAttempted",
+      "RuntimeBlocked",
+      "RuntimeProtocolRequestCreated",
+      "SearchActivity",
+      "Started",
+      "SteeringAccepted",
+      "TextDelta",
+      "ThinkingDelta",
+      "TokenUsageDelta",
+      "UserInteraction",
+      "WorkspaceChanged",
+      "WorkspaceFileChanged"
+    ],
+    "AgentEvent fields": [
+      "BudgetWarning:roundsRemaining,runId,toolCallsRemaining",
+      "CompactionApplied:afterMessageCount,beforeMessageCount,droppedCount,runId,summaryBytes",
+      "ConfirmationRequired:pending",
+      "EmptyCompletionObserved:continueCount,continued,hadStateAdvancingWork,kind,modelRound,runId,successfulBackendToolCount,textChars,thinkingChars",
+      "ExecOutputDelta:runId,text",
+      "Failed:code,message,recoverable,runId",
+      "Finished:runId",
+      "NativeToolCallFinished:result,runId,toolCallId,toolName",
+      "NativeToolCallStarted:arguments,runId,toolCallId,toolName",
+      "NetworkToolActivity:decision,domain,runId,statusCode,toolCallId,toolName,truncated",
+      "ResultAvailable:result",
+      "RetryAttempted:attempt,delayMillis,fallbackModelRef,modelRef,runId",
+      "RuntimeBlocked:blocker",
+      "RuntimeProtocolRequestCreated:protocolRequest",
+      "SearchActivity:provider,queryPreview,resultCount,runId",
+      "Started:runId",
+      "SteeringAccepted:requestId,runId,textPreview",
+      "TextDelta:runId,text",
+      "ThinkingDelta:runId,text",
+      "TokenUsageDelta:cacheReadTokens,cacheWriteTokens,inputTokens,outputTokens,reasoningTokens,runId",
+      "UserInteraction:interaction,runId",
+      "WorkspaceChanged:runId,workspaceId",
+      "WorkspaceFileChanged:addedLines,bytes,diffTimedOut,path,removedLines,replacements,runId,toolCallId,toolName"
+    ],
+    "ModelMessage fields": [
+      "content",
+      "images",
+      "role",
+      "thinkingSignature",
+      "toolAdditions",
+      "toolArgumentsJson",
+      "toolCallId",
+      "toolName"
+    ],
+    "ModelImage fields": [
+      "bytes",
+      "detail",
+      "mediaType",
+      "sourcePath"
+    ],
+    "ModelEvent variants": [
+      "Completed",
+      "SearchActivity",
+      "TextDelta",
+      "ThinkingDelta",
+      "ToolCall",
+      "UsageDelta"
+    ],
+    "ModelEvent fields": [
+      "SearchActivity:provider,queryPreview,resultCount",
+      "TextDelta:text",
+      "ThinkingDelta:signature,text",
+      "ToolCall:argumentsJson,id,name",
+      "UsageDelta:cacheReadTokens,cacheWriteTokens,inputTokens,outputTokens,reasoningTokens"
+    ],
+    "HttpEvent variants": [
+      "Data",
+      "Done",
+      "Response"
+    ],
+    "HttpEvent fields": [
+      "Data:bytes",
+      "Response:headers,statusCode"
+    ],
+    "ConfirmationResumeResult tokens": [
+      "Accepted",
+      "AlreadyConsumed",
+      "Expired",
+      "NotFound",
+      "Rejected"
+    ],
+    "CancelPendingResult tokens": [
+      "AlreadyConsumed",
+      "Cancelled",
+      "Expired",
+      "NotFound"
+    ],
+    "PostUserInputResult tokens": [
+      "Accepted",
+      "Duplicate",
+      "NotFound",
+      "Rejected",
+      "RunNotActive"
+    ],
+    "ProtocolRequestCloseLoopResult tokens": [
+      "AlreadyApplied",
+      "AlreadyTerminal",
+      "Expired",
+      "InvalidState",
+      "NotFound",
+      "Updated"
+    ],
+    "RuntimeRunStatus tokens": [
+      "CREATED",
+      "QUEUED",
+      "RUNNING",
+      "WAITING_CONFIRMATION",
+      "WAITING_USER_INPUT",
+      "WAITING_PROTOCOL_REQUEST",
+      "BLOCKED",
+      "COMPLETED",
+      "FAILED",
+      "CANCELLED"
+    ],
+    "RuntimeResult fields": [
+      "completion",
+      "errorCode",
+      "evidenceIds",
+      "recoverable",
+      "response",
+      "runId",
+      "status"
+    ],
+    "RuntimeCompletionOutcome tokens": [
+      "SUCCEEDED",
+      "PARTIAL",
+      "BLOCKED",
+      "FAILED",
+      "UNKNOWN"
+    ],
+    "RuntimeCompletionSummary fields": [
+      "outcome",
+      "projectionDigest",
+      "requiredSucceeded",
+      "requiredTotal",
+      "requiredUnresolved",
+      "unresolvedCodes"
+    ],
+    "RuntimeEffectKind tokens": [
+      "READ_ONLY",
+      "MUTATING",
+      "CONTROL",
+      "UNKNOWN"
+    ],
+    "CompletionImpact tokens": [
+      "REQUIRED_ON_CALL",
+      "ADVISORY"
+    ],
+    "RuntimeActionStatus tokens": [
+      "DECLARED",
+      "STARTED",
+      "SUCCEEDED",
+      "FAILED",
+      "DENIED",
+      "BLOCKED",
+      "CANCELLED",
+      "UNKNOWN"
+    ],
+    "RuntimeCommitStatus tokens": [
+      "COMMITTED",
+      "NO_CHANGE_REQUIRED",
+      "NOT_COMMITTED",
+      "UNKNOWN"
+    ],
+    "RuntimeActionOutcome fields": [
+      "actionName",
+      "commitStatus",
+      "obligationId",
+      "retryable",
+      "safeCode",
+      "status"
+    ],
+    "RuntimeRunSnapshot fields": [
+      "pendingConfirmationId",
+      "runId",
+      "sessionId",
+      "status",
+      "suggestedNextAction",
+      "updatedAtEpochMillis"
+    ],
+    "RuntimeRunPhase tokens": [
+      "QUEUED",
+      "MODEL_RUNNING",
+      "WAITING_CONFIRMATION",
+      "WAITING_USER_INPUT",
+      "WAITING_PROTOCOL_REQUEST",
+      "TERMINAL"
+    ],
+    "RuntimeProtocolRequestStatus tokens": [
+      "CREATED",
+      "WAITING",
+      "RESOLVED",
+      "REJECTED",
+      "CANCELLED",
+      "EXPIRED"
+    ],
+    "RuntimeEvidenceType tokens": [
+      "PROTOCOL_REQUEST_RESOLUTION",
+      "RUN_CREATED",
+      "WORKPAD_UPDATED",
+      "HANDOFF_WRITTEN",
+      "BLOCKER_RECORDED",
+      "RESULT_WRITTEN",
+      "MCP_DEBUG_CALL"
+    ],
+    "SuggestedNextAction tokens": [
+      "ASK_USER",
+      "RESUME_CONFIRMATION",
+      "START_NEW_AGENT_REQUEST",
+      "RESOLVE_PROTOCOL_REQUEST",
+      "INSPECT_BLOCKER"
+    ],
+    "RuntimeErrorCode tokens": [
+      "CAPABILITY_BACKEND_NOT_CONFIGURED",
+      "SCHEMA_INSPECT_FAILED",
+      "INVALID_TOOL_SCHEMA",
+      "SCHEMA_VALIDATION_FAILED",
+      "POLICY_DENIED",
+      "BACKEND_CALL_FAILED",
+      "MODEL_LOOP_FAILED",
+      "PROVIDER_AUTH_FAILED",
+      "PROVIDER_RATE_LIMITED",
+      "PROVIDER_SERVER_ERROR",
+      "PROVIDER_HTTP_ERROR",
+      "PROVIDER_TRANSPORT_FAILED",
+      "PROVIDER_RESPONSE_MALFORMED",
+      "MODEL_LOOP_BUDGET_EXCEEDED",
+      "MODEL_LOOP_TIMEOUT",
+      "MODEL_FINISHED_WITHOUT_RUNTIME_FINISH",
+      "WORKSPACE_NOT_CONFIGURED",
+      "WORKSPACE_WRITE_DENIED",
+      "WORKSPACE_READ_REQUIRED",
+      "WORKSPACE_FULL_READ_REQUIRED",
+      "WORKSPACE_WRITE_BUDGET_EXCEEDED",
+      "WORKSPACE_WRITE_CONFLICT",
+      "WORKSPACE_EDIT_NO_MATCH",
+      "HOOK_DENIED",
+      "HOOK_FAILED",
+      "POLICY_CONFIG_INVALID",
+      "PENDING_CONFIRMATION_EXISTS",
+      "WAITING_USER_INPUT",
+      "INVALID_WORKSPACE_PATH",
+      "READ_BUDGET_EXCEEDED",
+      "BINARY_FILE_UNSUPPORTED",
+      "NOT_FOUND",
+      "INVALID_GREP_PATTERN",
+      "GREP_BUDGET_EXCEEDED",
+      "NETWORK_URL_INVALID",
+      "NETWORK_PRIVATE_ADDRESS_DENIED",
+      "NETWORK_FETCH_FAILED",
+      "EXEC_ENGINE_NOT_CONFIGURED",
+      "EXEC_FAILED",
+      "EXEC_TIMEOUT",
+      "UNSUPPORTED_NATIVE_TOOL",
+      "INACTIVE_BACKEND_TOOL",
+      "UNKNOWN_BACKEND_TOOL",
+      "SCHEMA_MATERIALIZE_BUDGET_EXCEEDED",
+      "SCHEMA_MATERIALIZE_TIMEOUT",
+      "CAPABILITY_CATALOG_TIMEOUT",
+      "RELIABILITY_STORAGE_ROOT_MUST_BE_DIRECTORY",
+      "RELIABILITY_STORAGE_LOCK_UNAVAILABLE",
+      "RAW_TRACE_WORKSPACE_FORBIDDEN_IN_RELEASE",
+      "DEBUG_RAW_TRACE_FORBIDDEN_IN_RELEASE",
+      "DEBUG_RAW_TRACE_ACCESS_NOT_ENABLED",
+      "SESSION_QUEUE_FULL",
+      "RUNTIME_BUSY",
+      "RUNTIME_CLOSED",
+      "ADMISSION_POLICY_REQUIRED",
+      "RUN_REPLACED",
+      "DUPLICATE_RUN_ID",
+      "PROCESS_RESTART_ADMISSION_UNSUPPORTED"
+    ],
+    "VfsEntry fields": [
+      "modifiedAtMillis",
+      "name",
+      "revision",
+      "sizeBytes",
+      "type"
+    ],
+    "VfsReadResult variants": [
+      "BinaryUnsupported",
+      "Error",
+      "Found",
+      "InvalidPath",
+      "NotFound",
+      "ReadDenied"
+    ],
+    "VfsReadResult fields": [
+      "Error:code,message,retryable",
+      "Found:attributes,bytesRead,modifiedAtMillis,revision,sizeBytes,text,totalBytes"
+    ],
+    "VfsStat fields": [
+      "modifiedAtMillis",
+      "revision",
+      "sizeBytes",
+      "type"
+    ],
+    "VfsStatResult variants": [
+      "Error",
+      "Found",
+      "InvalidPath",
+      "NotFound",
+      "ReadDenied"
+    ],
+    "VfsStatResult fields": [
+      "Error:code,message,retryable",
+      "Found:stat"
+    ],
+    "VfsWriteMode tokens": [
+      "CREATE",
+      "OVERWRITE",
+      "APPEND",
+      "ATOMIC_REPLACE"
+    ],
+    "VfsWriteResult variants": [
+      "BinaryUnsupported",
+      "Conflict",
+      "Error",
+      "InvalidPath",
+      "NotFound",
+      "WriteDenied",
+      "Written"
+    ],
+    "VfsWriteResult fields": [
+      "Error:code,message,retryable",
+      "Written:bytes,modifiedAtMillis,revision,sizeBytes"
+    ],
+    "VfsSource methods": [
+      "deleteTree",
+      "list",
+      "read",
+      "search",
+      "stat",
+      "write"
+    ]
+  }
+}

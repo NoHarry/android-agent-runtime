@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "runId": "dual-new-1",
+  "sessionId": "session-dual",
+  "armId": "default",
+  "buildId": "fixture-build",
+  "startedAtEpochMillis": 1700000001000,
+  "provider": "fixture",
+  "protocol": "native",
+  "model": "m1",
+  "baseUrlHost": "local",
+  "isolation": {"session": "fresh", "memory": "cleared", "cache": "cold"},
+  "caseBinding": {"casePackId": "none"},
+  "enabledProbePacks": ["bench_core"],
+  "toolset": [],
+  "comparable": true,
+  "controlFingerprint": "fp-dual",
+  "configFingerprint": "cfg-dual",
+  "declaredVariables": []
+}

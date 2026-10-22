@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "casePackId": "synthetic.dual_step.v1",
+  "normative": false,
+  "prompt": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "requires": {
+    "minToolCalls": 0,
+    "probePacks": ["bench_core"]
+  },
+  "toolMatchers": {
+    "step_a": {
+      "anyOf": [
+        {
+          "toolNameRegex": "^mcp__[^_]+__search$",
+          "sourceIn": ["BACKEND"],
+          "ok": true
+        }
+      ]
+    },
+    "step_b": {
+      "anyOf": [
+        {
+          "toolNameRegex": "^mcp__[^_]+__route$",
+          "sourceIn": ["BACKEND"],
+          "ok": true
+        }
+      ]
+    },
+    "bad_network": {
+      "anyOf": [
+        {
+          "sourceIn": ["NETWORK"]
+        }
+      ]
+    }
+  },
+  "gates": [
+    {
+      "id": "G_HAS_A",
+      "type": "exists",
+      "matcher": "step_a",
+      "minCount": 1
+    },
+    {
+      "id": "G_B_AFTER_A",
+      "type": "order",
+      "before": { "matcher": "step_a", "requireOk": true },
+      "after": { "matcher": "step_b", "requireOk": true }
+    },
+    {
+      "id": "G_FORBID_NET_BEFORE_B",
+      "type": "forbids_before",
+      "before": { "matcher": "bad_network" },
+      "after": { "matcher": "step_b", "requireOk": true }
+    },
+    {
+      "id": "G_FORBID_NET",
+      "type": "forbid",
+      "matcher": "bad_network"
+    },
+    {
+      "id": "G_ARGS_A",
+      "type": "args_match",
+      "matcher": "step_a",
+      "path": "$.q",
+      "op": "exists"
+    },
+    {
+      "id": "G_ROUND",
+      "type": "round_width",
+      "min": 1,
+      "max": 8
+    },
+    {
+      "id": "G_RATIO",
+      "type": "count_ratio",
+      "numeratorMatcher": "step_a",
+      "denominator": "tool_calls",
+      "max": 1.0
+    },
+    {
+      "id": "G_FINAL",
+      "type": "final_response",
+      "op": "contains",
+      "value": "ok"
+    }
+  ]
+}

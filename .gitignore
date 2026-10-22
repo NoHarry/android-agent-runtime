@@ -1,0 +1,32 @@
+# Gradle / Android
+.gradle/
+build/
+**/build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+.kotlin/
+**/.kotlin/
+
+# Python tools
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+tools/a2a/.cache/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Signing keys never go in the repository
+*.jks
+*.keystore
+*.gpg

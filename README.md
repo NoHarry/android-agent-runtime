@@ -1,0 +1,130 @@
+# Android Agent Runtime
+
+**English** | [中文](README.zh-CN.md)
+
+**An embeddable agent runtime (an agent harness) for Android and the JVM.** It runs a full agent loop inside your
+app's process: a sandboxed workspace the agent reads and writes, tools from your code and from MCP servers, skills
+and subagents, hooks and policy around every tool call, and durable sessions. Bring any OpenAI- or
+Anthropic-compatible model.
+
+> **Status: 0.x, under active development.** The public API is not frozen and may change between minor releases;
+> breaking changes are listed in the [changelog](CHANGELOG.md). 0.1.0 is not on Maven Central yet: until it is, use the
+> [composite build](#before-010-is-published) below.
+
+## What you get
+
+- **The agent loop, on the device.** Native tool calling with streaming, thinking, prompt caching and server-side web
+  search where the provider has them; retries, budgets and conversation compaction that summarizes old turns.
+- **A sandboxed workspace.** A virtual file system the agent works in; mount app directories, assets, in-memory
+  sources or a folder the user picks (SAF). Nothing outside what you mount is reachable.
+- **Tools.** Plain Kotlin functions (`functionTools`), any `ToolProvider`, and remote MCP servers over Streamable HTTP
+  (`McpHttpClient`, built in). With many tools the agent searches for the right ones instead of seeing them all.
+- **Skills, AGENTS.md and subagents.** Skills load on demand; the agent can delegate to child agents and wait for them.
+- **Control.** Hooks before and after tool calls, a policy engine, confirmation for network and side-effecting
+  actions, and a per-provider concurrency limit.
+- **Durable sessions.** An append-only event log per session, resumable runs, SQLite session storage on Android.
+- **Optional modules.** Operate other apps' screens through accessibility (Android Use), Mandarin voice sessions with an
+  on-device wake word, sandboxed JavaScript that calls tools, calendar and notification tools, and A2A client and
+  server.
+
+## Install
+
+```kotlin
+dependencies {
+    implementation(platform("cc.noharry:agent-bom:0.1.0"))
+    implementation("cc.noharry:agent-runtime-android") // an Android app
+    // implementation("cc.noharry:agent-runtime")      // the JVM: a server, a desktop tool, tests
+}
+```
+
+Kotlin 2.0 or later (the artifacts are built at language level 2.1), JDK 17, Android `minSdk` 23. The workspace and
+the event log use `java.nio.file`, which Android has from API 26: below that, enable core library desugaring with
+`com.android.tools:desugar_jdk_libs_nio` (as `samples/quickstart-android` does).
+
+## Quickstart (Android)
+
+```kotlin
+val tools = functionTools("device") {
+    tool("device_info", "The phone or tablet this app runs on.", readOnly = true) {
+        "${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}"
+    }
+}
+
+val runtime = AndroidAgentRuntime.builder(context) // workspace, SQLite sessions, event log, history
+    .modelClient(OpenAiModelClient({ apiKey }, model = "gpt-4o-mini", stream = true))
+    .toolProvider(tools)
+    .build()
+
+scope.launch {
+    runtime.run(AgentRequest(requestId = "r1", sessionId = "chat", input = "What device am I on?"))
+        .collect { event -> if (event is AgentEvent.TextDelta) answer.append(event.text) }
+}
+```
+
+Keep API keys off the device in a real app: point `baseUrl` at your own backend.
+
+## Quickstart (JVM, with an MCP server)
+
+```kotlin
+val deepWiki = McpToolProvider(
+    McpHttpClient("https://mcp.deepwiki.com/mcp", headers = { emptyMap() }, http = OkHttpHttpTransport(),
+        clientName = "my-app", clientVersion = "1.0"),
+    serverId = "deepwiki",
+)
+
+val runtime = AgentRuntimeBuilder.create()
+    // Any OpenAI-compatible endpoint: pass its baseUrl. AnthropicModelClient speaks the Messages API.
+    .modelClient(OpenAiModelClient({ System.getenv("API_KEY") }, model = "gpt-4o-mini", stream = true))
+    .toolProvider(deepWiki)
+    .workspaceRoot(File("agent-workspace"))
+    .build()
+```
+
+The [samples](samples) run as they are: `AGENT_API_KEY=… ./gradlew :samples:quickstart-jvm:run --args="…"`, and
+`samples/quickstart-android` is a one-screen app.
+
+## Modules
+
+| Artifact | What it is |
+|---|---|
+| `agent-runtime` | The runtime and host facade (plain JVM): `AgentRuntimeBuilder`, OpenAI- and Anthropic-compatible model clients, MCP, `functionTools`, skills, subagents, sessions and memory, web search and fetch, hooks and policy |
+| `agent-runtime-android` | The Android layer: `AndroidAgentRuntime.builder(context)`, SQLite sessions, the app-private event log |
+| `agent-kernel-api` | Android-neutral contracts: model, tool, plugin, capability, workspace, completion, event log, lifecycle |
+| `agent-kernel-core` | The agent loop: scheduler, native tool loop, profile compiler, `KernelRuntimeBuilder` |
+| `agent-minimal` | A minimal agent profile built straight on the kernel, a starting point for your own runtime |
+| `agent-vfs` | The virtual file system behind the workspace |
+| `agent-vfs-saf` | Optional: mount a folder the user picks through the Storage Access Framework |
+| `agent-exec-js` | Optional: `exec_js`, sandboxed JavaScript (QuickJS through Zipline) that can call tools |
+| `agent-device-capabilities` | Optional: calendar and notification tools |
+| `agent-android-use` | Optional: observe and operate the screen through an accessibility service |
+| `agent-voice` | Optional: Mandarin voice sessions, on-device wake word and recognition (sherpa-onnx) or a cloud recognizer |
+| `agent-a2a-client`, `-direct`, `-official` | Optional: delegate tasks to remote A2A agents (two interchangeable transports) |
+| `agent-a2a-server` | Optional: expose the agent as a local A2A endpoint |
+| `agent-bom` | One version for all of the above |
+
+Three ways in: an app depends on `agent-runtime-android`; a server, desktop tool or test on `agent-runtime`; a runtime
+of your own builds on `agent-kernel-api` and `agent-kernel-core`. Optional modules depend at most on the kernel API.
+
+## Before 0.1.0 is published
+
+Clone this repository next to your project and let Gradle build it from source; the same coordinates resolve to it:
+
+```kotlin
+// settings.gradle.kts of your project
+includeBuild("../android-agent-runtime")
+```
+
+## Showcase
+
+[Bothy](https://github.com/NoHarry/bothy) is a tablet-first demo built on this runtime: a floating voice assistant,
+public MCP servers, plans that watch a server's state, generative UI, and a simulated car head unit to drive.
+
+## Building
+
+JDK 17 and the Android SDK. `./gradlew ciCheck` runs what CI runs: the source rules, the API compatibility check, every
+unit test and the sample builds. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE). Third-party code and native libraries keep their own licenses; see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

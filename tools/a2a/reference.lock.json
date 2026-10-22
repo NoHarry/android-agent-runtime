@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/a2aproject/a2a-samples.git",
+  "commit": "e580a885a73e689eb448c377789b3a65e97b6c0d",
+  "sample_path": "samples/python/agents/helloworld",
+  "port": 9999
+}

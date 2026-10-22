@@ -1,0 +1,12 @@
+package cc.noharry.agent.runtime
+
+internal object VfsPerformanceBaselineFixture {
+    const val MCP_TOOLS_JSON_REPEATED_READS = 10
+    const val MCP_TOOLS_JSON_REPEATED_READ_OVERLAY_ATTACHES = 10L
+    const val MCP_TOOLS_JSON_REPEATED_READ_MATERIALIZER_READS = 10L
+    const val MCP_TOOLS_JSON_REPEATED_READ_BYTE_ENCODES = 10L
+
+    const val MCP_TOOLS_JSON_GREP_OVERLAY_ATTACHES = 1L
+    const val MCP_TOOLS_JSON_GREP_MATERIALIZER_SEARCH_FILES = 1L
+    const val MCP_TOOLS_JSON_GREP_SEARCH_BYTE_ENCODES = 1L
+}

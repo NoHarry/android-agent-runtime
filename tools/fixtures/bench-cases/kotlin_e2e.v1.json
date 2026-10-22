@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "casePackId": "kotlin_e2e.v1",
+  "normative": false,
+  "prompt": {
+    "sha256": "a380cb4108c3f502a25181721edb371b149d6622cbf991bff4e7fbc2465a8341"
+  },
+  "requires": {
+    "minToolCalls": 1,
+    "probePacks": ["bench_core"]
+  },
+  "toolMatchers": {
+    "search_exec": {
+      "anyOf": [
+        {
+          "toolNameRegex": "^mcp__default__search_docs$",
+          "sourceIn": ["BACKEND"],
+          "ok": true
+        }
+      ]
+    },
+    "any_network": {
+      "anyOf": [
+        {
+          "sourceIn": ["NETWORK"]
+        }
+      ]
+    }
+  },
+  "gates": [
+    {
+      "id": "G_SEARCH_EXECUTED",
+      "type": "exists",
+      "matcher": "search_exec",
+      "minCount": 1
+    },
+    {
+      "id": "G_NO_NETWORK",
+      "type": "forbid",
+      "matcher": "any_network"
+    },
+    {
+      "id": "G_FINAL_TEXT",
+      "type": "final_response",
+      "op": "contains",
+      "value": "done"
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Task :agent-a2a-client-official:dependencies
+
+------------------------------------------------------------
+Project ':agent-a2a-client-official'
+------------------------------------------------------------
+
+releaseRuntimeClasspath - Runtime classpath of /release.
++--- org.jetbrains.kotlin:kotlin-stdlib:1.9.22
+|    +--- org.jetbrains:annotations:13.0 -> 23.0.0
+|    +--- org.jetbrains.kotlin:kotlin-stdlib-common:1.9.22 (c)
+|    +--- org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0 -> 1.8.20 (c)
+|    \--- org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0 -> 1.8.20 (c)
++--- project :agent-a2a-client
+|    +--- org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1
+|    |    \--- org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.1
+|    |         +--- org.jetbrains:annotations:23.0.0
+|    |         +--- org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.7.1
+|    |         |    +--- org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.1 (c)
+|    |         |    \--- org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1 (c)
+|    |         +--- org.jetbrains.kotlin:kotlin-stdlib-common:1.8.20 -> 1.9.22
+|    |         |    \--- org.jetbrains.kotlin:kotlin-stdlib:1.9.22 (*)
+|    |         \--- org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.20
+|    |              +--- org.jetbrains.kotlin:kotlin-stdlib:1.8.20 -> 1.9.22 (*)
+|    |              \--- org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.20
+|    |                   \--- org.jetbrains.kotlin:kotlin-stdlib:1.8.20 -> 1.9.22 (*)
+|    \--- org.jetbrains.kotlin:kotlin-stdlib:1.9.22 (*)
++--- org.a2aproject.sdk:a2a-java-sdk-client:1.1.0.Final
+|    +--- org.a2aproject.sdk:a2a-java-sdk-http-client:1.1.0.Final
+|    |    +--- org.a2aproject.sdk:a2a-java-sdk-spec:1.1.0.Final
+|    |    |    \--- com.google.code.gson:gson:2.14.0
+|    |    |         \--- com.google.errorprone:error_prone_annotations:2.48.0
+|    |    +--- org.a2aproject.sdk:a2a-java-sdk-spec-grpc:1.1.0.Final
+|    |    |    +--- org.a2aproject.sdk:a2a-java-sdk-spec:1.1.0.Final (*)
+|    |    |    +--- org.a2aproject.sdk:a2a-java-sdk-jsonrpc-common:1.1.0.Final
+|    |    |    |    +--- org.a2aproject.sdk:a2a-java-sdk-spec:1.1.0.Final (*)
+|    |    |    |    \--- com.google.code.gson:gson:2.14.0 (*)
+|    |    |    +--- com.google.protobuf:protobuf-java:4.33.2
+|    |    |    +--- jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0
+|    |    |    |    +--- jakarta.enterprise:jakarta.enterprise.lang-model:4.1.0
+|    |    |    |    +--- jakarta.annotation:jakarta.annotation-api:3.0.0
+|    |    |    |    +--- jakarta.el:jakarta.el-api:6.0.0
+|    |    |    |    +--- jakarta.interceptor:jakarta.interceptor-api:2.2.0
+|    |    |    |    \--- jakarta.inject:jakarta.inject-api:2.0.1
+|    |    |    +--- jakarta.inject:jakarta.inject-api:2.0.1
+|    |    |    \--- com.google.api.grpc:proto-google-common-protos:2.70.0
+|    |    |         \--- com.google.protobuf:protobuf-java:4.33.2
+|    |    +--- com.google.protobuf:protobuf-java-util:4.33.2
+|    |    |    +--- com.google.protobuf:protobuf-java:4.33.2
+|    |    |    +--- com.google.code.findbugs:jsr305:3.0.2
+|    |    |    +--- com.google.code.gson:gson:2.8.9 -> 2.14.0 (*)
+|    |    |    \--- com.google.errorprone:error_prone_annotations:2.18.0 -> 2.48.0
+|    |    \--- org.slf4j:slf4j-api:2.0.18
+|    +--- org.a2aproject.sdk:a2a-java-sdk-client-transport-spi:1.1.0.Final
+|    |    +--- org.a2aproject.sdk:a2a-java-sdk-spec:1.1.0.Final (*)
+|    |    +--- org.a2aproject.sdk:a2a-java-sdk-http-client:1.1.0.Final (*)
+|    |    \--- org.a2aproject.sdk:a2a-java-sdk-jsonrpc-common:1.1.0.Final (*)
+|    +--- org.a2aproject.sdk:a2a-java-sdk-client-transport-jsonrpc:1.1.0.Final
+|    |    +--- org.a2aproject.sdk:a2a-java-sdk-http-client:1.1.0.Final (*)
+|    |    +--- org.a2aproject.sdk:a2a-java-sdk-client-transport-spi:1.1.0.Final (*)
+|    |    +--- org.a2aproject.sdk:a2a-java-sdk-spec:1.1.0.Final (*)
+|    |    +--- org.a2aproject.sdk:a2a-java-sdk-jsonrpc-common:1.1.0.Final (*)
+|    |    \--- org.a2aproject.sdk:a2a-java-sdk-spec-grpc:1.1.0.Final (*)
+|    \--- org.a2aproject.sdk:a2a-java-sdk-spec:1.1.0.Final (*)
++--- org.a2aproject.sdk:a2a-java-sdk-http-client-android:1.1.0.Final
+|    +--- org.a2aproject.sdk:a2a-java-sdk-http-client:1.1.0.Final (*)
+|    \--- org.a2aproject.sdk:a2a-java-sdk-spec:1.1.0.Final (*)
++--- org.a2aproject.sdk:a2a-java-sdk-spec-grpc:1.1.0.Final (*)
++--- com.google.protobuf:protobuf-java:4.31.1 -> 4.33.2
++--- com.google.protobuf:protobuf-java-util:4.31.1 -> 4.33.2 (*)
+\--- org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1 (*)
+
+(c) - A dependency constraint, not a dependency. The dependency affected by the constraint occurs elsewhere in the tree.
+(*) - Indicates repeated occurrences of a transitive dependency subtree. Gradle expands transitive dependency subtrees only once per project; repeat occurrences only display the root of the subtree, followed by this annotation.
+
+A web-based, searchable dependency report is available by adding the --scan option.
+
+BUILD SUCCESSFUL in 17s
+1 actionable task: 1 executed

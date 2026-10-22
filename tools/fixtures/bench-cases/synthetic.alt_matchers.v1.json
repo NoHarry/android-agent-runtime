@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "casePackId": "synthetic.alt_matchers.v1",
+  "normative": false,
+  "toolMatchers": {
+    "only_climate": {
+      "anyOf": [
+        {
+          "toolNameRegex": "^mcp__x__climate_set$",
+          "ok": true
+        }
+      ]
+    }
+  },
+  "gates": [
+    {
+      "id": "G_CLIMATE",
+      "type": "exists",
+      "matcher": "only_climate",
+      "minCount": 1
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+name: Release
+
+# Pushing a tag vX.Y.Z checks the build and uploads X.Y.Z to the Maven Central Portal, signed. The deployment waits
+# there for a manual "Publish": nothing reaches Maven Central until it is released by hand.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Check
+        run: ./gradlew ciCheck --stacktrace
+      - name: Upload to the Maven Central Portal
+        run: ./gradlew publishToMavenCentral -PVERSION_NAME="${GITHUB_REF_NAME#v}" --stacktrace
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}

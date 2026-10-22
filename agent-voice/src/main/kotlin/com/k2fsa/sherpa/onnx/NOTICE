@@ -1,0 +1,11 @@
+The Kotlin files in this directory are copied unchanged (apart from a header comment and, in
+OnlineRecognizer.kt and KeywordSpotter.kt, dropping the trailing model-zoo helper functions) from
+
+  https://github.com/k2-fsa/sherpa-onnx  tag v1.13.8, directory sherpa-onnx/kotlin-api
+
+Copyright (c) Xiaomi Corporation and the sherpa-onnx authors.
+Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+
+The matching native libraries (libsherpa-onnx-jni.so, libonnxruntime.so) are committed under
+src/main/jniLibs; workspace/apps/android/tools/voice/fetch_voice_assets.py re-fetches them from the
+pinned release and checks their SHA-256.

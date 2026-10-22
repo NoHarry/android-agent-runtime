@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "runId": "dual-new-1",
+  "sequenceMax": 9,
+  "enqueued": 10,
+  "written": 10,
+  "dropped": 0,
+  "truncated": 0,
+  "error": 0,
+  "drainTimedOut": false,
+  "sinkIoFailed": false,
+  "completenessIoFailed": false,
+  "complete": true
+}

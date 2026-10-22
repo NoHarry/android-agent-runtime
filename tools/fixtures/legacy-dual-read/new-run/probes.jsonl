@@ -1,0 +1,10 @@
+{"sequence":0,"stageId":"run.start","probeId":"lifecycle.run","elapsedNanos":0,"epochMillis":1700000001000,"attrs":{}}
+{"sequence":1,"stageId":"model.round.start","probeId":"model.round","elapsedNanos":0,"epochMillis":1700000001000,"attrs":{"roundIndex":0}}
+{"sequence":2,"stageId":"model.round.end","probeId":"model.round","elapsedNanos":200000000,"epochMillis":1700000001200,"attrs":{"roundIndex":0,"status":"ok"}}
+{"sequence":3,"stageId":"tool.execute.start","probeId":"tool.exec","elapsedNanos":300000000,"epochMillis":1700000001300,"attrs":{"toolName":"read_file","callId":"c-read-1","source":"NATIVE_READ","roundIndex":0}}
+{"sequence":4,"stageId":"tool.execute.end","probeId":"tool.exec","elapsedNanos":400000000,"epochMillis":1700000001400,"attrs":{"toolName":"read_file","callId":"c-read-1","ok":true,"source":"NATIVE_READ","roundIndex":0}}
+{"sequence":5,"stageId":"model.round.start","probeId":"model.round","elapsedNanos":1000000000,"epochMillis":1700000002000,"attrs":{"roundIndex":1}}
+{"sequence":6,"stageId":"model.round.end","probeId":"model.round","elapsedNanos":1300000000,"epochMillis":1700000002300,"attrs":{"roundIndex":1,"status":"ok"}}
+{"sequence":7,"stageId":"tool.execute.start","probeId":"tool.exec","elapsedNanos":1400000000,"epochMillis":1700000002400,"attrs":{"toolName":"write_file","callId":"c-write-1","source":"NATIVE_WRITE","roundIndex":1}}
+{"sequence":8,"stageId":"tool.execute.end","probeId":"tool.exec","elapsedNanos":1500000000,"epochMillis":1700000002500,"attrs":{"toolName":"write_file","callId":"c-write-1","ok":true,"source":"NATIVE_WRITE","roundIndex":1}}
+{"sequence":9,"stageId":"run.terminal","probeId":"terminal.empty","elapsedNanos":1600000000,"epochMillis":1700000002600,"attrs":{"status":"COMPLETED"}}

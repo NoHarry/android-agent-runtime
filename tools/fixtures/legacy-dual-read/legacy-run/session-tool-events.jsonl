@@ -1,0 +1,4 @@
+{"toolName":"read_file","toolCallId":"c-read-1","phase":"start","roundIndex":0,"epochMillis":1700000001300,"source":"NATIVE_READ"}
+{"toolName":"read_file","toolCallId":"c-read-1","phase":"end","ok":true,"roundIndex":0,"epochMillis":1700000001400,"source":"NATIVE_READ"}
+{"toolName":"write_file","toolCallId":"c-write-1","phase":"start","roundIndex":1,"epochMillis":1700000002400,"source":"NATIVE_WRITE"}
+{"toolName":"write_file","toolCallId":"c-write-1","phase":"end","ok":true,"roundIndex":1,"epochMillis":1700000002500,"source":"NATIVE_WRITE"}

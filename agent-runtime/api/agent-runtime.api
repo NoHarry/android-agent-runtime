@@ -1,0 +1,739 @@
+public final class cc/noharry/agent/dream/DreamMode : java/lang/Enum {
+	public static final field CONSOLIDATE_MEMORY Lcc/noharry/agent/dream/DreamMode;
+	public static final field EXTRACT_MEMORY_CANDIDATES Lcc/noharry/agent/dream/DreamMode;
+	public static final field REBUILD_MEMORY_INDEX Lcc/noharry/agent/dream/DreamMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/dream/DreamMode;
+	public static fun values ()[Lcc/noharry/agent/dream/DreamMode;
+}
+
+public final class cc/noharry/agent/dream/DreamRequest {
+	public fun <init> (Lcc/noharry/agent/vfs/VfsFileSystem;Lcc/noharry/agent/dream/DreamMode;)V
+	public fun <init> (Ljava/io/File;Ljava/io/File;Ljava/io/File;Lcc/noharry/agent/dream/DreamMode;Lcc/noharry/agent/vfs/VfsFileSystem;)V
+	public synthetic fun <init> (Ljava/io/File;Ljava/io/File;Ljava/io/File;Lcc/noharry/agent/dream/DreamMode;Lcc/noharry/agent/vfs/VfsFileSystem;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/io/File;
+	public final fun component2 ()Ljava/io/File;
+	public final fun component3 ()Ljava/io/File;
+	public final fun component4 ()Lcc/noharry/agent/dream/DreamMode;
+	public final fun component5 ()Lcc/noharry/agent/vfs/VfsFileSystem;
+	public final fun copy (Ljava/io/File;Ljava/io/File;Ljava/io/File;Lcc/noharry/agent/dream/DreamMode;Lcc/noharry/agent/vfs/VfsFileSystem;)Lcc/noharry/agent/dream/DreamRequest;
+	public static synthetic fun copy$default (Lcc/noharry/agent/dream/DreamRequest;Ljava/io/File;Ljava/io/File;Ljava/io/File;Lcc/noharry/agent/dream/DreamMode;Lcc/noharry/agent/vfs/VfsFileSystem;ILjava/lang/Object;)Lcc/noharry/agent/dream/DreamRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMemoryRoot ()Ljava/io/File;
+	public final fun getMode ()Lcc/noharry/agent/dream/DreamMode;
+	public final fun getTraceRoot ()Ljava/io/File;
+	public final fun getVirtualWorkspace ()Lcc/noharry/agent/vfs/VfsFileSystem;
+	public final fun getWorkspaceRoot ()Ljava/io/File;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/dream/DreamResult {
+	public fun <init> (ZZLjava/util/List;Ljava/lang/String;)V
+	public synthetic fun <init> (ZZLjava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (ZZLjava/util/List;Ljava/lang/String;)Lcc/noharry/agent/dream/DreamResult;
+	public static synthetic fun copy$default (Lcc/noharry/agent/dream/DreamResult;ZZLjava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/dream/DreamResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCandidates ()Ljava/util/List;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getSuccess ()Z
+	public final fun getUpdatedMemoryIndex ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/dream/DreamWorker {
+	public abstract fun run (Lcc/noharry/agent/dream/DreamRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/dream/MemoryIndexRebuilder : cc/noharry/agent/dream/DreamWorker {
+	public fun <init> ()V
+	public fun run (Lcc/noharry/agent/dream/DreamRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/dream/NoOpDreamWorker : cc/noharry/agent/dream/DreamWorker {
+	public fun <init> ()V
+	public fun run (Lcc/noharry/agent/dream/DreamRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class cc/noharry/agent/mcp/McpClientMessages {
+	public static final field Default Lcc/noharry/agent/mcp/McpClientMessages$Default;
+	public abstract fun httpProblem (I)Ljava/lang/String;
+	public abstract fun initializeRefused (Ljava/lang/String;)Ljava/lang/String;
+	public abstract fun notJsonRpc ()Ljava/lang/String;
+	public abstract fun timedOut (J)Ljava/lang/String;
+	public abstract fun toolsListCursorRepeated ()Ljava/lang/String;
+	public abstract fun toolsListError (Ljava/lang/String;)Ljava/lang/String;
+	public abstract fun toolsListFailed (I)Ljava/lang/String;
+	public abstract fun toolsListNotJson ()Ljava/lang/String;
+	public abstract fun toolsListTooManyPages (I)Ljava/lang/String;
+	public abstract fun unreachable (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/mcp/McpClientMessages$Default : cc/noharry/agent/mcp/McpClientMessages {
+	public fun httpProblem (I)Ljava/lang/String;
+	public fun initializeRefused (Ljava/lang/String;)Ljava/lang/String;
+	public fun notJsonRpc ()Ljava/lang/String;
+	public fun timedOut (J)Ljava/lang/String;
+	public fun toolsListCursorRepeated ()Ljava/lang/String;
+	public fun toolsListError (Ljava/lang/String;)Ljava/lang/String;
+	public fun toolsListFailed (I)Ljava/lang/String;
+	public fun toolsListNotJson ()Ljava/lang/String;
+	public fun toolsListTooManyPages (I)Ljava/lang/String;
+	public fun unreachable (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/mcp/McpClientMessages$DefaultImpls {
+	public static fun httpProblem (Lcc/noharry/agent/mcp/McpClientMessages;I)Ljava/lang/String;
+	public static fun initializeRefused (Lcc/noharry/agent/mcp/McpClientMessages;Ljava/lang/String;)Ljava/lang/String;
+	public static fun notJsonRpc (Lcc/noharry/agent/mcp/McpClientMessages;)Ljava/lang/String;
+	public static fun timedOut (Lcc/noharry/agent/mcp/McpClientMessages;J)Ljava/lang/String;
+	public static fun toolsListCursorRepeated (Lcc/noharry/agent/mcp/McpClientMessages;)Ljava/lang/String;
+	public static fun toolsListError (Lcc/noharry/agent/mcp/McpClientMessages;Ljava/lang/String;)Ljava/lang/String;
+	public static fun toolsListFailed (Lcc/noharry/agent/mcp/McpClientMessages;I)Ljava/lang/String;
+	public static fun toolsListNotJson (Lcc/noharry/agent/mcp/McpClientMessages;)Ljava/lang/String;
+	public static fun toolsListTooManyPages (Lcc/noharry/agent/mcp/McpClientMessages;I)Ljava/lang/String;
+	public static fun unreachable (Lcc/noharry/agent/mcp/McpClientMessages;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/mcp/McpConnectResult {
+	public fun <init> (ILjava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (ILjava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/mcp/McpConnectResult;
+	public static synthetic fun copy$default (Lcc/noharry/agent/mcp/McpConnectResult;ILjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/mcp/McpConnectResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getErrorMessage ()Ljava/lang/String;
+	public final fun getOk ()Z
+	public final fun getRawMessage ()Ljava/lang/String;
+	public final fun getStatusCode ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/mcp/McpHttpClient : cc/noharry/agent/mcp/McpRpcClient {
+	public static final field Companion Lcc/noharry/agent/mcp/McpHttpClient$Companion;
+	public static final field PROTOCOL_VERSION Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/transport/HttpTransport;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;JLkotlin/jvm/functions/Function0;Lkotlinx/coroutines/CoroutineScope;Lcc/noharry/agent/mcp/McpClientMessages;)V
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/transport/HttpTransport;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;JLkotlin/jvm/functions/Function0;Lkotlinx/coroutines/CoroutineScope;Lcc/noharry/agent/mcp/McpClientMessages;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public fun connect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun sendRequest (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/mcp/McpHttpClient$Companion {
+}
+
+public abstract interface class cc/noharry/agent/mcp/McpRpcClient {
+	public abstract fun close ()V
+	public abstract fun connect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun sendRequest (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/mcp/McpRpcResponse {
+	public fun <init> (ILjava/lang/String;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lkotlinx/serialization/json/JsonObject;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (ILjava/lang/String;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;)Lcc/noharry/agent/mcp/McpRpcResponse;
+	public static synthetic fun copy$default (Lcc/noharry/agent/mcp/McpRpcResponse;ILjava/lang/String;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/mcp/McpRpcResponse;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDataJson ()Lkotlinx/serialization/json/JsonObject;
+	public final fun getErrorMessage ()Ljava/lang/String;
+	public final fun getOk ()Z
+	public final fun getRawEnvelope ()Ljava/lang/String;
+	public final fun getStatusCode ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/mcp/McpStatus {
+	public static final field CONNECT_ERROR I
+	public static final field INSTANCE Lcc/noharry/agent/mcp/McpStatus;
+	public static final field OK I
+}
+
+public abstract interface class cc/noharry/agent/mcp/McpToolCatalog {
+	public abstract fun get (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/mcp/McpToolProvider : cc/noharry/agent/kernel/api/mcp/McpClientProvider {
+	public fun <init> (Lcc/noharry/agent/mcp/McpRpcClient;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/mcp/McpToolCatalog;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcc/noharry/agent/mcp/McpRpcClient;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/mcp/McpToolCatalog;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun callTool (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/api/ToolCallContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getDisplayName ()Ljava/lang/String;
+	public fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
+	public fun getProviderId ()Ljava/lang/String;
+	public fun getServerId ()Ljava/lang/String;
+	public fun initialize (Lcc/noharry/agent/kernel/api/ToolInitializeContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun listPrompts (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun listResources (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun listTools (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/mcp/McpToolProviderKt {
+	public static final fun listMcpTools (Lcc/noharry/agent/mcp/McpRpcClient;Lcc/noharry/agent/mcp/McpClientMessages;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun listMcpTools$default (Lcc/noharry/agent/mcp/McpRpcClient;Lcc/noharry/agent/mcp/McpClientMessages;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun listMcpToolsCatalog (Lcc/noharry/agent/mcp/McpRpcClient;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/mcp/McpToolsListing {
+	public fun <init> (Ljava/util/List;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getProblem ()Ljava/lang/String;
+	public final fun getTools ()Ljava/util/List;
+}
+
+public final class cc/noharry/agent/model/AnthropicModelClient : cc/noharry/agent/kernel/api/model/ModelClient {
+	public fun <init> (Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/transport/HttpTransport;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/transport/HttpTransport;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lkotlin/jvm/functions/Function0;Ljava/lang/String;Ljava/lang/String;ZZLcc/noharry/agent/kernel/api/model/ServerSideSearchCapability;Lcc/noharry/agent/transport/HttpTransport;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;Ljava/lang/String;Ljava/lang/String;ZZLcc/noharry/agent/kernel/api/model/ServerSideSearchCapability;Lcc/noharry/agent/transport/HttpTransport;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun complete (Lcc/noharry/agent/kernel/api/model/ModelRequest;)Lkotlinx/coroutines/flow/Flow;
+	public fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
+}
+
+public final class cc/noharry/agent/model/ModelVariantRegistry {
+	public static final field INSTANCE Lcc/noharry/agent/model/ModelVariantRegistry;
+	public final fun defaultVariant (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public final fun resolve (Lcc/noharry/agent/kernel/api/model/ModelRef;Lcc/noharry/agent/kernel/api/model/ModelRef;Lcc/noharry/agent/kernel/api/model/ModelRef;Lcc/noharry/agent/kernel/api/model/ModelRef;Lcc/noharry/agent/kernel/api/model/ModelRef;)Lcc/noharry/agent/kernel/api/model/ModelRef;
+	public static synthetic fun resolve$default (Lcc/noharry/agent/model/ModelVariantRegistry;Lcc/noharry/agent/kernel/api/model/ModelRef;Lcc/noharry/agent/kernel/api/model/ModelRef;Lcc/noharry/agent/kernel/api/model/ModelRef;Lcc/noharry/agent/kernel/api/model/ModelRef;Lcc/noharry/agent/kernel/api/model/ModelRef;ILjava/lang/Object;)Lcc/noharry/agent/kernel/api/model/ModelRef;
+	public final fun variants (Ljava/lang/String;Ljava/lang/String;)Ljava/util/List;
+}
+
+public final class cc/noharry/agent/model/OpenAiModelClient : cc/noharry/agent/kernel/api/model/ModelClient {
+	public fun <init> (Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/transport/HttpTransport;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/transport/HttpTransport;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lkotlin/jvm/functions/Function0;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;ZLcc/noharry/agent/kernel/api/model/ServerSideSearchCapability;Lcc/noharry/agent/transport/HttpTransport;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;ZLcc/noharry/agent/kernel/api/model/ServerSideSearchCapability;Lcc/noharry/agent/transport/HttpTransport;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lkotlin/jvm/functions/Function0;Ljava/lang/String;Ljava/lang/String;ZZLcc/noharry/agent/kernel/api/model/ServerSideSearchCapability;Lcc/noharry/agent/transport/HttpTransport;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;Ljava/lang/String;Ljava/lang/String;ZZLcc/noharry/agent/kernel/api/model/ServerSideSearchCapability;Lcc/noharry/agent/transport/HttpTransport;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun complete (Lcc/noharry/agent/kernel/api/model/ModelRequest;)Lkotlinx/coroutines/flow/Flow;
+	public fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
+}
+
+public abstract interface class cc/noharry/agent/policy/PolicyAction {
+}
+
+public final class cc/noharry/agent/policy/PolicyAction$Call : cc/noharry/agent/policy/PolicyAction {
+	public fun <init> (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lkotlinx/serialization/json/JsonObject;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;)Lcc/noharry/agent/policy/PolicyAction$Call;
+	public static synthetic fun copy$default (Lcc/noharry/agent/policy/PolicyAction$Call;Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/policy/PolicyAction$Call;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArguments ()Lkotlinx/serialization/json/JsonObject;
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getToolName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/policy/PolicyContext {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Integer;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun component5 ()Ljava/lang/Integer;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Integer;)Lcc/noharry/agent/policy/PolicyContext;
+	public static synthetic fun copy$default (Lcc/noharry/agent/policy/PolicyContext;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Integer;ILjava/lang/Object;)Lcc/noharry/agent/policy/PolicyContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApprovedConfirmation ()Z
+	public final fun getApprovedStepIndex ()Ljava/lang/Integer;
+	public final fun getRequestId ()Ljava/lang/String;
+	public final fun getRunId ()Ljava/lang/String;
+	public final fun getSessionId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/policy/PolicyDecision {
+}
+
+public final class cc/noharry/agent/policy/PolicyDecision$Allow : cc/noharry/agent/policy/PolicyDecision {
+	public static final field INSTANCE Lcc/noharry/agent/policy/PolicyDecision$Allow;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/policy/PolicyDecision$Deny : cc/noharry/agent/policy/PolicyDecision {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/policy/PolicyDecision$Deny;
+	public static synthetic fun copy$default (Lcc/noharry/agent/policy/PolicyDecision$Deny;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/policy/PolicyDecision$Deny;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/policy/PolicyDecision$RequireConfirmation : cc/noharry/agent/policy/PolicyDecision {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/policy/PolicyDecision$RequireConfirmation;
+	public static synthetic fun copy$default (Lcc/noharry/agent/policy/PolicyDecision$RequireConfirmation;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/policy/PolicyDecision$RequireConfirmation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPrompt ()Ljava/lang/String;
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/policy/PolicyRule {
+	public abstract fun check (Lcc/noharry/agent/policy/PolicyAction;Lcc/noharry/agent/policy/PolicyContext;)Lcc/noharry/agent/policy/PolicyDecision;
+}
+
+public final class cc/noharry/agent/runtime/AgentRuntimeBuilder {
+	public static final field Companion Lcc/noharry/agent/runtime/AgentRuntimeBuilder$Companion;
+	public final fun agentsMd (Ljava/lang/String;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun build ()Lcc/noharry/agent/kernel/api/AgentRuntime;
+	public final fun buildAsync (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun contextProvider (Lcc/noharry/agent/kernel/api/RuntimeContextProvider;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun contextWindow (JD)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public static synthetic fun contextWindow$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;JDILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public static final fun create ()Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun defaultWorkspace (Ljava/lang/String;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun deferredBackendTools (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public static synthetic fun deferredBackendTools$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;ZILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun disabledNativeTools (Ljava/util/Set;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun execEngine (Lcc/noharry/agent/kernel/api/ExecEngine;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun hook (Lcc/noharry/agent/kernel/api/RuntimeHook;Lcc/noharry/agent/kernel/api/ToolMatcher;Ljava/lang/Long;Lcc/noharry/agent/kernel/api/HookFailurePolicy;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public static synthetic fun hook$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;Lcc/noharry/agent/kernel/api/RuntimeHook;Lcc/noharry/agent/kernel/api/ToolMatcher;Ljava/lang/Long;Lcc/noharry/agent/kernel/api/HookFailurePolicy;ILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun hookTimeoutMillis (J)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun imageInput (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun loopBudget (IILjava/lang/Long;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public static synthetic fun loopBudget$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;IILjava/lang/Long;ILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun modelClient (Lcc/noharry/agent/kernel/api/model/ModelClient;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun modelConcurrency (I)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public static synthetic fun modelConcurrency$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;IILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun modelRetry (IJJLjava/util/List;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public static synthetic fun modelRetry$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;IJJLjava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun nativeDeferredTools (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public static synthetic fun nativeDeferredTools$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;ZILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun nativeWebFetchEnabled (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun networkConfirmationPolicy (Lcc/noharry/agent/runtime/NetworkToolConfirmationPolicy;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun nowEpochMillis (Lkotlin/jvm/functions/Function0;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun plugin (Lcc/noharry/agent/kernel/api/AgentPlugin;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun policyConfig (Ljava/io/File;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun policyConfigJson (Ljava/lang/String;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun policyConfigPath (Ljava/lang/String;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun policyRule (Lcc/noharry/agent/policy/PolicyRule;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun profile (Lcc/noharry/agent/kernel/api/AgentProfile;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun runContext (Ljava/lang/String;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun runContextAsSystem (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public static synthetic fun runContextAsSystem$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;ZILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun runtimeEvidence (Lcc/noharry/agent/kernel/api/RuntimeEvidenceConfig;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun sceneAgentsMd (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun sessionActivationInheritance (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public static synthetic fun sessionActivationInheritance$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;ZILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun sessionConcurrency (III)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public static synthetic fun sessionConcurrency$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;IIIILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun sessionEventLog (Lcc/noharry/agent/kernel/api/SessionEventLog;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun sessionEventLogRoot (Ljava/io/File;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun sessionHistory (Lcc/noharry/agent/runtime/SessionHistory;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun sessionStore (Lkotlin/jvm/functions/Function1;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun sessionToolActivations (Lcc/noharry/agent/runtime/SessionToolActivations;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun skill (Lcc/noharry/agent/runtime/HostSkill;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun subagents (Lcc/noharry/agent/runtime/Subagents;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun systemPrompt (Ljava/lang/String;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun toolConcurrency (I)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public static synthetic fun toolConcurrency$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;IILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun toolProvider (Lcc/noharry/agent/kernel/api/ToolProvider;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun toolProviders (Ljava/util/List;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun turnObserver (Lcc/noharry/agent/kernel/api/RuntimeTurnObserver;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun virtualWorkspace (Lcc/noharry/agent/vfs/VfsFileSystem;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun webFetchFallback (Lcc/noharry/agent/runtime/WebFetchFallback;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun webSearch (Lcc/noharry/agent/runtime/WebSearchProvider;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun workspace (Lcc/noharry/agent/runtime/RuntimeWorkspaceRef;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun workspaceRoot (Ljava/io/File;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+}
+
+public final class cc/noharry/agent/runtime/AgentRuntimeBuilder$Companion {
+	public final fun create ()Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+}
+
+public final class cc/noharry/agent/runtime/FunctionToolsBuilder {
+	public final fun tool (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function2;)V
+	public static synthetic fun tool$default (Lcc/noharry/agent/runtime/FunctionToolsBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+}
+
+public final class cc/noharry/agent/runtime/FunctionToolsKt {
+	public static final fun functionTools (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lcc/noharry/agent/kernel/api/ToolProvider;
+	public static synthetic fun functionTools$default (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcc/noharry/agent/kernel/api/ToolProvider;
+}
+
+public final class cc/noharry/agent/runtime/HostSkill {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)Lcc/noharry/agent/runtime/HostSkill;
+	public static synthetic fun copy$default (Lcc/noharry/agent/runtime/HostSkill;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/runtime/HostSkill;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getScenes ()Ljava/util/List;
+	public final fun getSkillMd ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/runtime/NetworkToolConfirmationPolicy : java/lang/Enum {
+	public static final field ALLOW_ALL_HOSTS Lcc/noharry/agent/runtime/NetworkToolConfirmationPolicy;
+	public static final field REQUIRE_PER_HOST Lcc/noharry/agent/runtime/NetworkToolConfirmationPolicy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/runtime/NetworkToolConfirmationPolicy;
+	public static fun values ()[Lcc/noharry/agent/runtime/NetworkToolConfirmationPolicy;
+}
+
+public final class cc/noharry/agent/runtime/RuntimeWorkspaceRef {
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/vfs/VfsFileSystem;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcc/noharry/agent/vfs/VfsFileSystem;
+	public final fun copy (Ljava/lang/String;Lcc/noharry/agent/vfs/VfsFileSystem;)Lcc/noharry/agent/runtime/RuntimeWorkspaceRef;
+	public static synthetic fun copy$default (Lcc/noharry/agent/runtime/RuntimeWorkspaceRef;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsFileSystem;ILjava/lang/Object;)Lcc/noharry/agent/runtime/RuntimeWorkspaceRef;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFileSystem ()Lcc/noharry/agent/vfs/VfsFileSystem;
+	public final fun getWorkspaceId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/runtime/SessionHistory {
+	public fun <init> ()V
+	public fun <init> (I)V
+	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clearAll ()V
+	public final fun clearSession (Ljava/lang/String;)V
+	public final fun messages (Ljava/lang/String;)Ljava/util/List;
+}
+
+public final class cc/noharry/agent/runtime/SessionToolActivations {
+	public fun <init> ()V
+	public fun <init> (ILkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (ILkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clearAll ()V
+	public final fun clearSession (Ljava/lang/String;)V
+}
+
+public final class cc/noharry/agent/runtime/SubagentConfig {
+	public fun <init> ()V
+	public fun <init> (IIZLcc/noharry/agent/kernel/api/model/ModelRef;JJJLjava/util/List;)V
+	public synthetic fun <init> (IIZLcc/noharry/agent/kernel/api/model/ModelRef;JJJLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()Z
+	public final fun component4 ()Lcc/noharry/agent/kernel/api/model/ModelRef;
+	public final fun component5 ()J
+	public final fun component6 ()J
+	public final fun component7 ()J
+	public final fun component8 ()Ljava/util/List;
+	public final fun copy (IIZLcc/noharry/agent/kernel/api/model/ModelRef;JJJLjava/util/List;)Lcc/noharry/agent/runtime/SubagentConfig;
+	public static synthetic fun copy$default (Lcc/noharry/agent/runtime/SubagentConfig;IIZLcc/noharry/agent/kernel/api/model/ModelRef;JJJLjava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/runtime/SubagentConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAllowDeviceControl ()Z
+	public final fun getMaxActivePerSession ()I
+	public final fun getMaxDepth ()I
+	public final fun getMaxDurationMillis ()J
+	public final fun getModelRef ()Lcc/noharry/agent/kernel/api/model/ModelRef;
+	public final fun getReportHoldMillis ()J
+	public final fun getStallAfterMillis ()J
+	public final fun getTypes ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/runtime/SubagentLauncher {
+	public abstract fun launch (Lcc/noharry/agent/runtime/SubagentSpec;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class cc/noharry/agent/runtime/SubagentReport {
+	public fun <init> (Ljava/lang/String;Ljava/util/List;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;Ljava/util/List;)Lcc/noharry/agent/runtime/SubagentReport;
+	public static synthetic fun copy$default (Lcc/noharry/agent/runtime/SubagentReport;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/runtime/SubagentReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getParentSessionId ()Ljava/lang/String;
+	public final fun getStatuses ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/runtime/SubagentSpec {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILcc/noharry/agent/kernel/api/model/ModelRef;ZLjava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILcc/noharry/agent/kernel/api/model/ModelRef;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()I
+	public final fun component8 ()Lcc/noharry/agent/kernel/api/model/ModelRef;
+	public final fun component9 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILcc/noharry/agent/kernel/api/model/ModelRef;ZLjava/lang/String;)Lcc/noharry/agent/runtime/SubagentSpec;
+	public static synthetic fun copy$default (Lcc/noharry/agent/runtime/SubagentSpec;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILcc/noharry/agent/kernel/api/model/ModelRef;ZLjava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/runtime/SubagentSpec;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgentType ()Ljava/lang/String;
+	public final fun getAllowDeviceControl ()Z
+	public final fun getDepth ()I
+	public final fun getId ()Ljava/lang/String;
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getModelRef ()Lcc/noharry/agent/kernel/api/model/ModelRef;
+	public final fun getParentRunId ()Ljava/lang/String;
+	public final fun getParentSessionId ()Ljava/lang/String;
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun getTask ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/runtime/SubagentState : java/lang/Enum {
+	public static final field CANCELLED Lcc/noharry/agent/runtime/SubagentState;
+	public static final field COMPLETED Lcc/noharry/agent/runtime/SubagentState;
+	public static final field FAILED Lcc/noharry/agent/runtime/SubagentState;
+	public static final field RUNNING Lcc/noharry/agent/runtime/SubagentState;
+	public static final field STALLED Lcc/noharry/agent/runtime/SubagentState;
+	public static final field TIMED_OUT Lcc/noharry/agent/runtime/SubagentState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getFinished ()Z
+	public final fun getWireName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/runtime/SubagentState;
+	public static fun values ()[Lcc/noharry/agent/runtime/SubagentState;
+}
+
+public final class cc/noharry/agent/runtime/SubagentStatus {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/runtime/SubagentState;JJJILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJJJLjava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/runtime/SubagentState;JJJILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJJJLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/lang/String;
+	public final fun component11 ()Ljava/lang/String;
+	public final fun component12 ()Ljava/lang/String;
+	public final fun component13 ()Ljava/lang/String;
+	public final fun component14 ()I
+	public final fun component15 ()J
+	public final fun component16 ()J
+	public final fun component17 ()J
+	public final fun component18 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcc/noharry/agent/runtime/SubagentState;
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()J
+	public final fun component7 ()I
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/runtime/SubagentState;JJJILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJJJLjava/lang/String;)Lcc/noharry/agent/runtime/SubagentStatus;
+	public static synthetic fun copy$default (Lcc/noharry/agent/runtime/SubagentStatus;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/runtime/SubagentState;JJJILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJJJLjava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/runtime/SubagentStatus;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAgentType ()Ljava/lang/String;
+	public final fun getCachedTokens ()J
+	public final fun getError ()Ljava/lang/String;
+	public final fun getFinishedAtEpochMillis ()J
+	public final fun getId ()Ljava/lang/String;
+	public final fun getInputTokens ()J
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getLastActivityEpochMillis ()J
+	public final fun getLatest ()Ljava/lang/String;
+	public final fun getModelCalls ()I
+	public final fun getOutputTokens ()J
+	public final fun getParentSessionId ()Ljava/lang/String;
+	public final fun getResult ()Ljava/lang/String;
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun getStartedAtEpochMillis ()J
+	public final fun getState ()Lcc/noharry/agent/runtime/SubagentState;
+	public final fun getTask ()Ljava/lang/String;
+	public final fun getToolCalls ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/runtime/SubagentType {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/runtime/SubagentType;
+	public static synthetic fun copy$default (Lcc/noharry/agent/runtime/SubagentType;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/runtime/SubagentType;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/runtime/Subagents {
+	public fun <init> (Lcc/noharry/agent/runtime/SubagentConfig;Lcc/noharry/agent/runtime/SubagentLauncher;Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (Lcc/noharry/agent/runtime/SubagentConfig;Lcc/noharry/agent/runtime/SubagentLauncher;Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun cancelSession (Ljava/lang/String;)V
+	public static synthetic fun cancelSession$default (Lcc/noharry/agent/runtime/Subagents;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun getConfig ()Lcc/noharry/agent/runtime/SubagentConfig;
+	public final fun hasUnfinished (Ljava/lang/String;)Z
+	public final fun isSubagentSession (Ljava/lang/String;)Z
+	public final fun onReport (Lkotlin/jvm/functions/Function1;)V
+	public final fun onStatus (Lkotlin/jvm/functions/Function1;)V
+	public final fun setConfig (Lcc/noharry/agent/runtime/SubagentConfig;)V
+	public final fun statuses (Ljava/lang/String;)Ljava/util/List;
+}
+
+public final class cc/noharry/agent/runtime/WebFallbackPage {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/runtime/WebFallbackPage;
+	public static synthetic fun copy$default (Lcc/noharry/agent/runtime/WebFallbackPage;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/runtime/WebFallbackPage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMarkdown ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/runtime/WebFetchFallback {
+	public abstract fun fetch (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getLabel ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/runtime/WebSearchProvider {
+	public abstract fun getLabel ()Ljava/lang/String;
+	public abstract fun search (Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/runtime/WebSearchResult {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/runtime/WebSearchResult;
+	public static synthetic fun copy$default (Lcc/noharry/agent/runtime/WebSearchResult;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/runtime/WebSearchResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDate ()Ljava/lang/String;
+	public final fun getSite ()Ljava/lang/String;
+	public final fun getSummary ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/runtime/eventlog/DurableSessionEventLogPlugin : cc/noharry/agent/kernel/api/AgentPlugin {
+	public static final field Companion Lcc/noharry/agent/runtime/eventlog/DurableSessionEventLogPlugin$Companion;
+	public static final field PLUGIN_ID Ljava/lang/String;
+	public static final field ROOT_DIRECTORY Ljava/lang/String;
+	public synthetic fun <init> (Ljava/io/File;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getDescriptor ()Lcc/noharry/agent/kernel/api/AgentPluginDescriptor;
+	public fun getId ()Ljava/lang/String;
+	public fun install (Lcc/noharry/agent/kernel/api/AgentPluginScope;)V
+}
+
+public final class cc/noharry/agent/runtime/eventlog/DurableSessionEventLogPlugin$Companion {
+	public final fun forRoot (Ljava/io/File;)Lcc/noharry/agent/runtime/eventlog/DurableSessionEventLogPlugin;
+}
+
+public final class cc/noharry/agent/runtime/eventlog/DurableSessionEventLogPluginKt {
+	public static final fun openFileBackedSessionEventLog (Ljava/io/File;Lkotlin/jvm/functions/Function0;)Lcc/noharry/agent/kernel/api/SessionEventLog;
+	public static synthetic fun openFileBackedSessionEventLog$default (Ljava/io/File;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Lcc/noharry/agent/kernel/api/SessionEventLog;
+}
+
+public abstract interface class cc/noharry/agent/transport/HttpEvent {
+}
+
+public final class cc/noharry/agent/transport/HttpEvent$Data : cc/noharry/agent/transport/HttpEvent {
+	public fun <init> ([B)V
+	public final fun component1 ()[B
+	public final fun copy ([B)Lcc/noharry/agent/transport/HttpEvent$Data;
+	public static synthetic fun copy$default (Lcc/noharry/agent/transport/HttpEvent$Data;[BILjava/lang/Object;)Lcc/noharry/agent/transport/HttpEvent$Data;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBytes ()[B
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/transport/HttpEvent$Done : cc/noharry/agent/transport/HttpEvent {
+	public static final field INSTANCE Lcc/noharry/agent/transport/HttpEvent$Done;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/transport/HttpEvent$Response : cc/noharry/agent/transport/HttpEvent {
+	public fun <init> (ILjava/util/Map;)V
+	public synthetic fun <init> (ILjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/util/Map;
+	public final fun copy (ILjava/util/Map;)Lcc/noharry/agent/transport/HttpEvent$Response;
+	public static synthetic fun copy$default (Lcc/noharry/agent/transport/HttpEvent$Response;ILjava/util/Map;ILjava/lang/Object;)Lcc/noharry/agent/transport/HttpEvent$Response;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHeaders ()Ljava/util/Map;
+	public final fun getStatusCode ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/transport/HttpRequest {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;[B)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;[BILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()[B
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;[B)Lcc/noharry/agent/transport/HttpRequest;
+	public static synthetic fun copy$default (Lcc/noharry/agent/transport/HttpRequest;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;[BILjava/lang/Object;)Lcc/noharry/agent/transport/HttpRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBody ()[B
+	public final fun getHeaders ()Ljava/util/Map;
+	public final fun getMethod ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/transport/HttpResponse {
+	public fun <init> (ILjava/util/Map;[B)V
+	public synthetic fun <init> (ILjava/util/Map;[BILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/util/Map;
+	public final fun component3 ()[B
+	public final fun copy (ILjava/util/Map;[B)Lcc/noharry/agent/transport/HttpResponse;
+	public static synthetic fun copy$default (Lcc/noharry/agent/transport/HttpResponse;ILjava/util/Map;[BILjava/lang/Object;)Lcc/noharry/agent/transport/HttpResponse;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBody ()[B
+	public final fun getHeaders ()Ljava/util/Map;
+	public final fun getStatusCode ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/transport/HttpTransport {
+	public abstract fun execute (Lcc/noharry/agent/transport/HttpRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun stream (Lcc/noharry/agent/transport/HttpRequest;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class cc/noharry/agent/transport/OkHttpHttpTransport : cc/noharry/agent/transport/HttpTransport {
+	public fun <init> ()V
+	public fun execute (Lcc/noharry/agent/transport/HttpRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun stream (Lcc/noharry/agent/transport/HttpRequest;)Lkotlinx/coroutines/flow/Flow;
+}
+
