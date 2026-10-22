@@ -1,5 +1,13 @@
 # Android Agent Runtime
 
+[![CI](https://github.com/NoHarry/android-agent-runtime/actions/workflows/ci.yml/badge.svg)](https://github.com/NoHarry/android-agent-runtime/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.1.0--SNAPSHOT-blue)](CHANGELOG.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.0%2B-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![Android API](https://img.shields.io/badge/API-23%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com/about/versions)
+<!-- After the first Maven Central release, swap the version badge for
+[![Maven Central](https://img.shields.io/maven-central/v/cc.noharry/agent-runtime)](https://central.sonatype.com/namespace/cc.noharry) -->
+
 **English** | [中文](README.zh-CN.md)
 
 **An embeddable agent runtime (an agent harness) for Android and the JVM.** It runs a full agent loop inside your

@@ -1,5 +1,13 @@
 # Android Agent Runtime
 
+[![CI](https://github.com/NoHarry/android-agent-runtime/actions/workflows/ci.yml/badge.svg)](https://github.com/NoHarry/android-agent-runtime/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.1.0--SNAPSHOT-blue)](CHANGELOG.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.0%2B-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![Android API](https://img.shields.io/badge/API-23%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com/about/versions)
+<!-- After the first Maven Central release, swap the version badge for
+[![Maven Central](https://img.shields.io/maven-central/v/cc.noharry/agent-runtime)](https://central.sonatype.com/namespace/cc.noharry) -->
+
 [English](README.md) | **中文**
 
 **可嵌入的 agent 运行时（agent harness），面向 Android 和 JVM。** 它在你的 App 进程里跑一整套 agent 循环：agent 能读写的沙箱工作区、来自你自己代码和 MCP 服务的工具、skill 和子 agent、包在每次工具调用外面的 hook 与策略，以及可持久化的会话。模型用任何 OpenAI 或 Anthropic 兼容的接口都行。

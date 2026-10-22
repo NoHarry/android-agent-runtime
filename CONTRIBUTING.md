@@ -40,3 +40,9 @@ need a connected device.
 `tools/` holds Python helpers for working on the runtime: event-log reports (`session_latency.py`,
 `session_cache.py`), the probe analyzer (`bench_analyze`) and A2A interop runners (`tools/a2a`). They are not needed to
 build. Their tests: `cd tools && python -m unittest discover -s tests`.
+
+## Releasing
+
+Push a tag `vX.Y.Z`: the release workflow checks the build and uploads `X.Y.Z` to the Maven Central Portal, where it
+waits for a manual Publish. Then move `CHANGELOG.md`'s entry from unreleased to the version, and update the README
+version badge (after the first release, swap it for the Maven Central badge left in a comment there).
