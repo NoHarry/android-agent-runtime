@@ -1,12 +1,10 @@
 # Android Agent Runtime
 
 [![CI](https://github.com/NoHarry/android-agent-runtime/actions/workflows/ci.yml/badge.svg)](https://github.com/NoHarry/android-agent-runtime/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.1.0--SNAPSHOT-blue)](CHANGELOG.md)
+[![Maven Central](https://img.shields.io/maven-central/v/cc.noharry/agent-runtime)](https://central.sonatype.com/namespace/cc.noharry)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Kotlin](https://img.shields.io/badge/kotlin-2.0%2B-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![Android API](https://img.shields.io/badge/API-23%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com/about/versions)
-<!-- After the first Maven Central release, swap the version badge for
-[![Maven Central](https://img.shields.io/maven-central/v/cc.noharry/agent-runtime)](https://central.sonatype.com/namespace/cc.noharry) -->
 
 **English** | [中文](README.zh-CN.md)
 
@@ -16,8 +14,7 @@ and subagents, hooks and policy around every tool call, and durable sessions. Br
 Anthropic-compatible model.
 
 > **Status: 0.x, under active development.** The public API is not frozen and may change between minor releases;
-> breaking changes are listed in the [changelog](CHANGELOG.md). 0.1.0 is not on Maven Central yet: until it is, use the
-> [composite build](#before-010-is-published) below.
+> breaking changes are listed in the [changelog](CHANGELOG.md).
 
 ## What you get
 
@@ -113,9 +110,10 @@ The [samples](samples) run as they are: `AGENT_API_KEY=… ./gradlew :samples:qu
 Three ways in: an app depends on `agent-runtime-android`; a server, desktop tool or test on `agent-runtime`; a runtime
 of your own builds on `agent-kernel-api` and `agent-kernel-core`. Optional modules depend at most on the kernel API.
 
-## Before 0.1.0 is published
+## Building from source
 
-Clone this repository next to your project and let Gradle build it from source; the same coordinates resolve to it:
+To try changes not yet released, clone this repository next to your project and let Gradle build it from source; the
+same coordinates resolve to it:
 
 ```kotlin
 // settings.gradle.kts of your project

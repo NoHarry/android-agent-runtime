@@ -44,5 +44,6 @@ build. Their tests: `cd tools && python -m unittest discover -s tests`.
 ## Releasing
 
 Push a tag `vX.Y.Z`: the release workflow checks the build and uploads `X.Y.Z` to the Maven Central Portal, where it
-waits for a manual Publish. Then move `CHANGELOG.md`'s entry from unreleased to the version, and update the README
-version badge (after the first release, swap it for the Maven Central badge left in a comment there).
+waits for a manual Publish. Then date `CHANGELOG.md`'s entry and move `VERSION_NAME` in `gradle.properties` on to the
+next snapshot. The README's Maven Central badge follows the release by itself. Tags `v*` cannot be moved or deleted (a
+ruleset): to tag a failed release again, disable that ruleset first.
