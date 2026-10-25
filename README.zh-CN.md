@@ -87,7 +87,7 @@ val runtime = AgentRuntimeBuilder.create()
 | `agent-vfs` | 工作区背后的虚拟文件系统 |
 | `agent-vfs-saf` | 可选：把用户通过 SAF 选的文件夹挂进工作区 |
 | `agent-exec-js` | 可选：`exec_js`，能调用工具的沙箱 JavaScript（Zipline 里的 QuickJS） |
-| `agent-device-capabilities` | 可选：日历和通知工具 |
+| `agent-device-capabilities` | 可选：日历、通知和媒体控制工具 |
 | `agent-android-use` | 可选：通过无障碍服务看屏幕、操作屏幕 |
 | `agent-voice` | 可选：普通话语音会话，本地唤醒词和识别（sherpa-onnx）或云端识别 |
 | `agent-a2a-client`、`-direct`、`-official` | 可选：把任务交给远程 A2A agent（两种可互换的传输） |

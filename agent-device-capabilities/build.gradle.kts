@@ -3,7 +3,7 @@ plugins {
     id("com.vanniktech.maven.publish")
 }
 
-description = "Calendar and notification tools for the agent."
+description = "Calendar, notification and media tools for the agent."
 
 android {
     namespace = "cc.noharry.agent.device"

@@ -29,7 +29,7 @@ Anthropic-compatible model.
   actions, and a per-provider concurrency limit.
 - **Durable sessions.** An append-only event log per session, resumable runs, SQLite session storage on Android.
 - **Optional modules.** Operate other apps' screens through accessibility (Android Use), Mandarin voice sessions with an
-  on-device wake word, sandboxed JavaScript that calls tools, calendar and notification tools, and A2A client and
+  on-device wake word, sandboxed JavaScript that calls tools, calendar, notification and media tools, and A2A client and
   server.
 
 ## Install
@@ -100,7 +100,7 @@ The [samples](samples) run as they are: `AGENT_API_KEY=… ./gradlew :samples:qu
 | `agent-vfs` | The virtual file system behind the workspace |
 | `agent-vfs-saf` | Optional: mount a folder the user picks through the Storage Access Framework |
 | `agent-exec-js` | Optional: `exec_js`, sandboxed JavaScript (QuickJS through Zipline) that can call tools |
-| `agent-device-capabilities` | Optional: calendar and notification tools |
+| `agent-device-capabilities` | Optional: calendar, notification and media tools |
 | `agent-android-use` | Optional: observe and operate the screen through an accessibility service |
 | `agent-voice` | Optional: Mandarin voice sessions, on-device wake word and recognition (sherpa-onnx) or a cloud recognizer |
 | `agent-a2a-client`, `-direct`, `-official` | Optional: delegate tasks to remote A2A agents (two interchangeable transports) |
