@@ -26,7 +26,7 @@
 
 ```kotlin
 dependencies {
-    implementation(platform("cc.noharry:agent-bom:0.1.0"))
+    implementation(platform("cc.noharry:agent-bom:0.2.0"))
     implementation("cc.noharry:agent-runtime-android") // Android App
     // implementation("cc.noharry:agent-runtime")      // JVM：服务端、桌面工具、测试
 }
