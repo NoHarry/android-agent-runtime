@@ -33,20 +33,27 @@ import kotlinx.serialization.json.putJsonArray
 class DeviceMediaMcpProvider internal constructor(
     private val gateway: DeviceMediaGateway,
     private val settleMillis: Long = SETTLE_MILLIS,
+    /** The package in front, when the host knows it: with no app named and nothing playing, its session is meant. */
+    private val foregroundPackage: () -> String? = { null },
 ) : McpClientProvider, ToolCatalogCacheIdentity {
     override val serverId: String = MEDIA_SERVER_ID
     override val displayName: String = "Device Media"
-    override val catalogCacheIdentity: String = "$MEDIA_SERVER_ID:v2"
+    override val catalogCacheIdentity: String = "$MEDIA_SERVER_ID:v6"
     @OptIn(ExperimentalAgentRuntimeApi::class)
     override val providerConcurrency: ProviderConcurrencyDeclaration =
         ProviderConcurrencyDeclaration.serialized()
 
-    /** Sessions seen through [DeviceMediaListenerService], which the host declares in its manifest. */
-    constructor(context: Context) : this(context, defaultListener(context))
-
-    /** Sessions seen through the host's own notification listener [listener]. */
-    constructor(context: Context, listener: ComponentName) :
-        this(AndroidDeviceMediaGateway(context.applicationContext, listener))
+    /**
+     * Sessions seen through [listener] ([DeviceMediaListenerService] unless the host has its own). [foregroundPackage]
+     * names the app in front when the host can tell (an accessibility service can): 「暂停」 with nothing playing then
+     * goes to it, a video app whose session never reports playing among them.
+     */
+    @JvmOverloads
+    constructor(
+        context: Context,
+        listener: ComponentName = defaultListener(context),
+        foregroundPackage: () -> String? = { null },
+    ) : this(AndroidDeviceMediaGateway(context.applicationContext, listener), SETTLE_MILLIS, foregroundPackage)
 
     override suspend fun listTools(): List<ToolDescriptor> =
         listOf(mediaStatusTool(), mediaControlTool(), mediaVolumeTool(), mediaPlayFromSearchTool())
@@ -70,15 +77,22 @@ class DeviceMediaMcpProvider internal constructor(
 
     private fun status(): ToolCallResult {
         val sessions = gateway.sessions()
+        val sound = gateway.soundPlaying()
         return ok {
             put("access", sessions != null)
             put("volumePercent", gateway.volumePercent())
+            put("soundPlaying", sound)
+            foregroundPackage()?.let { put("foregroundPackage", it) }
             if (sessions == null) {
                 put("note", NO_ACCESS)
                 return@ok
             }
             val current = pick(sessions, null)
-            if (current == null) put("note", "Nothing plays, and no app keeps a paused session.") else put("current", current.json(full = true))
+            when {
+                sound && sessions.none { it.playing } -> put("note", UNTOLD_SOUND)
+                current == null -> put("note", "Nothing plays, and no app keeps a paused session.")
+            }
+            current?.let { put("current", it.json(full = true)) }
             putJsonArray("others") { sessions.filter { it != current }.take(MAX_OTHERS).forEach { add(it.json(full = false)) } }
         }
     }
@@ -96,11 +110,40 @@ class DeviceMediaMcpProvider internal constructor(
         val command = commandFor(action, target, args) ?: return refusal(action, target, args)
         if (!gateway.send(target.id, command)) return failed(DEVICE_CALL_FAILED, "${target.app} closed its media session.", retryable = true)
         val after = settle(target, command)
+        // A session that does not drive what plays (a video app's): the sound goes on, and no session owns up to it.
+        val unheard = (command == MediaCommand.Pause || command == MediaCommand.Stop) && stillSounding() &&
+            gateway.sessions().orEmpty().none { it.playing }
+        // A session that never reports playing (a video app's) is believed by the sound: played, it sounds.
+        val sounding = if (command == MediaCommand.Play && after?.playing != true) soundStarts() else gateway.soundPlaying()
         return ok {
             put("did", action.id)
             put("app", target.app)
+            put("soundPlaying", sounding)
             if (after != null) put("current", after.json(full = true)) else put("note", "${target.app} closed its session after the command.")
+            if (unheard) put("note", "Sent, but sound is still playing and no session says it plays: ${target.app} may not take commands through its media session (video apps often do not); pause it on screen instead.")
         }
+    }
+
+    /** Whether sound comes after a play the session does not confirm: given a moment to start. */
+    private suspend fun soundStarts(): Boolean {
+        var waited = 0L
+        while (!gateway.soundPlaying()) {
+            if (waited >= settleMillis / 2) return false
+            delay(SETTLE_POLL_MILLIS)
+            waited += SETTLE_POLL_MILLIS
+        }
+        return true
+    }
+
+    /** Whether sound goes on after a pause: given a moment to fade first. */
+    private suspend fun stillSounding(): Boolean {
+        var waited = 0L
+        while (gateway.soundPlaying()) {
+            if (waited >= settleMillis / 2) return true
+            delay(SETTLE_POLL_MILLIS)
+            waited += SETTLE_POLL_MILLIS
+        }
+        return false
     }
 
     private fun commandFor(action: ControlAction, target: MediaSessionSnapshot, args: JsonObject): MediaCommand? = when (action) {
@@ -181,10 +224,14 @@ class DeviceMediaMcpProvider internal constructor(
         }
     }
 
-    /** The session asked for by [app], else any; of those, the one playing, else the most recently active. */
+    /**
+     * The session asked for by [app], else any; of those, the one playing, else the app in front's (with nothing named,
+     * what is on screen is meant), else the most recently active.
+     */
     private fun pick(sessions: List<MediaSessionSnapshot>, app: String?): MediaSessionSnapshot? {
         val pool = if (app == null) sessions else sessions.filter { it.matches(app) }
-        return pool.firstOrNull { it.playing } ?: pool.firstOrNull()
+        val front = foregroundPackage()?.let { pkg -> pool.firstOrNull { it.packageName == pkg } }
+        return pool.firstOrNull { it.playing } ?: front ?: pool.firstOrNull()
     }
 
     /** The app takes a moment to play, pause or change the track: waited for, up to [settleMillis]. */
@@ -263,7 +310,8 @@ private fun mediaStatusTool(): ToolDescriptor = ToolDescriptor(
     name = MEDIA_STATUS,
     title = "Media status",
     description = "What plays on the device: the app, title, artist, playing or paused, position, what the app lets you " +
-        "do (seek, play by name, its own actions) and the media volume; other apps with a media session too. " +
+        "do (seek, play by name, its own actions) and the media volume; other apps with a media session too. soundPlaying " +
+        "says whether anything sounds at all, which a video app's session may not admit to. " +
         "现在在放什么歌、音乐、播客、视频。",
     inputSchemaJson = """{"type":"object","properties":{}}""",
 )
@@ -273,7 +321,8 @@ private fun mediaControlTool(): ToolDescriptor = ToolDescriptor(
     title = "Control media",
     description = "Play, pause, toggle, skip to the next or previous track, stop or seek what plays (music, podcasts, " +
         "video), or run one of the app's own actions (custom, e.g. a like or a play mode, as media.status lists them). " +
-        "app picks the app (its name or package); without it the one playing, else the latest. It cannot pick a song: " +
+        "app picks the app (its name or package); without it the one playing, else the latest. soundPlaying after the " +
+        "command tells whether anything sounds now: trust it over a video app's session that always reads stopped. It cannot pick a song: " +
         "use media.play_from_search where the app allows it, else open the app and choose on screen. " +
         "音乐播放控制：播放、继续、暂停、下一首、上一首、切歌、停止、快进、喜欢、收藏、播放模式。",
     inputSchemaJson = """{"type":"object","required":["action"],"properties":{""" +
@@ -309,6 +358,9 @@ private const val MEDIA_CONTROL = "media.control"
 private const val MEDIA_VOLUME = "media.volume"
 private const val MEDIA_PLAY_FROM_SEARCH = "media.play_from_search"
 private const val NO_ACCESS = "Notification access is not granted, so other apps' media sessions cannot be seen."
+private const val UNTOLD_SOUND = "Sound is playing, but no app's media session says it is: a video app (Douyin, for one) often keeps a " +
+    "session that reads stopped while it plays. Do not say nothing plays: send media.control to the app in front first " +
+    "(foregroundPackage); only if the sound goes on after it (soundPlaying), do it on screen."
 private const val ENABLED_LISTENERS = "enabled_notification_listeners"
 private const val MAX_OTHERS = 5
 private const val FULL = 100

@@ -71,6 +71,9 @@ internal interface DeviceMediaGateway {
 
     fun volumePercent(): Int
 
+    /** Whether any app is sounding through the media stream, whatever the sessions say. */
+    fun soundPlaying(): Boolean
+
     fun adjustVolume(raise: Boolean)
 
     fun setVolume(percent: Int)
@@ -120,6 +123,8 @@ internal class AndroidDeviceMediaGateway(
         audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
         audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
     }
+
+    override fun soundPlaying(): Boolean = audio.isMusicActive
 
     override fun volumePercent(): Int =
         audio.getStreamVolume(AudioManager.STREAM_MUSIC) * 100 / audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)

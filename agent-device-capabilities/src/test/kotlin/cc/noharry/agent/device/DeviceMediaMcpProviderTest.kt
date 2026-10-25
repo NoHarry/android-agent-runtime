@@ -94,6 +94,49 @@ class DeviceMediaMcpProviderTest {
     }
 
     @Test
+    fun soundThatNoSessionOwnsUpToIsNotCalledSilence() = runBlocking {
+        val gateway = FakeMediaGateway(listOf(music().copy(state = "paused"), video().copy(state = "stopped")), untoldSound = true)
+
+        val status = provider(gateway).call("media.status")
+        val pause = provider(gateway).call("media.control", """{"action":"pause","app":"YouTube"}""")
+
+        assertTrue(status.resultJson.contains(""""soundPlaying":true"""))
+        assertTrue(status.resultJson.contains("Do not say nothing plays"))
+        assertTrue(pause.success)
+        assertTrue(pause.resultJson.contains("pause it on screen instead"))
+    }
+
+    @Test
+    fun aPlayTheSessionDoesNotConfirmIsBelievedByTheSound() = runBlocking {
+        // A video app's session stays stopped while the app plays; the sound says it did.
+        val gateway = FakeMediaGateway(listOf(video().copy(state = "stopped")), untoldSound = true)
+
+        val result = provider(gateway).call("media.control", """{"action":"play","app":"YouTube"}""")
+
+        assertTrue(result.resultJson.contains(""""soundPlaying":true"""))
+    }
+
+    @Test
+    fun withNothingPlayingAndNoAppNamedTheAppInFrontIsMeant() = runBlocking {
+        // B站 paused most recently, 抖音 in front with a session that reads stopped while it plays.
+        val douyin = MediaSessionSnapshot(id = "douyin", packageName = "com.ss.android.ugc.aweme", app = "抖音", title = "", state = "stopped")
+        val gateway = FakeMediaGateway(listOf(podcast(state = "paused"), douyin), untoldSound = true)
+        val provider = DeviceMediaMcpProvider(gateway, settleMillis = 0, foregroundPackage = { "com.ss.android.ugc.aweme" })
+
+        val result = provider.call("media.control", """{"action":"pause"}""")
+
+        assertEquals("douyin" to MediaCommand.Pause, gateway.sent.single())
+        assertTrue(result.resultJson.contains(""""app":"抖音""""))
+    }
+
+    @Test
+    fun aPauseThatTookSaysNothingMore() = runBlocking {
+        val result = provider(FakeMediaGateway(listOf(music()))).call("media.control", """{"action":"pause"}""")
+
+        assertFalse(result.resultJson.contains("on screen"))
+    }
+
+    @Test
     fun volumeIsSetAndReported() = runBlocking {
         val gateway = FakeMediaGateway(listOf(music()))
 
@@ -122,7 +165,11 @@ private fun video() = MediaSessionSnapshot(
 )
 
 /** A device whose apps do at once what they are told. */
-private class FakeMediaGateway(private var sessions: List<MediaSessionSnapshot>? = emptyList()) : DeviceMediaGateway {
+private class FakeMediaGateway(
+    private var sessions: List<MediaSessionSnapshot>? = emptyList(),
+    /** Sound from an app whose session does not drive it (a video app's), unmoved by any command. */
+    private val untoldSound: Boolean = false,
+) : DeviceMediaGateway {
     val sent = mutableListOf<Pair<String, MediaCommand>>()
     val keys = mutableListOf<Int>()
     private var volume = 50
@@ -148,6 +195,8 @@ private class FakeMediaGateway(private var sessions: List<MediaSessionSnapshot>?
     }
 
     override fun volumePercent(): Int = volume
+
+    override fun soundPlaying(): Boolean = untoldSound || sessions.orEmpty().any { it.playing }
 
     override fun adjustVolume(raise: Boolean) {
         volume += if (raise) 10 else -10

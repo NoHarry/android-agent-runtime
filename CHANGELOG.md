@@ -9,7 +9,11 @@ called out.
   `media.control`, `media.volume`, `media.play_from_search`). With notification access granted to
   `DeviceMediaListenerService`, which the host declares, it sees what plays, picks the app and runs the app's own
   actions; without it, play, pause and skipping go out as media keys. The module's manifest now queries launcher apps,
-  to name the app behind each session.
+  to name the app behind each session. `soundPlaying` says whether anything sounds at all, which a video app's
+  session may not admit to; a host that knows the app in front passes `foregroundPackage`, and with nothing playing
+  and no app named the commands go to it.
+- `agent-android-use`: `AndroidUseAccessibility.foregroundApp(context)`, the app whose window is active, for a host to
+  tell its agent what is on screen.
 
 ## 0.1.0 (2026-10-25)
 

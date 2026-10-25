@@ -2,6 +2,7 @@ package cc.noharry.agent.androiduse
 
 import android.content.Context
 import android.provider.Settings
+import android.view.accessibility.AccessibilityWindowInfo
 
 /**
  * Candidate switch for [AndroidUseAccessibilityService]. Not frozen.
@@ -33,9 +34,30 @@ object AndroidUseAccessibility {
         Settings.Secure.putString(resolver, ENABLED_SERVICES, updated)
     }.getOrDefault(false)
 
+    /**
+     * The app whose window is active on the main display, as the service sees it; null while it is not connected or
+     * nothing is in front. Lets a host tell its agent what is on screen without an observation (an app already open
+     * needs no opening).
+     */
+    fun foregroundApp(context: Context): ForegroundApp? {
+        val service = AndroidUseServiceHolder.service ?: return null
+        val windows = runCatching { service.windows.orEmpty() }.getOrDefault(emptyList())
+        val app = windows.filter { it.type == AccessibilityWindowInfo.TYPE_APPLICATION }
+        val packageName = (app.firstOrNull { it.isActive } ?: app.firstOrNull())?.root?.packageName?.toString()
+            ?.takeIf { it.isNotEmpty() } ?: return null
+        val label = runCatching {
+            val pm = context.packageManager
+            pm.getApplicationLabel(pm.getApplicationInfo(packageName, 0)).toString()
+        }.getOrDefault(packageName)
+        return ForegroundApp(packageName, label)
+    }
+
     private fun serviceComponent(context: Context): String =
         "${context.packageName}/${AndroidUseAccessibilityService::class.java.name}"
 }
+
+/** An app in front: its package and the name it shows. Candidate API, not frozen. */
+data class ForegroundApp(val packageName: String, val label: String)
 
 /** Entries of an `enabled_accessibility_services` value, short `pkg/.Cls` forms expanded to `pkg/pkg.Cls`. */
 internal fun enabledServices(value: String?): List<String> =
