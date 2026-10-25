@@ -3,7 +3,7 @@
 All notable changes are listed here. The project is 0.x: a minor release may break the API, and every break is
 called out.
 
-## Unreleased
+## 0.2.0 (2026-10-25)
 
 - `agent-device-capabilities`: `DeviceMediaMcpProvider`, media tools for any app with a media session (`media.status`,
   `media.control`, `media.volume`, `media.play_from_search`). With notification access granted to
