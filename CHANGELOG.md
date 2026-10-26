@@ -3,7 +3,7 @@
 All notable changes are listed here. The project is 0.x: a minor release may break the API, and every break is
 called out.
 
-## Unreleased
+## 0.3.0 (2026-10-25)
 
 - `agent-voice`: the wake word listens with sherpa-onnx's Chinese–English keyword spotter
   (`sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20`), so a wake phrase may be English, written in the model's phones
