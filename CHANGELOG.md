@@ -10,7 +10,9 @@ called out.
   (`WakePhrase("OW1 K EY1 B AA1 TH IY0", "OK_Bothy")`). **Breaking:** an app that ships the wake model ships this one
   in its assets in place of the WenetSpeech one (`WAKE_MODEL_ASSET_DIR`); the Chinese phrases' pinyin tokens are the
   same. `WakePhrase.threshold` and `WakePhrase.boost` set one phrase's threshold and boost apart from the spotter's,
-  and a phrase must be reported without spaces.
+  and a phrase must be reported without spaces. **Binary break:** the new parameters change `wakeKeyword`'s and
+  `WakePhrase`'s compiled signatures (constructor, `copy`); source that calls them compiles as before, a library
+  compiled against 0.2.0 must be rebuilt.
 
 ## 0.2.0 (2026-10-25)
 

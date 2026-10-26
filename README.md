@@ -36,7 +36,7 @@ Anthropic-compatible model.
 
 ```kotlin
 dependencies {
-    implementation(platform("cc.noharry:agent-bom:0.2.0"))
+    implementation(platform("cc.noharry:agent-bom:0.3.0"))
     implementation("cc.noharry:agent-runtime-android") // an Android app
     // implementation("cc.noharry:agent-runtime")      // the JVM: a server, a desktop tool, tests
 }
