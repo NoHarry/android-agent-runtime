@@ -102,7 +102,7 @@ The [samples](samples) run as they are: `AGENT_API_KEY=… ./gradlew :samples:qu
 | `agent-exec-js` | Optional: `exec_js`, sandboxed JavaScript (QuickJS through Zipline) that can call tools |
 | `agent-device-capabilities` | Optional: calendar, notification and media tools |
 | `agent-android-use` | Optional: observe and operate the screen through an accessibility service |
-| `agent-voice` | Optional: Mandarin voice sessions, on-device wake word and recognition (sherpa-onnx) or a cloud recognizer |
+| `agent-voice` | Optional: Mandarin voice sessions, an on-device wake word (Chinese or English) and recognition (sherpa-onnx) or a cloud recognizer |
 | `agent-a2a-client`, `-direct`, `-official` | Optional: delegate tasks to remote A2A agents (two interchangeable transports) |
 | `agent-a2a-server` | Optional: expose the agent as a local A2A endpoint |
 | `agent-bom` | One version for all of the above |

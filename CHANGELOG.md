@@ -3,6 +3,15 @@
 All notable changes are listed here. The project is 0.x: a minor release may break the API, and every break is
 called out.
 
+## Unreleased
+
+- `agent-voice`: the wake word listens with sherpa-onnx's Chinese–English keyword spotter
+  (`sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20`), so a wake phrase may be English, written in the model's phones
+  (`WakePhrase("OW1 K EY1 B AA1 TH IY0", "OK_Bothy")`). **Breaking:** an app that ships the wake model ships this one
+  in its assets in place of the WenetSpeech one (`WAKE_MODEL_ASSET_DIR`); the Chinese phrases' pinyin tokens are the
+  same. `WakePhrase.threshold` and `WakePhrase.boost` set one phrase's threshold and boost apart from the spotter's,
+  and a phrase must be reported without spaces.
+
 ## 0.2.0 (2026-10-25)
 
 - `agent-device-capabilities`: `DeviceMediaMcpProvider`, media tools for any app with a media session (`media.status`,

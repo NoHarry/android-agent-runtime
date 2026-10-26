@@ -22,9 +22,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Listens for a wake phrase on the device with sherpa-onnx keyword spotting: the 3.3M-parameter Zipformer trained on
- * WenetSpeech, INT8 encoder and joiner, one CPU thread. It is light enough to stay on while the full recognizer is
- * off. The phrase is given as pinyin tokens ([wakeKeyword]), so homophones match alike. Audio stays in memory.
+ * Listens for a wake phrase on the device with sherpa-onnx keyword spotting: the 3M-parameter Chinese–English Zipformer
+ * (2025-12-20), INT8 encoder and joiner, one CPU thread. It is light enough to stay on while the full recognizer is
+ * off. A phrase is given as tokens ([wakeKeyword]): pinyin for Chinese, so homophones match alike, and phones for
+ * English. Audio stays in memory.
  * [onWake] runs on a background thread with the phrase heard; [onError] when the mic or model fails, which ends it.
  * Before [onWake], [lastHitLevelDb] is set to how loud the phrase was said ([wakeLevelDb]), the voice session's
  * [NearSpeechGate] reference.
@@ -144,11 +145,34 @@ class VoiceAudioTee(
 /** Two seconds of 100 ms frames. */
 private const val TEE_BUFFERED_FRAMES = 20
 
-/** A keyword line for the spotter: space-separated pinyin tokens, then `@` and the phrase reported on a hit. */
-fun wakeKeyword(tokens: String, phrase: String): String = "${tokens.trim().split(Regex("\\s+")).joinToString(" ")} @$phrase"
+/**
+ * A keyword line for the spotter: space-separated tokens, its own [boost] (`:`) and [threshold] (`#`) if it has them, in
+ * place of the spotter's, then `@` and the phrase reported on a hit.
+ */
+fun wakeKeyword(tokens: String, phrase: String, threshold: Float? = null, boost: Float? = null): String {
+    val parts = listOfNotNull(
+        tokens.trim().split(Regex("\\s+")).joinToString(" "),
+        boost?.let { ":$it" },
+        threshold?.let { "#$it" },
+        "@$phrase",
+    )
+    return parts.joinToString(" ")
+}
 
-/** One phrase the spotter listens for: its pinyin [tokens] and the [phrase] a hit reports. */
-data class WakePhrase(val tokens: String, val phrase: String)
+/**
+ * One phrase the spotter listens for: its [tokens] and the [phrase] a hit reports (no spaces: the spotter splits its
+ * line on them). Chinese is written in pinyin split into initial and final (`n ǐ h ǎo`), English in the model's phones
+ * with stress (`OW1 K EY1`). [threshold] and [boost] replace the spotter's for this phrase alone: a lower threshold for a
+ * phrase with a weak syllable that other words do not come near, a higher boost (the score its tokens earn on the search)
+ * to keep a phrase on it that the model hears less surely.
+ */
+data class WakePhrase(val tokens: String, val phrase: String, val threshold: Float? = null, val boost: Float? = null) {
+    init {
+        require(phrase.isNotEmpty() && phrase.none(Char::isWhitespace)) { "A wake phrase is reported without spaces: '$phrase'." }
+        require(threshold == null || threshold in 0f..1f) { "A wake phrase's threshold is between 0 and 1." }
+        require(boost == null || boost > 0f) { "A wake phrase's boost is positive." }
+    }
+}
 
 /**
  * The assistant's wake phrases for the spotter: [phrases] wake it at every [WakeSensitivity], [lenientPhrases] (near
@@ -196,7 +220,7 @@ enum class WakeSensitivity(
 
     /** The spotter's keywords for [profile]: one line per phrase, the decoys after them, `/` between them. */
     fun keywords(profile: WakeWordProfile): String =
-        (profile.phrasesFor(this) + profile.decoys).joinToString("/") { wakeKeyword(it.tokens, it.phrase) }
+        (profile.phrasesFor(this) + profile.decoys).joinToString("/") { wakeKeyword(it.tokens, it.phrase, it.threshold, it.boost) }
 
     companion object {
         fun of(wireName: String?): WakeSensitivity? = entries.firstOrNull { it.wireName == wireName }
@@ -234,11 +258,12 @@ const val DEFAULT_WAKE_THRESHOLD = 0.25f
 const val DEFAULT_WAKE_BOOST = 1.5f
 /** The paths the spotter's search keeps, as [WakeSensitivity.STANDARD] (sherpa-onnx's default is 4). */
 const val DEFAULT_WAKE_PATHS = 12
-const val WAKE_MODEL_NAME = "sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01-mobile"
+/** Chinese and English in one model (the 2024 WenetSpeech one heard Chinese only); 320 ms chunks. */
+const val WAKE_MODEL_NAME = "sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20"
 const val WAKE_MODEL_ASSET_DIR = "voice-models/$WAKE_MODEL_NAME"
-private const val WAKE_ENCODER = "encoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx"
-private const val WAKE_DECODER = "decoder-epoch-12-avg-2-chunk-16-left-64.onnx"
-private const val WAKE_JOINER = "joiner-epoch-12-avg-2-chunk-16-left-64.int8.onnx"
+private const val WAKE_ENCODER = "encoder-epoch-13-avg-2-chunk-16-left-64.int8.onnx"
+private const val WAKE_DECODER = "decoder-epoch-13-avg-2-chunk-16-left-64.onnx"
+private const val WAKE_JOINER = "joiner-epoch-13-avg-2-chunk-16-left-64.int8.onnx"
 private const val WAKE_TOKENS = "tokens.txt"
 /** Written by the asset fetch script; each stream is created with [WakeWordListener]'s own keywords. */
 private const val WAKE_KEYWORDS_FILE = "keywords.txt"

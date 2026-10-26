@@ -24,10 +24,10 @@ transitive dependencies and the versions your build actually packages.
 sherpa-onnx publishes no Android artifact on Maven Central, so these files are committed. The speech models are not:
 an app that uses on-device recognition or the wake word ships them in its own assets
 (`voice-models/sherpa-onnx-streaming-zipformer-small-bilingual-zh-en-2023-02-16/` and
-`voice-models/sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01-mobile/`), from the k2-fsa GitHub releases
-(<https://github.com/k2-fsa/sherpa-onnx/releases>). The keyword-spotting model was trained on the WenetSpeech corpus,
-which OpenSLR lists under CC BY 4.0 (<https://www.openslr.org/121>); check the upstream model pages and the dataset
-terms before using these models in a commercial product.
+`voice-models/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/`), from the k2-fsa GitHub releases
+(<https://github.com/k2-fsa/sherpa-onnx/releases>). Upstream does not say what the Chinese–English keyword-spotting
+model was trained on; check the upstream model pages and the dataset terms before using these models in a commercial
+product.
 
 ### A2A Java SDK sources (`agent-a2a-client-official`)
 

@@ -89,7 +89,7 @@ val runtime = AgentRuntimeBuilder.create()
 | `agent-exec-js` | 可选：`exec_js`，能调用工具的沙箱 JavaScript（Zipline 里的 QuickJS） |
 | `agent-device-capabilities` | 可选：日历、通知和媒体控制工具 |
 | `agent-android-use` | 可选：通过无障碍服务看屏幕、操作屏幕 |
-| `agent-voice` | 可选：普通话语音会话，本地唤醒词和识别（sherpa-onnx）或云端识别 |
+| `agent-voice` | 可选：普通话语音会话，本地唤醒词（中文或英文）和识别（sherpa-onnx）或云端识别 |
 | `agent-a2a-client`、`-direct`、`-official` | 可选：把任务交给远程 A2A agent（两种可互换的传输） |
 | `agent-a2a-server` | 可选：把 agent 本身开放成本地 A2A 端点 |
 | `agent-bom` | 对齐以上所有模块的版本 |

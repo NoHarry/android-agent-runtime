@@ -21,6 +21,28 @@ class WakeWordTest {
     }
 
     @Test
+    fun anEnglishPhraseIsItsPhonesAndMayCarryItsOwnThreshold() {
+        assertEquals("OW1 K EY1 B AA1 TH IY0 #0.2 @OK_Bothy", wakeKeyword("OW1 K EY1 B AA1 TH IY0", "OK_Bothy", 0.2f))
+        val profile = WakeWordProfile(
+            listOf(WakePhrase("n ǐ h ǎo zh ù sh ǒu", "你好助手"), WakePhrase("OW1 K EY1 B AA1 TH IY0", "OK_Bothy", threshold = 0.2f)),
+        )
+        assertEquals(
+            listOf("n ǐ h ǎo zh ù sh ǒu @你好助手", "OW1 K EY1 B AA1 TH IY0 #0.2 @OK_Bothy"),
+            WakeSensitivity.STANDARD.keywords(profile).split("/"),
+        )
+        // The spotter splits its line on spaces, so a phrase reported with one would be cut short.
+        assertTrue(runCatching { WakePhrase("OW1 K EY1", "OK Bothy") }.isFailure)
+        assertTrue(runCatching { WakePhrase("OW1 K EY1", "OK", threshold = 1.5f) }.isFailure)
+    }
+
+    @Test
+    fun aPhraseMayCarryItsOwnBoostBeforeItsThreshold() {
+        assertEquals("n ǐ h ǎo zh ù sh ǒu :2.0 @你好助手", wakeKeyword("n ǐ h ǎo zh ù sh ǒu", "你好助手", boost = 2f))
+        assertEquals("OW1 K EY1 :2.0 #0.2 @OK", wakeKeyword("OW1 K EY1", "OK", threshold = 0.2f, boost = 2f))
+        assertTrue(runCatching { WakePhrase("OW1 K EY1", "OK", boost = 0f) }.isFailure)
+    }
+
+    @Test
     fun everyLevelHearsTheProfilesPhrasesAndDecoysAndOnlyTheLowOneTakesItsLenientOnes() {
         val standard = WakeSensitivity.STANDARD.keywords(TEST_WAKE_PROFILE).split("/")
         assertEquals(listOf("n ǐ h ǎo zh ù sh ǒu @你好助手", "h āi zh ù sh ǒu @嗨助手", "n ǐ h ǎo zh ù sh ù @${DECOY_MARK}你好助术"), standard)
