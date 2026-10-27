@@ -78,6 +78,11 @@ name what moved.
     own folder under `/scratch`, but reads did not, so `read_file` of a file just written said not found, and `grep`
     and `list_dir` showed the internal folder (and `grep` other runs' scratch).
   - A directory mounted at the top (`/mcp`, `/context`, `/.agents`) is listed as a directory; it was listed as a file.
+- **`exec_js` replays tool calls in order.** A script runs again from the start after each tool call it waits for;
+  answers were cached by tool name and arguments, so a read after a write returned the old value, the same call made
+  twice ran once, and a script whose arguments changed on each run (Math.random, the time) ran its tool 32 times before
+  failing. Now the n-th call of every run gets the n-th answer, and a run that calls differently stops before any tool
+  runs again. A `try`/`catch` around `tools.call` no longer swallows the request to run the tool.
 - **Confirmations.** A hook that asks for confirmation again for the call the user just approved (one that does not
   check `HookContext.approvedConfirmation`) is taken as answered; the run used to fail with "Confirmation still
   required".

@@ -15,6 +15,7 @@ import cc.noharry.agent.kernel.api.ExecToolBridge
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runInterruptible
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -22,7 +23,15 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.util.concurrent.TimeUnit
 
-/** Zipline-backed JavaScript exec engine for the optional `exec_js` runtime tool. */
+/**
+ * Zipline-backed JavaScript exec engine for the optional `exec_js` runtime tool.
+ *
+ * QuickJS cannot suspend a script while a tool runs, so a script's first unanswered `tools.call` throws, the engine
+ * runs that tool, and the script runs again from the start with the answer. Answers are replayed by order: the n-th
+ * call of every run gets the n-th answer, so a read after a write is read again and the same call made twice runs
+ * twice. A run whose calls differ from the earlier runs (it depends on Math.random or the time) stops there, before
+ * any tool runs again.
+ */
 @OptIn(EngineApi::class)
 class ZiplineExecEngine : ExecEngine {
     /** Explicit serialized override; QuickJS evaluation is not reentrant. */
@@ -31,7 +40,7 @@ class ZiplineExecEngine : ExecEngine {
 
     override suspend fun run(request: ExecRequest, bridge: ExecToolBridge): ExecResult {
         val deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(request.timeoutMillis)
-        val hostResults = linkedMapOf<HostCall, String>()
+        val hostResults = mutableListOf<Pair<HostCall, String>>()
         return try {
             repeat(MAX_HOST_CALLS + 1) { attempt ->
                 val result = evaluate(request, deadlineNanos, hostResults)
@@ -43,7 +52,7 @@ class ZiplineExecEngine : ExecEngine {
                     return ExecResult(ok = true, output = finalOutput)
                 }
                 if (attempt >= MAX_HOST_CALLS) throw ExecBridgeException("Too many nested exec tool calls.")
-                hostResults[result.hostCall] = bridge.callTool(result.hostCall.name, result.hostCall.argumentsJson)
+                hostResults += result.hostCall to bridge.callTool(result.hostCall.name, result.hostCall.argumentsJson)
             }
             ExecResult(ok = false, errorCode = RuntimeErrorCode.EXEC_FAILED.wireCode, message = "JavaScript exec failed.")
         } catch (error: ExecTimeoutException) {
@@ -68,27 +77,32 @@ class ZiplineExecEngine : ExecEngine {
     private suspend fun evaluate(
         request: ExecRequest,
         deadlineNanos: Long,
-        hostResults: Map<HostCall, String>,
+        hostResults: List<Pair<HostCall, String>>,
     ): EvaluationResult =
         runInterruptible {
             QuickJs.create().use { quickJs ->
                 quickJs.interruptHandler = InterruptHandler { System.nanoTime() > deadlineNanos }
                 try {
                     val value = quickJs.evaluate(scriptFor(request.code, hostResults), EXEC_SOURCE_NAME)?.toString().orEmpty()
-                    EvaluationResult.from(value)
+                    EvaluationResult.from(value).also { if (it.mismatch) throw ExecBridgeException(REPLAY_MISMATCH_MESSAGE) }
                 } catch (error: QuickJsException) {
                     if (System.nanoTime() > deadlineNanos) throw ExecTimeoutException()
+                    if (error.message.orEmpty().contains(REPLAY_MISMATCH_PREFIX)) throw ExecBridgeException(REPLAY_MISMATCH_MESSAGE)
                     val hostCall = HostCall.fromException(error)
                     if (hostCall != null) EvaluationResult(hostCall = hostCall) else throw error
                 }
             }
         }
 
-    private fun scriptFor(code: String, hostResults: Map<HostCall, String>): String =
+    private fun scriptFor(code: String, hostResults: List<Pair<HostCall, String>>): String =
         """
         "use strict";
         const __execOutput = [];
         const __execHostResults = ${hostResultsJson(hostResults)};
+        let __execCallIndex = 0;
+        // Kept outside the thrown error too, so a script's try/catch around tools.call cannot swallow the request.
+        let __execPending = null;
+        let __execMismatch = false;
         globalThis.emit = function(text) {
           __execOutput.push(String(text ?? ""));
           return undefined;
@@ -98,9 +112,15 @@ class ZiplineExecEngine : ExecEngine {
             const normalizedName = String(name ?? "");
             const normalizedArguments = argumentsJson === undefined ? "{}" : String(argumentsJson);
             const key = normalizedName + "\u0000" + normalizedArguments;
-            if (Object.prototype.hasOwnProperty.call(__execHostResults, key)) {
-              return __execHostResults[key];
+            const index = __execCallIndex++;
+            if (index < __execHostResults.length) {
+              if (__execHostResults[index].key !== key) {
+                __execMismatch = true;
+                throw new Error("$REPLAY_MISMATCH_PREFIX" + index);
+              }
+              return __execHostResults[index].result;
             }
+            __execPending = __execPending ?? { name: normalizedName, argumentsJson: normalizedArguments };
             throw new Error("$HOST_CALL_PREFIX" + JSON.stringify({
               name: normalizedName,
               argumentsJson: normalizedArguments
@@ -112,27 +132,35 @@ class ZiplineExecEngine : ExecEngine {
         })();
         JSON.stringify({
           output: __execOutput.join(""),
-          value: __execValue === undefined ? "" : String(__execValue)
+          value: __execValue === undefined ? "" : String(__execValue),
+          pending: __execPending,
+          mismatch: __execMismatch
         });
         """.trimIndent()
 
-    private fun hostResultsJson(hostResults: Map<HostCall, String>): String =
-        JsonObject(
-            hostResults.mapKeys { (call, _) -> call.key }
-                .mapValues { (_, result) -> JsonPrimitive(result) },
+    private fun hostResultsJson(hostResults: List<Pair<HostCall, String>>): String =
+        JsonArray(
+            hostResults.map { (call, result) ->
+                JsonObject(mapOf("key" to JsonPrimitive(call.key), "result" to JsonPrimitive(result)))
+            },
         ).toString()
 
     private data class EvaluationResult(
         val output: String = "",
         val value: String = "",
         val hostCall: HostCall? = null,
+        val mismatch: Boolean = false,
     ) {
         companion object {
+            /** A script that caught the request to run a tool still gets that tool run; its return value waits. */
             fun from(value: String): EvaluationResult {
                 val json = Json.parseToJsonElement(value).jsonObject
+                val pending = json[RESULT_PENDING] as? JsonObject
                 return EvaluationResult(
                     output = json[RESULT_OUTPUT]?.jsonPrimitive?.contentOrNull.orEmpty(),
                     value = json[RESULT_VALUE]?.jsonPrimitive?.contentOrNull.orEmpty(),
+                    hostCall = pending?.let { HostCall.from(it) },
+                    mismatch = json[RESULT_MISMATCH]?.jsonPrimitive?.contentOrNull == "true",
                 )
             }
         }
@@ -150,12 +178,13 @@ class ZiplineExecEngine : ExecEngine {
                 val payload = message.substringAfter(HOST_CALL_PREFIX, missingDelimiterValue = "")
                     .substringBefore('\n')
                     .ifBlank { return null }
-                val json = Json.parseToJsonElement(payload).jsonObject
-                return HostCall(
-                    name = json[HOST_CALL_NAME]?.jsonPrimitive?.contentOrNull.orEmpty(),
-                    argumentsJson = json[HOST_CALL_ARGUMENTS]?.jsonPrimitive?.contentOrNull ?: EMPTY_JSON,
-                )
+                return from(Json.parseToJsonElement(payload).jsonObject)
             }
+
+            fun from(json: JsonObject): HostCall = HostCall(
+                name = json[HOST_CALL_NAME]?.jsonPrimitive?.contentOrNull.orEmpty(),
+                argumentsJson = json[HOST_CALL_ARGUMENTS]?.jsonPrimitive?.contentOrNull ?: EMPTY_JSON,
+            )
         }
     }
 }
@@ -187,7 +216,13 @@ private const val MIN_OUTPUT_TOKENS = 1
 private const val CHARS_PER_TOKEN = 4
 private const val MAX_HOST_CALLS = 32
 private const val HOST_CALL_PREFIX = "__AGENT_EXEC_HOST_CALL__"
+private const val REPLAY_MISMATCH_PREFIX = "__AGENT_EXEC_REPLAY_MISMATCH__"
+private const val REPLAY_MISMATCH_MESSAGE =
+    "The script called tools differently when it ran again (a call depended on Math.random or the time); " +
+        "no tool ran a second time. Compute such values once, outside the tool calls."
 private const val HOST_CALL_NAME = "name"
 private const val HOST_CALL_ARGUMENTS = "argumentsJson"
 private const val RESULT_OUTPUT = "output"
 private const val RESULT_VALUE = "value"
+private const val RESULT_PENDING = "pending"
+private const val RESULT_MISMATCH = "mismatch"
