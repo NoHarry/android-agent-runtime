@@ -118,6 +118,35 @@ class RuntimeSessionEventLogIntegrationTest {
     }
 
     @Test
+    fun onlyTheAssistantsOwnMessagesAreAssistantMessages() {
+        val log = InMemorySessionEventLog(nowEpochMillis = { 100 })
+        val recorder = RuntimeSessionRecorder(null, log) { 100 }
+        val request = AgentRequest("request-1", "session-1", "user prompt")
+        val context = MaterializerContext(request.sessionId, request.requestId, request.requestId)
+        recorder.startRun(request, request.requestId)
+        recorder.appendMessages(
+            context,
+            listOf(
+                ModelMessage("system", "<runtime_context>…</runtime_context>"),
+                ModelMessage(
+                    role = "assistant", content = "", toolCallId = "call-a", toolName = "read_file",
+                    toolArgumentsJson = """{"path":"/tmp/a"}""", assistantText = "我看一下。",
+                ),
+                ModelMessage(role = "tool", content = """{"ok":true,"content":"file-body"}""", toolCallId = "call-a", toolName = "read_file"),
+            ),
+        )
+
+        val assistant = log.replay(request.sessionId, request.requestId)
+            .filter { it.type == SessionEventType.ASSISTANT_MESSAGE }
+            .map { it.payload as SessionEventPayload.AssistantMessage }
+        assertEquals(1, assistant.size)
+        assertEquals("我看一下。", assistant.single().text)
+        assertEquals("", assistant.single().finishReason)
+        val call = assistant.single().toolCalls.toString()
+        assertTrue(call.contains("read_file") && call.contains("call-a") && call.contains("/tmp/a"))
+    }
+
+    @Test
     fun eventLogFailureNeverChangesRecorderControlFlow() {
         val recorder = RuntimeSessionRecorder(
             store = null,

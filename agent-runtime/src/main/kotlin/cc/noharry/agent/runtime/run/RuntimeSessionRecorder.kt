@@ -550,6 +550,9 @@ internal class RuntimeSessionRecorder(
     }
 
     private fun recordMessageEvent(context: MaterializerContext, message: ModelMessage) {
+        // A tool's result is its TOOL_RESULT and a system message is in its MODEL_REQUEST; as ASSISTANT_MESSAGE they
+        // read as the assistant's own words.
+        if (message.role.equals("tool", ignoreCase = true) || message.role.equals("system", ignoreCase = true)) return
         synchronized(eventLock) {
             appendEventSafely(
                 SessionEventAppend(
@@ -565,12 +568,8 @@ internal class RuntimeSessionRecorder(
                         SessionEventPayload.UserMessage(text = message.content)
                     } else {
                         SessionEventPayload.AssistantMessage(
-                            text = message.content,
-                            toolCalls = message.toolArgumentsJson
-                                ?.takeIf { it.isNotBlank() }
-                                ?.let(::parseJsonOrText)
-                                ?: cc.noharry.agent.kernel.api.SessionJson.Null,
-                            finishReason = message.toolName.orEmpty(),
+                            text = message.content.ifBlank { message.assistantText },
+                            toolCalls = message.toolCallJson(),
                             sourceChunkSequences = chunkSequences.remove(context.runId).orEmpty(),
                         )
                     },
@@ -812,3 +811,15 @@ private const val SESSION_TITLE_LIMIT = 48
 private const val HASH_FULL_RESULT_CHAR_LIMIT = 8192
 
 private const val TIMING_NANOS_PER_MILLI = 1_000_000L
+
+/** The call an assistant message makes, as `{"id","name","arguments"}`; [SessionJson.Null] for a message that makes none. */
+private fun ModelMessage.toolCallJson(): SessionJson {
+    val name = toolName?.takeIf { it.isNotBlank() } ?: return SessionJson.Null
+    return SessionJson.Object(
+        mapOf(
+            "id" to SessionJson.Text(toolCallId.orEmpty()),
+            "name" to SessionJson.Text(name),
+            "arguments" to parseJsonOrText(toolArgumentsJson.orEmpty()),
+        ),
+    )
+}

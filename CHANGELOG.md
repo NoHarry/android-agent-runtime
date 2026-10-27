@@ -85,6 +85,11 @@ name what moved.
     own folder under `/scratch`, but reads did not, so `read_file` of a file just written said not found, and `grep`
     and `list_dir` showed the internal folder (and `grep` other runs' scratch).
   - A directory mounted at the top (`/mcp`, `/context`, `/.agents`) is listed as a directory; it was listed as a file.
+- **The event log records only the assistant's own messages as `ASSISTANT_MESSAGE`.** A tool's result message was
+  recorded as one too, its result as the assistant's text and the tool's name as `finishReason`, and so was a system
+  message such as the run context; a trajectory read them as things the model said. They are left out (the result is
+  the call's `TOOL_RESULT`, the system message is in `MODEL_REQUEST`). An assistant message's call is
+  `toolCalls = {"id","name","arguments"}`, and what the model said beside it is its text.
 - **The event log's new files and renames survive a power cut.** A segment's first line and each manifest or health
   file (written to a temporary file, forced, then renamed) forced their bytes but not the directory entry, so a power
   cut could lose a new segment or bring back an older manifest, whose segment list then left the newest events out.
