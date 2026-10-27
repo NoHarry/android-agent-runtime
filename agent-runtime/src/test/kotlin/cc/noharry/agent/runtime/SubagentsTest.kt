@@ -237,6 +237,34 @@ class SubagentsTest {
     }
 
     @Test
+    fun aChildThatAsksTheUserIsToldNoOneAnswersAndGoesOn() = runBlocking {
+        lateinit var subagents: Subagents
+        val child = GoldenScriptedModel(
+            listOf(
+                round(tool("ask", """{"question":"要一等座还是二等座？"}""")),
+                round(tool("ask_async", """{"questions":[{"id":"q1","question":"几点出发？"}]}""")),
+                round(finish("按二等座查的：G1 08:00、G3 09:00")),
+            ),
+        )
+        subagents = subagents { spec ->
+            AgentRuntimeBuilder.create()
+                .workspaceRoot(Files.createTempDirectory("subagent-child-").toFile())
+                .modelClient(child)
+                .subagents(subagents)
+                .build()
+                .run(goldenRequest(requestId = "${spec.sessionId}-run", sessionId = spec.sessionId))
+        }
+        subagents.execute("spawn_agent", """{"task":"查高铁"}""", parent)
+
+        val waited = subagents.execute("wait_agent", """{"timeout_seconds":5}""", parent)
+
+        // A child's ask used to pause its run for an answer nobody gives, and the parent saw it fail without a result.
+        assertTrue(waited, waited.contains("\"status\":\"completed\"") && waited.contains("按二等座查的"))
+        val answers = child.seenRequests.drop(1).map { it.messages.last { message -> message.role == "tool" }.content }
+        assertTrue(answers.toString(), answers.all { it.contains("INTERACTION_UNAVAILABLE") && it.contains("cannot ask the user") })
+    }
+
+    @Test
     fun aCancelledChildIsNotReported() = runBlocking {
         val reports = Collections.synchronizedList(mutableListOf<SubagentReport>())
         val subagents = subagents { neverEnds() }

@@ -85,6 +85,10 @@ name what moved.
     own folder under `/scratch`, but reads did not, so `read_file` of a file just written said not found, and `grep`
     and `list_dir` showed the internal folder (and `grep` other runs' scratch).
   - A directory mounted at the top (`/mcp`, `/context`, `/.agents`) is listed as a directory; it was listed as a file.
+- **A subagent cannot ask the user.** Its `ask` paused its run for an answer nobody would give, and the parent saw
+  the child fail "without a result", the question lost; its `ask_async` question went nowhere. Both now return
+  `INTERACTION_UNAVAILABLE` (go on with a reasonable assumption, or finish with the question), and the child goes on.
+  `NativeToolLoop` and `NativeRoundRunner` take `userReachable`.
 - **A skill's description is its header's own.** The SKILL.md header reader took indented lines as keys too, so a
   `description:` under `metadata:` replaced the skill's; only top-level keys count now, and a value in single quotes
   loses them as one in double quotes did.

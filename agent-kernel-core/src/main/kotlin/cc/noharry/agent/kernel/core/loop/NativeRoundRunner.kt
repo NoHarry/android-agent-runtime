@@ -53,6 +53,8 @@ class NativeRoundRunner(
     private val imageView: ModelImageRequestView = ModelImageRequestView(),
     /** A subagent's run: its result is what it passes to finish, so a text-only reply is nudged once first. */
     private val textNeedsFinish: Boolean = false,
+    /** False in a subagent's run: nobody answers ask or ask_async there, so they return an error instead of waiting. */
+    private val userReachable: Boolean = true,
 ) {
     private val userInteraction = NativeUserInteraction(steeringQueue)
     private val readOnlyBatchExecutor = NativeReadOnlyToolBatchExecutor(toolUseController, sessionRecorder)
@@ -701,6 +703,7 @@ class NativeRoundRunner(
     }
 
     private suspend fun askToolCall(event: ModelEvent.ToolCall, context: RoundCollectContext): RoundOutcome {
+        if (!userReachable) return blockFinishToolCall(event, userNotReachableResult(), context)
         val authorization = toolUseController.prepareTerminalTool(event, context.toolContext)
         val toolUse = when (authorization) {
             is ToolAuthorization.Allowed -> authorization.toolUse
@@ -728,6 +731,7 @@ class NativeRoundRunner(
     }
 
     private suspend fun interactionToolCall(event: ModelEvent.ToolCall, context: RoundCollectContext): RoundOutcome? {
+        if (!userReachable) return interactionResult(event, userNotReachableResult(), context)
         val authorization = toolUseController.prepareInteractionTool(event, context.toolContext)
         val toolUse = when (authorization) {
             is ToolAuthorization.Allowed -> authorization.toolUse
@@ -959,3 +963,10 @@ internal class ModelCallUsage {
         if (usage != ModelEvent.UsageDelta()) publicEvents.recordUsage(usage)
     }
 }
+
+/** What ask and ask_async return in a subagent's run, where no user can answer. */
+private fun userNotReachableResult(): String = interactionFailure(
+    "INTERACTION_UNAVAILABLE",
+    "A subagent cannot ask the user. Go on with a reasonable assumption and say so in your result, or finish with " +
+        "the question for the agent that started you.",
+)

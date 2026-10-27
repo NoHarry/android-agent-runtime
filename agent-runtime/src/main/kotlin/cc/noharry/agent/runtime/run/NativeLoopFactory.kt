@@ -310,6 +310,7 @@ internal class NativeLoopFactory(
             subagentTools = subagents != null && workspaceFileSystem != null,
             subagentTypes = subagents?.config?.types.orEmpty().map { NativeSubagentType(it.name, it.description) },
             textNeedsFinish = childRun,
+            userReachable = !childRun,
             nativeWebSearchEnabled = nativeWebSearchEnabled,
         )
 

@@ -55,6 +55,8 @@ class NativeToolLoop(
     private val subagentTools: Boolean = false,
     /** This run is a subagent's: a text-only reply is nudged once to finish instead of ending the run. */
     private val textNeedsFinish: Boolean = false,
+    /** False in a subagent's run: ask and ask_async return an error there, since no user answers them. */
+    private val userReachable: Boolean = true,
     /** Offers web_search; the network port runs it with the host's search service. */
     private val nativeWebSearchEnabled: Boolean = false,
     /** The host's kinds of subagent, offered as spawn_agent's `agent`. */
@@ -95,6 +97,7 @@ class NativeToolLoop(
         steeringQueue,
         ModelImageRequestView(imageInputEnabled = loopBudget.imageInputEnabled),
         textNeedsFinish = textNeedsFinish,
+        userReachable = userReachable,
     )
     private val memoryRetriever = RuntimeMemoryRetriever()
     private val finishResponseRetryRuns = mutableSetOf<String>()
@@ -961,39 +964,5 @@ class NativeToolLoop(
 /** A remembered capability preactivates a tool only when the tool has every term of it (search scores vary with the catalog). */
 private const val MEMORY_HINT_MIN_COVERAGE = 1.0
 private const val MEMORY_HINT_ACTIVATION_TOP_K = 3
-private fun List<ModelMessage>.hasTodoUpdate(): Boolean =
-    any { it.role == "tool" && it.toolName == "update_todo" }
-
-private fun List<ModelMessage>.hasStateAdvancingTool(): Boolean =
-    any { it.isStateAdvancingToolResult() }
-
-private fun List<ModelMessage>.hasInvalidFinishResponseRetry(): Boolean =
-    any {
-        it.role == "tool" &&
-            it.toolName == "finish" &&
-            it.content.contains(INVALID_FINISH_RESPONSE_CODE)
-    }
-
-private fun List<ModelMessage>.hasUnresolvedObligationRetry(): Boolean =
-    any {
-        it.role == "tool" &&
-            it.toolName == "finish" &&
-            it.content.contains(REQUIRED_ACTION_UNRESOLVED)
-    }
-
-private fun List<ModelMessage>.hasEmptyCompletionContinue(): Boolean =
-    any {
-        it.role == "user" && it.content.contains(EMPTY_COMPLETION_CONTINUE_MARKER)
-    }
-
-private fun hasStateAdvancingToolAfterLastTodoUpdate(messages: List<ModelMessage>): Boolean {
-    val lastIndex = messages.indexOfLast { it.role == "tool" && it.toolName == "update_todo" }
-    if (lastIndex < 0) return false
-    return messages.drop(lastIndex + 1).any { it.isStateAdvancingToolResult() }
-}
-
-private fun ModelMessage.isStateAdvancingToolResult(): Boolean =
-    role == "tool" && toolName != null && toolName !in TODO_NEUTRAL_TOOL_NAMES
-
 private fun RuntimeResult.toTerminalOutcome(events: List<AgentEvent> = emptyList()): NativeLoopOutcome.Terminal =
     NativeLoopOutcome.Terminal(this, NativeLoopSummary(), events)
