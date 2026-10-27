@@ -411,9 +411,11 @@ internal fun appendForcedLine(file: File, line: String) {
     if (created) forceDirectory(file.parentFile)
 }
 
-internal fun writeForcedText(file: File, text: String) = writeForcedBytes(file, text.toByteArray(Charsets.UTF_8))
+internal fun writeForcedText(file: File, text: String, durableName: Boolean = true) =
+    writeForcedBytes(file, text.toByteArray(Charsets.UTF_8), durableName)
 
-internal fun writeForcedBytes(file: File, bytes: ByteArray) {
+/** Writes [bytes] to [file] through a forced temporary file; [durableName] also forces the rename into the directory. */
+internal fun writeForcedBytes(file: File, bytes: ByteArray, durableName: Boolean = true) {
     file.parentFile?.mkdirs()
     file.parentFile?.let { if (existsNoFollow(it)) rejectLink(it.toPath()) }
     if (existsNoFollow(file)) rejectLink(file.toPath())
@@ -431,7 +433,7 @@ internal fun writeForcedBytes(file: File, bytes: ByteArray) {
         staging.delete()
     }
     // The rename is an entry in the directory: until that is forced, a power cut can bring back the old file.
-    forceDirectory(file.parentFile)
+    if (durableName) forceDirectory(file.parentFile)
 }
 
 private fun forceChannel(channel: FileChannel) {

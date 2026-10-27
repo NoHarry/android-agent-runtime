@@ -31,7 +31,8 @@ internal class FileBackedSessionEventLog(
     private val nowEpochMillis: () -> Long = System::currentTimeMillis,
     private val eventIdFactory: () -> String = { UUID.randomUUID().toString() },
     private val persistLine: (File, String) -> Unit = ::appendForcedLine,
-    private val persistSidecar: (File, String) -> Unit = ::writeForcedText,
+    // Health is advice rewritten after every batch, and reading recomputes it: an older copy after a power cut is fine.
+    private val persistSidecar: (File, String) -> Unit = { file, text -> writeForcedText(file, text, durableName = false) },
     private val segmentRolloverBytes: Long = SEGMENT_ROLLOVER_BYTES,
     private val blobInlineThresholdBytes: Long = BLOB_INLINE_THRESHOLD_BYTES,
 ) : SessionEventLog {

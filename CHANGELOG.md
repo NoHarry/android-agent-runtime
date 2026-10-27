@@ -90,10 +90,10 @@ name what moved.
   message such as the run context; a trajectory read them as things the model said. They are left out (the result is
   the call's `TOOL_RESULT`, the system message is in `MODEL_REQUEST`). An assistant message's call is
   `toolCalls = {"id","name","arguments"}`, and what the model said beside it is its text.
-- **The event log's new files and renames survive a power cut.** A segment's first line and each manifest or health
-  file (written to a temporary file, forced, then renamed) forced their bytes but not the directory entry, so a power
-  cut could lose a new segment or bring back an older manifest, whose segment list then left the newest events out.
-  The directory is forced too, where the platform allows it.
+- **The event log's new files and renames survive a power cut.** A segment's first line and each manifest (written to
+  a temporary file, forced, then renamed) forced their bytes but not the directory entry, so a power cut could lose a
+  new segment or bring back an older manifest, whose segment list then left the newest events out. The directory is
+  forced too, where the platform allows it; the health file, advice recomputed on read, is not.
 - **`exec_js` replays tool calls in order.** A script runs again from the start after each tool call it waits for;
   answers were cached by tool name and arguments, so a read after a write returned the old value, the same call made
   twice ran once, and a script whose arguments changed on each run (Math.random, the time) ran its tool 32 times before
