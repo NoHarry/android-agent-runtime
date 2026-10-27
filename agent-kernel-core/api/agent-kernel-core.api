@@ -13,8 +13,8 @@ public final class cc/noharry/agent/kernel/core/context/BootstrapPrompt {
 
 public final class cc/noharry/agent/kernel/core/context/BootstrapPromptProvider {
 	public static final field INSTANCE Lcc/noharry/agent/kernel/core/context/BootstrapPromptProvider;
-	public final fun build (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Lcc/noharry/agent/kernel/core/context/SkillsCatalog;Ljava/util/Set;Lcc/noharry/agent/kernel/core/tools/ToolDomainIndex;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
-	public static synthetic fun build$default (Lcc/noharry/agent/kernel/core/context/BootstrapPromptProvider;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Lcc/noharry/agent/kernel/core/context/SkillsCatalog;Ljava/util/Set;Lcc/noharry/agent/kernel/core/tools/ToolDomainIndex;ILjava/lang/Object;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
+	public final fun build (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Lcc/noharry/agent/kernel/core/context/SkillsCatalog;Ljava/util/Set;Lcc/noharry/agent/kernel/core/tools/ToolDomainIndex;Lcc/noharry/agent/kernel/core/context/ProtocolTools;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
+	public static synthetic fun build$default (Lcc/noharry/agent/kernel/core/context/BootstrapPromptProvider;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Lcc/noharry/agent/kernel/core/context/SkillsCatalog;Ljava/util/Set;Lcc/noharry/agent/kernel/core/tools/ToolDomainIndex;Lcc/noharry/agent/kernel/core/context/ProtocolTools;ILjava/lang/Object;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
 }
 
 public final class cc/noharry/agent/kernel/core/context/BootstrapPromptProviderKt {
@@ -62,8 +62,8 @@ public final class cc/noharry/agent/kernel/core/context/CompactionResult$Unchang
 }
 
 public final class cc/noharry/agent/kernel/core/context/ContextBootstrapPromptResolver : cc/noharry/agent/kernel/core/context/BootstrapPromptResolver {
-	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SkillCatalogPort;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Ljava/util/Set;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SkillCatalogPort;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Ljava/util/Set;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SkillCatalogPort;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Ljava/util/Set;Lkotlin/jvm/functions/Function1;Lcc/noharry/agent/kernel/core/context/ProtocolTools;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SkillCatalogPort;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Ljava/util/Set;Lkotlin/jvm/functions/Function1;Lcc/noharry/agent/kernel/core/context/ProtocolTools;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun resolve (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
@@ -146,6 +146,23 @@ public final class cc/noharry/agent/kernel/core/context/MessageRetention$Critica
 public final class cc/noharry/agent/kernel/core/context/MessageRetention$Droppable : cc/noharry/agent/kernel/core/context/MessageRetention {
 	public static final field INSTANCE Lcc/noharry/agent/kernel/core/context/MessageRetention$Droppable;
 	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/kernel/core/context/ProtocolTools {
+	public fun <init> ()V
+	public fun <init> (ZZLjava/util/Set;)V
+	public synthetic fun <init> (ZZLjava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/util/Set;
+	public final fun copy (ZZLjava/util/Set;)Lcc/noharry/agent/kernel/core/context/ProtocolTools;
+	public static synthetic fun copy$default (Lcc/noharry/agent/kernel/core/context/ProtocolTools;ZZLjava/util/Set;ILjava/lang/Object;)Lcc/noharry/agent/kernel/core/context/ProtocolTools;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDisabled ()Ljava/util/Set;
+	public final fun getWebFetch ()Z
+	public final fun getWebSearch ()Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

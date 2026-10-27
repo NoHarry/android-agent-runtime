@@ -14,7 +14,7 @@ class BootstrapPromptProviderTest {
     fun promptVersionChangesWhenProtocolRulesChange() {
         val prompt = BootstrapPromptProvider.build()
 
-        assertTrue(prompt.version.contains("v9"))
+        assertTrue(prompt.version.contains("v10"))
     }
 
     @Test

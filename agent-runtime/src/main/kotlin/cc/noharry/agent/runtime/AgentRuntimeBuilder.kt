@@ -22,6 +22,7 @@ import cc.noharry.agent.kernel.core.context.BootstrapPromptResolver
 import cc.noharry.agent.kernel.core.context.ContextBootstrapPromptResolver
 import cc.noharry.agent.kernel.core.context.ConversationCompactor
 import cc.noharry.agent.kernel.core.context.HistoryCompactor
+import cc.noharry.agent.kernel.core.context.ProtocolTools
 import cc.noharry.agent.kernel.core.context.SimpleBootstrapPromptResolver
 import cc.noharry.agent.kernel.core.context.validateHostSystemPrompt
 import cc.noharry.agent.kernel.core.context.validateRunContext
@@ -674,7 +675,7 @@ class AgentRuntimeBuilder {
             traceRedactor = traceRedactor,
             reliabilityStorage = infrastructure.storage.reliabilityStorage,
             materializerSchemaCache = infrastructure.storage.schemaCache,
-            bootstrapPrompt = BootstrapPromptProvider.build(hostSystemPrompt),
+            bootstrapPrompt = BootstrapPromptProvider.build(hostSystemPrompt, tools = protocolTools()),
             promptResolver = infrastructure.context.promptResolver,
             contextRouter = infrastructure.context.contextRouter,
             todoStore = infrastructure.context.todoStore,
@@ -788,12 +789,20 @@ class AgentRuntimeBuilder {
                     val tools = mcpRegistry.allTools(MaterializerContext())
                     ToolDomainIndexer.index(tools)
                 },
+                tools = protocolTools(),
             )
         } else {
-            SimpleBootstrapPromptResolver(BootstrapPromptProvider.build(hostSystemPrompt))
+            SimpleBootstrapPromptResolver(BootstrapPromptProvider.build(hostSystemPrompt, tools = protocolTools()))
         }
         return ContextInfrastructure(todoStore, memoryStore, contextRouter, promptResolver)
     }
+
+    /** The native tools this runtime offers, for the protocol prompt. */
+    private fun protocolTools() = ProtocolTools(
+        webFetch = nativeWebFetchEnabled && "web_fetch" !in disabledNativeTools,
+        webSearch = webSearchProvider != null && "web_search" !in disabledNativeTools,
+        disabled = disabledNativeTools,
+    )
 
     private fun shouldUseContextPrompt(todoStore: TodoStore?): Boolean =
         todoStore != null ||

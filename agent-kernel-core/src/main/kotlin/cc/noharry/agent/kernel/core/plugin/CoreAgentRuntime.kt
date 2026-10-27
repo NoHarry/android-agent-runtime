@@ -30,6 +30,8 @@ import cc.noharry.agent.kernel.api.reliability.RuntimeResult
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunSnapshot
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.api.reliability.RuntimeTraceEvent
+import cc.noharry.agent.kernel.core.context.BootstrapPromptProvider
+import cc.noharry.agent.kernel.core.context.ProtocolTools
 import cc.noharry.agent.kernel.core.loop.NativeLoopOutcome
 import cc.noharry.agent.kernel.core.loop.NativeToolLoop
 import cc.noharry.agent.kernel.core.loop.RuntimeSteeringQueue
@@ -234,6 +236,7 @@ class CoreAgentRuntime internal constructor(
                 contextProviders = blueprint.resolveSharedAll(AgentCapabilities.RUNTIME_CONTEXT_PROVIDER),
                 turnObservers = blueprint.resolveSharedAll(AgentCapabilities.RUNTIME_TURN_OBSERVER),
                 nativeWebFetchEnabled = false,
+                bootstrapPrompt = KERNEL_PROMPT,
                 steeringQueue = steeringQueue,
             ).run(request, runId) { event -> emitIfOpen(event) }
         } catch (cancelled: CancellationException) {
@@ -504,3 +507,6 @@ private fun failedResult(
         outcome = cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome.FAILED,
     ),
 )
+
+/** The kernel runtime offers no web_fetch, so its protocol prompt does not describe it. */
+private val KERNEL_PROMPT = BootstrapPromptProvider.build(tools = ProtocolTools(webFetch = false))

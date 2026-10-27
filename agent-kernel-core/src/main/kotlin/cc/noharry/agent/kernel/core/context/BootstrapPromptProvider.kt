@@ -7,6 +7,17 @@ data class BootstrapPrompt(
 )
 
 /**
+ * The native tools a runtime offers, so the protocol prompt explains only those. Fixed for a runtime's configuration,
+ * so the prompt stays the same from run to run (and cached).
+ */
+data class ProtocolTools(
+    val webFetch: Boolean = true,
+    val webSearch: Boolean = false,
+    /** Native tools the host turned off. */
+    val disabled: Set<String> = emptySet(),
+)
+
+/**
  * Resolves the system prompt for each loop round.
  *
  * Static prompts (no scene/skills) use [SimpleBootstrapPromptResolver].
@@ -29,6 +40,7 @@ class ContextBootstrapPromptResolver(
     private val contextCatalog: ContextCatalog = defaultContextCatalog(),
     private val sceneRules: Set<String> = emptySet(),
     private val toolDomainIndexProvider: suspend () -> ToolDomainIndex? = { null },
+    private val tools: ProtocolTools = ProtocolTools(),
 ) : BootstrapPromptResolver {
     override suspend fun resolve(scene: String?, sessionId: String?): BootstrapPrompt =
         BootstrapPromptProvider.build(
@@ -38,6 +50,7 @@ class ContextBootstrapPromptResolver(
             skillsCatalog = skillRegistry?.catalog(scene),
             sceneRules = sceneRules,
             toolDomainIndex = toolDomainIndexProvider(),
+            tools = tools,
         )
 }
 
@@ -62,12 +75,14 @@ object BootstrapPromptProvider {
         skillsCatalog: SkillsCatalog? = null,
         sceneRules: Set<String> = emptySet(),
         toolDomainIndex: ToolDomainIndex? = null,
+        tools: ProtocolTools = ProtocolTools(),
     ): BootstrapPrompt {
         hostPrompt?.takeIf { it.isNotBlank() }?.let(::validateHostSystemPrompt)
         val sceneSection = scene?.takeIf { it.isNotBlank() }?.let { buildSceneSection(it, sceneRules) }
         val contextSection = contextCatalog?.takeIf { it.paths.isNotEmpty() }?.toPromptSection()
+        val protocolTools = tools
         fun assemble(tools: String?, skills: String?): String = listOfNotNull(
-            PROTOCOL_PROMPT, tools, contextSection, skills, sceneSection,
+            protocolPrompt(protocolTools), tools, contextSection, skills, sceneSection,
             hostPrompt?.takeIf { it.isNotBlank() }?.let { "Host instructions:\n$it" },
         ).joinToString(separator = "\n\n")
 
@@ -134,17 +149,24 @@ const val MAX_LISTED_DOMAINS = 12
 /** Over the budget even so, each skill keeps this much of its description. */
 const val MAX_SKILL_DESCRIPTION_CHARS = 40
 
-private const val BOOTSTRAP_PROMPT_VERSION = "context-driven-runtime-bootstrap-v9"
+private const val BOOTSTRAP_PROMPT_VERSION = "context-driven-runtime-bootstrap-v10"
 
-private val PROTOCOL_PROMPT = """
-Model-driven harness protocol v1.
-- Use the provided tools directly and keep backend tools as the primary work when they are present.
-- Search with search_tools(query) to discover backend tools by keyword. Call matches marked callable directly; a match that comes with its schema is called through call_tool(name, arguments). Neither needs a schema.json read.
-- Issue independent tool calls together in the same round.
-- For multi-step tasks, maintain update_todo and emit it in the same round as the related backend or workspace calls, including the first useful business call.
-- Prefer finish(response) as the explicit completion signal and call it exactly once when the useful result is ready. A finish with outcome success closes the remaining checklist items, so do not spend a round only to mark todos completed.
-- Read skill or context files only when the compact catalog is insufficient for the current task.
-- Workspace writes are limited to /scratch and /memory through write_file or edit_file.
-- web_fetch returns extracted page text for HTML. For web search call https://www.bing.com/search?q={query}&format=rss first (XML results); do not refetch the same URL with a larger max_bytes.
-- Read only the context you need for the current task; do not enumerate everything.
-""".trimIndent()
+/** The protocol rules, each about a tool only when the runtime offers that tool. */
+private fun protocolPrompt(tools: ProtocolTools): String = listOfNotNull(
+    "Model-driven harness protocol v1.",
+    "- Use the provided tools directly and keep backend tools as the primary work when they are present.",
+    "- Search with search_tools(query) to discover backend tools by keyword. Call matches marked callable directly; a match that comes with its schema is called through call_tool(name, arguments). Neither needs a schema.json read.",
+    "- Issue independent tool calls together in the same round.",
+    ("- For multi-step tasks, maintain update_todo and emit it in the same round as the related backend or workspace calls, including the first useful business call.")
+        .takeIf { "update_todo" !in tools.disabled },
+    "- Prefer finish(response) as the explicit completion signal and call it exactly once when the useful result is ready. A finish with outcome success closes the remaining checklist items, so do not spend a round only to mark todos completed.",
+    "- Read skill or context files only when the compact catalog is insufficient for the current task.",
+    "- Workspace writes are limited to /scratch and /memory through write_file or edit_file."
+        .takeIf { "write_file" !in tools.disabled || "edit_file" !in tools.disabled },
+    when {
+        !tools.webFetch -> null
+        tools.webSearch -> "- Search the web with web_search; web_fetch returns a page's extracted text for HTML. Do not refetch the same URL with a larger max_bytes."
+        else -> "- web_fetch returns extracted page text for HTML. For web search call https://www.bing.com/search?q={query}&format=rss first (XML results); do not refetch the same URL with a larger max_bytes."
+    },
+    "- Read only the context you need for the current task; do not enumerate everything.",
+).joinToString("\n")

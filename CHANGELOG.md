@@ -45,10 +45,15 @@ name what moved.
   - A resumed run (after a confirmation or an `ask` answer) no longer starts with a `Task: … Next: …` system note
     before the user's input: the run's own history already says it all, and the note moved the prompt cache's prefix.
     The note is still used when the paused history is lost.
+- **The protocol prompt describes only the tools the runtime offers.** Its `web_fetch` rule (search Bing through it)
+  is left out when `web_fetch` is off, and says to search with `web_search` when that is on; the `update_todo` and
+  workspace-write rules go when the host disables those tools (`ProtocolTools`). The kernel runtime, which has no
+  `web_fetch`, no longer mentions it. Prompt version `v10`.
 - **Confirmations.** A hook that asks for confirmation again for the call the user just approved (one that does not
   check `HookContext.approvedConfirmation`) is taken as answered; the run used to fail with "Confirmation still
   required".
-- **Binary break:** `ModelMessage`, `ModelTool`, `RoundOutcome.Failed` and `PendingNativeToolUse` gained parameters;
+- **Binary break:** `ModelMessage`, `ModelTool`, `RoundOutcome.Failed`, `PendingNativeToolUse`,
+  `BootstrapPromptProvider.build` and `ContextBootstrapPromptResolver` gained parameters;
   `PendingToolUseController.remove` returns the removed call.
 
 ## 0.3.0 (2026-10-25)
