@@ -687,11 +687,11 @@ internal class DefaultAgentRuntime(
         request: AgentRequest,
     ): Boolean {
         val confirmation = confirmationTemplate ?: return false
-        val pending = confirmationStore.create(started.runId, request.sessionId, confirmation.expiresInMillis)
+        val pending = confirmationStore.create(started.runId, request.sessionId, confirmation.expiresInMillis, CONFIGURED_CONFIRMATION_PROMPT)
         runtimeIo {
             runStateController.markWaitingConfirmation(
                 started = started,
-                prompt = "Resolve the pending confirmation.",
+                prompt = CONFIGURED_CONFIRMATION_PROMPT,
                 pendingConfirmationId = pending.pendingId,
             )
             sessionRecorder.updateRunStatus(started.runId, RuntimeRunStatus.WAITING_CONFIRMATION)
@@ -766,6 +766,9 @@ internal class DefaultAgentRuntime(
             runId = started.runId,
             sessionId = request.sessionId,
             expiresInMillis = DEFAULT_CONFIRMATION_TIMEOUT_MILLIS,
+            prompt = outcome.prompt,
+            toolName = outcome.pendingToolUse?.toolUse?.toolName,
+            argumentsJson = outcome.pendingToolUse?.toolUse?.argumentsJson,
         )
         runtimeIo {
             runStateController.markWaitingConfirmation(
@@ -797,6 +800,9 @@ internal class DefaultAgentRuntime(
             runId = snapshot.runId,
             sessionId = snapshot.sessionId,
             expiresInMillis = DEFAULT_CONFIRMATION_TIMEOUT_MILLIS,
+            prompt = outcome.prompt,
+            toolName = outcome.pendingToolUse?.toolUse?.toolName,
+            argumentsJson = outcome.pendingToolUse?.toolUse?.argumentsJson,
         )
         runtimeIo {
             runStateController.recordNativeLoopSummary(snapshot.runId, outcome.summary)
@@ -950,3 +956,5 @@ internal class DefaultAgentRuntime(
         val fileSystem: VfsFileSystem?,
     )
 }
+
+private const val CONFIGURED_CONFIRMATION_PROMPT = "Resolve the pending confirmation."

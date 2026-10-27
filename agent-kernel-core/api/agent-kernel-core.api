@@ -1649,7 +1649,8 @@ public final class cc/noharry/agent/kernel/core/state/InMemoryConfirmationStore 
 	public final fun cachedRecordCount ()I
 	public final fun cancel (Lcc/noharry/agent/kernel/api/CancelPendingConfirmationRequest;)Lcc/noharry/agent/kernel/core/state/ConfirmationCancel;
 	public final fun clearRun (Ljava/lang/String;)V
-	public final fun create (Ljava/lang/String;Ljava/lang/String;J)Lcc/noharry/agent/kernel/api/PendingConfirmation;
+	public final fun create (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/kernel/api/PendingConfirmation;
+	public static synthetic fun create$default (Lcc/noharry/agent/kernel/core/state/InMemoryConfirmationStore;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/kernel/api/PendingConfirmation;
 	public final fun getPending (Ljava/lang/String;)Lcc/noharry/agent/kernel/api/PendingConfirmation;
 	public final fun resume (Lcc/noharry/agent/kernel/api/ConfirmationDecision;)Lcc/noharry/agent/kernel/core/state/ConfirmationResume;
 }

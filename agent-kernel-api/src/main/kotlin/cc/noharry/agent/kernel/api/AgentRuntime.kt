@@ -360,6 +360,12 @@ data class PendingConfirmation(
     val runId: String,
     val expiresAtEpochMillis: Long,
     val idempotencyKey: String,
+    /** What to ask the user, from the policy rule or hook that wanted the confirmation. */
+    val prompt: String = "",
+    /** The model-visible name of the tool call waiting for this answer; null when no tool call waits. */
+    val toolName: String? = null,
+    /** The arguments that run on approval, after hook rewrites; null when no tool call waits. */
+    val argumentsJson: String? = null,
 )
 
 /** Candidate in-flight steering request. Not frozen until API review closes. */

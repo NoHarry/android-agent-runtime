@@ -99,6 +99,24 @@ class ConfirmationHistoryTest {
         assertTrue(resumed.none { it.role == "system" })
     }
 
+    @Test fun theConfirmationSaysWhichCallWaitsAndWithWhatArguments() = runBlocking {
+        val slowly = object : RuntimeHook {
+            override suspend fun onPreToolUse(call: ToolUse, context: HookContext) =
+                HookDecision.Allow(updatedArgumentsJson = """{"door":"driver","speed":"slow"}""")
+        }
+        val runtime = AgentRuntimeBuilder.create()
+            .modelClient(Script(listOf(unlock, answer))).toolProvider(Door())
+            .hook(slowly, ToolMatcher.toolName("mcp__car__unlock_door"))
+            .hook(AskFirst, ToolMatcher.toolName("mcp__car__unlock_door"))
+            .build()
+        val pending = runtime.pause("r1", "开主驾车门")
+
+        assertEquals("开门吗？", pending.prompt)
+        assertEquals("mcp__car__unlock_door", pending.toolName)
+        assertEquals("""{"door":"driver","speed":"slow"}""", pending.argumentsJson)
+        assertEquals(pending, runtime.getPendingConfirmation(pending.pendingId))
+    }
+
     @Test fun aFailedApprovedCallEndsTheRunAndTheNextRunSeesIt() = runBlocking {
         val script = Script(listOf(unlock, answer))
         val runtime = runtime(script, Door("""{"ok":false,"code":"DOOR_JAMMED"}"""))

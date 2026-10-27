@@ -89,7 +89,10 @@ name what moved.
 - **Confirmations.** A hook that asks for confirmation again for the call the user just approved (one that does not
   check `HookContext.approvedConfirmation`) is taken as answered; the run used to fail with "Confirmation still
   required".
-- **Binary break:** `ModelMessage`, `ModelTool`, `RoundOutcome.Failed`, `PendingNativeToolUse`,
+  - `PendingConfirmation` says what it asks: `prompt` (from the policy rule or hook), `toolName` and `argumentsJson`
+    (what runs on approval, after hook rewrites). A host had only the pending id, and had to fetch the prompt from the
+    run's handoff and guess which call it was about.
+- **Binary break:** `ModelMessage`, `ModelTool`, `RoundOutcome.Failed`, `PendingNativeToolUse`, `PendingConfirmation`,
   `BootstrapPromptProvider.build`, `ContextBootstrapPromptResolver` and `AnthropicModelClient` gained parameters;
   `PendingToolUseController.remove` returns the removed call.
 

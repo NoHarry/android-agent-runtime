@@ -20,6 +20,9 @@ class InMemoryConfirmationStore(
         runId: String,
         sessionId: String,
         expiresInMillis: Long,
+        prompt: String = "",
+        toolName: String? = null,
+        argumentsJson: String? = null,
     ): PendingConfirmation {
         val sequence = nextSequenceByRunId.computeIfAbsent(runId) { AtomicInteger() }
             .incrementAndGet()
@@ -31,6 +34,9 @@ class InMemoryConfirmationStore(
             runId = runId,
             expiresAtEpochMillis = nowEpochMillis() + expiresInMillis,
             idempotencyKey = "$pendingId:resume",
+            prompt = prompt,
+            toolName = toolName,
+            argumentsJson = argumentsJson,
         )
         records[pendingId] = ConfirmationRecord(pending)
         return pending
