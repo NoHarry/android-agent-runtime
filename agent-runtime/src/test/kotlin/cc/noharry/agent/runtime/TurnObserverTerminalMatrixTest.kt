@@ -1,7 +1,4 @@
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.CancelPendingConfirmationRequest
@@ -10,6 +7,7 @@ import cc.noharry.agent.kernel.api.ConfirmationDecision
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.ProtocolRequestCancellation
 import cc.noharry.agent.kernel.api.ProtocolRequestRejection
+import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.api.RuntimeCompletedTurn
 import cc.noharry.agent.kernel.api.RuntimeTurnInput
 import cc.noharry.agent.kernel.api.RuntimeTurnObserver
@@ -18,6 +16,7 @@ import cc.noharry.agent.kernel.api.TurnObservationReceipt
 import cc.noharry.agent.kernel.api.model.ModelClient
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.kernel.core.loop.completed
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +26,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.core.completed
 
 /**
  * Terminal coordinator matrix: post-persist exactly-once observer notification

@@ -10,13 +10,13 @@ import cc.noharry.agent.kernel.api.SessionEventLogDurability
 import cc.noharry.agent.kernel.api.SessionEventLogHealth
 import cc.noharry.agent.kernel.api.SessionEventLogHealthStatus
 import cc.noharry.agent.kernel.api.SessionEventQuery
+import cc.noharry.agent.kernel.core.state.encodeFileName
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.channels.FileChannel
 import java.nio.file.Files
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import cc.noharry.agent.kernel.core.encodeFileName
 
 /**
  * Official durable segmented EventLog rooted under a host-supplied app-private directory.

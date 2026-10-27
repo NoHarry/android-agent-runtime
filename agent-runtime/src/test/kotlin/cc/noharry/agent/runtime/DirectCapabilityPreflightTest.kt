@@ -1,7 +1,6 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentCapabilities
 import cc.noharry.agent.kernel.api.AgentPlugin
 import cc.noharry.agent.kernel.api.AgentPluginDescriptor
@@ -16,12 +15,13 @@ import cc.noharry.agent.kernel.api.SessionCapabilityFactory
 import cc.noharry.agent.kernel.api.model.ModelClient
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.kernel.core.plugin.RuntimeCapabilityDeclarations
+import cc.noharry.agent.kernel.core.plugin.RuntimeCompositionMessages
+import cc.noharry.agent.runtime.run.RuntimeProfileAdapter
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.core.RuntimeCapabilityDeclarations
-import cc.noharry.agent.kernel.core.RuntimeCompositionMessages
 
 class DirectCapabilityPreflightTest {
     @Test

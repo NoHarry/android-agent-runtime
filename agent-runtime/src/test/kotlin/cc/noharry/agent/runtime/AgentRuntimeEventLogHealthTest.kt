@@ -1,22 +1,22 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.SessionEventAppend
 import cc.noharry.agent.kernel.api.SessionEventLog
 import cc.noharry.agent.kernel.api.SessionEventLogHealthStatus
 import cc.noharry.agent.kernel.api.SessionEventQuery
 import cc.noharry.agent.kernel.api.SessionEventType
+import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
+import cc.noharry.agent.kernel.core.trace.DefaultTraceRedactor
+import cc.noharry.agent.kernel.core.trace.TraceVisibilityConfig
 import cc.noharry.agent.runtime.eventlog.FileBackedSessionEventLog
 import cc.noharry.agent.runtime.eventlog.appendForcedLine
+import cc.noharry.agent.runtime.run.RuntimeHookChain
+import java.nio.file.Files
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
-import java.nio.file.Files
-import cc.noharry.agent.kernel.core.DefaultTraceRedactor
-import cc.noharry.agent.kernel.core.ToolProviderRegistry
-import cc.noharry.agent.kernel.core.TraceVisibilityConfig
 
 class AgentRuntimeEventLogHealthTest {
     @Test

@@ -2,7 +2,7 @@
 
 ## Reference integration runners
 
-These runners exercise the real `:agent-a2a-client-direct` JVM test artifact
+These runners exercise the real `:agent-a2a` JVM test artifact
 against independently running HTTP servers. They inject the integration test
 source with a Gradle init script, so no Android Gradle module is modified.
 

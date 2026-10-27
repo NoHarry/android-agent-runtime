@@ -1,24 +1,22 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.core.MAX_HOST_SYSTEM_PROMPT_BYTES
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.ConfirmationResumeResult
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
-import cc.noharry.agent.kernel.core.DEFAULT_MAX_TOOL_CALLS_PER_RUN
+import cc.noharry.agent.kernel.core.context.MAX_HOST_SYSTEM_PROMPT_BYTES
+import cc.noharry.agent.kernel.core.loop.DEFAULT_MAX_TOOL_CALLS_PER_RUN
+import cc.noharry.agent.kernel.core.loop.LoopBudgetConfig
+import cc.noharry.agent.kernel.core.loop.LoopBudgetTracker
+import java.nio.file.Files
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.file.Files
-import cc.noharry.agent.kernel.core.LoopBudgetConfig
-import cc.noharry.agent.kernel.core.LoopBudgetTracker
 
 class RuntimeLoopBudgetTest {
     @Test

@@ -1,16 +1,15 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.*
 import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.core.FileBackedLoopHistoryStore
+import cc.noharry.agent.kernel.core.state.FileBackedLoopHistoryStore
+import java.nio.file.Files
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.file.Files
 
 class ConfirmationContextResumeTest {
     @Test fun confirmationPreservesExactContextWithoutRepeatingProvider() = runBlocking {

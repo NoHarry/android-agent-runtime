@@ -1,11 +1,12 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.core.NetworkToolPolicyDecision
+import cc.noharry.agent.kernel.core.tools.NetworkToolPolicyDecision
 import cc.noharry.agent.transport.WebFetchRequest
 import cc.noharry.agent.transport.WebFetchResponse
 import cc.noharry.agent.transport.WebFetchTransport
+import java.nio.file.Files
+import java.util.Collections
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -16,8 +17,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.file.Files
-import java.util.Collections
 
 class WebSearchToolTest {
     private val queries = Collections.synchronizedList(mutableListOf<Pair<String, Int>>())

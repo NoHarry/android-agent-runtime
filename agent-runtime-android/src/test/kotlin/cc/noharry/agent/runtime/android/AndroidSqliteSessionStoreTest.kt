@@ -1,6 +1,19 @@
 package cc.noharry.agent.runtime.android
 
 import android.database.sqlite.SQLiteDatabase
+import cc.noharry.agent.kernel.core.state.SESSION_MODEL_CALL_STATUS_COMPLETED
+import cc.noharry.agent.kernel.core.state.SESSION_TOOL_STATUS_COMPLETED
+import cc.noharry.agent.kernel.core.state.SESSION_TOOL_STATUS_STARTED
+import cc.noharry.agent.kernel.core.state.StoredModelCall
+import cc.noharry.agent.kernel.core.state.StoredRun
+import cc.noharry.agent.kernel.core.state.StoredSession
+import cc.noharry.agent.kernel.core.state.StoredSessionMessage
+import cc.noharry.agent.kernel.core.state.StoredToolEvent
+import cc.noharry.agent.kernel.core.state.StoredToolResult
+import cc.noharry.agent.kernel.core.state.StoredUsageDelta
+import cc.noharry.agent.kernel.core.state.StoredVfsOperation
+import cc.noharry.agent.kernel.core.state.VfsOperationTimings
+import cc.noharry.agent.kernel.core.tools.DynamicToolSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -8,19 +21,6 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import cc.noharry.agent.kernel.core.DynamicToolSource
-import cc.noharry.agent.kernel.core.SESSION_MODEL_CALL_STATUS_COMPLETED
-import cc.noharry.agent.kernel.core.SESSION_TOOL_STATUS_COMPLETED
-import cc.noharry.agent.kernel.core.SESSION_TOOL_STATUS_STARTED
-import cc.noharry.agent.kernel.core.StoredModelCall
-import cc.noharry.agent.kernel.core.StoredRun
-import cc.noharry.agent.kernel.core.StoredSession
-import cc.noharry.agent.kernel.core.StoredSessionMessage
-import cc.noharry.agent.kernel.core.StoredToolEvent
-import cc.noharry.agent.kernel.core.StoredToolResult
-import cc.noharry.agent.kernel.core.StoredUsageDelta
-import cc.noharry.agent.kernel.core.StoredVfsOperation
-import cc.noharry.agent.kernel.core.VfsOperationTimings
 
 @RunWith(RobolectricTestRunner::class)
 class AndroidSqliteSessionStoreTest {

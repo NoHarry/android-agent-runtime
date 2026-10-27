@@ -1,17 +1,16 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.AgentRequest
+import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.api.model.ModelClient
 import cc.noharry.agent.kernel.api.model.ModelClientException
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.kernel.core.loop.failed
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
@@ -19,7 +18,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.core.failed
 
 class ModelRetryNfrTest {
     @Test

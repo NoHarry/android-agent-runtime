@@ -1,7 +1,6 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.ConfirmationChoice
 import cc.noharry.agent.kernel.api.ConfirmationDecision
 import cc.noharry.agent.kernel.api.HookContext
@@ -11,10 +10,10 @@ import cc.noharry.agent.kernel.api.ToolUse
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
 import cc.noharry.agent.kernel.api.reliability.RuntimeResult
+import cc.noharry.agent.kernel.core.loop.failed
+import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
-import java.io.IOException
-import cc.noharry.agent.kernel.core.failed
 
 internal fun backendThenFinishModel(seenRequests: MutableList<ModelRequest>): FakeModelClient =
     FakeModelClient(

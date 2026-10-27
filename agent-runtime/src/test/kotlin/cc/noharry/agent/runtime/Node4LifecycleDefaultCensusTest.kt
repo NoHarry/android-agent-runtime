@@ -1,7 +1,6 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.runtime.eventlog.DurableSessionEventLogPlugin
 import java.io.File
 import org.junit.Assert.assertEquals

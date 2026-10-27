@@ -1,24 +1,31 @@
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.api.reliability.RuntimeCandidateType
 import cc.noharry.agent.kernel.api.reliability.RuntimeCandidate
+import cc.noharry.agent.kernel.api.reliability.RuntimeCandidateType
 import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
 import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
 import cc.noharry.agent.kernel.api.reliability.RuntimeResult
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunSnapshot
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.kernel.core.context.*
+import cc.noharry.agent.kernel.core.loop.*
+import cc.noharry.agent.kernel.core.memory.*
+import cc.noharry.agent.kernel.core.plugin.*
+import cc.noharry.agent.kernel.core.state.*
+import cc.noharry.agent.kernel.core.tools.*
+import cc.noharry.agent.kernel.core.trace.*
+import cc.noharry.agent.runtime.reliability.FileBackedReliabilityStorage
+import cc.noharry.agent.runtime.workspace.sessionCurrentJson
+import java.nio.file.Files
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.file.Files
-import cc.noharry.agent.kernel.core.*
 
 class RuntimeMemoryHintsTest {
     @Test

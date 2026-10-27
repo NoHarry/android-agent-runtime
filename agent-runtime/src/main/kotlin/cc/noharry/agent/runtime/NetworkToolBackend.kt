@@ -1,12 +1,17 @@
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.kernel.core.loop.failed
+import cc.noharry.agent.kernel.core.tools.NetworkToolActivityResult
+import cc.noharry.agent.kernel.core.tools.NetworkToolPolicyDecision
+import cc.noharry.agent.kernel.core.tools.NetworkToolPort
 import cc.noharry.agent.transport.NetworkAddressDeniedException
 import cc.noharry.agent.transport.OkHttpWebFetchTransport
 import cc.noharry.agent.transport.WebFetchRequest
 import cc.noharry.agent.transport.WebFetchResponse
 import cc.noharry.agent.transport.WebFetchTransport
 import cc.noharry.agent.transport.isDeniedNetworkTarget
+import java.net.InetAddress
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.SerializationException
@@ -19,12 +24,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import java.net.InetAddress
-import java.util.concurrent.ConcurrentHashMap
-import cc.noharry.agent.kernel.core.NetworkToolActivityResult
-import cc.noharry.agent.kernel.core.NetworkToolPolicyDecision
-import cc.noharry.agent.kernel.core.NetworkToolPort
-import cc.noharry.agent.kernel.core.failed
 
 internal class NetworkToolBackend(
     private val transport: WebFetchTransport = OkHttpWebFetchTransport(),

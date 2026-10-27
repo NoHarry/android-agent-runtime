@@ -2,7 +2,7 @@ package cc.noharry.agent.runtime.android
 
 import android.content.Context
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.core.SESSION_STORE_DB_FILE
+import cc.noharry.agent.kernel.core.state.SESSION_STORE_DB_FILE
 import cc.noharry.agent.runtime.AgentRuntimeBuilder
 import cc.noharry.agent.runtime.eventlog.DurableSessionEventLogPlugin
 import java.io.File

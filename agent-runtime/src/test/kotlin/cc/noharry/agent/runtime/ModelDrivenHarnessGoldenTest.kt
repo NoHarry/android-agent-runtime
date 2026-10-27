@@ -1,7 +1,6 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.ConfirmationResumeResult
@@ -15,15 +14,17 @@ import cc.noharry.agent.kernel.api.model.ModelRequest
 import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.kernel.core.state.encodeFileName
+import cc.noharry.agent.runtime.workspace.MAX_WORKSPACE_WRITE_FILE_BYTES
+import cc.noharry.agent.runtime.workspace.VirtualWorkspace
+import java.io.File
+import java.nio.file.Files
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
-import java.nio.file.Files
-import cc.noharry.agent.kernel.core.encodeFileName
 
 class ModelDrivenHarnessGoldenTest {
     @Test

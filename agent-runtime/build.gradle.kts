@@ -17,7 +17,6 @@ kotlin {
 dependencies {
     api(project(":agent-kernel-api"))
     api(project(":agent-kernel-core"))
-    api(project(":agent-vfs"))
     // Public API exposes Flow/suspend signatures; api scope keeps external consumers compiling.
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
     // Public policy APIs expose JsonObject; api scope keeps external consumers compiling.

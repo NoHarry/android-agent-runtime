@@ -121,7 +121,7 @@ def run_gradle_test(base_url: str, test_name: str) -> None:
         str(wrapper),
         "-I",
         str(INIT_SCRIPT),
-        ":agent-a2a-client-direct:testDebugUnitTest",
+        ":agent-a2a:testDebugUnitTest",
         "--tests",
         test_name,
         f"-Da2a.reference.baseUrl={base_url}",

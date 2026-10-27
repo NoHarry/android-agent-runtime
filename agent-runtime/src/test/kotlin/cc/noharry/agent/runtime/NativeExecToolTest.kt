@@ -1,19 +1,18 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentEvent
+import cc.noharry.agent.kernel.api.CompletionImpact
 import cc.noharry.agent.kernel.api.ExecEngine
 import cc.noharry.agent.kernel.api.ExecRequest
 import cc.noharry.agent.kernel.api.ExecResult
 import cc.noharry.agent.kernel.api.ExecToolBridge
 import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.CompletionImpact
 import cc.noharry.agent.kernel.api.RuntimeEffectKind
 import cc.noharry.agent.kernel.api.ToolCallContext
 import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
 import cc.noharry.agent.kernel.api.ToolDescriptor
+import cc.noharry.agent.kernel.api.mcp.McpClientProvider
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
 import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
@@ -21,15 +20,15 @@ import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.api.reliability.RuntimeResult
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.kernel.core.loop.failed
+import cc.noharry.agent.kernel.core.tools.cancelledToolResult
+import java.nio.file.Files
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.file.Files
-import cc.noharry.agent.kernel.core.failed
-import cc.noharry.agent.kernel.core.cancelledToolResult
 
 class NativeExecToolTest {
     @Test

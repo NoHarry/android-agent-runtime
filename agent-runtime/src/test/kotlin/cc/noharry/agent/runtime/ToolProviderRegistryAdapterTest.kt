@@ -1,13 +1,16 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.api.ToolCallContext
 import cc.noharry.agent.kernel.api.ToolCallResult
 import cc.noharry.agent.kernel.api.ToolCatalogCacheIdentity
 import cc.noharry.agent.kernel.api.ToolDescriptor
 import cc.noharry.agent.kernel.api.ToolProvider
+import cc.noharry.agent.kernel.core.tools.MaterializerContext
+import cc.noharry.agent.kernel.core.tools.ProviderConcurrencyLimiter
+import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -15,10 +18,6 @@ import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.util.concurrent.atomic.AtomicInteger
-import cc.noharry.agent.kernel.core.MaterializerContext
-import cc.noharry.agent.kernel.core.ProviderConcurrencyLimiter
-import cc.noharry.agent.kernel.core.ToolProviderRegistry
 
 class ToolProviderRegistryAdapterTest {
     @Before

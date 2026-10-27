@@ -1,10 +1,9 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.*
 import cc.noharry.agent.kernel.api.model.*
-import cc.noharry.agent.kernel.core.KernelRuntimeBuilder
+import cc.noharry.agent.kernel.core.plugin.KernelRuntimeBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.junit.Assert.*

@@ -2,7 +2,6 @@
 
 package cc.noharry.agent.mcp
 
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
 import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.api.ToolCallContext
 import cc.noharry.agent.kernel.api.ToolCallResult
@@ -10,11 +9,12 @@ import cc.noharry.agent.kernel.api.ToolDescriptor
 import cc.noharry.agent.kernel.api.ToolInitializeResult
 import cc.noharry.agent.kernel.api.ToolProvider
 import cc.noharry.agent.kernel.api.ToolProviderStatus
+import cc.noharry.agent.kernel.api.mcp.McpClientProvider
+import cc.noharry.agent.kernel.core.loop.failed
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlinx.coroutines.runBlocking
-import cc.noharry.agent.kernel.core.failed
 
 class McpClientProviderAdapterTest {
     @Test

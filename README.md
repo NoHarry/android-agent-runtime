@@ -28,9 +28,8 @@ Anthropic-compatible model.
 - **Control.** Hooks before and after tool calls, a policy engine, confirmation for network and side-effecting
   actions, and a per-provider concurrency limit.
 - **Durable sessions.** An append-only event log per session, resumable runs, SQLite session storage on Android.
-- **Optional modules.** Operate other apps' screens through accessibility (Android Use), Mandarin voice sessions with an
-  on-device wake word, sandboxed JavaScript that calls tools, calendar, notification and media tools, and A2A client and
-  server.
+- **Optional modules.** Operate other apps' screens through accessibility (Android Use), sandboxed JavaScript that calls
+  tools, calendar, notification and media tools, and A2A client and server.
 
 ## Install
 
@@ -92,23 +91,20 @@ The [samples](samples) run as they are: `AGENT_API_KEY=… ./gradlew :samples:qu
 
 | Artifact | What it is |
 |---|---|
-| `agent-runtime` | The runtime and host facade (plain JVM): `AgentRuntimeBuilder`, OpenAI- and Anthropic-compatible model clients, MCP, `functionTools`, skills, subagents, sessions and memory, web search and fetch, hooks and policy |
-| `agent-runtime-android` | The Android layer: `AndroidAgentRuntime.builder(context)`, SQLite sessions, the app-private event log |
+| `agent-runtime` | The runtime and host facade (plain JVM): `AgentRuntimeBuilder`, OpenAI- and Anthropic-compatible model clients, MCP, `functionTools`, skills, subagents, sessions and memory, web search and fetch, hooks and policy, and the workspace's virtual file system |
+| `agent-runtime-android` | The Android layer: `AndroidAgentRuntime.builder(context)`, SQLite sessions, the app-private event log, and mounting a folder the user picks through the Storage Access Framework |
 | `agent-kernel-api` | Android-neutral contracts: model, tool, plugin, capability, workspace, completion, event log, lifecycle |
-| `agent-kernel-core` | The agent loop: scheduler, native tool loop, profile compiler, `KernelRuntimeBuilder` |
-| `agent-minimal` | A minimal agent profile built straight on the kernel, a starting point for your own runtime |
-| `agent-vfs` | The virtual file system behind the workspace |
-| `agent-vfs-saf` | Optional: mount a folder the user picks through the Storage Access Framework |
+| `agent-kernel-core` | The agent loop (`loop`), tool registry and search (`tools`), prompt assembly and compaction (`context`), run state (`state`), plugins and `KernelRuntimeBuilder` (`plugin`), memory and tracing |
 | `agent-exec-js` | Optional: `exec_js`, sandboxed JavaScript (QuickJS through Zipline) that can call tools |
 | `agent-device-capabilities` | Optional: calendar, notification and media tools |
 | `agent-android-use` | Optional: observe and operate the screen through an accessibility service |
-| `agent-voice` | Optional: Mandarin voice sessions, an on-device wake word (Chinese or English) and recognition (sherpa-onnx) or a cloud recognizer |
-| `agent-a2a-client`, `-direct`, `-official` | Optional: delegate tasks to remote A2A agents (two interchangeable transports) |
-| `agent-a2a-server` | Optional: expose the agent as a local A2A endpoint |
+| `agent-a2a` | Optional: delegate tasks to remote A2A agents over a direct JSON-RPC/SSE transport, and expose the agent as a local A2A endpoint |
+| `agent-a2a-client-official` | Optional: the same client over the official A2A Java SDK |
 | `agent-bom` | One version for all of the above |
 
 Three ways in: an app depends on `agent-runtime-android`; a server, desktop tool or test on `agent-runtime`; a runtime
-of your own builds on `agent-kernel-api` and `agent-kernel-core`. Optional modules depend at most on the kernel API.
+of your own builds on `agent-kernel-api` and `agent-kernel-core` (`samples/minimal` is the smallest one). Optional
+modules depend at most on the kernel API.
 
 ## Building from source
 

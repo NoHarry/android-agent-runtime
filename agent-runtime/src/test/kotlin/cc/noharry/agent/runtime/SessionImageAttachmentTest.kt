@@ -1,7 +1,6 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.SessionEventLog
 import cc.noharry.agent.kernel.api.SessionEventPayload
@@ -10,11 +9,12 @@ import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelImage
 import cc.noharry.agent.kernel.api.model.ModelMessage
 import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.core.DynamicToolSource
-import cc.noharry.agent.kernel.core.MaterializerContext
+import cc.noharry.agent.kernel.core.tools.DynamicToolSource
+import cc.noharry.agent.kernel.core.tools.MaterializerContext
 import cc.noharry.agent.runtime.eventlog.FileBackedSessionEventLog
 import cc.noharry.agent.runtime.eventlog.InMemorySessionEventLog
 import cc.noharry.agent.runtime.eventlog.toAttachmentRef
+import cc.noharry.agent.runtime.run.RuntimeSessionRecorder
 import java.io.File
 import java.nio.file.Files
 import org.junit.Assert.assertArrayEquals

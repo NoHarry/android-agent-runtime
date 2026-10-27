@@ -1,6 +1,5 @@
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.core.ProtocolRequestTemplate
+import cc.noharry.agent.kernel.core.state.ProtocolRequestTemplate
 
 internal data class ConfirmationTemplate(
     val expiresInMillis: Long,

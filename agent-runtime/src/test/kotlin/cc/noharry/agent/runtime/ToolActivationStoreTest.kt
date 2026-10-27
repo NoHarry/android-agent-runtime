@@ -1,15 +1,13 @@
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.core.MEMORY_HINT_ACTIVATION_SOURCE
-import cc.noharry.agent.kernel.core.ToolActivationMetadata
-import cc.noharry.agent.kernel.core.ToolActivationStore
-
+import cc.noharry.agent.kernel.core.tools.BackendToolClassification
+import cc.noharry.agent.kernel.core.tools.MEMORY_HINT_ACTIVATION_SOURCE
+import cc.noharry.agent.kernel.core.tools.McpToolRef
+import cc.noharry.agent.kernel.core.tools.SESSION_INHERITED_ACTIVATION_SOURCE
+import cc.noharry.agent.kernel.core.tools.ToolActivationMetadata
+import cc.noharry.agent.kernel.core.tools.ToolActivationStore
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.core.BackendToolClassification
-import cc.noharry.agent.kernel.core.McpToolRef
-import cc.noharry.agent.kernel.core.SESSION_INHERITED_ACTIVATION_SOURCE
 
 class ToolActivationStoreTest {
     @Test

@@ -1,9 +1,8 @@
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.kernel.core.plugin.ProfileCompiler
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import cc.noharry.agent.kernel.core.ProfileCompiler
 
 @OptIn(ExperimentalAgentRuntimeApi::class)
 class PluginInstallOrderTest {

@@ -1,5 +1,4 @@
 package cc.noharry.agent.runtime
-
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -33,16 +32,16 @@ private const val CORE_MAIN = "../agent-kernel-core/src/main/kotlin/cc/noharry/a
 private const val RUNTIME_MAIN = "src/main/kotlin/cc/noharry/agent/runtime"
 
 private val CANONICAL_SCHEDULING_FILES = listOf(
-    "SessionRunScheduler.kt" to CORE_MAIN,
-    "SessionRunSchedulerContracts.kt" to CORE_MAIN,
-    "ProviderConcurrencyLimiter.kt" to CORE_MAIN,
-    "PluginRegistry.kt" to CORE_MAIN,
-    "ProfileCompiler.kt" to CORE_MAIN,
-    "RuntimeBlueprint.kt" to CORE_MAIN,
-    "ToolProviderRegistry.kt" to CORE_MAIN,
-    "RuntimeProfileAdapter.kt" to RUNTIME_MAIN,
+    "state/SessionRunScheduler.kt" to CORE_MAIN,
+    "state/SessionRunSchedulerContracts.kt" to CORE_MAIN,
+    "tools/ProviderConcurrencyLimiter.kt" to CORE_MAIN,
+    "plugin/PluginRegistry.kt" to CORE_MAIN,
+    "plugin/ProfileCompiler.kt" to CORE_MAIN,
+    "plugin/RuntimeBlueprint.kt" to CORE_MAIN,
+    "tools/ToolProviderRegistry.kt" to CORE_MAIN,
+    "run/RuntimeProfileAdapter.kt" to RUNTIME_MAIN,
     "DefaultAgentRuntime.kt" to RUNTIME_MAIN,
-    "NativeLoopFactory.kt" to RUNTIME_MAIN,
+    "run/NativeLoopFactory.kt" to RUNTIME_MAIN,
 )
 
 private fun productionSources(): List<File> {

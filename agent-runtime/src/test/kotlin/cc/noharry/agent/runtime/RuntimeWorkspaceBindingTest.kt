@@ -1,7 +1,6 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.model.ModelEvent
@@ -10,15 +9,15 @@ import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.api.reliability.RuntimeResult
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.kernel.core.loop.failed
 import cc.noharry.agent.vfs.VfsFileSystem
+import java.io.File
+import java.nio.file.Files
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
-import java.nio.file.Files
-import cc.noharry.agent.kernel.core.failed
 
 class RuntimeWorkspaceBindingTest {
     @Test

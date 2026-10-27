@@ -1,16 +1,15 @@
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.CapabilityCardinality
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.KernelApiVersions
 import cc.noharry.agent.kernel.api.SessionCapabilityContext
 import cc.noharry.agent.kernel.api.SessionCapabilityFactory
+import cc.noharry.agent.kernel.core.loop.failed
+import cc.noharry.agent.kernel.core.plugin.PluginRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.core.PluginRegistry
-import cc.noharry.agent.kernel.core.failed
 
 @OptIn(ExperimentalAgentRuntimeApi::class)
 class PluginTransactionTest {

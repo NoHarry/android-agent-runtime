@@ -1,17 +1,26 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.ConfirmationResumeResult
-import cc.noharry.agent.kernel.api.SessionRunConflictPolicy
 import cc.noharry.agent.dream.DreamMode
 import cc.noharry.agent.dream.DreamRequest
 import cc.noharry.agent.dream.NoOpDreamWorker
+import cc.noharry.agent.kernel.api.AgentEvent
+import cc.noharry.agent.kernel.api.ConfirmationResumeResult
+import cc.noharry.agent.kernel.api.SessionRunConflictPolicy
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.api.reliability.RuntimeEvidenceType
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
+import cc.noharry.agent.kernel.core.trace.RELEASE_RAW_TRACE_ERROR
+import cc.noharry.agent.kernel.core.trace.RuntimeBuildType
+import cc.noharry.agent.kernel.core.trace.TraceVisibilityConfig
+import cc.noharry.agent.runtime.workspace.MemoryCategory
+import cc.noharry.agent.runtime.workspace.MemoryWorkspace
+import cc.noharry.agent.runtime.workspace.VirtualFileMaterializer
+import cc.noharry.agent.runtime.workspace.VirtualWorkspace
+import java.io.File
+import java.nio.file.Files
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -20,12 +29,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
-import java.nio.file.Files
-import cc.noharry.agent.kernel.core.RuntimeBuildType
-import cc.noharry.agent.kernel.core.ToolProviderRegistry
-import cc.noharry.agent.kernel.core.TraceVisibilityConfig
-import cc.noharry.agent.kernel.core.RELEASE_RAW_TRACE_ERROR
 
 class GoldenMatrixTest {
     @Test

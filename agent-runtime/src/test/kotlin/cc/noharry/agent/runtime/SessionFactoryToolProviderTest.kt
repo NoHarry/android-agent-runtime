@@ -1,7 +1,6 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentCapabilities
 import cc.noharry.agent.kernel.api.AgentPlugin
 import cc.noharry.agent.kernel.api.AgentPluginDescriptor
@@ -22,6 +21,13 @@ import cc.noharry.agent.kernel.api.ToolProvider
 import cc.noharry.agent.kernel.api.model.ModelClient
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.kernel.core.plugin.ProfileCompiler
+import cc.noharry.agent.kernel.core.plugin.RuntimeCompositionMessages
+import cc.noharry.agent.kernel.core.tools.MaterializerContext
+import cc.noharry.agent.kernel.core.tools.ProviderConcurrencyLimiter
+import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
+import java.nio.file.Files
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -35,13 +41,6 @@ import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.nio.file.Files
-import java.util.concurrent.atomic.AtomicInteger
-import cc.noharry.agent.kernel.core.MaterializerContext
-import cc.noharry.agent.kernel.core.ProfileCompiler
-import cc.noharry.agent.kernel.core.ProviderConcurrencyLimiter
-import cc.noharry.agent.kernel.core.RuntimeCompositionMessages
-import cc.noharry.agent.kernel.core.ToolProviderRegistry
 
 class SessionFactoryToolProviderTest {
     @Before

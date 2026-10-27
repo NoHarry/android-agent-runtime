@@ -1,5 +1,4 @@
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentCapabilities
 import cc.noharry.agent.kernel.api.CapabilityCardinality
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
@@ -9,16 +8,16 @@ import cc.noharry.agent.kernel.api.SessionCapabilityFactory
 import cc.noharry.agent.kernel.api.ToolCallContext
 import cc.noharry.agent.kernel.api.ToolCallResult
 import cc.noharry.agent.kernel.api.ToolProvider
+import cc.noharry.agent.kernel.core.plugin.PluginRegistry
+import cc.noharry.agent.kernel.core.plugin.RuntimeCompositionMessages
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
-import cc.noharry.agent.kernel.core.PluginRegistry
-import cc.noharry.agent.kernel.core.RuntimeCompositionMessages
 
 @OptIn(ExperimentalAgentRuntimeApi::class)
 class SessionCapabilityFactoryTest {

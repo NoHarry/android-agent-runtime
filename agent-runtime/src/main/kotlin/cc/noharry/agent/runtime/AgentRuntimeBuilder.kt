@@ -1,75 +1,91 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
+import cc.noharry.agent.kernel.api.AgentPlugin
 import cc.noharry.agent.kernel.api.AgentProfile
 import cc.noharry.agent.kernel.api.AgentRuntime
-import cc.noharry.agent.kernel.api.AgentPlugin
+import cc.noharry.agent.kernel.api.ExecEngine
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.kernel.api.HookFailurePolicy
 import cc.noharry.agent.kernel.api.RuntimeContextProvider
 import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
+import cc.noharry.agent.kernel.api.RuntimeHook
+import cc.noharry.agent.kernel.api.RuntimeHookRegistration
 import cc.noharry.agent.kernel.api.RuntimeTurnObserver
 import cc.noharry.agent.kernel.api.SessionEventLog
+import cc.noharry.agent.kernel.api.ToolMatcher
 import cc.noharry.agent.kernel.api.ToolProvider
 import cc.noharry.agent.kernel.api.model.ModelClient
 import cc.noharry.agent.kernel.api.model.ModelRef
+import cc.noharry.agent.kernel.core.context.BootstrapPromptProvider
+import cc.noharry.agent.kernel.core.context.BootstrapPromptResolver
+import cc.noharry.agent.kernel.core.context.ContextBootstrapPromptResolver
+import cc.noharry.agent.kernel.core.context.ConversationCompactor
+import cc.noharry.agent.kernel.core.context.HistoryCompactor
+import cc.noharry.agent.kernel.core.context.SimpleBootstrapPromptResolver
+import cc.noharry.agent.kernel.core.context.validateHostSystemPrompt
+import cc.noharry.agent.kernel.core.context.validateRunContext
+import cc.noharry.agent.kernel.core.loop.DEFAULT_MAX_MODEL_ROUNDS
+import cc.noharry.agent.kernel.core.loop.DEFAULT_MAX_TOOL_CALLS_PER_RUN
+import cc.noharry.agent.kernel.core.loop.DEFAULT_MODEL_RETRY_MAX_ATTEMPTS
+import cc.noharry.agent.kernel.core.loop.LoopBudgetConfig
+import cc.noharry.agent.kernel.core.loop.ModelRetryConfig
+import cc.noharry.agent.kernel.core.plugin.ProfileCompiler
+import cc.noharry.agent.kernel.core.plugin.RuntimeBlueprint
+import cc.noharry.agent.kernel.core.plugin.RuntimeCapabilityDeclarations
+import cc.noharry.agent.kernel.core.plugin.RuntimeCompositionMessages
+import cc.noharry.agent.kernel.core.state.DEFAULT_MAX_ACTIVE_SESSIONS
+import cc.noharry.agent.kernel.core.state.DEFAULT_MAX_QUEUED_RUNS_GLOBAL
+import cc.noharry.agent.kernel.core.state.DEFAULT_MAX_QUEUED_RUNS_PER_SESSION
+import cc.noharry.agent.kernel.core.state.FileBackedLoopHistoryStore
+import cc.noharry.agent.kernel.core.state.InMemoryLoopHistoryStore
+import cc.noharry.agent.kernel.core.state.LoopHistoryStore
+import cc.noharry.agent.kernel.core.state.MAX_LOOP_HISTORY_BYTES
+import cc.noharry.agent.kernel.core.state.ProtocolRequestTemplate
+import cc.noharry.agent.kernel.core.state.ReliabilityRetentionPolicy
+import cc.noharry.agent.kernel.core.state.ReliabilityStorage
+import cc.noharry.agent.kernel.core.state.SessionRunSchedulerConfig
+import cc.noharry.agent.kernel.core.state.SessionStore
+import cc.noharry.agent.kernel.core.state.defaultSessionRunSchedulerConfig
+import cc.noharry.agent.kernel.core.tools.BackendToolExposure
+import cc.noharry.agent.kernel.core.tools.ConcurrencyLimitedExecEngine
+import cc.noharry.agent.kernel.core.tools.ConcurrencyLimitedModelClient
+import cc.noharry.agent.kernel.core.tools.DEFAULT_MAX_CONCURRENT_MODEL_CALLS
+import cc.noharry.agent.kernel.core.tools.DEFAULT_MAX_CONCURRENT_TOOL_CALLS
+import cc.noharry.agent.kernel.core.tools.MaterializerContext
+import cc.noharry.agent.kernel.core.tools.ProviderConcurrencyLimiter
+import cc.noharry.agent.kernel.core.tools.ToolActivationStore
+import cc.noharry.agent.kernel.core.tools.ToolDomainIndexer
+import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
+import cc.noharry.agent.kernel.core.trace.DefaultTraceRedactor
+import cc.noharry.agent.kernel.core.trace.TraceRedactor
+import cc.noharry.agent.kernel.core.trace.TraceVisibilityConfig
 import cc.noharry.agent.policy.PolicyEngine
 import cc.noharry.agent.policy.PolicyRule
+import cc.noharry.agent.runtime.reliability.FileBackedReliabilityStorage
+import cc.noharry.agent.runtime.reliability.InternalRuntimeEvidenceConfig
+import cc.noharry.agent.runtime.reliability.ReliabilityStorageHardeningPolicy
+import cc.noharry.agent.runtime.reliability.validateRuntimeEvidenceConfig
+import cc.noharry.agent.runtime.run.BlueprintCapabilities
+import cc.noharry.agent.runtime.run.DEFAULT_HOOK_TIMEOUT_MILLIS
+import cc.noharry.agent.runtime.run.PolicyConfigException
+import cc.noharry.agent.runtime.run.PolicyConfigLoader
+import cc.noharry.agent.runtime.run.PolicyHookAdapter
+import cc.noharry.agent.runtime.run.RuntimeHookChain
+import cc.noharry.agent.runtime.run.RuntimeMemoryStore
+import cc.noharry.agent.runtime.run.RuntimeProfileAdapter
+import cc.noharry.agent.runtime.run.TodoStore
+import cc.noharry.agent.runtime.workspace.ContextMaterializerRouter
+import cc.noharry.agent.runtime.workspace.FileBackedMaterializerSchemaCache
+import cc.noharry.agent.runtime.workspace.MaterializerSchemaCacheStore
+import cc.noharry.agent.runtime.workspace.MemoryWorkspace
 import cc.noharry.agent.vfs.VfsFileSystem
 import cc.noharry.agent.vfs.VfsPathResolver
 import cc.noharry.agent.vfs.VfsReadResult
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import java.io.File
-import cc.noharry.agent.kernel.api.ExecEngine
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.RuntimeHookRegistration
-import cc.noharry.agent.kernel.api.HookFailurePolicy
-import cc.noharry.agent.kernel.api.ToolMatcher
-import cc.noharry.agent.kernel.core.ConcurrencyLimitedExecEngine
-import cc.noharry.agent.kernel.core.ConcurrencyLimitedModelClient
-import cc.noharry.agent.kernel.core.DEFAULT_MAX_ACTIVE_SESSIONS
-import cc.noharry.agent.kernel.core.DEFAULT_MAX_CONCURRENT_MODEL_CALLS
-import cc.noharry.agent.kernel.core.DEFAULT_MAX_CONCURRENT_TOOL_CALLS
-import cc.noharry.agent.kernel.core.DEFAULT_MAX_MODEL_ROUNDS
-import cc.noharry.agent.kernel.core.DEFAULT_MAX_QUEUED_RUNS_GLOBAL
-import cc.noharry.agent.kernel.core.DEFAULT_MAX_QUEUED_RUNS_PER_SESSION
-import cc.noharry.agent.kernel.core.DEFAULT_MAX_TOOL_CALLS_PER_RUN
-import cc.noharry.agent.kernel.core.DEFAULT_MODEL_RETRY_MAX_ATTEMPTS
-import cc.noharry.agent.kernel.core.DefaultTraceRedactor
-import cc.noharry.agent.kernel.core.FileBackedLoopHistoryStore
-import cc.noharry.agent.kernel.core.MAX_LOOP_HISTORY_BYTES
-import cc.noharry.agent.kernel.core.HistoryCompactor
-import cc.noharry.agent.kernel.core.InMemoryLoopHistoryStore
-import cc.noharry.agent.kernel.core.LoopBudgetConfig
-import cc.noharry.agent.kernel.core.LoopHistoryStore
-import cc.noharry.agent.kernel.core.MaterializerContext
-import cc.noharry.agent.kernel.core.ModelRetryConfig
-import cc.noharry.agent.kernel.core.ProfileCompiler
-import cc.noharry.agent.kernel.core.ProtocolRequestTemplate
-import cc.noharry.agent.kernel.core.ProviderConcurrencyLimiter
-import cc.noharry.agent.kernel.core.RuntimeCapabilityDeclarations
-import cc.noharry.agent.kernel.core.ReliabilityRetentionPolicy
-import cc.noharry.agent.kernel.core.ReliabilityStorage
-import cc.noharry.agent.kernel.core.RuntimeBlueprint
-import cc.noharry.agent.kernel.core.RuntimeCompositionMessages
-import cc.noharry.agent.kernel.core.SessionRunSchedulerConfig
-import cc.noharry.agent.kernel.core.SessionStore
-import cc.noharry.agent.kernel.core.ToolDomainIndexer
-import cc.noharry.agent.kernel.core.ToolProviderRegistry
-import cc.noharry.agent.kernel.core.TraceRedactor
-import cc.noharry.agent.kernel.core.TraceVisibilityConfig
-import cc.noharry.agent.kernel.core.defaultSessionRunSchedulerConfig
-import cc.noharry.agent.kernel.core.BootstrapPromptProvider
-import cc.noharry.agent.kernel.core.BootstrapPromptResolver
-import cc.noharry.agent.kernel.core.ContextBootstrapPromptResolver
-import cc.noharry.agent.kernel.core.SimpleBootstrapPromptResolver
-import cc.noharry.agent.kernel.core.BackendToolExposure
-import cc.noharry.agent.kernel.core.ConversationCompactor
-import cc.noharry.agent.kernel.core.ToolActivationStore
-import cc.noharry.agent.kernel.core.validateHostSystemPrompt
-import cc.noharry.agent.kernel.core.validateRunContext
 
 class AgentRuntimeBuilder {
     companion object {
@@ -511,7 +527,7 @@ class AgentRuntimeBuilder {
      * Candidate API, not frozen until API freeze closes. An engine is still required for exec_js.
      */
     fun disabledNativeTools(names: Set<String>): AgentRuntimeBuilder = apply {
-        disabledNativeTools = cc.noharry.agent.kernel.core.snapshotDisabledNativeTools(names)
+        disabledNativeTools = cc.noharry.agent.kernel.core.tools.snapshotDisabledNativeTools(names)
     }
 
     /** Registers a candidate host-provided exec engine. Not frozen until API freeze closes. */

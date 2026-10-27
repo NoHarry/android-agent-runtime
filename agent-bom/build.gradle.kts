@@ -8,10 +8,9 @@ description = "One version for every Android Agent Runtime module."
 dependencies {
     constraints {
         listOf(
-            ":agent-kernel-api", ":agent-kernel-core", ":agent-minimal", ":agent-vfs", ":agent-runtime",
-            ":agent-runtime-android", ":agent-vfs-saf", ":agent-exec-js", ":agent-device-capabilities",
-            ":agent-android-use", ":agent-voice", ":agent-a2a-client", ":agent-a2a-client-direct",
-            ":agent-a2a-client-official", ":agent-a2a-server",
+            ":agent-kernel-api", ":agent-kernel-core", ":agent-runtime", ":agent-runtime-android",
+            ":agent-exec-js", ":agent-device-capabilities", ":agent-android-use", ":agent-a2a",
+            ":agent-a2a-client-official",
         ).forEach { api(project(it)) }
     }
 }

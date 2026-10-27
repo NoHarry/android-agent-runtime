@@ -5,22 +5,28 @@ package cc.noharry.agent.runtime.probe
 
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.model.ModelEvent
+import cc.noharry.agent.kernel.core.context.*
+import cc.noharry.agent.kernel.core.loop.*
+import cc.noharry.agent.kernel.core.memory.*
+import cc.noharry.agent.kernel.core.plugin.*
+import cc.noharry.agent.kernel.core.state.*
+import cc.noharry.agent.kernel.core.tools.*
+import cc.noharry.agent.kernel.core.trace.*
 import cc.noharry.agent.runtime.FakeModelClient
 import cc.noharry.agent.runtime.LoopMcpProvider
-import cc.noharry.agent.runtime.ProbeSessionLoopProbeSink
-import cc.noharry.agent.runtime.VirtualFileMaterializer
-import cc.noharry.agent.runtime.VirtualWorkspace
+import cc.noharry.agent.runtime.mcpTool
+import cc.noharry.agent.runtime.run.ProbeSessionLoopProbeSink
+import cc.noharry.agent.runtime.workspace.VirtualFileMaterializer
+import cc.noharry.agent.runtime.workspace.VirtualWorkspace
 import cc.noharry.agent.vfs.VfsFileSystem
+import java.io.File
+import java.nio.file.Files
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
-import java.nio.file.Files
-import java.util.concurrent.atomic.AtomicLong
-import cc.noharry.agent.kernel.core.*
-import cc.noharry.agent.runtime.mcpTool
 
 /**
  * Golden cross-language contract: real Kotlin emission (NativeToolLoop → ProbeRunAttachment

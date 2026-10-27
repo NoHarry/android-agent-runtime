@@ -1,5 +1,5 @@
 package cc.noharry.agent.runtime
-
+import cc.noharry.agent.runtime.run.loopFailureCause
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

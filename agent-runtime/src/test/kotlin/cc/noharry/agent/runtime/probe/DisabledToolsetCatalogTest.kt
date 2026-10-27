@@ -1,8 +1,8 @@
 package cc.noharry.agent.runtime.probe
 
-import cc.noharry.agent.kernel.core.DynamicToolRegistry
-import cc.noharry.agent.kernel.core.MaterializerContext
-import cc.noharry.agent.kernel.core.ToolActivationStore
+import cc.noharry.agent.kernel.core.tools.DynamicToolRegistry
+import cc.noharry.agent.kernel.core.tools.MaterializerContext
+import cc.noharry.agent.kernel.core.tools.ToolActivationStore
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

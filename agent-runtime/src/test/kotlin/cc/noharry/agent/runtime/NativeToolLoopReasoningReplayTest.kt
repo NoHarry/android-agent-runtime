@@ -1,15 +1,19 @@
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.kernel.core.context.*
+import cc.noharry.agent.kernel.core.loop.*
+import cc.noharry.agent.kernel.core.memory.*
+import cc.noharry.agent.kernel.core.plugin.*
+import cc.noharry.agent.kernel.core.state.*
+import cc.noharry.agent.kernel.core.tools.*
+import cc.noharry.agent.kernel.core.trace.*
+import java.io.File
+import java.nio.file.Files
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.io.File
-import java.nio.file.Files
-import cc.noharry.agent.kernel.core.*
-
 class NativeToolLoopReasoningReplayTest {
     @Test
     fun runPreservesThinkingOnAssistantToolCallHistory() = runBlocking {

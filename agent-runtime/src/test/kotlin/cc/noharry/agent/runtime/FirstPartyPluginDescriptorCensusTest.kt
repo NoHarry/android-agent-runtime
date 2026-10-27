@@ -1,20 +1,19 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentCapabilities
 import cc.noharry.agent.kernel.api.AgentPlugin
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.KernelApiVersions
 import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.core.DirectCapabilityPlugin
-import cc.noharry.agent.kernel.core.RuntimeCapabilityDeclarations
+import cc.noharry.agent.kernel.core.plugin.DirectCapabilityPlugin
+import cc.noharry.agent.kernel.core.plugin.RuntimeCapabilityDeclarations
+import cc.noharry.agent.kernel.core.plugin.RuntimeCompositionMessages
 import cc.noharry.agent.runtime.eventlog.DurableSessionEventLogPlugin
 import java.nio.file.Files
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.core.RuntimeCompositionMessages
 
 class FirstPartyPluginDescriptorCensusTest {
     @Test

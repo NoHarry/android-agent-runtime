@@ -12,7 +12,7 @@ class ExecutePlanCompatibilityDeletedInventoryTest {
             File("../agent-kernel-api/src/main"),
             File("../agent-kernel-core/src/main"),
             File("src/main"),
-            File("../agent-minimal/src/main"),
+            File("../samples/minimal/src/main"),
             File("src/test/resources/fixtures/protocol"),
         )
         roots.forEach { root ->

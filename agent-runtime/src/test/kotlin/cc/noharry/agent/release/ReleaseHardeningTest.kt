@@ -1,21 +1,21 @@
 package cc.noharry.agent.release
 
 import cc.noharry.agent.kernel.api.AgentRuntime
-import cc.noharry.agent.runtime.ANDROID_RELIABILITY_STORAGE_MIN_SDK
+import cc.noharry.agent.runtime.reliability.ANDROID_RELIABILITY_STORAGE_MIN_SDK
+import cc.noharry.agent.runtime.reliability.ReliabilityStorageEncryptionMode
+import cc.noharry.agent.runtime.reliability.ReliabilityStorageFileLockMode
+import cc.noharry.agent.runtime.reliability.ReliabilityStorageHardeningPolicy
+import cc.noharry.agent.runtime.reliability.ReliabilityStorageRootKind
 import cc.noharry.agent.transport.OkHttpHttpTransport
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
 import java.io.File
 import java.lang.reflect.Constructor
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
-import cc.noharry.agent.runtime.ReliabilityStorageEncryptionMode
-import cc.noharry.agent.runtime.ReliabilityStorageFileLockMode
-import cc.noharry.agent.runtime.ReliabilityStorageHardeningPolicy
-import cc.noharry.agent.runtime.ReliabilityStorageRootKind
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class ReleaseHardeningTest {
     @Test
@@ -23,9 +23,8 @@ class ReleaseHardeningTest {
         val rules = File("src/main/resources/META-INF/proguard/agent-runtime.pro").readText()
 
         assertTrue(rules.contains("-keep class cc.noharry.agent.kernel.api.** { *; }"))
-        assertTrue(rules.contains("-keep class cc.noharry.agent.kernel.core.KernelRuntimeBuilder { *; }"))
-        assertTrue(rules.contains("-keep class cc.noharry.agent.kernel.core.CoreAgentRuntime { *; }"))
-        assertTrue(rules.contains("-keep class cc.noharry.agent.minimal.MinimalAgent { *; }"))
+        assertTrue(rules.contains("-keep class cc.noharry.agent.kernel.core.plugin.KernelRuntimeBuilder { *; }"))
+        assertTrue(rules.contains("-keep class cc.noharry.agent.kernel.core.plugin.CoreAgentRuntime { *; }"))
         assertTrue(rules.contains("-keep class cc.noharry.agent.runtime.AgentRuntimeBuilder { *; }"))
         assertTrue(rules.contains("-keep class cc.noharry.agent.runtime.RuntimeWorkspaceRef { *; }"))
         assertTrue(rules.contains("-keep class cc.noharry.agent.runtime.HostSkill { *; }"))
@@ -371,8 +370,8 @@ private val CANDIDATE_PUBLIC_API_CLASS_NAMES = listOf(
     "cc.noharry.agent.runtime.HostSkill",
     "cc.noharry.agent.runtime.NetworkToolConfirmationPolicy",
     "cc.noharry.agent.runtime.eventlog.DurableSessionEventLogPlugin",
-    "cc.noharry.agent.kernel.core.KernelRuntimeBuilder",
-    "cc.noharry.agent.kernel.core.CoreAgentRuntime",
+    "cc.noharry.agent.kernel.core.plugin.KernelRuntimeBuilder",
+    "cc.noharry.agent.kernel.core.plugin.CoreAgentRuntime",
     "cc.noharry.agent.vfs.VfsFileSystem",
     "cc.noharry.agent.transport.HttpTransport",
     "cc.noharry.agent.transport.HttpRequest",

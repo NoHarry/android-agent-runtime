@@ -1,8 +1,12 @@
 package cc.noharry.agent.model
 
 import cc.noharry.agent.kernel.api.model.ModelClientException
-
+import cc.noharry.agent.kernel.api.model.ModelEvent
+import cc.noharry.agent.kernel.api.model.ModelImage
+import cc.noharry.agent.kernel.api.model.ModelResponseMetadata
+import cc.noharry.agent.kernel.api.model.ServerSideSearchCapability
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.kernel.core.loop.completed
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.boolean
@@ -14,11 +18,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.api.model.ModelImage
-import cc.noharry.agent.kernel.api.model.ServerSideSearchCapability
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelResponseMetadata
-import cc.noharry.agent.kernel.core.completed
 
 class ModelClientContractTest {
     @Test

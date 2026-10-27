@@ -1,16 +1,24 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.AgentRequest
+import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.api.model.ModelClient
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
 import cc.noharry.agent.kernel.api.reliability.RuntimeCandidate
 import cc.noharry.agent.kernel.api.reliability.RuntimeCandidateType
+import cc.noharry.agent.kernel.core.context.*
+import cc.noharry.agent.kernel.core.loop.*
+import cc.noharry.agent.kernel.core.memory.*
+import cc.noharry.agent.kernel.core.plugin.*
+import cc.noharry.agent.kernel.core.state.*
+import cc.noharry.agent.kernel.core.tools.*
+import cc.noharry.agent.kernel.core.trace.*
+import cc.noharry.agent.runtime.run.RuntimeMemoryStore
+import java.nio.file.Files
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -18,9 +26,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.file.Files
-import java.util.concurrent.ConcurrentHashMap
-import cc.noharry.agent.kernel.core.*
 
 class NativeToolLoopProgressiveBackendTest {
     @Test

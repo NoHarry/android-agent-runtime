@@ -1,12 +1,12 @@
 package cc.noharry.agent.runtime
-
+import cc.noharry.agent.kernel.core.context.SkillCatalogEntry
+import cc.noharry.agent.kernel.core.context.SkillCatalogPort
+import cc.noharry.agent.kernel.core.context.SkillsCatalog
+import cc.noharry.agent.runtime.workspace.AGENTS_SKILLS_ROOT
 import cc.noharry.agent.vfs.VFS_ENTRY_DIR
 import cc.noharry.agent.vfs.VfsFileSystem
 import cc.noharry.agent.vfs.VfsListResult
 import cc.noharry.agent.vfs.VfsReadResult
-import cc.noharry.agent.kernel.core.SkillCatalogEntry
-import cc.noharry.agent.kernel.core.SkillCatalogPort
-import cc.noharry.agent.kernel.core.SkillsCatalog
 
 /**
  * Merges backend-provided and host-provided skills into a unified catalog.

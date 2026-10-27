@@ -737,3 +737,649 @@ public final class cc/noharry/agent/transport/OkHttpHttpTransport : cc/noharry/a
 	public fun stream (Lcc/noharry/agent/transport/HttpRequest;)Lkotlinx/coroutines/flow/Flow;
 }
 
+public final class cc/noharry/agent/vfs/VfsEntry {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/Long;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;)Lcc/noharry/agent/vfs/VfsEntry;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsEntry;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getModifiedAtMillis ()Ljava/lang/Long;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getRevision ()Ljava/lang/String;
+	public final fun getSizeBytes ()Ljava/lang/Long;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsFileSource : cc/noharry/agent/vfs/VfsSource {
+	public fun <init> (Ljava/io/File;)V
+	public fun deleteTree (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun list (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun read (Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun search (Ljava/lang/String;Ljava/lang/String;IJLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun stat (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun write (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsWriteMode;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/vfs/VfsFileSystem {
+	public static final field Companion Lcc/noharry/agent/vfs/VfsFileSystem$Companion;
+	public fun <init> (Lcc/noharry/agent/vfs/VfsWorkspaceManifest;Lcc/noharry/agent/vfs/VfsSourceResolver;)V
+	public final fun deleteTree (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun list (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun mounts ()Ljava/util/List;
+	public final fun read (Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun search (Ljava/lang/String;Ljava/lang/String;IJLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun stat (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun withOverlay (Ljava/util/List;Ljava/util/Map;)Lcc/noharry/agent/vfs/VfsFileSystem;
+	public final fun write (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsWriteMode;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun write$default (Lcc/noharry/agent/vfs/VfsFileSystem;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsWriteMode;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/vfs/VfsFileSystem$Companion {
+	public final fun fromJson (Ljava/lang/String;Lcc/noharry/agent/vfs/VfsSourceResolver;)Lcc/noharry/agent/vfs/VfsFileSystem;
+	public final fun singleFileRoot (Ljava/io/File;)Lcc/noharry/agent/vfs/VfsFileSystem;
+}
+
+public abstract interface class cc/noharry/agent/vfs/VfsListResult {
+}
+
+public final class cc/noharry/agent/vfs/VfsListResult$Entries : cc/noharry/agent/vfs/VfsListResult {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcc/noharry/agent/vfs/VfsListResult$Entries;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsListResult$Entries;Ljava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsListResult$Entries;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntries ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsListResult$Error : cc/noharry/agent/vfs/VfsListResult {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Z)Lcc/noharry/agent/vfs/VfsListResult$Error;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsListResult$Error;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsListResult$Error;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getRetryable ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsListResult$InvalidPath : cc/noharry/agent/vfs/VfsListResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsListResult$InvalidPath;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsListResult$NotFound : cc/noharry/agent/vfs/VfsListResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsListResult$NotFound;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsManifestLoader {
+	public fun <init> ()V
+	public final fun parse (Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsWorkspaceManifest;
+}
+
+public final class cc/noharry/agent/vfs/VfsMemorySource : cc/noharry/agent/vfs/VfsSource {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Map;J)V
+	public synthetic fun <init> (Ljava/util/Map;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun deleteTree (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun list (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun read (Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun search (Ljava/lang/String;Ljava/lang/String;IJLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun snapshot ()Ljava/util/Map;
+	public fun stat (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun write (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsWriteMode;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/vfs/VfsMount {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsPath;Lcc/noharry/agent/vfs/VfsMountMode;I)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcc/noharry/agent/vfs/VfsPath;
+	public final fun component4 ()Lcc/noharry/agent/vfs/VfsMountMode;
+	public final fun component5 ()I
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsPath;Lcc/noharry/agent/vfs/VfsMountMode;I)Lcc/noharry/agent/vfs/VfsMount;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsMount;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsPath;Lcc/noharry/agent/vfs/VfsMountMode;IILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsMount;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getMode ()Lcc/noharry/agent/vfs/VfsMountMode;
+	public final fun getPriority ()I
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getTarget ()Lcc/noharry/agent/vfs/VfsPath;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsMountMode : java/lang/Enum {
+	public static final field Companion Lcc/noharry/agent/vfs/VfsMountMode$Companion;
+	public static final field READ_ONLY Lcc/noharry/agent/vfs/VfsMountMode;
+	public static final field READ_WRITE Lcc/noharry/agent/vfs/VfsMountMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getWireName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsMountMode;
+	public static fun values ()[Lcc/noharry/agent/vfs/VfsMountMode;
+}
+
+public final class cc/noharry/agent/vfs/VfsMountMode$Companion {
+	public final fun fromWire (Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsMountMode;
+}
+
+public final class cc/noharry/agent/vfs/VfsMountTable {
+	public fun <init> (Ljava/util/List;)V
+	public final fun mounts ()Ljava/util/List;
+	public final fun resolve (Ljava/lang/String;Z)Lcc/noharry/agent/vfs/VfsResolvedMount;
+	public static synthetic fun resolve$default (Lcc/noharry/agent/vfs/VfsMountTable;Ljava/lang/String;ZILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsResolvedMount;
+	public final fun resolveAll (Ljava/lang/String;Z)Ljava/util/List;
+	public static synthetic fun resolveAll$default (Lcc/noharry/agent/vfs/VfsMountTable;Ljava/lang/String;ZILjava/lang/Object;)Ljava/util/List;
+	public final fun resolveVisible (Ljava/lang/String;)Ljava/util/List;
+}
+
+public final class cc/noharry/agent/vfs/VfsPath {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsPath;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsPath;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsPath;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSegments ()Ljava/util/List;
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsPathResolver {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsPathResolver;
+	public final fun normalize (Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsPath;
+	public final fun resolveInside (Ljava/io/File;Ljava/lang/String;)Ljava/io/File;
+}
+
+public final class cc/noharry/agent/vfs/VfsReadAttributes {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun copy (Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;)Lcc/noharry/agent/vfs/VfsReadAttributes;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsReadAttributes;Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsReadAttributes;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBooleans ()Ljava/util/Map;
+	public final fun getLongs ()Ljava/util/Map;
+	public final fun getStrings ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/vfs/VfsReadResult {
+}
+
+public final class cc/noharry/agent/vfs/VfsReadResult$BinaryUnsupported : cc/noharry/agent/vfs/VfsReadResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsReadResult$BinaryUnsupported;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsReadResult$Error : cc/noharry/agent/vfs/VfsReadResult {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Z)Lcc/noharry/agent/vfs/VfsReadResult$Error;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsReadResult$Error;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsReadResult$Error;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getRetryable ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsReadResult$Found : cc/noharry/agent/vfs/VfsReadResult {
+	public fun <init> (Ljava/lang/String;IJLjava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Lcc/noharry/agent/vfs/VfsReadAttributes;)V
+	public synthetic fun <init> (Ljava/lang/String;IJLjava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Lcc/noharry/agent/vfs/VfsReadAttributes;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()J
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun component6 ()Ljava/lang/Long;
+	public final fun component7 ()Lcc/noharry/agent/vfs/VfsReadAttributes;
+	public final fun copy (Ljava/lang/String;IJLjava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Lcc/noharry/agent/vfs/VfsReadAttributes;)Lcc/noharry/agent/vfs/VfsReadResult$Found;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsReadResult$Found;Ljava/lang/String;IJLjava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Lcc/noharry/agent/vfs/VfsReadAttributes;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsReadResult$Found;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttributes ()Lcc/noharry/agent/vfs/VfsReadAttributes;
+	public final fun getBytesRead ()I
+	public final fun getModifiedAtMillis ()Ljava/lang/Long;
+	public final fun getRevision ()Ljava/lang/String;
+	public final fun getSizeBytes ()Ljava/lang/Long;
+	public final fun getText ()Ljava/lang/String;
+	public final fun getTotalBytes ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsReadResult$InvalidPath : cc/noharry/agent/vfs/VfsReadResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsReadResult$InvalidPath;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsReadResult$NotFound : cc/noharry/agent/vfs/VfsReadResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsReadResult$NotFound;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsReadResult$ReadDenied : cc/noharry/agent/vfs/VfsReadResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsReadResult$ReadDenied;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsRecordsKt {
+	public static final field VFS_ENTRY_DIR Ljava/lang/String;
+	public static final field VFS_ENTRY_FILE Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsResolvedMount {
+	public fun <init> (Lcc/noharry/agent/vfs/VfsMount;Lcc/noharry/agent/vfs/VfsPath;Ljava/lang/String;)V
+	public final fun component1 ()Lcc/noharry/agent/vfs/VfsMount;
+	public final fun component2 ()Lcc/noharry/agent/vfs/VfsPath;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lcc/noharry/agent/vfs/VfsMount;Lcc/noharry/agent/vfs/VfsPath;Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsResolvedMount;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsResolvedMount;Lcc/noharry/agent/vfs/VfsMount;Lcc/noharry/agent/vfs/VfsPath;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsResolvedMount;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMount ()Lcc/noharry/agent/vfs/VfsMount;
+	public final fun getPath ()Lcc/noharry/agent/vfs/VfsPath;
+	public final fun getRelativePath ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsRoomResource {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsRoomResource;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsRoomResource;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsRoomResource;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDisplayPath ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getSearchableText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/vfs/VfsRoomResourceAdapter {
+	public abstract fun queryNames ()Ljava/util/List;
+	public abstract fun readQuery (Ljava/lang/String;)Ljava/lang/String;
+	public abstract fun readResource (Ljava/lang/String;)Ljava/lang/String;
+	public abstract fun resources ()Ljava/util/List;
+	public abstract fun schemaJson ()Ljava/lang/String;
+	public abstract fun updateRow (Lcc/noharry/agent/vfs/VfsRoomUpdateRow;)Z
+}
+
+public final class cc/noharry/agent/vfs/VfsRoomResourceAdapter$DefaultImpls {
+	public static fun queryNames (Lcc/noharry/agent/vfs/VfsRoomResourceAdapter;)Ljava/util/List;
+	public static fun readQuery (Lcc/noharry/agent/vfs/VfsRoomResourceAdapter;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsRoomSource : cc/noharry/agent/vfs/VfsSource {
+	public fun <init> (Lcc/noharry/agent/vfs/VfsRoomResourceAdapter;Ljava/util/Set;)V
+	public synthetic fun <init> (Lcc/noharry/agent/vfs/VfsRoomResourceAdapter;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun deleteTree (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun list (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun read (Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun search (Ljava/lang/String;Ljava/lang/String;IJLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun stat (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun write (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsWriteMode;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/vfs/VfsRoomUpdateRow {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsRoomUpdateRow;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsRoomUpdateRow;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsRoomUpdateRow;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExpectedVersion ()Ljava/lang/String;
+	public final fun getFields ()Ljava/util/Map;
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getResource ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsSearchMatch {
+	public fun <init> (Ljava/lang/String;ILjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;ILjava/lang/String;)Lcc/noharry/agent/vfs/VfsSearchMatch;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsSearchMatch;Ljava/lang/String;ILjava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsSearchMatch;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLine ()I
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getPreview ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/vfs/VfsSearchResult {
+}
+
+public final class cc/noharry/agent/vfs/VfsSearchResult$BudgetExceeded : cc/noharry/agent/vfs/VfsSearchResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsSearchResult$BudgetExceeded;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsSearchResult$Error : cc/noharry/agent/vfs/VfsSearchResult {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Z)Lcc/noharry/agent/vfs/VfsSearchResult$Error;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsSearchResult$Error;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsSearchResult$Error;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getRetryable ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsSearchResult$InvalidPath : cc/noharry/agent/vfs/VfsSearchResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsSearchResult$InvalidPath;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsSearchResult$InvalidPattern : cc/noharry/agent/vfs/VfsSearchResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsSearchResult$InvalidPattern;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsSearchResult$Matches : cc/noharry/agent/vfs/VfsSearchResult {
+	public fun <init> (Ljava/util/List;J)V
+	public synthetic fun <init> (Ljava/util/List;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()J
+	public final fun copy (Ljava/util/List;J)Lcc/noharry/agent/vfs/VfsSearchResult$Matches;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsSearchResult$Matches;Ljava/util/List;JILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsSearchResult$Matches;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMatches ()Ljava/util/List;
+	public final fun getScannedBytes ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsSearchResult$NotFound : cc/noharry/agent/vfs/VfsSearchResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsSearchResult$NotFound;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsSnapshot {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;JLjava/util/List;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun component4 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;JLjava/util/List;)Lcc/noharry/agent/vfs/VfsSnapshot;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsSnapshot;Ljava/lang/String;Ljava/lang/String;JLjava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCapturedAtEpochMillis ()J
+	public final fun getManifestHash ()Ljava/lang/String;
+	public final fun getMounts ()Ljava/util/List;
+	public final fun getVfsContractVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsSnapshotFactory {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsSnapshotFactory;
+	public final fun snapshot (Lcc/noharry/agent/vfs/VfsWorkspaceManifest;Ljava/lang/String;J)Lcc/noharry/agent/vfs/VfsSnapshot;
+}
+
+public final class cc/noharry/agent/vfs/VfsSnapshotMount {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()I
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)Lcc/noharry/agent/vfs/VfsSnapshotMount;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsSnapshotMount;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsSnapshotMount;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getMode ()Ljava/lang/String;
+	public final fun getPriority ()I
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getTarget ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/vfs/VfsSource {
+	public abstract fun deleteTree (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun list (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun read (Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun search (Ljava/lang/String;Ljava/lang/String;IJLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun stat (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun write (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsWriteMode;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/vfs/VfsSource$DefaultImpls {
+	public static fun deleteTree (Lcc/noharry/agent/vfs/VfsSource;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun stat (Lcc/noharry/agent/vfs/VfsSource;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun write (Lcc/noharry/agent/vfs/VfsSource;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsWriteMode;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun write$default (Lcc/noharry/agent/vfs/VfsSource;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsWriteMode;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface class cc/noharry/agent/vfs/VfsSourceResolver {
+	public abstract fun resolve (Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsSource;
+}
+
+public final class cc/noharry/agent/vfs/VfsStat {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Long;
+	public final fun component4 ()Ljava/lang/Long;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;)Lcc/noharry/agent/vfs/VfsStat;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsStat;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsStat;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getModifiedAtMillis ()Ljava/lang/Long;
+	public final fun getRevision ()Ljava/lang/String;
+	public final fun getSizeBytes ()Ljava/lang/Long;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/vfs/VfsStatResult {
+}
+
+public final class cc/noharry/agent/vfs/VfsStatResult$Error : cc/noharry/agent/vfs/VfsStatResult {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Z)Lcc/noharry/agent/vfs/VfsStatResult$Error;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsStatResult$Error;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsStatResult$Error;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getRetryable ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsStatResult$Found : cc/noharry/agent/vfs/VfsStatResult {
+	public fun <init> (Lcc/noharry/agent/vfs/VfsStat;)V
+	public final fun component1 ()Lcc/noharry/agent/vfs/VfsStat;
+	public final fun copy (Lcc/noharry/agent/vfs/VfsStat;)Lcc/noharry/agent/vfs/VfsStatResult$Found;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsStatResult$Found;Lcc/noharry/agent/vfs/VfsStat;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsStatResult$Found;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getStat ()Lcc/noharry/agent/vfs/VfsStat;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsStatResult$InvalidPath : cc/noharry/agent/vfs/VfsStatResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsStatResult$InvalidPath;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsStatResult$NotFound : cc/noharry/agent/vfs/VfsStatResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsStatResult$NotFound;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsStatResult$ReadDenied : cc/noharry/agent/vfs/VfsStatResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsStatResult$ReadDenied;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsWorkspaceManifest {
+	public fun <init> (ILjava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsPath;Ljava/util/List;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lcc/noharry/agent/vfs/VfsPath;
+	public final fun component5 ()Ljava/util/List;
+	public final fun copy (ILjava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsPath;Ljava/util/List;)Lcc/noharry/agent/vfs/VfsWorkspaceManifest;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsWorkspaceManifest;ILjava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsPath;Ljava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsWorkspaceManifest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBundleVersion ()Ljava/lang/String;
+	public final fun getMounts ()Ljava/util/List;
+	public final fun getSchemaVersion ()I
+	public final fun getVfsContractVersion ()Ljava/lang/String;
+	public final fun getWorkspaceRoot ()Lcc/noharry/agent/vfs/VfsPath;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsWriteMode : java/lang/Enum {
+	public static final field APPEND Lcc/noharry/agent/vfs/VfsWriteMode;
+	public static final field ATOMIC_REPLACE Lcc/noharry/agent/vfs/VfsWriteMode;
+	public static final field CREATE Lcc/noharry/agent/vfs/VfsWriteMode;
+	public static final field OVERWRITE Lcc/noharry/agent/vfs/VfsWriteMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsWriteMode;
+	public static fun values ()[Lcc/noharry/agent/vfs/VfsWriteMode;
+}
+
+public abstract interface class cc/noharry/agent/vfs/VfsWriteResult {
+}
+
+public final class cc/noharry/agent/vfs/VfsWriteResult$BinaryUnsupported : cc/noharry/agent/vfs/VfsWriteResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsWriteResult$BinaryUnsupported;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsWriteResult$Conflict : cc/noharry/agent/vfs/VfsWriteResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsWriteResult$Conflict;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsWriteResult$Error : cc/noharry/agent/vfs/VfsWriteResult {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Z)Lcc/noharry/agent/vfs/VfsWriteResult$Error;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsWriteResult$Error;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsWriteResult$Error;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getRetryable ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsWriteResult$InvalidPath : cc/noharry/agent/vfs/VfsWriteResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsWriteResult$InvalidPath;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsWriteResult$NotFound : cc/noharry/agent/vfs/VfsWriteResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsWriteResult$NotFound;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsWriteResult$WriteDenied : cc/noharry/agent/vfs/VfsWriteResult {
+	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsWriteResult$WriteDenied;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/vfs/VfsWriteResult$Written : cc/noharry/agent/vfs/VfsWriteResult {
+	public fun <init> (JLjava/lang/String;Ljava/lang/Long;Ljava/lang/Long;)V
+	public synthetic fun <init> (JLjava/lang/String;Ljava/lang/Long;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Long;
+	public final fun component4 ()Ljava/lang/Long;
+	public final fun copy (JLjava/lang/String;Ljava/lang/Long;Ljava/lang/Long;)Lcc/noharry/agent/vfs/VfsWriteResult$Written;
+	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsWriteResult$Written;JLjava/lang/String;Ljava/lang/Long;Ljava/lang/Long;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsWriteResult$Written;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBytes ()J
+	public final fun getModifiedAtMillis ()Ljava/lang/Long;
+	public final fun getRevision ()Ljava/lang/String;
+	public final fun getSizeBytes ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

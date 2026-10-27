@@ -1,5 +1,13 @@
 package cc.noharry.agent.transport
 
+import cc.noharry.agent.kernel.core.loop.failed
+import java.io.IOException
+import java.net.InetAddress
+import java.net.Proxy
+import java.net.UnknownHostException
+import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -11,14 +19,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.Buffer
 import okio.BufferedSource
-import java.io.IOException
-import java.net.InetAddress
-import java.net.Proxy
-import java.net.UnknownHostException
-import java.util.concurrent.TimeUnit
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import cc.noharry.agent.kernel.core.failed
 
 internal class OkHttpWebFetchTransport(
     private val callFactory: Call.Factory = buildWebFetchClient(GuardedNetworkDns()),

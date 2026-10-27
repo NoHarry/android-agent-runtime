@@ -1,13 +1,13 @@
 package cc.noharry.agent.runtime.probe
 
+import cc.noharry.agent.kernel.core.loop.failed
+import java.io.File
+import java.nio.file.Files
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
-import java.nio.file.Files
-import cc.noharry.agent.kernel.core.failed
 
 /**
  * Real file-backed lifecycle path: ProbeSession → probes.jsonl + completeness + run-meta.

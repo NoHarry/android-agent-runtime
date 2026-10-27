@@ -1,24 +1,28 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.core.*
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.HookContext
 import cc.noharry.agent.kernel.api.HookDecision
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.ToolUse
-import cc.noharry.agent.kernel.api.ToolUseResult
 import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
+import cc.noharry.agent.kernel.api.RuntimeHook
 import cc.noharry.agent.kernel.api.ToolCallContext
 import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
 import cc.noharry.agent.kernel.api.ToolDescriptor
+import cc.noharry.agent.kernel.api.ToolUse
+import cc.noharry.agent.kernel.api.ToolUseResult
+import cc.noharry.agent.kernel.api.mcp.McpClientProvider
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.kernel.core.context.*
+import cc.noharry.agent.kernel.core.loop.*
+import cc.noharry.agent.kernel.core.memory.*
+import cc.noharry.agent.kernel.core.plugin.*
+import cc.noharry.agent.kernel.core.state.*
+import cc.noharry.agent.kernel.core.tools.*
+import cc.noharry.agent.kernel.core.trace.*
 import cc.noharry.agent.vfs.VfsEntry
 import cc.noharry.agent.vfs.VfsFileSystem
 import cc.noharry.agent.vfs.VfsListResult
@@ -26,6 +30,8 @@ import cc.noharry.agent.vfs.VfsReadResult
 import cc.noharry.agent.vfs.VfsSearchResult
 import cc.noharry.agent.vfs.VfsSource
 import cc.noharry.agent.vfs.VfsSourceResolver
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -34,8 +40,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 
 class NativeToolLoopBatchTest {
     @Test

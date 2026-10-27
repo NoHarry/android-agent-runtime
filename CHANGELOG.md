@@ -3,6 +3,23 @@
 All notable changes are listed here. The project is 0.x: a minor release may break the API, and every break is
 called out.
 
+## Unreleased (0.4.0)
+
+Module and package layout only; no behavior changes. **Breaking** for code and build files that name what moved.
+
+- **Fewer artifacts.** `agent-vfs` is part of `agent-runtime` and `agent-vfs-saf` of `agent-runtime-android`;
+  `agent-a2a-client`, `agent-a2a-client-direct` and `agent-a2a-server` are one artifact, `agent-a2a`. Their packages are
+  unchanged (`cc.noharry.agent.vfs`, `.vfs.saf`, `.a2a`, `.a2a.direct`, `.a2a.server`): replace the dependencies, not
+  the imports. `agent-minimal` is no longer published; it is `samples/minimal`.
+- **`agent-voice` moved out.** It used none of the runtime and now lives in [Bothy](https://github.com/NoHarry/bothy)
+  as `bothy-voice`. Releases up to 0.3.0 stay on Maven Central.
+- **`agent-kernel-core` packages.** The flat `cc.noharry.agent.kernel.core` is split into `.loop`, `.tools`,
+  `.context`, `.state`, `.plugin`, `.memory` and `.trace`; for example `KernelRuntimeBuilder` and `CoreAgentRuntime` are
+  in `.plugin`, `NativeToolLoop` in `.loop`. Code that imports kernel-core types needs the new packages.
+- **`agent-runtime` packages.** `cc.noharry.agent.runtime` keeps the host-facing API (`AgentRuntimeBuilder`,
+  `functionTools`, `SessionHistory`, `SessionToolActivations`, `Subagents`, `HostSkill`, `RuntimeWorkspaceRef`,
+  `NetworkToolConfirmationPolicy`, web search); the implementation moved to `.workspace`, `.run` and `.reliability`.
+
 ## 0.3.0 (2026-10-25)
 
 - `agent-voice`: the wake word listens with sherpa-onnx's Chinese–English keyword spotter

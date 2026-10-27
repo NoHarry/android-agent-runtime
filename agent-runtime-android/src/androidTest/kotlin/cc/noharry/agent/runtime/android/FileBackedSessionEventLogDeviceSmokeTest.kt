@@ -2,23 +2,23 @@
 
 package cc.noharry.agent.runtime.android
 
-import androidx.test.runner.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.AndroidJUnit4
 import cc.noharry.agent.kernel.api.SessionEventAppend
 import cc.noharry.agent.kernel.api.SessionEventLog
 import cc.noharry.agent.kernel.api.SessionEventLogHealthStatus
 import cc.noharry.agent.kernel.api.SessionEventType
-import cc.noharry.agent.kernel.core.encodeFileName
+import cc.noharry.agent.kernel.core.state.encodeFileName
 import cc.noharry.agent.runtime.eventlog.openFileBackedSessionEventLog
+import java.io.File
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-import java.util.UUID
-import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
 class FileBackedSessionEventLogDeviceSmokeTest {

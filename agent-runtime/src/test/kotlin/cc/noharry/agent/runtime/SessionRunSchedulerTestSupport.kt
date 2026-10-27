@@ -1,5 +1,11 @@
 package cc.noharry.agent.runtime
-
+import cc.noharry.agent.kernel.core.state.SessionRunAdmission
+import cc.noharry.agent.kernel.core.state.SessionRunLease
+import cc.noharry.agent.kernel.core.state.SessionRunScheduler
+import cc.noharry.agent.kernel.core.state.SessionRunSchedulerConfig
+import cc.noharry.agent.kernel.core.state.SessionRunSchedulerSnapshot
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -9,13 +15,6 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.coroutines.coroutineContext
-import cc.noharry.agent.kernel.core.SessionRunAdmission
-import cc.noharry.agent.kernel.core.SessionRunLease
-import cc.noharry.agent.kernel.core.SessionRunScheduler
-import cc.noharry.agent.kernel.core.SessionRunSchedulerConfig
-import cc.noharry.agent.kernel.core.SessionRunSchedulerSnapshot
 
 internal const val SCHEDULER_TEST_TIMEOUT_MS = 5_000L
 internal const val SCHEDULER_TEST_CASE_TIMEOUT_MS = 15_000L

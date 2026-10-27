@@ -20,7 +20,7 @@
 - **Skill、AGENTS.md 和子 agent。** skill 按需加载；agent 可以把任务交给子 agent 并等待结果。
 - **可控。** 工具调用前后的 hook、策略引擎、联网和有副作用操作的确认，以及按 provider 限制并发。
 - **持久化会话。** 每个会话一份只追加的事件日志，运行可恢复，Android 上用 SQLite 存会话。
-- **可选模块。** 通过无障碍服务操作别的 App（Android Use）、带本地唤醒词的普通话语音会话、能调用工具的沙箱 JavaScript、日历和通知工具，以及 A2A 客户端和服务端。
+- **可选模块。** 通过无障碍服务操作别的 App（Android Use）、能调用工具的沙箱 JavaScript、日历和通知工具，以及 A2A 客户端和服务端。
 
 ## 安装
 
@@ -79,22 +79,18 @@ val runtime = AgentRuntimeBuilder.create()
 
 | 构件 | 是什么 |
 |---|---|
-| `agent-runtime` | 运行时和宿主门面（纯 JVM）：`AgentRuntimeBuilder`、OpenAI / Anthropic 兼容的模型客户端、MCP、`functionTools`、skill、子 agent、会话与记忆、联网搜索与读网页、hook 与策略 |
-| `agent-runtime-android` | Android 层：`AndroidAgentRuntime.builder(context)`、SQLite 会话、App 私有的事件日志 |
+| `agent-runtime` | 运行时和宿主门面（纯 JVM）：`AgentRuntimeBuilder`、OpenAI / Anthropic 兼容的模型客户端、MCP、`functionTools`、skill、子 agent、会话与记忆、联网搜索与读网页、hook 与策略，以及工作区背后的虚拟文件系统 |
+| `agent-runtime-android` | Android 层：`AndroidAgentRuntime.builder(context)`、SQLite 会话、App 私有的事件日志，以及把用户通过 SAF 选的文件夹挂进工作区 |
 | `agent-kernel-api` | 与 Android 无关的契约：模型、工具、插件、能力、工作区、完成判定、事件日志、生命周期 |
-| `agent-kernel-core` | agent 循环：调度器、原生工具循环、profile 编译器、`KernelRuntimeBuilder` |
-| `agent-minimal` | 直接搭在内核上的最小 agent，自己写运行时的起点 |
-| `agent-vfs` | 工作区背后的虚拟文件系统 |
-| `agent-vfs-saf` | 可选：把用户通过 SAF 选的文件夹挂进工作区 |
+| `agent-kernel-core` | agent 循环（`loop`）、工具注册和搜索（`tools`）、prompt 组装和压缩（`context`）、运行状态（`state`）、插件和 `KernelRuntimeBuilder`（`plugin`）、记忆和追踪 |
 | `agent-exec-js` | 可选：`exec_js`，能调用工具的沙箱 JavaScript（Zipline 里的 QuickJS） |
 | `agent-device-capabilities` | 可选：日历、通知和媒体控制工具 |
 | `agent-android-use` | 可选：通过无障碍服务看屏幕、操作屏幕 |
-| `agent-voice` | 可选：普通话语音会话，本地唤醒词（中文或英文）和识别（sherpa-onnx）或云端识别 |
-| `agent-a2a-client`、`-direct`、`-official` | 可选：把任务交给远程 A2A agent（两种可互换的传输） |
-| `agent-a2a-server` | 可选：把 agent 本身开放成本地 A2A 端点 |
+| `agent-a2a` | 可选：通过直连的 JSON-RPC/SSE 传输把任务交给远程 A2A agent，并把 agent 本身开放成本地 A2A 端点 |
+| `agent-a2a-client-official` | 可选：同一个客户端，改用官方 A2A Java SDK 做传输 |
 | `agent-bom` | 对齐以上所有模块的版本 |
 
-三种用法：App 依赖 `agent-runtime-android`；服务端、桌面工具或测试依赖 `agent-runtime`；自己重建运行时就基于 `agent-kernel-api` 和 `agent-kernel-core`。可选模块最多依赖内核 API。
+三种用法：App 依赖 `agent-runtime-android`；服务端、桌面工具或测试依赖 `agent-runtime`；自己重建运行时就基于 `agent-kernel-api` 和 `agent-kernel-core`（最小的例子见 `samples/minimal`）。可选模块最多依赖内核 API。
 
 ## 从源码构建
 

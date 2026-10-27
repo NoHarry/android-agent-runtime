@@ -1,10 +1,8 @@
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.ContextStability
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.api.RuntimeContextBlock
 import cc.noharry.agent.kernel.api.RuntimeContextContribution
 import cc.noharry.agent.kernel.api.RuntimeContextDatum
@@ -15,6 +13,8 @@ import cc.noharry.agent.kernel.api.RuntimeContextScalar
 import cc.noharry.agent.kernel.api.model.ModelClient
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.kernel.core.context.RuntimeContextHooks
+import cc.noharry.agent.kernel.core.loop.failed
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.flow.Flow
@@ -24,8 +24,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.core.RuntimeContextHooks
-import cc.noharry.agent.kernel.core.failed
 
 /**
  * 20ms is an aggregate monotonic deadline across all providers — not N×20ms serial budget.

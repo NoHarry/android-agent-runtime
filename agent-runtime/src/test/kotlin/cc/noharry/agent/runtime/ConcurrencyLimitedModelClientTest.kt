@@ -1,12 +1,14 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.api.model.ModelClient
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelMessage
 import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.kernel.core.tools.ConcurrencyLimitedModelClient
+import cc.noharry.agent.kernel.core.tools.ProviderConcurrencyLimiter
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -25,9 +27,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.concurrent.atomic.AtomicInteger
-import cc.noharry.agent.kernel.core.ConcurrencyLimitedModelClient
-import cc.noharry.agent.kernel.core.ProviderConcurrencyLimiter
 
 class ConcurrencyLimitedModelClientTest {
     @Test

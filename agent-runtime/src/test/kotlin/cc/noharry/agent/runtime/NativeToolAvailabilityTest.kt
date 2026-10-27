@@ -1,7 +1,6 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.ExecEngine
 import cc.noharry.agent.kernel.api.ExecRequest
@@ -10,12 +9,12 @@ import cc.noharry.agent.kernel.api.ExecToolBridge
 import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.core.NATIVE_TOOLS
+import cc.noharry.agent.kernel.core.tools.NATIVE_TOOLS
+import java.nio.file.Files
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
-import java.nio.file.Files
 
 class NativeToolAvailabilityTest {
     @Test

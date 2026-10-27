@@ -2,8 +2,8 @@ package cc.noharry.agent.model
 
 import cc.noharry.agent.kernel.api.model.ModelClientException
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.kernel.core.loop.failed
 import kotlinx.coroutines.CancellationException
-import cc.noharry.agent.kernel.core.failed
 
 internal fun providerHttpFailure(
     provider: String,

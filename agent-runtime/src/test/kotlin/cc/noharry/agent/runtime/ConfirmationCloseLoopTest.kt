@@ -1,17 +1,18 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.AgentRequest
+import cc.noharry.agent.kernel.api.AgentRuntime
 import cc.noharry.agent.kernel.api.CancelPendingConfirmationRequest
 import cc.noharry.agent.kernel.api.CancelPendingResult
 import cc.noharry.agent.kernel.api.ConfirmationChoice
 import cc.noharry.agent.kernel.api.ConfirmationDecision
 import cc.noharry.agent.kernel.api.ConfirmationResumeResult
-import cc.noharry.agent.kernel.api.AgentRuntime
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.api.reliability.SuggestedNextAction
+import cc.noharry.agent.kernel.core.state.InMemoryConfirmationStore
+import cc.noharry.agent.kernel.core.state.RunStateController
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -19,8 +20,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.core.InMemoryConfirmationStore
-import cc.noharry.agent.kernel.core.RunStateController
 
 class ConfirmationCloseLoopTest {
     @Test

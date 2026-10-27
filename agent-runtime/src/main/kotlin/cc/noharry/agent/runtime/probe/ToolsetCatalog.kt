@@ -1,6 +1,15 @@
 package cc.noharry.agent.runtime.probe
 
 import cc.noharry.agent.kernel.api.model.ModelTool
+import cc.noharry.agent.kernel.core.loop.INTERACTION_TOOLS
+import cc.noharry.agent.kernel.core.tools.DynamicToolSource
+import cc.noharry.agent.kernel.core.tools.NATIVE_EXEC_TOOLS
+import cc.noharry.agent.kernel.core.tools.NATIVE_NETWORK_TOOLS
+import cc.noharry.agent.kernel.core.tools.NATIVE_READ_TOOLS
+import cc.noharry.agent.kernel.core.tools.NATIVE_TODO_TOOLS
+import cc.noharry.agent.kernel.core.tools.NATIVE_WRITE_TOOLS
+import cc.noharry.agent.kernel.core.tools.TERMINAL_TOOLS
+import cc.noharry.agent.kernel.core.tools.ToolActivationStore
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -9,15 +18,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
-import cc.noharry.agent.kernel.core.DynamicToolSource
-import cc.noharry.agent.kernel.core.ToolActivationStore
-import cc.noharry.agent.kernel.core.NATIVE_EXEC_TOOLS
-import cc.noharry.agent.kernel.core.NATIVE_NETWORK_TOOLS
-import cc.noharry.agent.kernel.core.NATIVE_READ_TOOLS
-import cc.noharry.agent.kernel.core.NATIVE_TODO_TOOLS
-import cc.noharry.agent.kernel.core.NATIVE_WRITE_TOOLS
-import cc.noharry.agent.kernel.core.TERMINAL_TOOLS
-import cc.noharry.agent.kernel.core.INTERACTION_TOOLS
 
 /** Digest placeholder when schema JSON cannot be canonicalized (A6 fail-closed). */
 internal const val SCHEMA_DIGEST_ERROR = "schema-error"
@@ -35,7 +35,7 @@ internal fun snapshotAdvertisedToolset(
     nativeExecEnabled: Boolean = false,
     disabledNativeTools: Set<String> = emptySet(),
 ): List<ToolCatalogEntry> {
-    val disabled = cc.noharry.agent.kernel.core.snapshotDisabledNativeTools(disabledNativeTools)
+    val disabled = cc.noharry.agent.kernel.core.tools.snapshotDisabledNativeTools(disabledNativeTools)
     val entries = mutableListOf<ToolCatalogEntry>()
     fun addAll(tools: List<ModelTool>, source: String) {
         tools.filterNot { it.name in disabled }.forEach { entries += toolCatalogEntry(it.name, source, it.schemaJson) }

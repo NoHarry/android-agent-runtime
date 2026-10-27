@@ -1,7 +1,6 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.HookContext
 import cc.noharry.agent.kernel.api.HookDecision
 import cc.noharry.agent.kernel.api.RuntimeHook

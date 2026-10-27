@@ -1,13 +1,17 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-
 import cc.noharry.agent.kernel.api.AgentRequest
+import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.api.model.ModelClient
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.kernel.core.trace.DEBUG_RAW_TRACE_NOT_ENABLED
+import cc.noharry.agent.kernel.core.trace.DebugRawTraceAccessDecision
+import cc.noharry.agent.kernel.core.trace.RELEASE_DEBUG_RAW_TRACE_ERROR
+import cc.noharry.agent.kernel.core.trace.RELEASE_RAW_TRACE_ERROR
+import cc.noharry.agent.kernel.core.trace.RuntimeBuildType
+import cc.noharry.agent.kernel.core.trace.TraceVisibilityConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -16,12 +20,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.core.DebugRawTraceAccessDecision
-import cc.noharry.agent.kernel.core.RuntimeBuildType
-import cc.noharry.agent.kernel.core.TraceVisibilityConfig
-import cc.noharry.agent.kernel.core.DEBUG_RAW_TRACE_NOT_ENABLED
-import cc.noharry.agent.kernel.core.RELEASE_DEBUG_RAW_TRACE_ERROR
-import cc.noharry.agent.kernel.core.RELEASE_RAW_TRACE_ERROR
 
 class TraceSecurityTest {
     @Test

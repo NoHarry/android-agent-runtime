@@ -1,7 +1,6 @@
 -keep class cc.noharry.agent.kernel.api.** { *; }
--keep class cc.noharry.agent.kernel.core.KernelRuntimeBuilder { *; }
--keep class cc.noharry.agent.kernel.core.CoreAgentRuntime { *; }
--keep class cc.noharry.agent.minimal.MinimalAgent { *; }
+-keep class cc.noharry.agent.kernel.core.plugin.KernelRuntimeBuilder { *; }
+-keep class cc.noharry.agent.kernel.core.plugin.CoreAgentRuntime { *; }
 -keep class cc.noharry.agent.runtime.AgentRuntimeBuilder { *; }
 -keep class cc.noharry.agent.runtime.RuntimeWorkspaceRef { *; }
 -keep class cc.noharry.agent.runtime.HostSkill { *; }

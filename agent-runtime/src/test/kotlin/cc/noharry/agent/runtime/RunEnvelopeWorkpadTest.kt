@@ -1,11 +1,9 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.AgentRequest
+import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.api.model.ModelClient
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
@@ -14,6 +12,22 @@ import cc.noharry.agent.kernel.api.reliability.RuntimeHandoff
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunPhase
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.api.reliability.SuggestedNextAction
+import cc.noharry.agent.kernel.core.loop.BackendToolFailureSummary
+import cc.noharry.agent.kernel.core.loop.NativeLoopSummary
+import cc.noharry.agent.kernel.core.loop.RuntimeMemoryMatchSummary
+import cc.noharry.agent.kernel.core.state.MAX_WORKPAD_ATTEMPTED_TOOLS
+import cc.noharry.agent.kernel.core.state.MAX_WORKPAD_BLOCKERS
+import cc.noharry.agent.kernel.core.state.MAX_WORKPAD_EVIDENCE_REFS
+import cc.noharry.agent.kernel.core.state.MAX_WORKPAD_HANDOFF_ITEMS
+import cc.noharry.agent.kernel.core.state.MAX_WORKPAD_PLAN_SUMMARIES
+import cc.noharry.agent.kernel.core.state.MAX_WORKPAD_READ_PATHS
+import cc.noharry.agent.kernel.core.state.MAX_WORKPAD_TEXT_CHARS
+import cc.noharry.agent.kernel.core.state.MAX_WORKPAD_TOOL_REGISTRY_ITEMS
+import cc.noharry.agent.kernel.core.state.MAX_WORKPAD_WRITE_ARTIFACTS
+import cc.noharry.agent.kernel.core.state.RunArtifactsController
+import cc.noharry.agent.kernel.core.state.WORKPAD_TRUNCATION_SUFFIX
+import java.io.File
+import java.nio.file.Files
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -22,22 +36,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
-import java.nio.file.Files
-import cc.noharry.agent.kernel.core.BackendToolFailureSummary
-import cc.noharry.agent.kernel.core.MAX_WORKPAD_ATTEMPTED_TOOLS
-import cc.noharry.agent.kernel.core.MAX_WORKPAD_BLOCKERS
-import cc.noharry.agent.kernel.core.MAX_WORKPAD_EVIDENCE_REFS
-import cc.noharry.agent.kernel.core.MAX_WORKPAD_HANDOFF_ITEMS
-import cc.noharry.agent.kernel.core.MAX_WORKPAD_PLAN_SUMMARIES
-import cc.noharry.agent.kernel.core.MAX_WORKPAD_READ_PATHS
-import cc.noharry.agent.kernel.core.MAX_WORKPAD_TEXT_CHARS
-import cc.noharry.agent.kernel.core.MAX_WORKPAD_TOOL_REGISTRY_ITEMS
-import cc.noharry.agent.kernel.core.MAX_WORKPAD_WRITE_ARTIFACTS
-import cc.noharry.agent.kernel.core.NativeLoopSummary
-import cc.noharry.agent.kernel.core.RunArtifactsController
-import cc.noharry.agent.kernel.core.RuntimeMemoryMatchSummary
-import cc.noharry.agent.kernel.core.WORKPAD_TRUNCATION_SUFFIX
 
 class RunEnvelopeWorkpadTest {
     @Test

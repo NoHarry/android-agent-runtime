@@ -1,11 +1,9 @@
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.core.isPureNarrationFinishResponse
-
+import cc.noharry.agent.kernel.core.loop.completed
+import cc.noharry.agent.kernel.core.loop.isPureNarrationFinishResponse
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.core.completed
 
 class FinishResponseQualityTest {
     @Test

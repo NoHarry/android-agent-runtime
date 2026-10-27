@@ -8,13 +8,7 @@ import cc.noharry.agent.kernel.api.SessionEventLogHealthStatus
 import cc.noharry.agent.kernel.api.SessionEventPayload
 import cc.noharry.agent.kernel.api.SessionEventQuery
 import cc.noharry.agent.kernel.api.SessionEventType
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
-import org.junit.Assume
-import org.junit.Test
+import cc.noharry.agent.kernel.core.state.encodeFileName
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -22,7 +16,13 @@ import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
-import cc.noharry.agent.kernel.core.encodeFileName
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
+import org.junit.Assume
+import org.junit.Test
 
 class FileBackedSessionEventLogTest {
     @Test

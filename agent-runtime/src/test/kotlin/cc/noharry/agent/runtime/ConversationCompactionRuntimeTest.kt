@@ -1,10 +1,9 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.core.CHECKPOINT_PREAMBLE
+import cc.noharry.agent.kernel.core.context.CHECKPOINT_PREAMBLE
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals

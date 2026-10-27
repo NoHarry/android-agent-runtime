@@ -3,7 +3,7 @@
 package cc.noharry.agent.runtime.eventlog
 
 import cc.noharry.agent.kernel.api.SessionAttachmentRef
-import cc.noharry.agent.kernel.core.encodeFileName
+import cc.noharry.agent.kernel.core.state.encodeFileName
 import java.io.File
 
 /**

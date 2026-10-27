@@ -1,15 +1,15 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.SessionEventType
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelMessage
 import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.core.DynamicToolSource
-import cc.noharry.agent.kernel.core.MaterializerContext
+import cc.noharry.agent.kernel.core.tools.DynamicToolSource
+import cc.noharry.agent.kernel.core.tools.MaterializerContext
 import cc.noharry.agent.runtime.eventlog.InMemorySessionEventLog
+import cc.noharry.agent.runtime.run.RuntimeSessionRecorder
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

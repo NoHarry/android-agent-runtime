@@ -1,12 +1,13 @@
 package cc.noharry.agent.runtime.android
 
 import androidx.test.runner.AndroidJUnit4
-import cc.noharry.agent.kernel.core.SessionRunAdmission
-import cc.noharry.agent.kernel.core.SessionRunAdmissionReason
-import cc.noharry.agent.kernel.core.SessionRunQueuedIdentity
-import cc.noharry.agent.kernel.core.SessionRunScheduler
-import cc.noharry.agent.kernel.core.SessionRunSchedulerConfig
-import cc.noharry.agent.kernel.core.SessionRunSchedulerSnapshot
+import cc.noharry.agent.kernel.core.state.SessionRunAdmission
+import cc.noharry.agent.kernel.core.state.SessionRunAdmissionReason
+import cc.noharry.agent.kernel.core.state.SessionRunQueuedIdentity
+import cc.noharry.agent.kernel.core.state.SessionRunScheduler
+import cc.noharry.agent.kernel.core.state.SessionRunSchedulerConfig
+import cc.noharry.agent.kernel.core.state.SessionRunSchedulerSnapshot
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -18,7 +19,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.coroutines.coroutineContext
 
 @RunWith(AndroidJUnit4::class)
 class SessionRunSchedulerDeviceSmokeTest {

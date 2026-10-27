@@ -1,7 +1,6 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.AgentRuntime
@@ -11,11 +10,17 @@ import cc.noharry.agent.kernel.api.ProtocolRequestRejection
 import cc.noharry.agent.kernel.api.ProtocolRequestResolution
 import cc.noharry.agent.kernel.api.SessionEventQuery
 import cc.noharry.agent.kernel.api.SessionRunConflictPolicy
+import cc.noharry.agent.kernel.api.model.ModelEvent
+import cc.noharry.agent.kernel.api.model.ModelRequest
 import cc.noharry.agent.kernel.api.reliability.RuntimeEvidenceType
 import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequestStatus
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.kernel.core.context.RUN_CONTEXT_HEADER
+import cc.noharry.agent.kernel.core.state.encodeFileName
 import cc.noharry.agent.runtime.eventlog.DurableSessionEventLogPlugin
 import cc.noharry.agent.vfs.VfsFileSystem
+import java.io.File
+import java.nio.file.Files
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -25,12 +30,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
-import java.nio.file.Files
-import cc.noharry.agent.kernel.core.encodeFileName
-import cc.noharry.agent.kernel.core.RUN_CONTEXT_HEADER
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
 
 class AgentRuntimeBuilderTest {
     @Test

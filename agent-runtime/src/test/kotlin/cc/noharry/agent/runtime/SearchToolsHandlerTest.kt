@@ -1,23 +1,22 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.ToolDescriptor
 import cc.noharry.agent.kernel.api.ToolCallContext
 import cc.noharry.agent.kernel.api.ToolCallResult
+import cc.noharry.agent.kernel.api.ToolDescriptor
 import cc.noharry.agent.kernel.api.ToolInitializeContext
 import cc.noharry.agent.kernel.api.ToolInitializeResult
+import cc.noharry.agent.kernel.api.mcp.McpClientProvider
+import cc.noharry.agent.kernel.core.tools.MaterializerContext
+import cc.noharry.agent.kernel.core.tools.ToolActivationStore
+import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
+import cc.noharry.agent.runtime.workspace.VirtualWorkspace
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.core.MaterializerContext
-import cc.noharry.agent.kernel.core.ToolActivationStore
-import cc.noharry.agent.kernel.core.ToolProviderRegistry
 
 class SearchToolsHandlerTest {
 

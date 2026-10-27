@@ -1,9 +1,6 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
-import cc.noharry.agent.kernel.core.recordPostToolUse
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.ConfirmationResumeResult
 import cc.noharry.agent.kernel.api.HookContext
@@ -17,14 +14,23 @@ import cc.noharry.agent.kernel.api.ToolUse
 import cc.noharry.agent.kernel.api.ToolUseResult
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.kernel.core.loop.failed
+import cc.noharry.agent.kernel.core.loop.recordPostToolUse
+import cc.noharry.agent.kernel.core.tools.MCP_RESULT_INVALID_JSON_CODE
+import cc.noharry.agent.kernel.core.tools.MCP_TOOL_IS_ERROR_CODE
+import cc.noharry.agent.kernel.core.tools.MaterializerContext
 import cc.noharry.agent.policy.PolicyAction
 import cc.noharry.agent.policy.PolicyDecision
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.runtime.run.RuntimeHookChain
 import cc.noharry.agent.vfs.VfsFileSystem
 import cc.noharry.agent.vfs.VfsMemorySource
 import cc.noharry.agent.vfs.VfsSourceResolver
-import kotlinx.coroutines.CompletableDeferred
+import java.io.File
+import java.nio.file.Files
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -33,13 +39,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
-import java.nio.file.Files
-import java.util.concurrent.atomic.AtomicInteger
-import cc.noharry.agent.kernel.core.MCP_RESULT_INVALID_JSON_CODE
-import cc.noharry.agent.kernel.core.MCP_TOOL_IS_ERROR_CODE
-import cc.noharry.agent.kernel.core.MaterializerContext
-import cc.noharry.agent.kernel.core.failed
 
 class RuntimeHookPolicyTest {
     @Test

@@ -1,9 +1,8 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.core.ToolActivationStore
+import cc.noharry.agent.kernel.core.tools.ToolActivationStore
 
 /**
  * The backend tools a conversation's runs have found, kept outside any one runtime. A host that builds a new runtime

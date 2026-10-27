@@ -1,7 +1,9 @@
 package cc.noharry.agent.dream
 
 import cc.noharry.agent.kernel.api.reliability.RuntimeCandidate
-import cc.noharry.agent.runtime.MemoryWorkspace
+import cc.noharry.agent.kernel.core.loop.completed
+import cc.noharry.agent.kernel.core.loop.failed
+import cc.noharry.agent.runtime.workspace.MemoryWorkspace
 import cc.noharry.agent.vfs.VFS_ENTRY_FILE
 import cc.noharry.agent.vfs.VfsFileSystem
 import cc.noharry.agent.vfs.VfsListResult
@@ -9,8 +11,6 @@ import cc.noharry.agent.vfs.VfsReadResult
 import cc.noharry.agent.vfs.VfsWriteMode
 import cc.noharry.agent.vfs.VfsWriteResult
 import java.io.File
-import cc.noharry.agent.kernel.core.completed
-import cc.noharry.agent.kernel.core.failed
 
 /**
  * Candidate Dream worker API scaffold. Exact API names remain subject to API freeze.

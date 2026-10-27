@@ -1,19 +1,21 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.ProtocolRequestResolution
 import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
 import cc.noharry.agent.kernel.api.SessionEventType
-import cc.noharry.agent.runtime.eventlog.scalarFields
 import cc.noharry.agent.kernel.api.SessionRunConflictPolicy
 import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
 import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.kernel.core.loop.failed
 import cc.noharry.agent.runtime.eventlog.InMemorySessionEventLog
+import cc.noharry.agent.runtime.eventlog.scalarFields
 import cc.noharry.agent.vfs.VfsFileSystem
+import java.nio.file.Files
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -26,9 +28,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.file.Files
-import java.util.concurrent.CopyOnWriteArrayList
-import cc.noharry.agent.kernel.core.failed
 
 class SessionSchedulingIntegrationTest {
     @Test

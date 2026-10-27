@@ -15,7 +15,7 @@ runs what CI runs:
 - **Source rules** (`checkSourceRules`): a file has at most 1000 lines, a function at most 50, and nothing prints to
   stdout. Split a long function rather than raising a limit.
 - **API compatibility** (`apiCheck`): the public API of the JVM modules (`agent-kernel-api`, `agent-kernel-core`,
-  `agent-vfs`, `agent-runtime`, `agent-minimal`) is recorded in each module's `api/*.api`. When you change it on
+  `agent-runtime`) is recorded in each module's `api/*.api`. When you change it on
   purpose, run `./gradlew apiDump`, commit the new dump, and note any breaking change in `CHANGELOG.md`. The Android
   modules are not covered yet: the validator does not see Kotlin compiled by the Android Gradle plugin.
 - **Unit tests** of every module, and the samples' builds.
@@ -25,14 +25,13 @@ need a connected device.
 
 ## Rules of the codebase
 
-- `agent-kernel-api`, `agent-kernel-core`, `agent-vfs` and `agent-runtime` are plain JVM modules. Android APIs go in
+- `agent-kernel-api`, `agent-kernel-core` and `agent-runtime` are plain JVM modules. Android APIs go in
   `agent-runtime-android` or an optional module.
-- Optional modules depend at most on `agent-kernel-api` (or `agent-vfs` / `agent-a2a-client` for their own adapters);
+- Optional modules depend at most on `agent-kernel-api` (or `agent-a2a` for its own adapters);
   the runtime depends on none of them.
 - Every first-party `ToolProvider` and `ModelClient` declares its `providerConcurrency` explicitly, even where the
   default would do; a test checks it.
 - Messages a host may show its users have English defaults and a way to replace them (see `McpClientMessages`).
-  `agent-voice` is the exception: it is built for Mandarin.
 - Public API is 0.x. New API may carry `@ExperimentalAgentRuntimeApi`; keep the quick-start path free of it.
 
 ## Tools

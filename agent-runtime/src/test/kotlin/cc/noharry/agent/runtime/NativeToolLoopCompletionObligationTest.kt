@@ -1,25 +1,24 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.AgentRequest
+import cc.noharry.agent.kernel.api.CancelPendingConfirmationRequest
+import cc.noharry.agent.kernel.api.CompletionImpact
 import cc.noharry.agent.kernel.api.HookContext
 import cc.noharry.agent.kernel.api.HookDecision
 import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.ToolSource
-import cc.noharry.agent.kernel.api.ToolUse
-import cc.noharry.agent.kernel.api.CancelPendingConfirmationRequest
-import cc.noharry.agent.kernel.api.CompletionImpact
 import cc.noharry.agent.kernel.api.RuntimeEffectKind
+import cc.noharry.agent.kernel.api.RuntimeHook
 import cc.noharry.agent.kernel.api.RuntimeTurnObserver
-import cc.noharry.agent.kernel.api.TurnInputObservation
-import cc.noharry.agent.kernel.api.TurnObservationReceipt
 import cc.noharry.agent.kernel.api.ToolCallContext
 import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
 import cc.noharry.agent.kernel.api.ToolDescriptor
+import cc.noharry.agent.kernel.api.ToolSource
+import cc.noharry.agent.kernel.api.ToolUse
+import cc.noharry.agent.kernel.api.TurnInputObservation
+import cc.noharry.agent.kernel.api.TurnObservationReceipt
+import cc.noharry.agent.kernel.api.mcp.McpClientProvider
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
 import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
@@ -27,6 +26,17 @@ import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.api.reliability.RuntimeResult
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.kernel.core.context.*
+import cc.noharry.agent.kernel.core.loop.*
+import cc.noharry.agent.kernel.core.memory.*
+import cc.noharry.agent.kernel.core.plugin.*
+import cc.noharry.agent.kernel.core.state.*
+import cc.noharry.agent.kernel.core.tools.*
+import cc.noharry.agent.kernel.core.trace.*
+import cc.noharry.agent.runtime.reliability.ReliabilityJsonCodecs
+import cc.noharry.agent.runtime.workspace.VirtualFileMaterializer
+import cc.noharry.agent.runtime.workspace.VirtualWorkspace
+import java.nio.file.Files
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -35,8 +45,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.file.Files
-import cc.noharry.agent.kernel.core.*
 
 class NativeToolLoopCompletionObligationTest {
     @Test

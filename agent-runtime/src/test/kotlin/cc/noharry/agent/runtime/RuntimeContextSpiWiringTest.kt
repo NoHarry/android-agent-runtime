@@ -1,27 +1,26 @@
 package cc.noharry.agent.runtime
-
+import cc.noharry.agent.kernel.api.AgentRequest
+import cc.noharry.agent.kernel.api.ContextStability
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.kernel.api.RuntimeCompletedTurn
+import cc.noharry.agent.kernel.api.RuntimeContextBlock
 import cc.noharry.agent.kernel.api.RuntimeContextContribution
+import cc.noharry.agent.kernel.api.RuntimeContextDatum
+import cc.noharry.agent.kernel.api.RuntimeContextDatumKind
 import cc.noharry.agent.kernel.api.RuntimeContextProvider
 import cc.noharry.agent.kernel.api.RuntimeContextRequest
+import cc.noharry.agent.kernel.api.RuntimeContextScalar
 import cc.noharry.agent.kernel.api.RuntimeTurnInput
 import cc.noharry.agent.kernel.api.RuntimeTurnObserver
 import cc.noharry.agent.kernel.api.TurnInputObservation
 import cc.noharry.agent.kernel.api.TurnObservationReceipt
-import cc.noharry.agent.kernel.api.RuntimeCompletedTurn
-import cc.noharry.agent.kernel.api.ContextStability
-import cc.noharry.agent.kernel.api.RuntimeContextBlock
-import cc.noharry.agent.kernel.api.RuntimeContextDatum
-import cc.noharry.agent.kernel.api.RuntimeContextDatumKind
-import cc.noharry.agent.kernel.api.RuntimeContextScalar
-import cc.noharry.agent.kernel.api.AgentRequest
+import cc.noharry.agent.kernel.core.context.RuntimeContextHooks
+import cc.noharry.agent.kernel.core.context.RuntimeContextRenderer
+import cc.noharry.agent.kernel.core.loop.failed
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.core.RuntimeContextHooks
-import cc.noharry.agent.kernel.core.RuntimeContextRenderer
-import cc.noharry.agent.kernel.core.failed
 
 @OptIn(ExperimentalAgentRuntimeApi::class)
 class RuntimeContextSpiWiringTest {

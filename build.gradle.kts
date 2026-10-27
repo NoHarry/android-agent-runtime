@@ -23,7 +23,7 @@ allprojects {
 
 apiValidation {
     // Samples and the BOM have no API of their own.
-    ignoredProjects += listOf("quickstart-jvm", "quickstart-android", "agent-bom")
+    ignoredProjects += listOf("quickstart-jvm", "quickstart-android", "minimal", "agent-bom")
 }
 
 // Unit tests create temp dirs (createTempDirectory, TemporaryFolder, Robolectric) and rarely delete them,

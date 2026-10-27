@@ -1,10 +1,9 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.model.ModelMessage
-import cc.noharry.agent.kernel.core.SessionHistoryStore
+import cc.noharry.agent.kernel.core.context.SessionHistoryStore
 
 /**
  * A conversation's earlier runs as the model saw them, kept outside any one runtime. A host that builds a new runtime

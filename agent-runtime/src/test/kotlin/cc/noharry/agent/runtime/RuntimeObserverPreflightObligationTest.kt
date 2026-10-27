@@ -1,7 +1,6 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.CompletionImpact
 import cc.noharry.agent.kernel.api.RuntimeCommitStatus
@@ -14,6 +13,11 @@ import cc.noharry.agent.kernel.api.TurnObservationReceipt
 import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
 import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.kernel.core.context.RuntimeContextHooks
+import cc.noharry.agent.kernel.core.loop.RuntimeObligationLedger
+import cc.noharry.agent.kernel.core.loop.isRequiredUnresolved
+import cc.noharry.agent.kernel.core.loop.isSatisfied
+import cc.noharry.agent.kernel.core.state.normalizeTransportResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -23,11 +27,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
-import cc.noharry.agent.kernel.core.RuntimeContextHooks
-import cc.noharry.agent.kernel.core.RuntimeObligationLedger
-import cc.noharry.agent.kernel.core.normalizeTransportResult
-import cc.noharry.agent.kernel.core.isRequiredUnresolved
-import cc.noharry.agent.kernel.core.isSatisfied
 
 class RuntimeObserverPreflightObligationTest {
     @Test

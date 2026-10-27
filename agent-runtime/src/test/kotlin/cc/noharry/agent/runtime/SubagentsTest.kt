@@ -1,10 +1,11 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.reliability.RuntimeResult
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import java.nio.file.Files
+import java.util.Collections
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,8 +19,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.file.Files
-import java.util.Collections
 
 class SubagentsTest {
     private val parent = SubagentCall(sessionId = "session-1", runId = "run-1", modelRef = null)
@@ -81,7 +80,7 @@ class SubagentsTest {
         val unknown = subagents.execute("spawn_agent", """{"task":"x","agent":"trip-hotel"}""", parent)
         assertTrue(unknown, unknown.contains("SUBAGENT_TYPE_UNKNOWN") && unknown.contains("trip-transport, trip-days"))
         assertEquals(1, launched.size)
-        assertFalse(cc.noharry.agent.kernel.core.nativeSubagentTools(emptyList()).single { it.name == "spawn_agent" }.schemaJson.contains("\"agent\""))
+        assertFalse(cc.noharry.agent.kernel.core.tools.nativeSubagentTools(emptyList()).single { it.name == "spawn_agent" }.schemaJson.contains("\"agent\""))
     }
 
     @Test

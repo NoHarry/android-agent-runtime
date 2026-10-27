@@ -1,23 +1,22 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
 import cc.noharry.agent.kernel.api.model.ModelEvent
+import cc.noharry.agent.kernel.core.state.RUNS_DIR
 import cc.noharry.agent.runtime.probe.PROBES_JSONL
 import cc.noharry.agent.runtime.probe.PROBE_COMPLETENESS_JSON
 import cc.noharry.agent.runtime.probe.RUN_META_JSON
 import cc.noharry.agent.runtime.probe.probeRunDirectory
+import java.io.File
+import java.nio.file.Files
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
-import java.nio.file.Files
-import cc.noharry.agent.kernel.core.RUNS_DIR
 
 /**
  * Production [AgentRuntimeBuilder.runtimeEvidence] → DefaultAgentRuntime probe artifacts.

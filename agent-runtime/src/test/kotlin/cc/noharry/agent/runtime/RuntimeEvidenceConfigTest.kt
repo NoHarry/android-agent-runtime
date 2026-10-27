@@ -1,15 +1,15 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-
 import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
+import cc.noharry.agent.runtime.reliability.validateRuntimeEvidenceConfig
+import java.nio.file.Files
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
-import java.nio.file.Files
 
 class RuntimeEvidenceConfigTest {
     @Test

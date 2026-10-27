@@ -1,5 +1,6 @@
 package cc.noharry.agent.kernel.api
 
+import cc.noharry.agent.kernel.core.plugin.PluginRegistry
 import cc.noharry.agent.runtime.testDescriptor
 import cc.noharry.agent.runtime.testPlugin
 import cc.noharry.agent.runtime.testSerializedConcurrency
@@ -9,7 +10,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.core.PluginRegistry
 
 @OptIn(ExperimentalAgentRuntimeApi::class)
 class CapabilityKeyIdentityTest {
