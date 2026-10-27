@@ -93,15 +93,21 @@ private fun parseFrontmatter(markdown: String): Map<String, String> {
     if (end <= 0) return emptyMap()
     return markdown.substring(FRONTMATTER_MARKER.length, end)
         .lineSequence()
+        // An indented line belongs to the key above it (metadata's entries): its `description` is not the skill's.
+        .filter { line -> line.isNotEmpty() && !line.first().isWhitespace() }
         .mapNotNull { line ->
             val separator = line.indexOf(':')
             if (separator < 0) return@mapNotNull null
             val key = line.substring(0, separator).trim()
-            val value = line.substring(separator + 1).trim().trim('"')
+            val value = line.substring(separator + 1).trim().unquoted()
             key.takeIf { it.isNotBlank() }?.let { it to value }
         }
         .toMap()
 }
+
+/** A YAML scalar in double or single quotes, without them. */
+private fun String.unquoted(): String =
+    if (length >= 2 && (first() == '"' || first() == '\'') && last() == first()) substring(1, length - 1) else trim('"')
 
 private fun parseScenes(value: String?): List<String> =
     value.orEmpty()

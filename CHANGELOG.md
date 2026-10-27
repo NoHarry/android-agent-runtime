@@ -85,6 +85,9 @@ name what moved.
     own folder under `/scratch`, but reads did not, so `read_file` of a file just written said not found, and `grep`
     and `list_dir` showed the internal folder (and `grep` other runs' scratch).
   - A directory mounted at the top (`/mcp`, `/context`, `/.agents`) is listed as a directory; it was listed as a file.
+- **A skill's description is its header's own.** The SKILL.md header reader took indented lines as keys too, so a
+  `description:` under `metadata:` replaced the skill's; only top-level keys count now, and a value in single quotes
+  loses them as one in double quotes did.
 - **The event log records only the assistant's own messages as `ASSISTANT_MESSAGE`.** A tool's result message was
   recorded as one too, its result as the assistant's text and the tool's name as `finishReason`, and so was a system
   message such as the run context; a trajectory read them as things the model said. They are left out (the result is
