@@ -53,6 +53,9 @@ name what moved.
   top-level `cache_control`, automatic caching); Claude caches only what a request marks, so requests to
   `api.anthropic.com` were never cached. Other base URLs (DeepSeek and other compatible services, which cache on their
   own) are unchanged; `promptCaching` sets it either way.
+- **In-run compaction folds an old read-only result only when that at least halves it.** A result of a few hundred
+  bytes was folded into a preview not much smaller, sometimes larger, and every early message it rewrote cost the prompt
+  cache for the rest of the run.
 - **Confirmations.** A hook that asks for confirmation again for the call the user just approved (one that does not
   check `HookContext.approvedConfirmation`) is taken as answered; the run used to fail with "Confirmation still
   required".

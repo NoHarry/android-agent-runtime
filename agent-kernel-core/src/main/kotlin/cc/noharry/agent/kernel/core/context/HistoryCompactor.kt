@@ -92,19 +92,19 @@ class HistoryCompactor(
     /**
      * Folds each old read-only result once. An already folded result is left byte-identical: rewriting it
      * would change an early message on every round and invalidate the provider prompt cache for the whole
-     * history after it, and it would count as progress when nothing was actually reduced.
+     * history after it, and it would count as progress when nothing was actually reduced. For the same reason a
+     * result is folded only when that at least halves it: a short result folded into a preview of itself saves
+     * little, or grows, and still costs the cache after it.
      */
     private fun foldOldReadOnlyToolResults(messages: List<ModelMessage>): FoldedMessages {
         val readOnlyIndexes = messages.indices.filter { index -> messages[index].isReadOnlyToolResult() }
         val keepIndexes = readOnlyIndexes.takeLast(RECENT_READ_ONLY_TOOL_RESULTS_TO_KEEP).toSet()
         var foldedCount = 0
         val folded = messages.mapIndexed { index, message ->
-            if (index in readOnlyIndexes && index !in keepIndexes && message.isLargeEnoughToFold() && !message.isFoldedToolResult()) {
-                foldedCount += 1
-                message.copy(content = foldedToolResultContent(message))
-            } else {
-                message
-            }
+            val content = if (index in readOnlyIndexes && index !in keepIndexes && !message.isFoldedToolResult()) {
+                foldedToolResultContent(message).takeIf { it.utf8Size() * 2 <= message.content.utf8Size() }
+            } else null
+            if (content == null) message else message.copy(content = content).also { foldedCount += 1 }
         }
         return FoldedMessages(folded, foldedCount)
     }
@@ -284,8 +284,7 @@ private fun String.compactionPreview(): String =
 private fun ModelMessage.isReadOnlyToolResult(): Boolean =
     role == "tool" && toolName in FOLDABLE_READ_ONLY_TOOL_NAMES
 
-private fun ModelMessage.isLargeEnoughToFold(): Boolean =
-    content.toByteArray(Charsets.UTF_8).size > FOLDED_TOOL_RESULT_PREVIEW_CHARS
+private fun String.utf8Size(): Int = toByteArray(Charsets.UTF_8).size
 
 private fun ModelMessage.isFoldedToolResult(): Boolean =
     content.startsWith(FOLDED_TOOL_RESULT_PREFIX)

@@ -174,6 +174,28 @@ class HistoryCompactorTest {
     }
 
     @Test
+    fun aShortResultIsNotFoldedForLittleGain() = runBlocking {
+        val shortResult = ModelMessage(
+            role = "tool", toolCallId = "call-1", toolName = "search_tools",
+            content = """{"ok":true,"matches":[{"name":"mcp__car__get_climate","description":"读取空调的当前状态，包括每个区域的详细读数。","score":1.57}]}""",
+        )
+        val messages = listOf(
+            ModelMessage(role = "user", content = "inspect then continue"),
+            assistantToolCall("call-1", "search_tools"), shortResult,
+            assistantToolCall("call-2", "search_tools"),
+            ModelMessage(role = "tool", toolCallId = "call-2", toolName = "search_tools", content = "recent"),
+        )
+
+        val result = HistoryCompactor(null, budgetBytes = 100_000, inputTokenThreshold = 10).compact(messages, latestUsageTokens = 20)
+
+        val after = when (result) {
+            is CompactionResult.Unchanged -> result.messages
+            is CompactionResult.Compacted -> result.messages
+        }
+        assertTrue(after.none { it.content.contains("foldedToolResult") })
+    }
+
+    @Test
     fun foldsOldReadOnlyToolResultsBeforeLlmSummary() = runBlocking {
         val model = SummaryModel("should not run")
         val firstUser = ModelMessage(role = "user", content = "inspect then continue")
