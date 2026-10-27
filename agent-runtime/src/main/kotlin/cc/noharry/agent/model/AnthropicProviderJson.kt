@@ -124,8 +124,11 @@ internal fun anthropicStreamEvents(events: Flow<HttpEvent>): Flow<ModelEvent> = 
             "content_block_delta" -> {
                 val delta = item.obj("delta")
                 if (delta?.string("type") == "signature_delta") {
-                    delta.string("signature")?.let { sig ->
-                        thinkingSignature = if (sig.isNotBlank()) sig else thinkingSignature
+                    delta.string("signature")?.takeIf { it.isNotBlank() }?.let { sig ->
+                        thinkingSignature = sig
+                        // The signature closes a thinking block, after its last thinking_delta: an empty delta carries
+                        // it, or the round never learns it and the next request sends the block back unsigned.
+                        emit(ModelEvent.ThinkingDelta(text = "", signature = sig))
                     }
                 }
                 appendAnthropicTextDelta(item, textBlocks)

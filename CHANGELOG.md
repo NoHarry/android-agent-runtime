@@ -31,6 +31,9 @@ name what moved.
   - A backend tool's description is sent with its definition (`ModelTool.description`); only its schema went before.
   - Calls run as a parallel read batch, and denied calls, keep the round's thinking signature, which Anthropic requires
     back; a resumed run keeps signatures too.
+  - A streamed Anthropic thinking block's signature reaches the loop (an empty `ThinkingDelta` carries it when it
+    arrives); before, only non-streamed replies kept it, so a streamed Claude turn went back unsigned.
+  - The Responses API's cached input tokens (`input_tokens_details.cached_tokens`) are counted as cache reads.
   - `finish` (or a text-only answer) that only announces a lookup in Chinese, such as 「我将为你查询当前的空调状态。」, is
     sent back for a real answer once, like its English forms.
 - **Binary break:** `ModelMessage`, `ModelTool` and `RoundOutcome.Failed` gained parameters.

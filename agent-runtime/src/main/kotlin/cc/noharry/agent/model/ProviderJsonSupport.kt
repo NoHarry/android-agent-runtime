@@ -293,7 +293,8 @@ internal fun JsonObject.rawOrString(name: String): String? =
     string(name) ?: this[name]?.toString()
 
 internal fun JsonObject.modelUsageDelta(): ModelEvent.UsageDelta? {
-    val promptDetails = obj("prompt_tokens_details")
+    // Chat Completions calls it prompt_tokens_details, the Responses API input_tokens_details.
+    val promptDetails = obj("prompt_tokens_details") ?: obj("input_tokens_details")
     val completionDetails = obj("completion_tokens_details") ?: obj("output_tokens_details")
     val cacheRead = int("prompt_cache_hit_tokens")
         ?: int("cache_read_input_tokens")

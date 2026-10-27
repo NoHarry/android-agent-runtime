@@ -123,7 +123,7 @@ class NativeRoundRunner(
                     if (event is ModelEvent.ThinkingDelta) {
                         thinking.append(event.text)
                         event.signature?.takeIf { it.isNotBlank() }?.let { thinkingSignature = it }
-                        publicEvents.recordThinking(event.text)
+                        if (event.text.isNotEmpty()) publicEvents.recordThinking(event.text)
                         return@roundEvents
                     }
                     if (event is ModelEvent.ToolCall) {
