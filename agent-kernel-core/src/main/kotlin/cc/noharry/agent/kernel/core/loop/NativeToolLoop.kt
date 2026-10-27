@@ -718,7 +718,7 @@ class NativeToolLoop(
             .mapTo(linkedSetOf()) { it.toolName }
         for (query in selection.capabilityQueries) {
             val hits = rankMcpTools(tools, query, maxResults = MEMORY_HINT_ACTIVATION_TOP_K)
-                .filter { it.score >= MEMORY_HINT_MIN_TOOL_SCORE }
+                .filter { queryCoverage(it.tool, query) >= MEMORY_HINT_MIN_COVERAGE }
             for (hit in hits) {
                 if (activated.size >= selection.maxPreactivatedTools) return
                 if (hit.tool.qualifiedName in available) break
@@ -958,7 +958,8 @@ class NativeToolLoop(
         )
 }
 
-private const val MEMORY_HINT_MIN_TOOL_SCORE = 1.5
+/** A remembered capability preactivates a tool only when the tool has every term of it (search scores vary with the catalog). */
+private const val MEMORY_HINT_MIN_COVERAGE = 1.0
 private const val MEMORY_HINT_ACTIVATION_TOP_K = 3
 private fun List<ModelMessage>.hasTodoUpdate(): Boolean =
     any { it.role == "tool" && it.toolName == "update_todo" }

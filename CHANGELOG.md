@@ -68,6 +68,11 @@ name what moved.
   - A failure the provider already explains (`{"ok":false,"code":…}`) reaches the model as it is; it used to arrive
     escaped inside a `BACKEND_CALL_FAILED` message.
   - A tool found by prefetch no longer carries its description inside its schema as well; it was sent twice.
+  - `search_tools` ranks with Okapi BM25 proper: a term counts by how few tools have it, against the catalog's average
+    description length, with a light length penalty; a one-character Chinese query (灯) matches the tools that have
+    the character. On Bothy's catalog, 「灯」 now finds `set_light` and 「导航去公司」 `start_navigation`, which a
+    one-line `stop_navigation` outranked. A remembered capability now preactivates a tool only when the tool has every
+    term of it (`queryCoverage`); a fixed bar on the search score no longer fits a score that depends on the catalog.
 - **Confirmations.** A hook that asks for confirmation again for the call the user just approved (one that does not
   check `HookContext.approvedConfirmation`) is taken as answered; the run used to fail with "Confirmation still
   required".
