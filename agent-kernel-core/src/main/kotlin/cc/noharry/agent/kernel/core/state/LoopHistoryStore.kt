@@ -158,6 +158,9 @@ private object LoopHistoryJson {
         message.toolName?.let { put("toolName", it) }
         message.toolArgumentsJson?.let { put("toolArgumentsJson", it) }
         if (message.toolAdditions.isNotEmpty()) put("toolAdditions", JsonArray(message.toolAdditions.map(::JsonPrimitive)))
+        // A resumed run sends these back as they were: Anthropic rejects a thinking block whose signature went missing.
+        message.thinkingSignature?.takeIf { it.isNotBlank() }?.let { put("thinkingSignature", it) }
+        message.assistantText.takeIf { it.isNotBlank() }?.let { put("assistantText", it) }
     }
 
     private fun decodeMessage(json: JsonObject): ModelMessage = ModelMessage(
@@ -167,6 +170,8 @@ private object LoopHistoryJson {
         toolName = json.optionalString("toolName"),
         toolArgumentsJson = json.optionalString("toolArgumentsJson"),
         toolAdditions = (json["toolAdditions"] as? JsonArray)?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty(),
+        thinkingSignature = json.optionalString("thinkingSignature"),
+        assistantText = json.optionalString("assistantText").orEmpty(),
     )
 }
 

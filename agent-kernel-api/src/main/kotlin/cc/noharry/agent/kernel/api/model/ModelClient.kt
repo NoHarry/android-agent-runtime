@@ -87,6 +87,13 @@ data class ModelMessage(
      */
     @property:ExperimentalAgentRuntimeApi
     val toolAdditions: List<String> = emptyList(),
+    /**
+     * What the model said to the user in the round that made this tool call ("帮你调高一点。"), kept on the round's
+     * first call so the next request shows the model its own words; [content] stays the call's reasoning. Empty on
+     * other messages. Not frozen until API review closes.
+     */
+    @property:ExperimentalAgentRuntimeApi
+    val assistantText: String = "",
 )
 
 /** Candidate bounded image attachment for provider multimodal requests. */
@@ -113,6 +120,9 @@ data class ModelTool(
      */
     @property:ExperimentalAgentRuntimeApi
     val deferred: Boolean = false,
+    /** What the tool does, sent with its definition; native tools keep theirs in the schema. Not frozen until API review closes. */
+    @property:ExperimentalAgentRuntimeApi
+    val description: String = "",
 )
 
 /** Candidate provider web_search capability declaration. Not frozen until API review closes. */

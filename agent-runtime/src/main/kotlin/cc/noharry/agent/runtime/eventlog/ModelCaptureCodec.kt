@@ -80,6 +80,7 @@ private fun List<ModelMessage>.toMessageSessionJson(attachmentJson: (ModelImage)
                     if (message.toolAdditions.isNotEmpty()) {
                         put("toolAdditions", SessionJson.Array(message.toolAdditions.map { SessionJson.Text(it) }))
                     }
+                    message.assistantText.takeIf { it.isNotBlank() }?.let { put("assistantText", SessionJson.Text(it)) }
                     if (message.images.isNotEmpty()) {
                         put("attachments", SessionJson.Array(message.images.map(attachmentJson)))
                     }
@@ -94,6 +95,7 @@ private fun List<ModelTool>.toToolSessionJson(): SessionJson =
             SessionJson.Object(
                 buildMap {
                     put("name", SessionJson.Text(tool.name))
+                    tool.description.takeIf { it.isNotBlank() }?.let { put("description", SessionJson.Text(it)) }
                     put("schema", parseJsonOrText(tool.schemaJson))
                     if (tool.deferred) put("deferred", SessionJson.Bool(true))
                 },

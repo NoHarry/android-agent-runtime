@@ -341,10 +341,12 @@
       "KernelApiVersion",
       "KernelApiVersions",
       "MinimalAgent",
+      "ModelMessage.assistantText",
       "ModelMessage.toolAdditions",
       "ModelRequest.promptCacheKey",
       "ModelRequest.toolChoice",
       "ModelTool.deferred",
+      "ModelTool.description",
       "PluginVersion",
       "ProbeEmitterRegistration",
       "ProviderConcurrencyDeclaration",
@@ -712,6 +714,7 @@
       "WorkspaceFileChanged:addedLines,bytes,diffTimedOut,path,removedLines,replacements,runId,toolCallId,toolName"
     ],
     "ModelMessage fields": [
+      "assistantText",
       "content",
       "images",
       "role",

@@ -363,6 +363,8 @@ class NativeToolLoop(
                 )
             } catch (error: LegalHistoryCancellationException) {
                 persistLegalCancellationHistory(runId, toolContext, messages, error.roundMessages, budgetTracker)
+                // The calls this round started stay in the run, so the session's history below shows them.
+                messages += error.roundMessages
                 throw error.original
             }
             emitProbeRoundOutcome(probeRoundIndex, retryRound.outcome)
@@ -406,7 +408,8 @@ class NativeToolLoop(
                         toolContext,
                         ModelMessage(role = "assistant", content = round.failure.message),
                     )
-                    sessionHistory?.record(runId, messages + ModelMessage(role = "assistant", content = round.failure.message))
+                    // The calls the failed round ran did happen; a notice, not the error text as the model's own words, ends it.
+                    sessionHistory?.record(runId, messages + round.messages + failedRunNotice(round.failure.code))
                     return terminalOutcome(
                         hookContext,
                         failed(runId, round.failure).copy(
@@ -476,6 +479,8 @@ class NativeToolLoop(
             }
         }
         } catch (cancelled: CancellationException) {
+            // The next run of the session sees this one and is told it was cut short, as Codex and dsh tell their model.
+            sessionHistory?.record(runId, messages + cancelledRunNotice())
             // Record why queued input and open questions ended; the host's later clear() is then a no-op.
             steeringQueue.close(runId, "CANCELLED")
             throw cancelled

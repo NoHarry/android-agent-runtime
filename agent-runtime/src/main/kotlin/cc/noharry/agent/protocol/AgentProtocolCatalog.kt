@@ -113,7 +113,7 @@ internal object AgentProtocolCatalog {
             AgentRuntimeBuilder.turnObserver AgentRuntimeBuilder.webFetchFallback AgentRuntimeBuilder.webSearch
             CapabilityCardinality CapabilityKey ExecEngine ExecRequest ExecResult ExecToolBridge HookDecision
             HookFailurePolicy KernelApiRange KernelApiVersion KernelApiVersions MinimalAgent
-            ModelMessage.toolAdditions ModelRequest.promptCacheKey ModelRequest.toolChoice ModelTool.deferred PluginVersion
+            ModelMessage.assistantText ModelMessage.toolAdditions ModelRequest.promptCacheKey ModelRequest.toolChoice ModelTool.deferred ModelTool.description PluginVersion
             ProbeEmitterRegistration
             ProviderConcurrencyDeclaration ProviderConcurrencyMode
             RuntimeContextProvider RuntimeHook RuntimeHookRegistration RuntimeProbeEmitterHub RuntimeProbeStageEmitter
@@ -228,7 +228,7 @@ internal object AgentProtocolCatalog {
             WorkspaceFileChanged:addedLines,bytes,diffTimedOut,path,removedLines,replacements,runId,toolCallId,toolName
             """,
         ),
-        "ModelMessage fields" to tokens("content images role thinkingSignature toolAdditions toolArgumentsJson toolCallId toolName"),
+        "ModelMessage fields" to tokens("assistantText content images role thinkingSignature toolAdditions toolArgumentsJson toolCallId toolName"),
         "ModelImage fields" to tokens("bytes detail mediaType sourcePath"),
         "ModelEvent variants" to tokens("Completed SearchActivity TextDelta ThinkingDelta ToolCall UsageDelta"),
         "ModelEvent fields" to tokens(

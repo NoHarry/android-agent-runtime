@@ -8,6 +8,7 @@ import cc.noharry.agent.kernel.api.ToolUseResult
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelImage
 import cc.noharry.agent.kernel.api.model.ModelMessage
+import cc.noharry.agent.kernel.core.tools.TOOL_CALL_CANCELLED_CODE
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.core.context.TodoItem
 import cc.noharry.agent.kernel.core.context.TodoStatus
@@ -233,6 +234,8 @@ sealed interface RoundOutcome {
         val failure: ToolLoopFailure,
         val modelFailure: Boolean = false,
         val toolResultsCommitted: Boolean = false,
+        /** The calls this round ran before it failed, with their results: they happened, so the history keeps them. */
+        val messages: List<ModelMessage> = emptyList(),
     ) : RoundOutcome
 
     data class RequiresConfirmation(
@@ -313,6 +316,22 @@ const val EMPTY_COMPLETION_CONTINUE_MESSAGE =
         "Continue the task now: call the next required tool(s), or call finish with the complete user-facing final answer."
 const val EMPTY_COMPLETION_CONTINUE_MARKER = "EMPTY_COMPLETION_CONTINUE"
 
+/** Ends a failed run in the session's history: the model gave no answer, and the error is the app's, not its words. */
+internal fun failedRunNotice(code: String): ModelMessage = ModelMessage(
+    role = "user",
+    content = "$APP_NOTICE the request above ended without an answer ($code). Tool calls above that have a result did run.",
+)
+
+/** Ends a cancelled run in the session's history, so a later "how did that go?" can be answered. */
+internal fun cancelledRunNotice(): ModelMessage = ModelMessage(
+    role = "user",
+    content = "$APP_NOTICE the request above was cancelled before it finished. A call whose result is " +
+        "$TOOL_CALL_CANCELLED_CODE was stopped before it returned and may have partly taken effect: check before " +
+        "repeating anything that changes something.",
+)
+
+private const val APP_NOTICE = "From the app, not typed by the user:"
+
 fun emptyCompletionContinueMessages(partialText: String): List<ModelMessage> {
     val messages = mutableListOf<ModelMessage>()
     val trimmed = partialText.trim()
@@ -338,6 +357,8 @@ private val PROSPECTIVE_FINISH_NARRATION = listOf(
     Regex("""\bfinish with (?:a |the )?.*(?:response|answer|summary)\b""", RegexOption.IGNORE_CASE),
     Regex("""\bwrap up with (?:the )?.*(?:response|answer|summary)\b""", RegexOption.IGNORE_CASE),
     Regex("""(我来|我会|我将|现在|准备).{0,8}(更新|调用|提供).{0,8}(todo|finish|最终答复|最终回答|总结)"""),
+    // A short reply that only announces a lookup (「我将为你查询当前的空调状态。」) and holds no figures is not an answer.
+    Regex("""^(?:好的[，,。]?\s*)?(?:我将|我会|我来|让我|我先|我马上|马上)(?:为你|帮你|给你)?(?:查询|查看|查一下|看一下|搜索|检索|获取|调用|确认|核实|检查)(?!.*\d).{0,30}$"""),
 )
 
 private val GENERIC_NON_ANSWER_NARRATION = listOf(

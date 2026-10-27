@@ -21,6 +21,14 @@ class FinishArgumentValidationTest {
         assertFalse(invalidFinishResponseText("XML示例：<response>内容</response>"))
     }
 
+    @Test fun rejectsAChineseLookupAnnouncementButKeepsRealAnswers() {
+        assertTrue(invalidFinishResponseText("我将为你查询当前的空调状态。"))
+        assertTrue(invalidFinishResponseText("好的，我来帮你看一下车门的状态"))
+        assertFalse(invalidFinishResponseText("我来看一下：现在空调 24 度，自动模式。"))
+        assertFalse(invalidFinishResponseText("好的，我会在八点提醒你带伞。"))
+        assertFalse(invalidFinishResponseText("空调开着，24 度。"))
+    }
+
     @Test fun acceptsAllOutcomesAndWellFormedLegacyCalls() {
         assertFalse(invalidFinishArguments("""{"response":"done"}"""))
         listOf("success", "partial", "blocked").forEach {

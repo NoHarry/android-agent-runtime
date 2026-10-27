@@ -5,7 +5,8 @@ called out.
 
 ## Unreleased (0.4.0)
 
-Module and package layout only; no behavior changes. **Breaking** for code and build files that name what moved.
+Module and package layout, plus fixes to what a session's next request shows. **Breaking** for code and build files that
+name what moved.
 
 - **Fewer artifacts.** `agent-vfs` is part of `agent-runtime` and `agent-vfs-saf` of `agent-runtime-android`;
   `agent-a2a-client`, `agent-a2a-client-direct` and `agent-a2a-server` are one artifact, `agent-a2a`. Their packages are
@@ -19,6 +20,20 @@ Module and package layout only; no behavior changes. **Breaking** for code and b
 - **`agent-runtime` packages.** `cc.noharry.agent.runtime` keeps the host-facing API (`AgentRuntimeBuilder`,
   `functionTools`, `SessionHistory`, `SessionToolActivations`, `Subagents`, `HostSkill`, `RuntimeWorkspaceRef`,
   `NetworkToolConfirmationPolicy`, web search); the implementation moved to `.workspace`, `.run` and `.reliability`.
+- **What the next request shows.**
+  - A cancelled run is kept in the session's history: its calls, a `TOOL_CALL_CANCELLED` result for any that had not
+    returned, and a notice that it was cut short. The next run used to start as if it never happened.
+  - A run that failed after its calls ran keeps those calls and their results, and ends with a notice naming the error
+    code; the error text is no longer stored as the model's own answer.
+  - What the model said beside its tool calls in a round (spoken, shown) goes back to it: `ModelMessage.assistantText`,
+    sent as the assistant's content (OpenAI), a text block before `tool_use` (Anthropic) or an assistant message before
+    the call (Responses).
+  - A backend tool's description is sent with its definition (`ModelTool.description`); only its schema went before.
+  - Calls run as a parallel read batch, and denied calls, keep the round's thinking signature, which Anthropic requires
+    back; a resumed run keeps signatures too.
+  - `finish` (or a text-only answer) that only announces a lookup in Chinese, such as 「我将为你查询当前的空调状态。」, is
+    sent back for a real answer once, like its English forms.
+- **Binary break:** `ModelMessage`, `ModelTool` and `RoundOutcome.Failed` gained parameters.
 
 ## 0.3.0 (2026-10-25)
 

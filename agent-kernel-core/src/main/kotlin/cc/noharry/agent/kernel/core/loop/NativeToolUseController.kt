@@ -47,6 +47,7 @@ class NativeToolUseController(
                 source = source,
                 result = prepared.resultJson,
                 reasoningContent = reasoningContent,
+                thinkingSignature = thinkingSignature,
             )
             is PreparedToolUse.RequiresConfirmation -> prepared.outcome
             is PreparedToolUse.Allowed -> {
@@ -100,6 +101,7 @@ class NativeToolUseController(
                 DynamicToolSource.BACKEND,
                 authorization.resultJson,
                 reasoningContent,
+                thinkingSignature = thinkingSignature,
                 summaryBuilder,
                 )
             }
@@ -159,6 +161,7 @@ class NativeToolUseController(
                     source = DynamicToolSource.NETWORK,
                     result = authorization.resultJson,
                     reasoningContent = reasoningContent,
+                    thinkingSignature = thinkingSignature,
                 )
             }
             is ToolAuthorization.RequiresConfirmation -> {
@@ -199,6 +202,7 @@ class NativeToolUseController(
                 DynamicToolSource.EXEC,
                 authorization.resultJson,
                 reasoningContent,
+                thinkingSignature = thinkingSignature,
                 summaryBuilder,
             )
             is ToolAuthorization.RequiresConfirmation -> requiresConfirmation(authorization, reasoningContent)
@@ -237,6 +241,7 @@ class NativeToolUseController(
             DynamicToolSource.EXEC,
             execEngineNotConfiguredResult(),
             reasoningContent,
+            thinkingSignature = thinkingSignature,
             summaryBuilder,
         )
         val request = execRequest(context.runId, toolUse.argumentsJson)
@@ -303,6 +308,7 @@ class NativeToolUseController(
                     DynamicToolSource.NETWORK,
                     networkDecision.resultJson,
                     reasoningContent,
+                    thinkingSignature = thinkingSignature,
                 )
             }
             is NetworkToolPolicyDecision.RequiresConfirmation -> {
@@ -635,6 +641,7 @@ class NativeToolUseController(
         source: DynamicToolSource,
         result: String,
         reasoningContent: String?,
+        thinkingSignature: String? = null,
         summaryBuilder: NativeLoopSummaryBuilder? = null,
     ): RoundOutcome? {
         publicEvents.recordFinished(event.id, event.name, result)
@@ -642,7 +649,7 @@ class NativeToolUseController(
         if (source == DynamicToolSource.BACKEND) {
             summaryBuilder?.recordBackendToolResult(event.name, result)
         }
-        appendToolResult(toolResults, event, result, reasoningContent)
+        appendToolResult(toolResults, event, result, reasoningContent, thinkingSignature)
         return null
     }
 

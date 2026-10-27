@@ -1,3 +1,5 @@
+@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+
 package cc.noharry.agent.model
 
 import cc.noharry.agent.transport.HttpEvent
@@ -108,6 +110,7 @@ private fun JsonObjectBuilder.putOpenAiTools(tools: List<ModelTool>) {
                 put("type", "function")
                 put("function", buildJsonObject {
                     put("name", tool.name)
+                    tool.description.takeIf { it.isNotBlank() }?.let { put("description", it) }
                     put("parameters", parseObjectOrEmpty(tool.schemaJson))
                 })
             })
@@ -139,11 +142,15 @@ private fun JsonObjectBuilder.putOpenAiMessages(request: ModelRequest, model: St
                         val options = request.modelRef.providerOptions(OPENAI_PROVIDER_NAME, model)
                         val reasoningContent = assistantReasoningContent(message, model, options)
                         put("role", "assistant")
-                        if (reasoningContent == null) {
-                            put("content", JsonNull)
-                        } else {
-                            put("content", "")
-                            put("reasoning_content", reasoningContent)
+                        // What the model told the user alongside the call; null when it said nothing.
+                        val said = message.assistantText.takeIf { it.isNotBlank() }
+                        when {
+                            reasoningContent != null -> {
+                                put("content", said.orEmpty())
+                                put("reasoning_content", reasoningContent)
+                            }
+                            said != null -> put("content", said)
+                            else -> put("content", JsonNull)
                         }
                         putJsonArray("tool_calls") {
                             add(buildJsonObject {

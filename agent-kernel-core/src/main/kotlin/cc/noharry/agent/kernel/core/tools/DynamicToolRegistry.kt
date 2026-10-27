@@ -77,7 +77,7 @@ class DynamicToolRegistry(
             }
             usedNames += injectedName
             entries += DynamicToolEntry(
-                modelTool = ModelTool(injectedName, activation.schemaJson),
+                modelTool = ModelTool(injectedName, activation.schemaJson, description = activation.description),
                 source = DynamicToolSource.BACKEND,
                 backendToolName = activation.toolName,
                 action = RuntimeActionDescriptor(

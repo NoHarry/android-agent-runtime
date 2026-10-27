@@ -163,6 +163,7 @@ private fun JsonObjectBuilder.putAnthropicTools(
         for (tool in tools) {
             add(buildJsonObject {
                 put("name", tool.name)
+                tool.description.takeIf { it.isNotBlank() }?.let { put("description", it) }
                 put("input_schema", parseObjectOrEmpty(tool.schemaJson))
                 if (tool.deferred) put("defer_loading", true)
             })
@@ -200,6 +201,13 @@ private fun JsonObjectBuilder.putAnthropicMessages(request: ModelRequest) {
                                     put("type", "thinking")
                                     put("thinking", message.content)
                                     put("signature", message.thinkingSignature ?: "")
+                                })
+                            }
+                            // What the model told the user alongside the call, after the thinking block it follows.
+                            message.assistantText.takeIf { it.isNotBlank() }?.let { said ->
+                                add(buildJsonObject {
+                                    put("type", "text")
+                                    put("text", said)
                                 })
                             }
                             add(buildJsonObject {

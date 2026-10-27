@@ -247,6 +247,9 @@ private fun JsonObjectBuilder.putOpenAiResponsesInput(request: ModelRequest) {
     putJsonArray("input") {
         request.system?.takeIf { it.isNotBlank() }?.let { add(responseMessage("system", it)) }
         for (message in request.messages.withoutToolLoads()) {
+            // What the model told the user alongside a call goes before the call, as the assistant's message.
+            message.assistantText.takeIf { it.isNotBlank() && message.isAssistantToolCall() }
+                ?.let { add(responseMessage("assistant", it)) }
             add(responseInputItem(message))
             message.toolResultImagesFollowUp()?.let { add(responseMessage(it)) }
         }
@@ -319,6 +322,7 @@ private fun JsonObjectBuilder.putOpenAiResponsesTools(
             add(buildJsonObject {
                 put("type", "function")
                 put("name", tool.name)
+                tool.description.takeIf { it.isNotBlank() }?.let { put("description", it) }
                 put("parameters", parseObjectOrEmpty(tool.schemaJson))
             })
         }

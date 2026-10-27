@@ -194,6 +194,7 @@ class NativeRoundRunner(
                 failure = ToolLoopFailure(error.code.wireCode, error.message, error.recoverable),
                 modelFailure = true,
                 toolResultsCommitted = toolResults.isNotEmpty(),
+                messages = toolResults.toList(),
             )
         } catch (error: RuntimeException) {
             modelProbe.finish(SESSION_MODEL_CALL_STATUS_FAILED, RuntimeErrorCode.MODEL_LOOP_FAILED.wireCode)
@@ -349,12 +350,20 @@ class NativeRoundRunner(
         if (pendingToolCalls.isEmpty()) return null
         val calls = pendingToolCalls.toList()
         pendingToolCalls.clear()
-        val outcome = handleToolCalls(calls, context)
-        if (context.wireCalls.isEmpty()) return outcome
-        val restored = context.toolResults.withWireCalls(context.wireCalls)
-        context.toolResults.clear()
-        context.toolResults += restored
-        return outcome?.withWireCalls(context.wireCalls)
+        var outcome = handleToolCalls(calls, context)
+        if (context.wireCalls.isNotEmpty()) {
+            val restored = context.toolResults.withWireCalls(context.wireCalls)
+            context.toolResults.clear()
+            context.toolResults += restored
+            outcome = outcome?.withWireCalls(context.wireCalls)
+        }
+        // What the model said before these calls was spoken; the next request shows it to the model.
+        val said = context.toolResults.withAssistantText(context.visibleText)
+        if (said !== context.toolResults) {
+            context.toolResults.clear()
+            context.toolResults += said
+        }
+        return outcome?.withAssistantText(context.visibleText)
     }
 
     private suspend fun handleToolCalls(
@@ -507,6 +516,7 @@ class NativeRoundRunner(
                         source = DynamicToolSource.BACKEND,
                         result = item.resultJson,
                         reasoningContent = context.nextReasoningContentForHistory(),
+                        thinkingSignature = context.thinkingSignature,
                         summaryBuilder = context.summaryBuilder,
                     )
                 }

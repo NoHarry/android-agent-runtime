@@ -55,6 +55,7 @@ class NativeReadOnlyToolBatchExecutor(
                         source = source,
                         result = prepared.resultJson,
                         reasoningContent = reasoningContent,
+                        thinkingSignature = context.thinkingSignature,
                     )
                 }
                 is PreparedToolUse.RequiresConfirmation -> {
@@ -133,6 +134,8 @@ class NativeReadOnlyToolBatchExecutor(
             source = call.source,
             result = execution.resultJson,
             reasoningContent = call.reasoningContent,
+            // The batch's calls come from one assistant turn: each keeps its thinking signature for Anthropic.
+            thinkingSignature = context.thinkingSignature,
             telemetry = telemetry,
         )
     }
