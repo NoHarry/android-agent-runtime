@@ -1,10 +1,17 @@
+@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+
 package cc.noharry.agent.mcp
 
 import cc.noharry.agent.transport.HttpEvent
 import cc.noharry.agent.transport.HttpRequest
 import cc.noharry.agent.transport.HttpResponse
 import cc.noharry.agent.transport.HttpTransport
+import cc.noharry.agent.kernel.api.ProviderConcurrencyMode
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.runBlocking
@@ -23,7 +30,7 @@ import org.junit.Test
 class McpHttpClientTest {
     /** Answers each POST with what [reply] returns for the JSON-RPC method, echoing the request id. */
     private class FakeServer(private val reply: (method: String, id: Int?, request: HttpRequest) -> HttpResponse) : HttpTransport {
-        val requests = mutableListOf<HttpRequest>()
+        val requests: MutableList<HttpRequest> = java.util.Collections.synchronizedList(mutableListOf())
 
         override fun stream(request: HttpRequest): Flow<HttpEvent> = emptyFlow()
 
@@ -105,6 +112,33 @@ class McpHttpClientTest {
         assertEquals(1, listMcpToolsCatalog(mcp).size)
         assertEquals(2, sessions)
         assertEquals("s-2", server.requests.last().headers["Mcp-Session-Id"])
+    }
+
+    @Test
+    fun callsInFlightTogetherThatLoseTheSessionOpenItAgainOnce() = runBlocking {
+        val sessions = AtomicInteger()
+        val lost = AtomicInteger()
+        val server = FakeServer { method, id, request ->
+            when {
+                method == "initialize" -> json("""{"jsonrpc":"2.0","id":$id,"result":{"protocolVersion":"2025-06-18"}}""", "Mcp-Session-Id" to "s-${sessions.incrementAndGet()}")
+                method == "notifications/initialized" -> HttpResponse(202)
+                // The server forgot s-1; it answers 404 only once all three calls have arrived.
+                request.headers["Mcp-Session-Id"] == "s-1" -> {
+                    lost.incrementAndGet()
+                    while (lost.get() < 3) Thread.sleep(1)
+                    HttpResponse(404)
+                }
+                else -> json("""{"jsonrpc":"2.0","id":$id,"result":$toolsReply}""")
+            }
+        }
+        val mcp = client(server)
+        mcp.connect()
+
+        val replies = List(3) { async(Dispatchers.Default) { mcp.sendRequest("tools/list", JsonObject(emptyMap())) } }.awaitAll()
+
+        assertTrue(replies.all { it.ok })
+        assertEquals(2, sessions.get())
+        assertEquals(McpToolProvider(mcp, serverId = "weather").providerConcurrency.mode, ProviderConcurrencyMode.RUNTIME_SHARED_THREAD_SAFE)
     }
 
     @Test

@@ -31,7 +31,9 @@ fun interface McpToolCatalog {
 /**
  * An MCP server's tools in a run, through any [McpRpcClient], such as a standard MCP server over HTTP
  * ([McpHttpClient]). It speaks JSON-RPC `tools/list` and `tools/call`; [catalog] keeps the tool list between runs, and
- * [describe] may adjust each tool before the model sees it. Candidate API, not frozen.
+ * [describe] may adjust each tool before the model sees it. Over [McpHttpClient] up to four calls run at once (each is
+ * its own request, and MCP lets a session have several in flight), so a round's read-only calls run together; through
+ * another client, one at a time. Candidate API, not frozen.
  */
 class McpToolProvider(
     private val client: McpRpcClient,
@@ -42,7 +44,7 @@ class McpToolProvider(
 ) : McpClientProvider {
     @OptIn(ExperimentalAgentRuntimeApi::class)
     override val providerConcurrency: ProviderConcurrencyDeclaration =
-        ProviderConcurrencyDeclaration.serialized()
+        if (client is McpHttpClient) ProviderConcurrencyDeclaration.threadSafe() else ProviderConcurrencyDeclaration.serialized()
 
     override suspend fun initialize(context: ToolInitializeContext): ToolInitializeResult {
         val result = client.connect()

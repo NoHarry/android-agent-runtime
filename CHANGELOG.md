@@ -60,9 +60,13 @@ name what moved.
   - A tool's name always fits what model APIs take (ASCII letters, digits, `_` and `-`, at most 64 characters): a
     name part in another script becomes a short hash of itself, a long name keeps its start and a hash of the whole.
     `mcpQualifiedName` gives that name. A Chinese tool name, or a long one, used to make the provider reject the request.
-  - Read-only tools run in parallel batches when the provider says so (`effectKind = READ_ONLY`: an MCP tool's
+  - Read-only tools join a round's parallel batch when the provider says so (`effectKind = READ_ONLY`: an MCP tool's
     `annotations.readOnlyHint`, `functionTools(readOnly = true)`); only a `readOnlyHint` inside the input schema
-    counted, so MCP's standard hint never did.
+    counted, so MCP's standard hint never did. How many of a provider's calls run at once is still its own
+    `providerConcurrency`: `functionTools` calls one at a time.
+  - An MCP server over HTTP (`McpToolProvider` with `McpHttpClient`) takes up to four calls at once; it took one, so a
+    round's three read-only calls to it ran one after another (1.2 s for three 400 ms calls, now 0.4 s). Calls in
+    flight together that find the session lost open a new one once, not once each.
   - Arguments are checked against `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `minLength` and `maxLength` too;
     only `minimum` was, so a 35 went to a 16–32 thermostat.
   - A failure the provider already explains (`{"ok":false,"code":…}`) reaches the model as it is; it used to arrive

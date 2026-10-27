@@ -85,9 +85,12 @@ class McpHttpClient(
 
     override suspend fun sendRequest(method: String, params: JsonObject): McpRpcResponse {
         connect().takeIf { !it.ok }?.let { return McpRpcResponse(it.statusCode, "", null, it.errorMessage) }
-        var reply = exchange(rpcRequest(method, params), session)
-        if (reply.status == HTTP_NOT_FOUND && session?.id != null) {
+        val sent = session
+        var reply = exchange(rpcRequest(method, params), sent)
+        if (reply.status == HTTP_NOT_FOUND && sent?.id != null) {
+            // Calls in flight together all lose the session; the first opens a new one and the others use it.
             val again = lock.withLock {
+                if (session !== sent && session != null) return@withLock OK_RESULT
                 session = null
                 initialize()
             }
