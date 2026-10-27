@@ -49,11 +49,15 @@ name what moved.
   is left out when `web_fetch` is off, and says to search with `web_search` when that is on; the `update_todo` and
   workspace-write rules go when the host disables those tools (`ProtocolTools`). The kernel runtime, which has no
   `web_fetch`, no longer mentions it. Prompt version `v10`.
+- **Prompt caching with Claude.** `AnthropicModelClient` asks Anthropic's API to cache each request's prefix (a
+  top-level `cache_control`, automatic caching); Claude caches only what a request marks, so requests to
+  `api.anthropic.com` were never cached. Other base URLs (DeepSeek and other compatible services, which cache on their
+  own) are unchanged; `promptCaching` sets it either way.
 - **Confirmations.** A hook that asks for confirmation again for the call the user just approved (one that does not
   check `HookContext.approvedConfirmation`) is taken as answered; the run used to fail with "Confirmation still
   required".
 - **Binary break:** `ModelMessage`, `ModelTool`, `RoundOutcome.Failed`, `PendingNativeToolUse`,
-  `BootstrapPromptProvider.build` and `ContextBootstrapPromptResolver` gained parameters;
+  `BootstrapPromptProvider.build`, `ContextBootstrapPromptResolver` and `AnthropicModelClient` gained parameters;
   `PendingToolUseController.remove` returns the removed call.
 
 ## 0.3.0 (2026-10-25)

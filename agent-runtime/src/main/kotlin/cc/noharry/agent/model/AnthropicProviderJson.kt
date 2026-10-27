@@ -31,6 +31,7 @@ internal fun anthropicRequest(
     stream: Boolean = false,
     serverSideSearch: Boolean = false,
     searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.ANTHROPIC_SERVER_TOOL,
+    promptCaching: Boolean = false,
 ): HttpRequest = providerRequest(
     url = endpoint(baseUrl, "/messages"),
     headers = mapOf(
@@ -42,6 +43,8 @@ internal fun anthropicRequest(
         put("model", model)
         put("max_tokens", modelOutputTokenLimit(model) ?: maxTokensFor(options))
         put("stream", stream)
+        // Automatic caching: the API marks the last cacheable block and moves the mark as the conversation grows.
+        if (promptCaching) put("cache_control", buildJsonObject { put("type", "ephemeral") })
         putAnthropicThinking(options)
         request.system?.takeIf { it.isNotBlank() }?.let { put("system", it) }
         putAnthropicMessages(request)

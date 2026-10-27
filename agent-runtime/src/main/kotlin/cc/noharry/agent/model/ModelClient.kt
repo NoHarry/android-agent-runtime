@@ -155,7 +155,13 @@ class AnthropicModelClient(
     private var stream: Boolean = false
     private var serverSideSearch: Boolean = true
     private var searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.ANTHROPIC_SERVER_TOOL
+    private var promptCaching: Boolean = true
 
+    /**
+     * @param promptCaching asks the API to cache the request's prefix (a top-level `cache_control`). Claude caches only
+     * what a request marks; DeepSeek and other compatible services cache on their own and may not take the field, so it
+     * is on only for Anthropic's own API unless set.
+     */
     constructor(
         apiKeyProvider: () -> String,
         model: String,
@@ -164,6 +170,7 @@ class AnthropicModelClient(
         serverSideSearch: Boolean = true,
         searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.ANTHROPIC_SERVER_TOOL,
         transport: HttpTransport = OkHttpHttpTransport(),
+        promptCaching: Boolean = isAnthropicApi(baseUrl),
     ) : this(apiKeyProvider, transport) {
         require(model.isNotBlank()) { "Anthropic model must not be blank." }
         require(baseUrl.isNotBlank()) { "Anthropic base URL must not be blank." }
@@ -172,6 +179,7 @@ class AnthropicModelClient(
         this.stream = stream
         this.serverSideSearch = serverSideSearch
         this.searchCapability = searchCapability
+        this.promptCaching = promptCaching
     }
 
     override fun complete(request: ModelRequest): Flow<ModelEvent> = flow {
@@ -190,6 +198,7 @@ class AnthropicModelClient(
                         stream = true,
                         serverSideSearch = serverSideSearch,
                         searchCapability = searchCapability,
+                        promptCaching = promptCaching,
                     ),
                 ),
             ).collect { emit(it) }
@@ -205,6 +214,7 @@ class AnthropicModelClient(
                         request,
                         serverSideSearch = serverSideSearch,
                         searchCapability = searchCapability,
+                        promptCaching = promptCaching,
                     ),
                 ),
             )
@@ -220,6 +230,9 @@ private const val DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 private const val DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
 private const val DEFAULT_ANTHROPIC_MODEL = "claude-3-5-haiku-latest"
 private const val DEFAULT_ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1"
+
+private fun isAnthropicApi(baseUrl: String): Boolean =
+    runCatching { java.net.URI(baseUrl).host }.getOrNull() == "api.anthropic.com"
 private const val ANTHROPIC_PROVIDER_NAME = "Anthropic"
 
 internal enum class OpenAiEndpointMode(val wireName: String) {

@@ -48,6 +48,18 @@ class ModelClientSystemPromptTest {
         assertEquals("protocol\nhost append", body["system"]?.jsonPrimitive?.contentOrNull)
         assertEquals("user", body["messages"]?.jsonArray?.single()?.jsonObject?.get("role")?.jsonPrimitive?.contentOrNull)
     }
+
+    @Test
+    fun anthropicAsksClaudeToCacheButNotACompatibleService() = runBlocking {
+        fun cacheControl(baseUrl: String): String? {
+            val transport = SystemPromptTransport("""{"content":[]}""")
+            runBlocking { AnthropicModelClient(::apiKey, MODEL, baseUrl, transport = transport).complete(modelRequest()).toList() }
+            return transport.executeRequests.single().bodyJson()["cache_control"]?.jsonObject?.get("type")?.jsonPrimitive?.contentOrNull
+        }
+
+        assertEquals("ephemeral", cacheControl("https://api.anthropic.com/v1"))
+        assertEquals(null, cacheControl("https://api.deepseek.com/anthropic"))
+    }
 }
 
 private class SystemPromptTransport(responseBody: String) : HttpTransport {

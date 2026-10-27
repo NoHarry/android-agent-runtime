@@ -194,8 +194,8 @@ public final class cc/noharry/agent/mcp/McpToolsListing {
 public final class cc/noharry/agent/model/AnthropicModelClient : cc/noharry/agent/kernel/api/model/ModelClient {
 	public fun <init> (Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/transport/HttpTransport;)V
 	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/transport/HttpTransport;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Lkotlin/jvm/functions/Function0;Ljava/lang/String;Ljava/lang/String;ZZLcc/noharry/agent/kernel/api/model/ServerSideSearchCapability;Lcc/noharry/agent/transport/HttpTransport;)V
-	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;Ljava/lang/String;Ljava/lang/String;ZZLcc/noharry/agent/kernel/api/model/ServerSideSearchCapability;Lcc/noharry/agent/transport/HttpTransport;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lkotlin/jvm/functions/Function0;Ljava/lang/String;Ljava/lang/String;ZZLcc/noharry/agent/kernel/api/model/ServerSideSearchCapability;Lcc/noharry/agent/transport/HttpTransport;Z)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;Ljava/lang/String;Ljava/lang/String;ZZLcc/noharry/agent/kernel/api/model/ServerSideSearchCapability;Lcc/noharry/agent/transport/HttpTransport;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun complete (Lcc/noharry/agent/kernel/api/model/ModelRequest;)Lkotlinx/coroutines/flow/Flow;
 	public fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
 }
