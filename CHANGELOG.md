@@ -73,6 +73,11 @@ name what moved.
     the character. On Bothy's catalog, 「灯」 now finds `set_light` and 「导航去公司」 `start_navigation`, which a
     one-line `stop_navigation` outranked. A remembered capability now preactivates a tool only when the tool has every
     term of it (`queryCoverage`); a fixed bar on the search score no longer fits a score that depends on the catalog.
+- **Workspace.**
+  - A file the model writes to `/scratch` is read, listed and found by `grep` at that path. Writes went to the run's
+    own folder under `/scratch`, but reads did not, so `read_file` of a file just written said not found, and `grep`
+    and `list_dir` showed the internal folder (and `grep` other runs' scratch).
+  - A directory mounted at the top (`/mcp`, `/context`, `/.agents`) is listed as a directory; it was listed as a file.
 - **Confirmations.** A hook that asks for confirmation again for the call the user just approved (one that does not
   check `HookContext.approvedConfirmation`) is taken as answered; the run used to fail with "Confirmation still
   required".

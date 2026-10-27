@@ -29,6 +29,21 @@ class VirtualWorkspaceWriteTest {
     }
 
     @Test
+    fun aScratchFileIsReadListedAndFoundAtThePathItWasWritten() = runBlocking {
+        val root = createWorkspace()
+        VirtualWorkspace(root, runId = "run-b").executeJson("write_file", """{"path":"/scratch/other.txt","content":"note b"}""")
+        val workspace = VirtualWorkspace(root, runId = "run-a")
+        workspace.executeJson("write_file", """{"path":"/scratch/out.txt","content":"note a"}""")
+
+        assertTrue(workspace.executeJson("read_file", """{"path":"/scratch/out.txt"}""").contains(""""content":"note a""""))
+        val listed = workspace.executeJson("list_dir", """{"path":"/scratch"}""")
+        assertTrue(listed, listed.contains(""""name":"out.txt"""") && !listed.contains("other.txt"))
+        val found = workspace.executeJson("grep", """{"pattern":"note","path":"/"}""")
+        assertTrue(found, found.contains(""""path":"/scratch/out.txt""""))
+        assertFalse(found, found.contains("other.txt") || found.contains("run-a"))
+    }
+
+    @Test
     fun scratchWritesAreIsolatedByRunIdAndCleanedOnDemand() = runBlocking {
         val root = createWorkspace()
         VirtualWorkspace(root, runId = "run-a").executeJson(

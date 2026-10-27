@@ -96,7 +96,7 @@ internal class VirtualWorkspace(
         val fileSystem = fileSystemFor(context)
         val resolveMs = elapsedMs(resolveStart)
         val listStart = System.nanoTime()
-        val result = fileSystem.list(path)
+        val result = fileSystem.list(writer.storagePath(path))
         val listMs = elapsedMs(listStart)
         val serializeStart = System.nanoTime()
         val json = listVfsDir(result, pageSize)
@@ -109,6 +109,11 @@ internal class VirtualWorkspace(
             ),
         )
     }
+
+    /** Matches under this run's scratch carry the /scratch paths the model wrote; other runs' scratch is left out. */
+    private fun VfsSearchResult.inModelPaths(): VfsSearchResult =
+        if (this !is VfsSearchResult.Matches) this
+        else VfsSearchResult.Matches(matches.mapNotNull { match -> writer.modelPath(match.path)?.let { match.copy(path = it) } })
 
     private fun listVfsDir(result: VfsListResult, pageSize: Int): String {
         val entries = when (result) {
@@ -139,7 +144,7 @@ internal class VirtualWorkspace(
         val fileSystem = fileSystemFor(context)
         val resolveMs = elapsedMs(resolveStart)
         val materializeStart = System.nanoTime()
-        val result = fileSystem.read(path, offset, maxChars)
+        val result = fileSystem.read(writer.storagePath(path), offset, maxChars)
         val materializeMs = elapsedMs(materializeStart)
         val serializeStart = System.nanoTime()
         val json = readVfsFile(path, result, offset)
@@ -192,7 +197,7 @@ internal class VirtualWorkspace(
         val fileSystem = fileSystemFor(context)
         val resolveMs = elapsedMs(resolveStart)
         val scanStart = System.nanoTime()
-        val result = fileSystem.search(path, pattern, maxMatches, MAX_GREP_SCAN_BYTES)
+        val result = fileSystem.search(writer.storagePath(path), pattern, maxMatches, MAX_GREP_SCAN_BYTES).inModelPaths()
         val scanMs = elapsedMs(scanStart)
         val serializeStart = System.nanoTime()
         val json = grepResultJson(result)

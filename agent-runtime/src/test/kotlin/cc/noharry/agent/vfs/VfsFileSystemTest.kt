@@ -54,6 +54,32 @@ class VfsFileSystemTest {
     }
 
     @Test
+    fun aMountedDirectoryListsAsADirectoryAndAMountedFileAsAFile() = runSuspend {
+        val root = tempDir("root")
+        val catalog = tempDir("catalog").apply { File(this, "tools.json").writeText("{}") }
+        val agents = File(tempDir("instructions"), "AGENTS.md").apply { writeText("rules") }
+        val vfs = fileSystem(
+            manifestJson = manifestJson(
+                mounts = """
+                    ${mount("root", "file://root", "/", "readWrite", 10)},
+                    ${mount("mcp", "file://catalog", "/mcp", "readOnly", 100)},
+                    ${mount("instructions", "file://instructions", "/AGENTS.md", "readOnly", 100)}
+                """.trimIndent(),
+            ),
+            sources = mapOf(
+                "file://root" to VfsFileSource(root),
+                "file://catalog" to VfsFileSource(catalog),
+                "file://instructions" to VfsFileSource(agents),
+            ),
+        )
+
+        val types = (vfs.list("/") as VfsListResult.Entries).entries.associate { it.name to it.type }
+
+        assertEquals("dir", types["mcp"])
+        assertEquals("file", types["AGENTS.md"])
+    }
+
+    @Test
     fun fallsBackToLowerPriorityMountOnlyWhenHigherPrioritySourceMisses() = runSuspend {
         val root = tempDir("root")
         val fallback = File(tempDir("fallback"), "AGENTS.md").apply { writeText("fallback agents") }

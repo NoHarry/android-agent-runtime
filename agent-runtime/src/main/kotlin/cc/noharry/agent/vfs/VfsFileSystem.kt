@@ -156,16 +156,19 @@ class VfsFileSystem(
         return matches.filter { it.mount.mode == VfsMountMode.READ_WRITE }
     }
 
-    private fun childMountEntries(path: VfsPath): List<VfsEntry> =
-        manifest.mounts.mapNotNull { mount -> childEntryFor(path, mount.target) }
+    private suspend fun childMountEntries(path: VfsPath): List<VfsEntry> =
+        manifest.mounts.mapNotNull { mount -> childEntryFor(path, mount) }
 
-    private fun childEntryFor(parent: VfsPath, target: VfsPath): VfsEntry? {
+    /** A mount just below [parent] is a directory when its source lists entries (/mcp), else a file (/AGENTS.md). */
+    private suspend fun childEntryFor(parent: VfsPath, mount: VfsMount): VfsEntry? {
+        val target = mount.target
         if (target.value == parent.value) return null
         val parentPrefix = if (parent.value == ROOT_PATH) ROOT_PATH else parent.value + ROOT_PATH
         if (!target.value.startsWith(parentPrefix)) return null
         val child = target.value.removePrefix(parentPrefix).trim('/').substringBefore('/')
         if (child.isBlank()) return null
-        val type = if (target.value.removePrefix(parentPrefix).trim('/').contains('/')) {
+        val deeper = target.value.removePrefix(parentPrefix).trim('/').contains('/')
+        val type = if (deeper || sourceResolver.resolve(mount.source)?.list("") is VfsListResult.Entries) {
             VFS_ENTRY_DIR
         } else {
             VFS_ENTRY_FILE

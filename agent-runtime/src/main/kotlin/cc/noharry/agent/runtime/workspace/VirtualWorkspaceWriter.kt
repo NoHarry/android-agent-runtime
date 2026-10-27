@@ -152,6 +152,23 @@ internal class VirtualWorkspaceWriter(
     private fun runScratchPath(relativePath: String = ""): String =
         "/$SCRATCH_DIR/${encodeFileName(runId)}/${relativePath.trimStart('/')}".trimEnd('/')
 
+    /** Where [path] is stored: the model's /scratch is this run's own folder, which it reads and lists as /scratch too. */
+    fun storagePath(path: String): String = when {
+        path == SCRATCH_PREFIX.trimEnd('/') -> runScratchPath()
+        path.startsWith(SCRATCH_PREFIX) -> runScratchPath(path.removePrefix(SCRATCH_PREFIX))
+        else -> path
+    }
+
+    /** The path the model knows for stored [path]; null for another run's scratch, which this run does not see. */
+    fun modelPath(path: String): String? {
+        val own = runScratchPath()
+        return when {
+            path == own || path.startsWith("$own/") -> SCRATCH_PREFIX.trimEnd('/') + path.removePrefix(own)
+            path.startsWith(SCRATCH_PREFIX) -> null
+            else -> path
+        }
+    }
+
     private suspend fun readExistingText(targetPath: String): String? =
         when (val result = fileSystem.read(targetPath, 0, MAX_WORKSPACE_WRITE_FILE_BYTES.toInt() + 1)) {
             is VfsReadResult.Found -> result.text
