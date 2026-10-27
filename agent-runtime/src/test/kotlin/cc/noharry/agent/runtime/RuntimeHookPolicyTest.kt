@@ -469,6 +469,30 @@ class RuntimeHookPolicyTest {
     }
 
     @Test
+    fun approvalAnswersAHookThatAsksAgainForTheSameCall() = runBlocking {
+        val backend = LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature")))
+        val alwaysAsks = object : RuntimeHook {
+            override suspend fun onPreToolUse(call: ToolUse, context: HookContext): HookDecision =
+                HookDecision.RequireConfirmation("door", "Approve?")
+        }
+        val runtime = AgentRuntimeBuilder.create()
+            .workspaceRoot(hookWorkspace())
+            .toolProvider(backend)
+            .hook(alwaysAsks, ToolMatcher.source(ToolSource.BACKEND))
+            .modelClient(backendThenFinishModel(mutableListOf()))
+            .build()
+
+        val pending = runtime.run(agentRequest()).toList()
+            .filterIsInstance<AgentEvent.ConfirmationRequired>()
+            .single()
+            .pending
+
+        assertEquals(ConfirmationResumeResult.Accepted, runtime.resumeConfirmation(approve(pending.pendingId)))
+        assertEquals(listOf("set_temperature"), backend.calledTools)
+        assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRuntimeResult("request-1")?.status)
+    }
+
+    @Test
     fun hookChainAggregatesConfirmationReasonsAndPrompts() = runBlocking {
         val chain = RuntimeHookChain(
             listOf(

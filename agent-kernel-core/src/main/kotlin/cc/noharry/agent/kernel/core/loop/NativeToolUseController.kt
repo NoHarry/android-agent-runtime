@@ -421,7 +421,10 @@ class NativeToolUseController(
                 hookDeniedResult(decision.code, decision.reason),
                 pending.toolUse.source,
             )
-            is PreToolUseOutcome.RequiresConfirmation -> return confirmedResult(
+            // The user approved this exact call: a hook that asks again without checking approvedConfirmation is answered.
+            is PreToolUseOutcome.RequiresConfirmation -> if (decision.toolUse.argumentsJson == pending.toolUse.argumentsJson) {
+                decision.toolUse
+            } else return confirmedResult(
                 hookDeniedResult(RuntimeErrorCode.HOOK_DENIED.wireCode, "Confirmation still required."),
                 pending.toolUse.source,
             )

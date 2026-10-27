@@ -36,7 +36,20 @@ name what moved.
   - The Responses API's cached input tokens (`input_tokens_details.cached_tokens`) are counted as cache reads.
   - `finish` (or a text-only answer) that only announces a lookup in Chinese, such as 「我将为你查询当前的空调状态。」, is
     sent back for a real answer once, like its English forms.
-- **Binary break:** `ModelMessage`, `ModelTool` and `RoundOutcome.Failed` gained parameters.
+  - A call waiting for the user's confirmation shows in the session's history as waiting. If the user declines, the
+    confirmation is withdrawn or it expires, the call stays there with a `USER_DECLINED`, `CONFIRMATION_CANCELLED` or
+    `CONFIRMATION_EXPIRED` result; the next run used to start as if nothing had been asked. An approved call that then
+    fails still ends the run, and the next run now sees the call, its result and a notice.
+  - The call that waited for confirmation goes back with its round's thinking signature and what the model said
+    before it, like any other call.
+  - A resumed run (after a confirmation or an `ask` answer) no longer starts with a `Task: … Next: …` system note
+    before the user's input: the run's own history already says it all, and the note moved the prompt cache's prefix.
+    The note is still used when the paused history is lost.
+- **Confirmations.** A hook that asks for confirmation again for the call the user just approved (one that does not
+  check `HookContext.approvedConfirmation`) is taken as answered; the run used to fail with "Confirmation still
+  required".
+- **Binary break:** `ModelMessage`, `ModelTool`, `RoundOutcome.Failed` and `PendingNativeToolUse` gained parameters;
+  `PendingToolUseController.remove` returns the removed call.
 
 ## 0.3.0 (2026-10-25)
 

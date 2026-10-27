@@ -36,4 +36,8 @@ data class PendingNativeToolUse(
     val historyMessages: List<ModelMessage> = emptyList(),
     val budgetSnapshot: LoopBudgetSnapshot = LoopBudgetSnapshot(),
     val reasoningContent: String? = null,
+    /** The round's thinking signature; Claude checks it when the thinking comes back with this call. */
+    val thinkingSignature: String? = null,
+    /** What the model told the user before this call, when this call is the round's first. */
+    val assistantText: String = "",
 )

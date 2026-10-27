@@ -442,6 +442,7 @@ class NativeToolLoop(
                         budgetSnapshot = budgetTracker.snapshot(),
                     )
                     persistHistory(runId, pending?.historyMessages ?: messages, budgetTracker.snapshot())
+                    pending?.let { sessionHistory?.record(runId, messages + it.awaitingConfirmationMessages()) }
                     return NativeLoopOutcome.RequiresConfirmation(
                         prompt = round.prompt,
                         summary = summaryBuilder.build(),
@@ -808,15 +809,18 @@ class NativeToolLoop(
             ok = executed.parsed.ok,
             code = executed.parsed.code,
         )
+        val messages = restoredHistory(pending).toMutableList()
+        messages += pending.toCallMessage()
+        messages += pending.toToolCallEvent().toToolResultMessage(executed.resultJson, executed.images)
         if (!executed.parsed.ok) {
+            // The user approved this call, not further attempts: the run stops, and the session sees the call and its result.
             persistHistory(pending.context.runId, restoredHistory(pending), pending.budgetSnapshot)
+            sessionHistory?.record(pending.context.runId, messages + failedRunNotice(executed.parsed.code ?: "TOOL_FAILED"))
             val outcome = failed(pending.context.runId, executed.parsed)
                 .copy(completion = obligationLedger.summarize(RuntimeCompletionOutcome.FAILED))
                 .toTerminalOutcome(publicEvents.snapshot())
             return emitTerminalProbeEvents(outcome)
         }
-        val messages = restoredHistory(pending).toMutableList()
-        messages.appendToolResult(pending.toToolCallEvent(), executed.resultJson, pending.reasoningContent, images = executed.images)
         persistHistory(pending.context.runId, messages, pending.budgetSnapshot)
         return when (
             val outcome = continueLoop(
@@ -867,8 +871,7 @@ class NativeToolLoop(
             return emitTerminalProbeEvents(outcome)
         }
         // Append answer only; do not rewrite first historical user message.
-        val messages = (resumeContextMessage(runId) + history.messages + ModelMessage(role = "user", content = answer))
-            .toMutableList()
+        val messages = (history.messages + ModelMessage(role = "user", content = answer)).toMutableList()
         val context = MaterializerContext(
             sessionId = sessionId,
             runId = runId,
@@ -927,11 +930,11 @@ class NativeToolLoop(
         }
     }
 
+    /** The run as it paused. Only when that is lost does the handoff note stand in for it: it would repeat the history. */
     private suspend fun restoredHistory(pending: PendingNativeToolUse): List<ModelMessage> =
-        resumeContextMessage(pending.context.runId) +
-            (loopHistoryStore.read(pending.context.runId)?.messages?.takeIf { it.isNotEmpty() }
+        loopHistoryStore.read(pending.context.runId)?.messages?.takeIf { it.isNotEmpty() }
             ?: pending.historyMessages.takeIf { it.isNotEmpty() }
-            ?: listOf(ModelMessage(role = "user", content = "")))
+            ?: (resumeContextMessage(pending.context.runId) + ModelMessage(role = "user", content = ""))
 
     private suspend fun resumeContextMessage(runId: String): List<ModelMessage> =
         handoffProvider(runId)?.toResumeContextMessage()?.let { listOf(it) }.orEmpty()

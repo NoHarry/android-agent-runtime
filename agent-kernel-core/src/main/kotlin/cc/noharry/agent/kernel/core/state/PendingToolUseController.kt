@@ -12,9 +12,8 @@ class PendingToolUseController {
         states[pending.pendingId] = toolUse
     }
 
-    fun remove(pendingId: String) {
-        states.remove(pendingId)
-    }
+    /** Forgets the paused call and returns it, so a run that ends here can still be recorded. */
+    fun remove(pendingId: String): PendingNativeToolUse? = states.remove(pendingId)
 
     fun clearRun(runId: String) {
         states.entries.forEach { entry ->

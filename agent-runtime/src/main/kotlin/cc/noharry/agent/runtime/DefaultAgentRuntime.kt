@@ -38,6 +38,7 @@ import cc.noharry.agent.kernel.core.context.ConversationCompactor
 import cc.noharry.agent.kernel.core.context.HistoryCompactor
 import cc.noharry.agent.kernel.core.context.SessionHistoryStore
 import cc.noharry.agent.kernel.core.context.SimpleBootstrapPromptResolver
+import cc.noharry.agent.kernel.core.loop.CONFIRMATION_CANCELLED_CODE
 import cc.noharry.agent.kernel.core.loop.LoopBudgetConfig
 import cc.noharry.agent.kernel.core.loop.ModelRetryConfig
 import cc.noharry.agent.kernel.core.loop.NativeLoopOutcome
@@ -315,7 +316,9 @@ internal class DefaultAgentRuntime(
 
     override suspend fun cancelPendingConfirmation(request: CancelPendingConfirmationRequest): CancelPendingResult {
         val result = confirmationStore.cancel(request)
-        pendingToolUseController.remove(request.pendingId)
+        pendingToolUseController.remove(request.pendingId)?.let { paused ->
+            if (result.apiResult is CancelPendingResult.Cancelled) nativeLoopFactory.recordUnconfirmed(paused, CONFIRMATION_CANCELLED_CODE)
+        }
         controlResume.applyConfirmationTerminalState(result.runId, result.terminalStatus, result.response)
         return result.apiResult
     }

@@ -28,6 +28,7 @@ import cc.noharry.agent.kernel.core.loop.NativeToolLoop
 import cc.noharry.agent.kernel.core.loop.PendingNativeToolUse
 import cc.noharry.agent.kernel.core.loop.RuntimeSteeringQueue
 import cc.noharry.agent.kernel.core.loop.failed
+import cc.noharry.agent.kernel.core.loop.unconfirmedMessages
 import cc.noharry.agent.kernel.core.state.LoopHistoryStore
 import cc.noharry.agent.kernel.core.tools.BackendToolExposure
 import cc.noharry.agent.kernel.core.tools.NativeSubagentType
@@ -141,6 +142,11 @@ internal class NativeLoopFactory(
                 NativeLoopSummary(),
             )
         }
+    }
+
+    /** A paused call the user never approved stays in the session's history with why it did not run. */
+    fun recordUnconfirmed(pending: PendingNativeToolUse, code: String) {
+        sessionHistory?.record(pending.context.runId, pending.historyMessages + pending.unconfirmedMessages(code))
     }
 
     suspend fun resumeConfirmedToolUse(

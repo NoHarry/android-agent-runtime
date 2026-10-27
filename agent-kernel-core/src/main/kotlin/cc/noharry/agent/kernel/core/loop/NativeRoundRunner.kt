@@ -363,7 +363,7 @@ class NativeRoundRunner(
             context.toolResults.clear()
             context.toolResults += said
         }
-        return outcome?.withAssistantText(context.visibleText)
+        return outcome?.withAssistantText(context.visibleText)?.withPausedCallSignature(context.thinkingSignature)
     }
 
     private suspend fun handleToolCalls(

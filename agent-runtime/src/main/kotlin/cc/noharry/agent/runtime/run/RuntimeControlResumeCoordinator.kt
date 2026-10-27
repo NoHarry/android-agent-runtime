@@ -8,7 +8,9 @@ import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequest
 import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequestStatus
 import cc.noharry.agent.kernel.api.reliability.RuntimeResult
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.kernel.core.loop.CONFIRMATION_EXPIRED_CODE
 import cc.noharry.agent.kernel.core.loop.NativeLoopOutcome
+import cc.noharry.agent.kernel.core.loop.USER_DECLINED_CODE
 import cc.noharry.agent.kernel.core.state.ConfirmationResume
 import cc.noharry.agent.kernel.core.state.InMemoryConfirmationStore
 import cc.noharry.agent.kernel.core.state.PendingToolUseController
@@ -52,7 +54,10 @@ internal class RuntimeControlResumeCoordinator(
         val runId = result.runId
         val lease = runId?.let { sessionAdmission.leaseOf(it) }
         try {
-            pendingToolUseController.remove(decision.pendingId)
+            pendingToolUseController.remove(decision.pendingId)?.let { paused ->
+                val code = if (result.apiResult == ConfirmationResumeResult.Expired) CONFIRMATION_EXPIRED_CODE else USER_DECLINED_CODE
+                if (result.terminalStatus?.isTerminalStatus() == true) nativeLoopFactory.recordUnconfirmed(paused, code)
+            }
             applyConfirmationTerminalState(result.runId, result.terminalStatus, result.response)
             return result.apiResult
         } catch (cancelled: CancellationException) {
