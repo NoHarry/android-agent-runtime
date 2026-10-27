@@ -13,6 +13,8 @@ internal suspend fun prepareRuntimeTools(
 ) {
     val started = System.nanoTime()
     val catalog = registry.allTools(context)
+    // Known for the run, so a call to a tool not loaded yet is told how to load it rather than that it does not exist.
+    activations.recordCatalog(context.runId, catalog)
     activations.dropInheritedOutside(context.runId, catalog.mapTo(hashSetOf()) { it.qualifiedName })
     val prefetchStarted = System.nanoTime()
     prefetchRuntimeTools(input, context, registry, activations, recorder)

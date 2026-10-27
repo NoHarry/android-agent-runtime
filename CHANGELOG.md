@@ -68,6 +68,9 @@ name what moved.
   - A failure the provider already explains (`{"ok":false,"code":…}`) reaches the model as it is; it used to arrive
     escaped inside a `BACKEND_CALL_FAILED` message.
   - A tool found by prefetch no longer carries its description inside its schema as well; it was sent twice.
+  - A real backend tool called before it was loaded is answered `INACTIVE_BACKEND_TOOL` with the schema path to read,
+    in every run: the run records the catalog it loads at the start. Without a search or prefetch first, the answer was
+    a bare `UNSUPPORTED_NATIVE_TOOL`, as if the tool did not exist.
   - `search_tools` ranks with Okapi BM25 proper: a term counts by how few tools have it, against the catalog's average
     description length, with a light length penalty; a one-character Chinese query (灯) matches the tools that have
     the character. On Bothy's catalog, 「灯」 now finds `set_light` and 「导航去公司」 `start_navigation`, which a
