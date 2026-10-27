@@ -56,6 +56,18 @@ name what moved.
 - **In-run compaction folds an old read-only result only when that at least halves it.** A result of a few hundred
   bytes was folded into a preview not much smaller, sometimes larger, and every early message it rewrote cost the prompt
   cache for the rest of the run.
+- **Tools.**
+  - A tool's name always fits what model APIs take (ASCII letters, digits, `_` and `-`, at most 64 characters): a
+    name part in another script becomes a short hash of itself, a long name keeps its start and a hash of the whole.
+    `mcpQualifiedName` gives that name. A Chinese tool name, or a long one, used to make the provider reject the request.
+  - Read-only tools run in parallel batches when the provider says so (`effectKind = READ_ONLY`: an MCP tool's
+    `annotations.readOnlyHint`, `functionTools(readOnly = true)`); only a `readOnlyHint` inside the input schema
+    counted, so MCP's standard hint never did.
+  - Arguments are checked against `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `minLength` and `maxLength` too;
+    only `minimum` was, so a 35 went to a 16–32 thermostat.
+  - A failure the provider already explains (`{"ok":false,"code":…}`) reaches the model as it is; it used to arrive
+    escaped inside a `BACKEND_CALL_FAILED` message.
+  - A tool found by prefetch no longer carries its description inside its schema as well; it was sent twice.
 - **Confirmations.** A hook that asks for confirmation again for the call the user just approved (one that does not
   check `HookContext.approvedConfirmation`) is taken as answered; the run used to fail with "Confirmation still
   required".

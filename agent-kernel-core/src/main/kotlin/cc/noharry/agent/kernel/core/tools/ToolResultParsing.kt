@@ -61,6 +61,16 @@ fun backendToolCallResult(resultJson: String): ToolUseResult {
 }
 
 /** A delivered MCP business result, not evidence of a broken connection. */
+/** [resultJson] when it is a failure in the runtime's own shape (`ok` false, a `code`), with [retryable] added if unset. */
+internal fun structuredFailure(resultJson: String, retryable: Boolean): String? {
+    val root = backendResultObject(resultJson) ?: return null
+    if (root["error"] != null && root["error"] !is JsonNull) return null
+    val ok = (root["ok"] as? JsonPrimitive)?.takeUnless { it.isString }?.booleanOrNull
+    val code = (root["code"] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
+    if (ok != false || code.isNullOrBlank()) return null
+    return if ("retryable" in root) resultJson else JsonObject(root + ("retryable" to JsonPrimitive(retryable))).toString()
+}
+
 internal fun isMcpBusinessResult(resultJson: String): Boolean {
     val root = backendResultObject(resultJson) ?: return false
     if (root["error"] != null && root["error"] !is JsonNull) return false

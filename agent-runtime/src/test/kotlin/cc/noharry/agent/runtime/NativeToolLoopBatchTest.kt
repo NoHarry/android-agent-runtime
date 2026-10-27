@@ -284,6 +284,26 @@ class NativeToolLoopBatchTest {
     }
 
     @Test
+    fun runBatchesBackendToolsTheProviderDeclaresReadOnly() = runBlocking {
+        // MCP puts readOnlyHint in the tool's annotations, which the client turns into effectKind, not in its input schema.
+        val backend = ConcurrentBackendProvider(schemaJson = NO_HINT_BACKEND_SCHEMA, effectKind = "READ_ONLY")
+        val seenRequests = mutableListOf<ModelRequest>()
+        val runtime = AgentRuntimeBuilder.create()
+            .workspaceRoot(java.nio.file.Files.createTempDirectory("backend-declared-read-").toFile())
+            .toolProvider(backend)
+            .modelClient(backendBatchModel(seenRequests))
+            .build()
+
+        val result = runtime.run(agentRequest()).toList()
+            .filterIsInstance<AgentEvent.ResultAvailable>()
+            .single()
+            .result
+
+        assertEquals(RuntimeRunStatus.COMPLETED, result.status)
+        assertTrue("tools declared read-only should overlap inside one batch", backend.concurrent.get())
+    }
+
+    @Test
     fun runFeedsSameRoundTodoAndBackendResultsBackInOrder() = runBlocking {
         val backend = LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature")))
         val seenRequests = mutableListOf<ModelRequest>()
@@ -459,6 +479,7 @@ private class FinishGateReadProbeSource : VfsSource {
 
 private class ConcurrentBackendProvider(
     private val schemaJson: String = READ_ONLY_BACKEND_SCHEMA,
+    private val effectKind: String = "UNKNOWN",
 ) : McpClientProvider {
     private val activeCalls = AtomicInteger(0)
     val concurrent = AtomicBoolean(false)
@@ -470,8 +491,8 @@ private class ConcurrentBackendProvider(
 
     override suspend fun listTools(): List<ToolDescriptor> =
         listOf(
-            mcpTool("slow_backend").copy(description = "slow backend", inputSchemaJson = schemaJson),
-            mcpTool("fast_backend").copy(description = "fast backend", inputSchemaJson = schemaJson),
+            mcpTool("slow_backend").copy(description = "slow backend", inputSchemaJson = schemaJson, effectKind = effectKind),
+            mcpTool("fast_backend").copy(description = "fast backend", inputSchemaJson = schemaJson, effectKind = effectKind),
         )
 
     override suspend fun callTool(

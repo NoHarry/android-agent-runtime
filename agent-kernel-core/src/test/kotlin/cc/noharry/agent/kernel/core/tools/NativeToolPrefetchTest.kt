@@ -41,7 +41,9 @@ class NativeToolPrefetchTest {
         val activated = store.activated("r")
         assertEquals(1, activated.size)
         assertEquals("route", activated.single().originalToolName)
-        assertTrue(activated.single().schemaJson.contains("trusted route description"))
+        // The description reaches the model with the tool (ModelTool.description), not a second time inside its schema.
+        assertEquals("trusted route description", activated.single().description)
+        assertFalse(activated.single().schemaJson.contains("trusted route description"))
         assertEquals("tool_prefetch", activated.single().metadata.source)
         assertTrue(recorder.started.single().argumentsJson.contains("complex request"))
         assertTrue(recorder.finished.single().contains("\"score\":0.9"))

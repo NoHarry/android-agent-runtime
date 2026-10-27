@@ -45,6 +45,15 @@ class ToolCallFailureBreakerTest {
     }
 
     @Test
+    fun aFailureInTheRuntimesOwnShapeReachesTheModelAsItIs() {
+        val raw = """{"ok":false,"code":"TOOL_FAILED","tool":"explode","message":"传感器没有响应"}"""
+        val result = cc.noharry.agent.kernel.api.ToolCallResult(false, raw).toBackendToolResult()
+        assertEquals("TOOL_FAILED", backendToolCallResult(result).code)
+        assertEquals(false, result.contains("BACKEND_CALL_FAILED"))
+        assertEquals(true, result.contains("\"retryable\":false"))
+    }
+
+    @Test
     fun jsonRpcErrorCannotMasqueradeAsDeliveredBusinessResult() {
         val raw = """{"error":{"code":-32603},"result":{"structuredContent":{"status":{"name":"OK"}}}}"""
         assertEquals(false, isMcpBusinessResult(raw))

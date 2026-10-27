@@ -941,9 +941,10 @@ private fun ToolSource.toDynamicToolSource(): DynamicToolSource? = when (this) {
     ToolSource.INTERACTION -> DynamicToolSource.INTERACTION
 }
 
+/** A failure the provider already explains (`{"ok":false,"code":…}`) reaches the model as it is, not as an escaped string. */
 internal fun cc.noharry.agent.kernel.api.ToolCallResult.toBackendToolResult(): String =
     if (success || isMcpBusinessResult(resultJson) && !backendToolCallResult(resultJson).ok) resultJson
-    else backendFailedResult(resultJson, retryable)
+    else structuredFailure(resultJson, retryable) ?: backendFailedResult(resultJson, retryable)
 
 private fun mcpToolsCallJson(id: String, toolName: String, argumentsJson: String): String =
     """{"jsonrpc":"2.0","id":"${id.escapeJson()}","method":"tools/call","params":{"name":"${toolName.escapeJson()}","arguments":${argumentsJson.asJsonObjectLiteral()}}}"""

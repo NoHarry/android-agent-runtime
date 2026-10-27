@@ -80,6 +80,8 @@ class DynamicToolRegistry(
                 modelTool = ModelTool(injectedName, activation.schemaJson, description = activation.description),
                 source = DynamicToolSource.BACKEND,
                 backendToolName = activation.toolName,
+                // The provider's own word (an MCP tool's annotations.readOnlyHint, functionTools' readOnly) or a hint in the schema.
+                readOnlyHint = activation.effectKind == RuntimeEffectKind.READ_ONLY || activation.schemaJson.hasReadOnlyHint(),
                 action = RuntimeActionDescriptor(
                     providerId = activation.serverId,
                     actionName = activation.originalToolName,

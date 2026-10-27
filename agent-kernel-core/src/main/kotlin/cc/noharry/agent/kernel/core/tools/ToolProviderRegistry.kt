@@ -427,7 +427,7 @@ private data class McpProviderCatalog(
             val toolId = normalizeMcpComponent(descriptor.name)
             val baseName = "mcp__${normalizedServerId}__${toolId}"
             val count = qualifiedCounts.merge(baseName, 1, Int::plus) ?: 1
-            val qualified = if (count == 1) baseName else "${baseName}_$count"
+            val qualified = fitToolName(if (count == 1) baseName else "${baseName}_$count")
             McpToolRef(
                 provider = provider,
                 serverId = serverId,
@@ -508,10 +508,32 @@ data class McpToolRef(
     val descriptor: ToolDescriptor,
 )
 
-fun normalizeMcpComponent(value: String): String =
-    value.map { char ->
-        if (char.isLetterOrDigit() || char == '_' || char == '-') char else '_'
-    }.joinToString("").ifBlank { "unnamed" }
+/**
+ * A part of a tool name as model APIs take it: OpenAI and DeepSeek accept only ASCII letters, digits, `_` and `-`. A
+ * part with none of those (a name in Chinese, say) becomes a short hash of itself rather than a row of underscores.
+ */
+fun normalizeMcpComponent(value: String): String {
+    if (value.isBlank()) return "unnamed"
+    val ascii = value.map { char -> if (char.isAsciiNameChar()) char else '_' }.joinToString("")
+    return if (ascii.any { it.isLetterOrDigit() }) ascii else "t${value.sha256Hex().take(TOOL_NAME_HASH_CHARS)}"
+}
+
+/** The model-visible name of [toolName] from the provider [serverId] (before equal names are told apart). */
+fun mcpQualifiedName(serverId: String, toolName: String): String =
+    fitToolName("mcp__${normalizeMcpComponent(serverId)}__${normalizeMcpComponent(toolName)}")
+
+/** Model APIs take tool names of at most 64 characters; a longer one keeps its start and a hash of the whole. */
+private fun fitToolName(name: String): String =
+    if (name.length <= MAX_TOOL_NAME_CHARS) name
+    else name.take(MAX_TOOL_NAME_CHARS - TOOL_NAME_HASH_CHARS - 1) + "_" + name.sha256Hex().take(TOOL_NAME_HASH_CHARS)
+
+private fun Char.isAsciiNameChar(): Boolean = this in 'a'..'z' || this in 'A'..'Z' || this in '0'..'9' || this == '_' || this == '-'
+
+private fun String.sha256Hex(): String =
+    java.security.MessageDigest.getInstance("SHA-256").digest(toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+
+private const val MAX_TOOL_NAME_CHARS = 64
+private const val TOOL_NAME_HASH_CHARS = 8
 
 private fun toolsPayloadJson(tools: List<JsonObject>): String =
     tools.joinToString(prefix = "{\"tools\":[\n", separator = ",\n", postfix = "\n]}")

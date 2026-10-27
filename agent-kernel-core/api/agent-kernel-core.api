@@ -3557,6 +3557,7 @@ public final class cc/noharry/agent/kernel/core/tools/ToolProviderRegistry$Compa
 }
 
 public final class cc/noharry/agent/kernel/core/tools/ToolProviderRegistryKt {
+	public static final fun mcpQualifiedName (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 	public static final fun normalizeMcpComponent (Ljava/lang/String;)Ljava/lang/String;
 	public static final fun toMcpCallContext (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;)Lcc/noharry/agent/kernel/api/ToolCallContext;
 }

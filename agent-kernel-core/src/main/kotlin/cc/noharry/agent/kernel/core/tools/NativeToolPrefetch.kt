@@ -176,9 +176,10 @@ private class PrefetchRecording(
     }
 }
 
+/** The tool's own schema, as search activates it; its description goes to the model with the tool, not inside the schema. */
 private fun McpToolRef.prefetchSchema(): String {
-    val schema = Json.parseToJsonElement(descriptor.inputSchemaJson) as JsonObject
-    return JsonObject(schema + ("description" to JsonPrimitive(descriptor.description))).toString()
+    check(Json.parseToJsonElement(descriptor.inputSchemaJson) is JsonObject) { "Tool schema must be an object." }
+    return descriptor.inputSchemaJson
 }
 
 private const val PREFETCH_SOURCE = "tool_prefetch"

@@ -95,7 +95,7 @@ private fun validateValue(
 ): ToolArgumentValidationResult.Invalid? {
     validateType(toolName, path, value, schema)?.let { return it }
     validateEnum(toolName, path, value, schema)?.let { return it }
-    validateMinimum(toolName, path, value, schema)?.let { return it }
+    validateBounds(toolName, path, value, schema)?.let { return it }
     return when {
         value is JsonObject -> validateNestedObject(toolName, path, value, schema)
         value is JsonArray -> validateArrayItems(toolName, path, value, schema)
@@ -171,19 +171,27 @@ private fun validateEnum(
     return invalidArguments(toolName, "Property '$path' must match one of the declared enum values.")
 }
 
-private fun validateMinimum(
+/** A number's minimum, maximum and exclusive bounds; a string's length in characters. */
+private fun validateBounds(
     toolName: String,
     path: String,
     value: JsonElement,
     schema: JsonObject,
 ): ToolArgumentValidationResult.Invalid? {
-    val minimum = (schema["minimum"] as? JsonPrimitive)?.doubleOrNull ?: return null
-    val actual = (value as? JsonPrimitive)?.takeUnless { it.isString }?.doubleOrNull ?: return null
-    return if (actual < minimum) {
-        invalidArguments(toolName, "Property '$path' must be >= $minimum.")
-    } else {
-        null
+    fun limit(keyword: String) = (schema[keyword] as? JsonPrimitive)?.takeUnless { it.isString }?.doubleOrNull
+    val primitive = value as? JsonPrimitive ?: return null
+    if (primitive.isString) {
+        val length = primitive.content.codePointCount(0, primitive.content.length)
+        limit("minLength")?.let { if (length < it) return invalidArguments(toolName, "Property '$path' must be at least ${it.toLong()} characters.") }
+        limit("maxLength")?.let { if (length > it) return invalidArguments(toolName, "Property '$path' must be at most ${it.toLong()} characters.") }
+        return null
     }
+    val actual = primitive.doubleOrNull ?: return null
+    limit("minimum")?.let { if (actual < it) return invalidArguments(toolName, "Property '$path' must be >= $it.") }
+    limit("maximum")?.let { if (actual > it) return invalidArguments(toolName, "Property '$path' must be <= $it.") }
+    limit("exclusiveMinimum")?.let { if (actual <= it) return invalidArguments(toolName, "Property '$path' must be > $it.") }
+    limit("exclusiveMaximum")?.let { if (actual >= it) return invalidArguments(toolName, "Property '$path' must be < $it.") }
+    return null
 }
 
 private fun JsonElement.matchesJsonType(type: String): Boolean = when (type) {

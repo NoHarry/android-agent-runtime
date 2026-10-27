@@ -47,3 +47,25 @@ class ToolArgumentSchemaValidatorTest {
         assertTrue(result.resultJson().contains(limit))
     }
 }
+
+/** Bounds beyond `minimum`: a model that sends 35 to a 16–32 thermostat hears about it before the car does. */
+class ToolArgumentBoundsTest {
+    private val schema = """{"type":"object","properties":{
+        "temperature":{"type":"integer","minimum":16,"maximum":32},
+        "level":{"type":"number","exclusiveMinimum":0,"exclusiveMaximum":3},
+        "name":{"type":"string","minLength":1,"maxLength":4}}}"""
+
+    private fun invalid(arguments: String) =
+        validateBackendToolArguments("mcp__car__set", arguments, schema) is ToolArgumentValidationResult.Invalid
+
+    @org.junit.Test fun maximumAndExclusiveBoundsAndLengthsAreChecked() {
+        org.junit.Assert.assertTrue(invalid("""{"temperature":35}"""))
+        org.junit.Assert.assertFalse(invalid("""{"temperature":32}"""))
+        org.junit.Assert.assertTrue(invalid("""{"level":3}"""))
+        org.junit.Assert.assertTrue(invalid("""{"level":0}"""))
+        org.junit.Assert.assertFalse(invalid("""{"level":2.5}"""))
+        org.junit.Assert.assertTrue(invalid("""{"name":""}"""))
+        org.junit.Assert.assertTrue(invalid("""{"name":"主驾副驾后排"}"""))
+        org.junit.Assert.assertFalse(invalid("""{"name":"主驾"}"""))
+    }
+}
