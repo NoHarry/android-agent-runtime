@@ -85,6 +85,10 @@ name what moved.
     own folder under `/scratch`, but reads did not, so `read_file` of a file just written said not found, and `grep`
     and `list_dir` showed the internal folder (and `grep` other runs' scratch).
   - A directory mounted at the top (`/mcp`, `/context`, `/.agents`) is listed as a directory; it was listed as a file.
+- **The event log's new files and renames survive a power cut.** A segment's first line and each manifest or health
+  file (written to a temporary file, forced, then renamed) forced their bytes but not the directory entry, so a power
+  cut could lose a new segment or bring back an older manifest, whose segment list then left the newest events out.
+  The directory is forced too, where the platform allows it.
 - **`exec_js` replays tool calls in order.** A script runs again from the start after each tool call it waits for;
   answers were cached by tool name and arguments, so a read after a write returned the old value, the same call made
   twice ran once, and a script whose arguments changed on each run (Math.random, the time) ran its tool 32 times before

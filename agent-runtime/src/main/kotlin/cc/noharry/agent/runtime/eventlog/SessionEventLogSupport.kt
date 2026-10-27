@@ -9,6 +9,11 @@ import cc.noharry.agent.kernel.api.SessionEventLogHealth
 import cc.noharry.agent.kernel.api.SessionEventLogHealthStatus
 import cc.noharry.agent.kernel.api.SessionEventQuery
 import cc.noharry.agent.kernel.api.SessionEventType
+import java.io.File
+import java.io.IOException
+import java.io.RandomAccessFile
+import java.nio.channels.FileChannel
+import java.nio.file.StandardOpenOption
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -391,3 +396,54 @@ private fun JsonObject.requiredTypedLongList(key: String): List<Long> {
 }
 
 private val SAFE_FAILURE_CODE = Regex("^[A-Z][A-Z0-9_]{0,63}$")
+
+internal fun appendForcedLine(file: File, line: String) {
+    file.parentFile?.mkdirs()
+    rejectSymlink(file.toPath())
+    val created = !file.exists()
+    RandomAccessFile(file, "rw").use { raf ->
+        raf.seek(raf.length())
+        raf.write((line + "\n").toByteArray(Charsets.UTF_8))
+        raf.fd.sync()
+        forceChannel(raf.channel)
+    }
+    // A new segment's name is in its directory, which a power cut can lose though the file's bytes were forced.
+    if (created) forceDirectory(file.parentFile)
+}
+
+internal fun writeForcedText(file: File, text: String) = writeForcedBytes(file, text.toByteArray(Charsets.UTF_8))
+
+internal fun writeForcedBytes(file: File, bytes: ByteArray) {
+    file.parentFile?.mkdirs()
+    file.parentFile?.let { if (existsNoFollow(it)) rejectLink(it.toPath()) }
+    if (existsNoFollow(file)) rejectLink(file.toPath())
+    val staging = File(file.parentFile, file.name + ".tmp")
+    if (existsNoFollow(staging)) rejectLink(staging.toPath())
+    RandomAccessFile(staging, "rw").use { raf ->
+        raf.setLength(0)
+        raf.write(bytes)
+        raf.fd.sync()
+        forceChannel(raf.channel)
+    }
+    if (existsNoFollow(file)) rejectLink(file.toPath())
+    if (!staging.renameTo(file)) {
+        staging.copyTo(file, overwrite = true)
+        staging.delete()
+    }
+    // The rename is an entry in the directory: until that is forced, a power cut can bring back the old file.
+    forceDirectory(file.parentFile)
+}
+
+private fun forceChannel(channel: FileChannel) {
+    channel.force(true)
+}
+
+/** Makes the entries created or renamed in [dir] durable; skipped where a directory cannot be opened (Windows). */
+internal fun forceDirectory(dir: File?) {
+    if (dir == null) return
+    try {
+        FileChannel.open(dir.toPath(), StandardOpenOption.READ).use { it.force(true) }
+    } catch (_: IOException) {
+    } catch (_: UnsupportedOperationException) {
+    }
+}

@@ -26,6 +26,24 @@ import org.junit.Test
 
 class FileBackedSessionEventLogTest {
     @Test
+    fun forcingADirectoryNeverFailsAWrite() {
+        val root = Files.createTempDirectory("file-event-log-dir-force-").toFile()
+        try {
+            val manifest = File(root, "stream/manifest.json")
+            writeForcedText(manifest, "{}")
+            appendForcedLine(File(root, "stream/segments/000001.jsonl"), "{}")
+            forceDirectory(File(root, "missing"))
+            forceDirectory(manifest)
+            forceDirectory(null)
+
+            assertEquals("{}", manifest.readText())
+            assertFalse("no staging file is left", File(root, "stream/manifest.json.tmp").exists())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun runtimesOpeningOneLogAtOnceNeverTripOverEachOthersProbe() {
         // 2026-10-21 on a device: two opens of one session's log raced on the probe's staging file, and one run failed
         // with 「The source file doesn't exist」.

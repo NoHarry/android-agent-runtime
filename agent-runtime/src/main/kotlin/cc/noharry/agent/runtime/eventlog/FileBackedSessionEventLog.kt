@@ -13,7 +13,6 @@ import cc.noharry.agent.kernel.api.SessionEventQuery
 import cc.noharry.agent.kernel.core.state.encodeFileName
 import java.io.File
 import java.io.RandomAccessFile
-import java.nio.channels.FileChannel
 import java.nio.file.Files
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -945,42 +944,6 @@ internal fun rejectAncestorLinks(root: File, leaf: File) {
 }
 
 internal fun utf8ByteLength(text: String): Long = text.toByteArray(Charsets.UTF_8).size.toLong()
-
-internal fun appendForcedLine(file: File, line: String) {
-    file.parentFile?.mkdirs()
-    rejectSymlink(file.toPath())
-    RandomAccessFile(file, "rw").use { raf ->
-        raf.seek(raf.length())
-        raf.write((line + "\n").toByteArray(Charsets.UTF_8))
-        raf.fd.sync()
-        forceChannel(raf.channel)
-    }
-}
-
-internal fun writeForcedText(file: File, text: String) = writeForcedBytes(file, text.toByteArray(Charsets.UTF_8))
-
-internal fun writeForcedBytes(file: File, bytes: ByteArray) {
-    file.parentFile?.mkdirs()
-    file.parentFile?.let { if (existsNoFollow(it)) rejectLink(it.toPath()) }
-    if (existsNoFollow(file)) rejectLink(file.toPath())
-    val staging = File(file.parentFile, file.name + ".tmp")
-    if (existsNoFollow(staging)) rejectLink(staging.toPath())
-    RandomAccessFile(staging, "rw").use { raf ->
-        raf.setLength(0)
-        raf.write(bytes)
-        raf.fd.sync()
-        forceChannel(raf.channel)
-    }
-    if (existsNoFollow(file)) rejectLink(file.toPath())
-    if (!staging.renameTo(file)) {
-        staging.copyTo(file, overwrite = true)
-        staging.delete()
-    }
-}
-
-private fun forceChannel(channel: FileChannel) {
-    channel.force(true)
-}
 
 internal const val EVENT_LOG_LOCK_FILE = ".session-event-log.lock"
 internal const val EVENT_LOG_OPEN_PROBE_FILE = ".eventlog-open-probe"
