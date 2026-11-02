@@ -3,7 +3,7 @@
 All notable changes are listed here. The project is 0.x: a minor release may break the API, and every break is
 called out.
 
-## Unreleased (0.4.0)
+## 0.4.0 (2026-11-01)
 
 Module and package layout, plus fixes to what a session's next request shows. **Breaking** for code and build files that
 name what moved.
