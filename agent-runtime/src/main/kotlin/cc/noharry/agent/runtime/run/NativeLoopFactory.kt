@@ -39,8 +39,10 @@ import cc.noharry.agent.kernel.core.trace.TraceRedactor
 import cc.noharry.agent.runtime.NetworkToolBackend
 import cc.noharry.agent.runtime.Subagents
 import cc.noharry.agent.runtime.probe.ProbeRunAttachment
+import cc.noharry.agent.runtime.workspace.BackendToolSearch
 import cc.noharry.agent.runtime.workspace.ContextMaterializerRouter
 import cc.noharry.agent.runtime.workspace.MaterializerSchemaCacheStore
+import cc.noharry.agent.runtime.workspace.ToolSearchPort
 import cc.noharry.agent.runtime.workspace.VirtualFileMaterializer
 import cc.noharry.agent.runtime.workspace.VirtualWorkspace
 import cc.noharry.agent.vfs.VfsFileSystem
@@ -263,7 +265,15 @@ internal class NativeLoopFactory(
                     deferBackendTools = backendToolExposure == BackendToolExposure.CALL_TOOL,
                     subagentTools = subagents?.let { it::execute },
                 )
-            },
+            } ?: ToolSearchPort(
+                // Without a workspace the model still finds the providers' tools with search_tools.
+                BackendToolSearch(
+                    mcpRegistry, activationStore, sessionRecorder,
+                    discoveries.getOrPut(runId) { cc.noharry.agent.kernel.core.tools.OnDemandToolDiscovery() },
+                    deferBackendTools = backendToolExposure == BackendToolExposure.CALL_TOOL,
+                    schemaFiles = false,
+                ),
+            ),
             traceRedactor = traceRedactor,
             hookChain = hookChain,
             bootstrapPrompt = bootstrapPrompt,

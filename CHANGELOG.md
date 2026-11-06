@@ -30,6 +30,13 @@ The API is cleaned up for use as a public library. **Breaking** for hosts that u
   crashed the host instead of returning a failure, and requests failed without core library desugaring.
 - **API docs for the JVM artifacts.** The javadoc jars of `agent-kernel-api`, `agent-kernel-core` and `agent-runtime`
   were empty; they now hold the API docs, like the other artifacts'.
+- **A runtime without a workspace reaches its tools.** Tools from providers (`functionTools`, MCP) are found with
+  `search_tools`, which only a workspace ran: without one, the model was offered `search_tools` and the file tools, all
+  answering `WORKSPACE_NOT_CONFIGURED`, and could call only the tools a `ToolPrefetchProvider` had brought in.
+  `search_tools` now works without a workspace. Such a runtime no longer offers the file tools (`list_dir`,
+  `read_file`, `grep`, `write_file`, `edit_file`), nor the prompt's lines about files, its context paths or its skills,
+  which the model would have to read as files (behaviour change: its prompt and tool list are shorter). A backend tool
+  called before it was found now says to find it with `search_tools`.
 - **The Dream scaffold is gone** (`cc.noharry.agent.dream`: `DreamWorker`, `DreamRequest`, `DreamMode`, `DreamResult`,
   `NoOpDreamWorker`, `MemoryIndexRebuilder`). Nothing in the runtime ran it. A host that called `MemoryIndexRebuilder`
   to rebuild `/memory/MEMORY.md` from the memory files writes that index itself.

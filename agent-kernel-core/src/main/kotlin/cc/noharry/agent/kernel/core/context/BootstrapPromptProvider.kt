@@ -13,7 +13,7 @@ data class BootstrapPrompt(
 data class ProtocolTools(
     val webFetch: Boolean = true,
     val webSearch: Boolean = false,
-    /** Native tools the host turned off. */
+    /** Native tools not offered: the ones the host turned off, and the file tools of a runtime without a workspace. */
     val disabled: Set<String> = emptySet(),
 )
 
@@ -191,7 +191,7 @@ const val MAX_LISTED_DOMAINS = 12
 /** Over the budget even so, each skill keeps this much of its description. */
 const val MAX_SKILL_DESCRIPTION_CHARS = 40
 
-private const val BOOTSTRAP_PROMPT_VERSION = "context-driven-runtime-bootstrap-v10"
+private const val BOOTSTRAP_PROMPT_VERSION = "context-driven-runtime-bootstrap-v11"
 
 /** The protocol rules, each about a tool only when the runtime offers that tool, as the host words them ([rules]). */
 private fun protocolPrompt(tools: ProtocolTools, rules: ProtocolRules): String? = rules.rules(defaultProtocolLines(tools))
@@ -207,7 +207,8 @@ private fun defaultProtocolLines(tools: ProtocolTools): List<String> = listOfNot
     ("- For multi-step tasks, maintain update_todo and emit it in the same round as the related backend or workspace calls, including the first useful business call.")
         .takeIf { "update_todo" !in tools.disabled },
     "- Prefer finish(response) as the explicit completion signal and call it exactly once when the useful result is ready. A finish with outcome success closes the remaining checklist items, so do not spend a round only to mark todos completed.",
-    "- Read skill or context files only when the compact catalog is insufficient for the current task.",
+    "- Read skill or context files only when the compact catalog is insufficient for the current task."
+        .takeIf { "read_file" !in tools.disabled },
     "- Workspace writes are limited to /scratch and /memory through write_file or edit_file."
         .takeIf { "write_file" !in tools.disabled || "edit_file" !in tools.disabled },
     when {
@@ -215,5 +216,6 @@ private fun defaultProtocolLines(tools: ProtocolTools): List<String> = listOfNot
         tools.webSearch -> "- Search the web with web_search; web_fetch returns a page's extracted text for HTML. Do not refetch the same URL with a larger max_bytes."
         else -> "- web_fetch returns extracted page text for HTML. For web search call https://www.bing.com/search?q={query}&format=rss first (XML results); do not refetch the same URL with a larger max_bytes."
     },
-    "- Read only the context you need for the current task; do not enumerate everything.",
+    "- Read only the context you need for the current task; do not enumerate everything."
+        .takeIf { "read_file" !in tools.disabled },
 )

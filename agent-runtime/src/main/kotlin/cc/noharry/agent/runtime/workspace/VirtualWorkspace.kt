@@ -46,6 +46,7 @@ internal class VirtualWorkspace(
         runId: String = DEFAULT_WORKSPACE_RUN_ID,
     ) : this(VfsFileSystem.singleFileRoot(root), materializer, null, null, runId)
 
+    private val toolSearch = BackendToolSearch(mcpRegistry, activationStore, sessionRecorder, onDemandDiscovery, deferBackendTools)
     private val readGuard = RuntimeVfsReadGuard()
     private val writer = VirtualWorkspaceWriter(fileSystem, runId, readGuard = readGuard)
     private val runtimeMounts = materializer?.let(::RuntimeVfsMounts)
@@ -73,7 +74,7 @@ internal class VirtualWorkspace(
             "list_dir" -> listDir(argumentsJson, context)
             "read_file" -> readFile(argumentsJson, context)
             "grep" -> grep(argumentsJson, context)
-            "search_tools" -> searchTools(argumentsJson, context)
+            "search_tools" -> toolSearch.search(argumentsJson, context)
             in SUBAGENT_TOOL_NAMES -> subagentTools?.let {
                 WorkspaceExecutionResult(it(toolName, argumentsJson, SubagentCall(context.sessionId, context.runId, context.modelRef)))
             } ?: WorkspaceExecutionResult(errorResult(RuntimeErrorCode.UNSUPPORTED_NATIVE_TOOL.wireCode, "Subagents are not configured."))
@@ -211,7 +212,67 @@ internal class VirtualWorkspace(
         )
     }
 
-    private suspend fun searchTools(argumentsJson: String, context: MaterializerContext): WorkspaceExecutionResult {
+    private fun grepResultJson(result: VfsSearchResult): String {
+        val matches = when (result) {
+            is VfsSearchResult.Matches -> result.matches
+            is VfsSearchResult.Error -> return vfsError(result.code, result.message, result.retryable)
+            VfsSearchResult.InvalidPath -> return invalidPath()
+            VfsSearchResult.InvalidPattern -> return errorResult(
+                RuntimeErrorCode.INVALID_GREP_PATTERN.wireCode,
+                "Invalid grep pattern.",
+            )
+            VfsSearchResult.BudgetExceeded -> return errorResult(
+                RuntimeErrorCode.GREP_BUDGET_EXCEEDED.wireCode,
+                "Grep budget exceeded.",
+            )
+            VfsSearchResult.NotFound -> return errorResult(RuntimeErrorCode.NOT_FOUND.wireCode, "Path not found.")
+        }.joinToString(prefix = "[", postfix = "]") { match ->
+            """{"path":"${escape(match.path)}","line":${match.line},"preview":"${escape(match.preview.boundedGrepPreview())}"}"""
+        }
+        return """{"ok":true,"matches":$matches}"""
+    }
+
+    suspend fun cleanupScratch() {
+        writer.cleanupScratch()
+    }
+
+    private fun fileSystemFor(context: MaterializerContext): VfsFileSystem {
+        val mounts = runtimeMounts ?: return fileSystem
+        val key = context.cacheKey()
+        return synchronized(attachedFileSystems) {
+            attachedFileSystems.getOrPut(key) {
+                mounts.attach(fileSystem, context)
+            }
+        }
+    }
+
+    internal companion object {
+        suspend fun cleanupScratch(root: File, runId: String) {
+            VirtualWorkspaceWriter(VfsFileSystem.singleFileRoot(root), runId).cleanupScratch()
+        }
+
+        suspend fun cleanupScratch(fileSystem: VfsFileSystem, runId: String) {
+            VirtualWorkspaceWriter(fileSystem, runId).cleanupScratch()
+        }
+    }
+}
+
+/**
+ * search_tools: ranks the providers' tools for a query, finds more on demand, and activates the matches so the model
+ * can call them in the same round. It needs the tool registry rather than files, so a runtime without a workspace has
+ * it too ([ToolSearchPort]).
+ */
+internal class BackendToolSearch(
+    private val mcpRegistry: ToolProviderRegistry?,
+    private val activationStore: ToolActivationStore?,
+    private val sessionRecorder: LoopSessionRecorder,
+    private val onDemandDiscovery: OnDemandToolDiscovery,
+    /** Backend tools are called through call_tool, so each match carries its schema instead of joining the tool list. */
+    private val deferBackendTools: Boolean,
+    /** A match not callable yet points at its schema.json, which only a workspace serves. */
+    private val schemaFiles: Boolean = true,
+) {
+    suspend fun search(argumentsJson: String, context: MaterializerContext): WorkspaceExecutionResult {
         val query = stringField(argumentsJson, "query")
             ?: return WorkspaceExecutionResult(
                 errorResult(RuntimeErrorCode.INVALID_GREP_PATTERN.wireCode, "Missing query."),
@@ -298,57 +359,32 @@ internal class VirtualWorkspace(
                 """"via":"call_tool","schema":${compactSchema(tool.descriptor.inputSchemaJson)}"""
             } else if (tool.qualifiedName in callable) {
                 """"callable":true"""
-            } else {
+            } else if (schemaFiles) {
                 """"schemaPath":"${escape("/mcp/tools/${tool.qualifiedName}/schema.json")}""""
+            } else {
+                """"callable":false"""
             }
             """{"name":"$name","originalName":"$origName","description":"$desc","score":${hit.score},$access}"""
         }
         return """{"ok":true,"matches":$entries}"""
     }
+}
 
-    private fun grepResultJson(result: VfsSearchResult): String {
-        val matches = when (result) {
-            is VfsSearchResult.Matches -> result.matches
-            is VfsSearchResult.Error -> return vfsError(result.code, result.message, result.retryable)
-            VfsSearchResult.InvalidPath -> return invalidPath()
-            VfsSearchResult.InvalidPattern -> return errorResult(
-                RuntimeErrorCode.INVALID_GREP_PATTERN.wireCode,
-                "Invalid grep pattern.",
-            )
-            VfsSearchResult.BudgetExceeded -> return errorResult(
-                RuntimeErrorCode.GREP_BUDGET_EXCEEDED.wireCode,
-                "Grep budget exceeded.",
-            )
-            VfsSearchResult.NotFound -> return errorResult(RuntimeErrorCode.NOT_FOUND.wireCode, "Path not found.")
-        }.joinToString(prefix = "[", postfix = "]") { match ->
-            """{"path":"${escape(match.path)}","line":${match.line},"preview":"${escape(match.preview.boundedGrepPreview())}"}"""
+/**
+ * The workspace port of a runtime without a workspace: search_tools works, so the model reaches the providers' tools;
+ * the file tools are not offered there, and refused if called.
+ */
+internal class ToolSearchPort(private val toolSearch: BackendToolSearch) : WorkspacePort {
+    override suspend fun execute(
+        toolName: String,
+        argumentsJson: String,
+        context: WorkspaceCallContext,
+    ): WorkspaceExecutionResult =
+        if (toolName == "search_tools") {
+            toolSearch.search(argumentsJson, context.toMaterializerContext())
+        } else {
+            WorkspaceExecutionResult(errorResult(RuntimeErrorCode.WORKSPACE_NOT_CONFIGURED.wireCode, "No workspace is configured."))
         }
-        return """{"ok":true,"matches":$matches}"""
-    }
-
-    suspend fun cleanupScratch() {
-        writer.cleanupScratch()
-    }
-
-    private fun fileSystemFor(context: MaterializerContext): VfsFileSystem {
-        val mounts = runtimeMounts ?: return fileSystem
-        val key = context.cacheKey()
-        return synchronized(attachedFileSystems) {
-            attachedFileSystems.getOrPut(key) {
-                mounts.attach(fileSystem, context)
-            }
-        }
-    }
-
-    internal companion object {
-        suspend fun cleanupScratch(root: File, runId: String) {
-            VirtualWorkspaceWriter(VfsFileSystem.singleFileRoot(root), runId).cleanupScratch()
-        }
-
-        suspend fun cleanupScratch(fileSystem: VfsFileSystem, runId: String) {
-            VirtualWorkspaceWriter(fileSystem, runId).cleanupScratch()
-        }
-    }
 }
 
 internal fun canonicalRuntimeWorkspacePath(path: String): String? {

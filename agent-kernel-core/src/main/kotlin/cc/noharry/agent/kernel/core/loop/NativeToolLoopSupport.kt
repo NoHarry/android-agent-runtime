@@ -33,7 +33,7 @@ fun unsupportedToolResult(toolName: String): String =
     """{"ok":false,"code":"${RuntimeErrorCode.UNSUPPORTED_NATIVE_TOOL.wireCode}","tool":"${escapeJson(toolName)}"}"""
 
 fun inactiveBackendToolResult(toolName: String, schemaPath: String): String =
-    """{"ok":false,"code":"${RuntimeErrorCode.INACTIVE_BACKEND_TOOL.wireCode}","tool":"${escapeJson(toolName)}","schemaPath":"${escapeJson(schemaPath)}","message":"Read schema.json before calling this backend tool."}"""
+    """{"ok":false,"code":"${RuntimeErrorCode.INACTIVE_BACKEND_TOOL.wireCode}","tool":"${escapeJson(toolName)}","schemaPath":"${escapeJson(schemaPath)}","message":"Find this backend tool with search_tools before calling it."}"""
 
 fun unknownBackendToolResult(toolName: String): String =
     """{"ok":false,"code":"${RuntimeErrorCode.UNKNOWN_BACKEND_TOOL.wireCode}","tool":"${escapeJson(toolName)}","message":"Tool is not in the current MCP catalog."}"""

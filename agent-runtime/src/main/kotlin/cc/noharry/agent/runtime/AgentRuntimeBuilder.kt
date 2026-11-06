@@ -20,11 +20,13 @@ import cc.noharry.agent.kernel.api.model.ModelRef
 import cc.noharry.agent.kernel.core.context.BootstrapPromptProvider
 import cc.noharry.agent.kernel.core.context.BootstrapPromptResolver
 import cc.noharry.agent.kernel.core.context.ContextBootstrapPromptResolver
+import cc.noharry.agent.kernel.core.context.ContextCatalog
 import cc.noharry.agent.kernel.core.context.ConversationCompactor
 import cc.noharry.agent.kernel.core.context.HistoryCompactor
 import cc.noharry.agent.kernel.core.context.ProtocolRules
 import cc.noharry.agent.kernel.core.context.ProtocolTools
 import cc.noharry.agent.kernel.core.context.SimpleBootstrapPromptResolver
+import cc.noharry.agent.kernel.core.context.defaultContextCatalog
 import cc.noharry.agent.kernel.core.context.validateHostSystemPrompt
 import cc.noharry.agent.kernel.core.context.validateRunContext
 import cc.noharry.agent.kernel.core.context.validateSceneRules
@@ -62,6 +64,7 @@ import cc.noharry.agent.kernel.core.tools.ToolActivationStore
 import cc.noharry.agent.kernel.core.tools.ToolDomainIndexer
 import cc.noharry.agent.kernel.core.tools.ToolDomainNaming
 import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
+import cc.noharry.agent.kernel.core.tools.WORKSPACE_TOOL_NAMES
 import cc.noharry.agent.kernel.core.trace.DefaultTraceRedactor
 import cc.noharry.agent.kernel.core.trace.StandardTraceRedactor
 import cc.noharry.agent.kernel.core.trace.TraceRedactor
@@ -748,7 +751,7 @@ class AgentRuntimeBuilder {
             sessionEventLog = capabilities.eventLog,
             networkConfirmationPolicy = networkConfirmationPolicy,
             nativeWebFetchEnabled = nativeWebFetchEnabled,
-            disabledNativeTools = disabledNativeTools,
+            disabledNativeTools = offeredNativeToolsExcluded(),
             reliabilityStorageRoot = reliabilityStorageRoot,
             // Packs come only from validated evidence allowlist (string ids), never host-supplied ProbePack.
             probePacks = evidenceConfig?.takeIf { it.probesEnabled }?.resolvePacks() ?: emptyList(),
@@ -852,10 +855,13 @@ class AgentRuntimeBuilder {
     ): BootstrapPromptResolver {
         val tools = protocolTools()
         val sceneGuidance = sceneRules.toMap()
+        val files = runtimeWorkspaces.isNotEmpty()
         return when {
             shouldUseContextPrompt(todoStore) -> ContextBootstrapPromptResolver(
                 hostSystemPrompt,
-                skillRegistry,
+                // Without a workspace there is no read_file: no context paths to read and no skill files to open.
+                skillRegistry.takeIf { files },
+                contextCatalog = if (files) defaultContextCatalog() else ContextCatalog(emptyList()),
                 toolDomainIndexProvider = {
                     ToolDomainIndexer.index(mcpRegistry.allTools(MaterializerContext()), toolDomains)
                 },
@@ -881,7 +887,7 @@ class AgentRuntimeBuilder {
     private fun protocolTools() = ProtocolTools(
         webFetch = nativeWebFetchEnabled && "web_fetch" !in disabledNativeTools,
         webSearch = webSearchProvider != null && "web_search" !in disabledNativeTools,
-        disabled = disabledNativeTools,
+        disabled = offeredNativeToolsExcluded(),
     )
 
     private fun shouldUseContextPrompt(todoStore: TodoStore?): Boolean =
@@ -903,6 +909,10 @@ class AgentRuntimeBuilder {
             VfsReadResult.ReadDenied -> throw PolicyConfigException("Policy config read denied: $path")
         }
     }
+
+    /** The native tools left out: the host's, and the file tools when the runtime has no workspace for them. */
+    private fun offeredNativeToolsExcluded(): Set<String> =
+        if (runtimeWorkspaces.isEmpty()) disabledNativeTools + (WORKSPACE_TOOL_NAMES - "search_tools") else disabledNativeTools
 
     private fun registerWorkspace(ref: RuntimeWorkspaceRef, makeDefault: Boolean) {
         runtimeWorkspaces[ref.workspaceId] = ref

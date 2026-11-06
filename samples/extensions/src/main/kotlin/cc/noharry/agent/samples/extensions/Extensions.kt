@@ -16,7 +16,6 @@ import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
 import cc.noharry.agent.runtime.AgentRuntimeBuilder
 import cc.noharry.agent.runtime.functionTools
-import java.nio.file.Files
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
@@ -41,36 +40,30 @@ suspend fun runSample(): List<String> {
         tool("clear", "Deletes every note.") { notes.clear(); "cleared" }
     }
     val transcript = mutableListOf<String>()
-    // The workspace is where the model finds the providers' tools (search_tools) and keeps its files.
-    val workspace = Files.createTempDirectory("agent-workspace").toFile()
+    // No workspace: the agent has no files of its own here, and finds the providers' tools with search_tools.
+    val runtime = AgentRuntimeBuilder.create()
+        .modelClient(ScriptedModel())
+        .toolProvider(noteTools)
+        // The model sees a provider's tools as mcp__<provider id>__<tool>.
+        .hook(
+            RefuseDeleting { tool, reason -> transcript += "refused $tool: $reason" },
+            ToolMatcher.toolName("mcp__notes__clear"),
+        )
+        .build()
     try {
-        val runtime = AgentRuntimeBuilder.create()
-            .modelClient(ScriptedModel())
-            .toolProvider(noteTools)
-            // The model sees a provider's tools as mcp__<provider id>__<tool>.
-            .hook(
-                RefuseDeleting { tool, reason -> transcript += "refused $tool: $reason" },
-                ToolMatcher.toolName("mcp__notes__clear"),
-            )
-            .workspaceRoot(workspace)
-            .build()
-        try {
-            // Events name the tools; their arguments and results reach a hook (onPreToolUse, onPostToolUse) and the
-            // session event log, not the events.
-            val request = AgentRequest("request-1", "session-1", "Remember to buy milk, then tidy up my notes.")
-            runtime.run(request).collect { event ->
-                when (event) {
-                    is AgentEvent.NativeToolCallStarted -> transcript += "model called ${event.toolName}"
-                    is AgentEvent.ResultAvailable -> transcript += "answer: ${event.result.response}"
-                    is AgentEvent.Failed -> transcript += "failed: ${event.code}"
-                    else -> Unit
-                }
+        // Events name the tools; their arguments and results reach a hook (onPreToolUse, onPostToolUse) and the
+        // session event log, not the events.
+        val request = AgentRequest("request-1", "session-1", "Remember to buy milk, then tidy up my notes.")
+        runtime.run(request).collect { event ->
+            when (event) {
+                is AgentEvent.NativeToolCallStarted -> transcript += "model called ${event.toolName}"
+                is AgentEvent.ResultAvailable -> transcript += "answer: ${event.result.response}"
+                is AgentEvent.Failed -> transcript += "failed: ${event.code}"
+                else -> Unit
             }
-        } finally {
-            runtime.close()
         }
     } finally {
-        workspace.deleteRecursively()
+        runtime.close()
     }
     return transcript + "notes: $notes"
 }

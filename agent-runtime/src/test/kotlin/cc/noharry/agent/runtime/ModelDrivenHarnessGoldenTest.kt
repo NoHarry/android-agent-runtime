@@ -142,7 +142,8 @@ class ModelDrivenHarnessGoldenTest {
 
         val system = seen.single().system.orEmpty()
         assertTrue(system.contains("Model-driven harness protocol v1."))
-        assertTrue(system.contains("write_file"))
+        // No workspace: the file tools are not offered, nor the protocol's line about writing files.
+        assertFalse(system.contains("write_file"))
         assertTrue(system.contains("host append"))
         assertFalse(system.contains("Actions must be performed through execute_plan"))
     }
