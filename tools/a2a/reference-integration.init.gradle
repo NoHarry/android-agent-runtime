@@ -1,7 +1,7 @@
 gradle.afterProject { project, state ->
     if (state.failure == null && project.path == ":agent-a2a") {
         def sourceRoot = new File(project.rootProject.projectDir, "tools/a2a/jvm-client/src/test/kotlin")
-        project.android.sourceSets.test.java.srcDir(sourceRoot)
+        project.sourceSets.test.kotlin.srcDir(sourceRoot)
         project.tasks.withType(Test).configureEach { task ->
             def baseUrl = gradle.startParameter.systemPropertiesArgs.get("a2a.reference.baseUrl")
             if (baseUrl != null) {

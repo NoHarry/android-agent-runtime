@@ -98,7 +98,7 @@ The [samples](samples) run as they are: `AGENT_API_KEY=… ./gradlew :samples:qu
 | `agent-exec-js` | Optional: `exec_js`, sandboxed JavaScript (QuickJS through Zipline) that can call tools |
 | `agent-device-capabilities` | Optional: calendar, notification and media tools |
 | `agent-android-use` | Optional: observe and operate the screen through an accessibility service |
-| `agent-a2a` | Optional: delegate tasks to remote A2A agents over a direct JSON-RPC/SSE transport, and expose the agent as a local A2A endpoint |
+| `agent-a2a` | Optional (plain JVM): delegate tasks to remote A2A agents over a direct JSON-RPC/SSE transport, and expose the agent as a local A2A endpoint |
 | `agent-a2a-client-official` | Optional: the same client over the official A2A Java SDK |
 | `agent-bom` | One version for all of the above |
 

@@ -4,7 +4,7 @@
 
 These runners exercise the real `:agent-a2a` JVM test artifact
 against independently running HTTP servers. They inject the integration test
-source with a Gradle init script, so no Android Gradle module is modified.
+source with a Gradle init script, so no Gradle module is modified.
 
 ## Official Python HelloWorld
 

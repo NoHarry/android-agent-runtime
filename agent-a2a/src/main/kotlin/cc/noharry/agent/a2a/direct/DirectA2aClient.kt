@@ -392,7 +392,10 @@ internal class DirectA2aClient(
 
     private fun requestId(): String = UUID.randomUUID().toString()
 
-    private class SafeFailure(val error: A2aClientError) : RuntimeException(null, null, false, false)
+    // RuntimeException(message, cause, suppression, writableStackTrace) is Android API 24; the trace is left out here.
+    private class SafeFailure(val error: A2aClientError) : RuntimeException() {
+        override fun fillInStackTrace(): Throwable = this
+    }
 
     private enum class FrameOutcome {
         CONTINUE,

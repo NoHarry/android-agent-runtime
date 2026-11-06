@@ -22,6 +22,12 @@ The API is cleaned up for use as a public library. **Breaking** for hosts that u
 - **Java hosts write only what they change.** Interface methods with a body now compile to JVM default methods, so a
   Java `ModelClient` implements only `complete`, and a Java `RuntimeHook` only the callbacks it uses. The `DefaultImpls`
   classes stay beside them, so Kotlin binaries compiled against earlier releases keep working.
+- **`agent-a2a` is a plain JVM library** (a jar, not an Android library), so a server or desktop host can use the A2A
+  client and server too. Its API is unchanged. An Android app that uses it without `agent-a2a-client-official` now
+  declares the `INTERNET` permission itself, which the library's manifest used to add.
+- **A2A on Android 6 (API 23).** The direct and official A2A clients' failures were made with a constructor Android only
+  has from API 24, and request headers were copied with `Map.forEach` (API 24 too): on Android 6 a refused endpoint
+  crashed the host instead of returning a failure, and requests failed without core library desugaring.
 - **The Dream scaffold is gone** (`cc.noharry.agent.dream`: `DreamWorker`, `DreamRequest`, `DreamMode`, `DreamResult`,
   `NoOpDreamWorker`, `MemoryIndexRebuilder`). Nothing in the runtime ran it. A host that called `MemoryIndexRebuilder`
   to rebuild `/memory/MEMORY.md` from the memory files writes that index itself.

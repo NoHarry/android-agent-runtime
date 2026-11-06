@@ -9,7 +9,8 @@ public class A2aProtectedHeaders private constructor(
 ) {
     /** Visits protected values for immediate request construction. Callers must not retain them. */
     public fun forEachValue(block: (name: String, value: String) -> Unit) {
-        values.forEach(block)
+        // Not Map.forEach, which is Android API 24.
+        for ((name, value) in values) block(name, value)
     }
 
     /** Returns only normalized header names for diagnostics or validation. */

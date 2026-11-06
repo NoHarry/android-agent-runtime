@@ -52,6 +52,9 @@ internal interface OfficialSdkBridge {
     fun close()
 }
 
+// RuntimeException(message, cause, suppression, writableStackTrace) is Android API 24; the trace is left out here.
 internal class OfficialSdkFailure(
     val error: A2aClientError,
-) : RuntimeException(null, null, false, false)
+) : RuntimeException() {
+    override fun fillInStackTrace(): Throwable = this
+}

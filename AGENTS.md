@@ -9,7 +9,8 @@ An embeddable agent runtime for Android and the JVM. Gradle project at the repos
 | `agent-kernel-api`, `agent-kernel-core` | Kernel: contracts and the agent loop (JVM) |
 | `agent-runtime` | The runtime facade (JVM): model clients, MCP (`cc.noharry.agent.mcp`), the workspace VFS (`cc.noharry.agent.vfs`), `functionTools`, sessions, hooks |
 | `agent-runtime-android` | Android layer: SQLite sessions, app-private event log, `AndroidAgentRuntime.builder`, SAF mounts (`cc.noharry.agent.vfs.saf`) |
-| `agent-exec-js`, `agent-device-capabilities`, `agent-android-use`, `agent-a2a`, `agent-a2a-client-official` | Optional modules (Android) |
+| `agent-a2a` | Optional module (JVM): A2A client, direct transport and server |
+| `agent-exec-js`, `agent-device-capabilities`, `agent-android-use`, `agent-a2a-client-official` | Optional modules (Android) |
 | `agent-bom` | Version alignment |
 | `samples/` | `quickstart-jvm`, `quickstart-android`, `minimal` (not published) |
 | `buildSrc/` | `SourceRulesTask` |

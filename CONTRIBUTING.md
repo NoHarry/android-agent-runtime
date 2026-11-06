@@ -24,8 +24,8 @@ need a connected device.
 
 ## Rules of the codebase
 
-- `agent-kernel-api`, `agent-kernel-core` and `agent-runtime` are plain JVM modules. Android APIs go in
-  `agent-runtime-android` or an optional module.
+- `agent-kernel-api`, `agent-kernel-core`, `agent-runtime` and `agent-a2a` are plain JVM modules. Android APIs go in
+  `agent-runtime-android` or an Android optional module.
 - Optional modules depend at most on `agent-kernel-api` (or `agent-a2a` for its own adapters);
   the runtime depends on none of them.
 - Every first-party `ToolProvider` and `ModelClient` declares its `providerConcurrency` explicitly, even where the
