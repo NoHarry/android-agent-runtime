@@ -22,6 +22,8 @@ PACKAGE = ""
 LOG_ROOT = "no_backup/agent-runtime/event-log"
 SEARCH_TOOL = "search_tools"
 CALL_TOOL = "call_tool"
+# The app server's card and option tools, which show things rather than do them; older logs name them car_ui.
+CARD_TOOL_PREFIXES = ("mcp__app_ui__", "mcp__car_ui__")
 COMPACTION_INSTRUCTION_START = "You are now compacting this conversation."
 NON_BUSINESS_TOOLS = {SEARCH_TOOL, "read_file", "list_dir", "grep", "update_todo", "finish", "ask", "ask_async"}
 
@@ -138,7 +140,7 @@ def summarize(events):
                 name = (arguments or {}).get("name", "") if isinstance(arguments, dict) else ""
             if name == SEARCH_TOOL:
                 search_calls += 1
-            elif name.startswith("mcp__") and not name.startswith("mcp__car_ui__"):
+            elif name.startswith("mcp__") and not name.startswith(CARD_TOOL_PREFIXES):
                 business_calls += 1
                 if first_business_call is None:
                     first_business_call = len(calls)
