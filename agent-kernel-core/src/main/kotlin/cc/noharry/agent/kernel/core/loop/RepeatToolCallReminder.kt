@@ -11,7 +11,7 @@ import kotlinx.serialization.json.JsonObject
  * and arguments named at the later ones. It is advice only; the calls still run, and [ToolCallFailureBreaker] still
  * stops calls that keep failing. One instance per run.
  */
-internal class RepeatToolCallReminder(private val thresholds: List<Int> = REPEAT_REMINDER_THRESHOLDS) {
+internal class RepeatToolCallReminder(private val thresholds: List<Int> = DEFAULT_REPEAT_REMINDERS) {
     private var lastCall: String? = null
     private var repeats = 0
 
@@ -57,6 +57,6 @@ private const val GENTLE_REMINDER =
         "before calling again: if the task is not complete, try a different approach or different arguments instead " +
         "of repeating the call."
 
-/** dsh's defaults. */
-private val REPEAT_REMINDER_THRESHOLDS = listOf(3, 5, 8)
+/** After how many identical calls in a run the model is reminded ([LoopLimits.repeatReminders]). */
+internal val DEFAULT_REPEAT_REMINDERS = listOf(3, 5, 8)
 private const val ARGUMENTS_PREVIEW_CHARS = 500

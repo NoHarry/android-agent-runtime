@@ -9,8 +9,8 @@ Fixes for Claude and OpenAI hosts, and nothing in Chinese or about a car unless 
 where noted, and for binaries compiled against the old constructors of `AnthropicModelClient`, `OpenAiModelClient`,
 `A2aServerConfig`, `AndroidUseOptions`, `SessionHistory`, the kernel's loop classes `NativeToolLoop`, `NativeRoundRunner`,
 `NativeToolUseController` and `ToolCallFailureBreaker`, and its prompt pieces `BootstrapPromptProvider.build`,
-`ContextBootstrapPromptResolver`, `SessionHistoryStore` and `RuntimeContextHooks.collectContextSystemSuffix` (Kotlin
-source that names its arguments is unchanged; new parameters come with defaults).
+`ContextBootstrapPromptResolver`, `SessionHistoryStore` and `RuntimeContextHooks.collectContextSystemSuffix`, and
+`McpHttpClient` (Kotlin source that names its arguments is unchanged; new parameters come with defaults).
 
 - **Claude's thinking.** Opus 4.7 and later, Sonnet 5 and later, Haiku 5.5 and newer families refuse a `budget_tokens`
   with a 400, and Opus and Sonnet 4.6 deprecate it. The `low`, `medium`, `high` and `max` variants now send
@@ -69,7 +69,10 @@ source that names its arguments is unchanged; new parameters come with defaults)
   report a problem are a service's answer in its own terms (no route found), passed to the model as written and not
   counted toward the failures that stop a tool (`ServiceAnswerCheck`; the runtime's own, `RuntimeServiceAnswerCheck`,
   reads an MCP `structuredContent.status.name`); `contextTimeoutMillis`, how long context providers have together
-  (20 ms). A subagent's runtime takes its own. `lessons(false)` keeps runs from learning lessons or using saved ones;
+  (20 ms); `limits`, the loop's own (`LoopLimits`: after how many failures in a row a call with the same arguments, 2,
+  or a tool, 4, is no longer made; after how many identical calls the model is reminded it repeats itself, 3, 5 and 8;
+  how many of the newest images at least the model is sent, 3, older ones folding three at a time). A subagent's
+  runtime takes its own. `lessons(false)` keeps runs from learning lessons or using saved ones;
   `toolDomains(…)` sets how tools are grouped into the areas the prompt lists (`ToolDomainNaming`; the runtime's own
   groups `command_<area>_…` names, then by MCP server); `protocolRules(…)` rewords, drops or adds lines of the protocol
   section (`ProtocolRules`), such as the Bing RSS search it suggests when no search provider is set.
@@ -78,6 +81,17 @@ source that names its arguments is unchanged; new parameters come with defaults)
   `KernelRuntimeBuilder` keeps the defaults.
   The defaults are expected to become neutral in a later release (no built-in topics, a narration check without
   language-specific phrasings, no suggested search site), so a host that relies on them should set them explicitly.
+- **A host's own HTTP timeouts, proxy and sandbox limits.** `OkHttpHttpTransport(connectTimeoutMillis,
+  readTimeoutMillis, proxy)` sets how long connecting (10 s) and a wait between bytes (300 s) may take and the proxy calls
+  go through; a host that needs more of its HTTP client (interceptors, certificate pinning) implements `HttpTransport`
+  over its own. `McpHttpClient(exchangeTimeoutMillis = …, initializeTimeoutMillis = …)` sets how long a request
+  (30 s) and opening a session (10 s) may take. `ZiplineExecEngine(maxToolCalls, memoryLimitBytes, maxStackSizeBytes)`
+  sets how many tool calls one `exec_js` script makes (32; 0 for none) and QuickJS's memory and stack limits (QuickJS's
+  own when not set; the stack at most 512 KiB, as QuickJS runs on the calling thread).
+  `AndroidAgentRuntime.builder(context, name)` keeps a second runtime's workspace, sessions, event log and lessons under
+  `agent-runtime/runtimes/<name>/`. `sceneAgentsMd(scene, content)` now puts its content in the system prompt of runs
+  in that scene (it only said that scene rules applied, and the content was not used), up to 16 KiB and not counted
+  against the prompt's budget for tool areas and skills; blank content removes it.
 - **Tool search reads Japanese, Korean and Thai.** Text in a script whose words run together or carry their particles
   (Japanese kana, Korean, Thai, Lao, Khmer, Myanmar, and the rarer Chinese characters) is read in pairs of characters
   as Chinese was, so `コーヒー` or `조명` finds the tool whose description holds it; English and common Chinese are read as

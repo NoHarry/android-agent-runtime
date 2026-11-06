@@ -27,6 +27,7 @@ import cc.noharry.agent.kernel.core.context.ProtocolTools
 import cc.noharry.agent.kernel.core.context.SimpleBootstrapPromptResolver
 import cc.noharry.agent.kernel.core.context.validateHostSystemPrompt
 import cc.noharry.agent.kernel.core.context.validateRunContext
+import cc.noharry.agent.kernel.core.context.validateSceneRules
 import cc.noharry.agent.kernel.core.loop.DEFAULT_MAX_MODEL_ROUNDS
 import cc.noharry.agent.kernel.core.loop.DEFAULT_MAX_TOOL_CALLS_PER_RUN
 import cc.noharry.agent.kernel.core.loop.DEFAULT_MODEL_RETRY_MAX_ATTEMPTS
@@ -331,9 +332,18 @@ class AgentRuntimeBuilder {
         agentsMdContent = content.takeIf { it.isNotBlank() }
     }
 
-    /** Adds scene-specific runtime guidance. Candidate API; scene paths are compatibility-only. */
+    /**
+     * Rules for runs in [scene]: the system prompt carries [content] under the current scene, and a run in another
+     * scene doesn't see it. Up to 16 KiB, like the host prompt; blank content removes the scene's rules. Candidate API.
+     */
     fun sceneAgentsMd(scene: String, content: String): AgentRuntimeBuilder = apply {
-        sceneRules[scene] = content
+        require(scene.isNotBlank()) { "A scene's rules need the scene's name." }
+        if (content.isBlank()) {
+            sceneRules.remove(scene)
+        } else {
+            validateSceneRules(scene, content)
+            sceneRules[scene] = content
+        }
     }
 
     /** Registers a host-provided skill for progressive disclosure. Candidate API. */
@@ -834,22 +844,40 @@ class AgentRuntimeBuilder {
             skillRegistry = skillRegistry,
             agentsMdContent = agentsMdContent,
         )
-        val promptResolver = if (shouldUseContextPrompt(todoStore)) {
-            ContextBootstrapPromptResolver(
+        val promptResolver = promptResolver(todoStore, skillRegistry, mcpRegistry)
+        return ContextInfrastructure(todoStore, memoryStore, contextRouter, promptResolver)
+    }
+
+    private fun promptResolver(
+        todoStore: TodoStore?,
+        skillRegistry: SkillRegistry,
+        mcpRegistry: ToolProviderRegistry,
+    ): BootstrapPromptResolver {
+        val tools = protocolTools()
+        val sceneGuidance = sceneRules.toMap()
+        return when {
+            shouldUseContextPrompt(todoStore) -> ContextBootstrapPromptResolver(
                 hostSystemPrompt,
                 skillRegistry,
-                sceneRules = sceneRules.keys,
                 toolDomainIndexProvider = {
-                    val tools = mcpRegistry.allTools(MaterializerContext())
-                    ToolDomainIndexer.index(tools, toolDomains)
+                    ToolDomainIndexer.index(mcpRegistry.allTools(MaterializerContext()), toolDomains)
                 },
-                tools = protocolTools(),
+                tools = tools,
                 protocolRules = protocolRules,
+                sceneGuidance = sceneGuidance,
             )
-        } else {
-            SimpleBootstrapPromptResolver(BootstrapPromptProvider.build(hostSystemPrompt, tools = protocolTools(), protocolRules = protocolRules))
+            // Without a workspace the prompt is the same every round, except for a scene that has its own rules.
+            sceneGuidance.isNotEmpty() -> BootstrapPromptResolver { scene, _ ->
+                BootstrapPromptProvider.build(
+                    hostSystemPrompt,
+                    scene = scene?.takeIf { it in sceneGuidance },
+                    tools = tools,
+                    protocolRules = protocolRules,
+                    sceneGuidance = sceneGuidance,
+                )
+            }
+            else -> SimpleBootstrapPromptResolver(BootstrapPromptProvider.build(hostSystemPrompt, tools = tools, protocolRules = protocolRules))
         }
-        return ContextInfrastructure(todoStore, memoryStore, contextRouter, promptResolver)
     }
 
     /** The native tools this runtime offers, for the protocol prompt. */

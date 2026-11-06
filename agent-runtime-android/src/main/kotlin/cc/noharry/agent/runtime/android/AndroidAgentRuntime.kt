@@ -20,15 +20,24 @@ import cc.noharry.agent.runtime.SessionHistory
  * Candidate API, not frozen.
  */
 object AndroidAgentRuntime {
+    /**
+     * [name] keeps a runtime's workspace, sessions, event log and lessons apart from another one's in the same app
+     * (`agent-runtime/runtimes/<name>/…`, outside the unnamed runtime's workspace); without one they are the app's
+     * single runtime's (`agent-runtime/…`). Letters, digits, `-` and `_`.
+     */
     @OptIn(ExperimentalAgentRuntimeApi::class)
-    fun builder(context: Context): AgentRuntimeBuilder {
+    @JvmOverloads
+    fun builder(context: Context, name: String? = null): AgentRuntimeBuilder {
+        require(name == null || NAME.matches(name)) { "A runtime's name is letters, digits, - and _: $name" }
         val app = context.applicationContext
+        val root = name?.let { "$ROOT/runtimes/$it" } ?: ROOT
         return AgentRuntimeBuilder.create()
-            .workspaceRoot(appStorage(app.filesDir, "$ROOT/workspace"))
+            .workspaceRoot(appStorage(app.filesDir, "$root/workspace"))
             .androidSqliteSessions()
-            .sessionEventLogRoot(appStorage(app.noBackupFilesDir, "$ROOT/event-log"))
+            .sessionEventLogRoot(appStorage(app.noBackupFilesDir, "$root/event-log"))
             .sessionHistory(SessionHistory())
     }
 
     private const val ROOT = "agent-runtime"
+    private val NAME = Regex("[A-Za-z0-9_-]{1,64}")
 }

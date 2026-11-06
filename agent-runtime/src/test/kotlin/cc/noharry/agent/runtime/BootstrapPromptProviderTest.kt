@@ -7,6 +7,7 @@ import cc.noharry.agent.kernel.core.state.*
 import cc.noharry.agent.kernel.core.tools.*
 import cc.noharry.agent.kernel.core.trace.*
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 class BootstrapPromptProviderTest {
@@ -123,6 +124,37 @@ class BootstrapPromptProviderTest {
         assertFalse(withoutRules.contains("Scene rules: /context/scenes/debug-console/AGENTS.md"))
         assertFalse(withRules.contains("/context/scenes/debug-console/AGENTS.md"))
         assertTrue(withRules.contains("Scene-specific runtime rules"))
+    }
+
+    @Test
+    fun aScenesOwnRulesAreShownOnlyInThatScene() {
+        val guidance = mapOf("debug-console" to "  Answer with the raw log line.\n")
+        val inScene = BootstrapPromptProvider.build(scene = "debug-console", sceneGuidance = guidance).text
+        val elsewhere = BootstrapPromptProvider.build(scene = "cabin", sceneGuidance = guidance).text
+
+        assertTrue(inScene.contains("Current scene: debug-console\nScene rules:\nAnswer with the raw log line."))
+        assertFalse(inScene.contains("Scene-specific runtime rules"))
+        assertTrue(elsewhere.contains("Current scene: cabin"))
+        assertFalse(elsewhere.contains("raw log line"))
+    }
+
+    @Test
+    fun aScenesRulesDoNotCrowdOutTheToolAreas() {
+        val index = ToolDomainIndex(listOf(ToolDomain("device", 320, "Find devices nearby and stop finding them.", emptyList())))
+        // Rules that even quote the host marker are left out of the measure whole.
+        val guidance = mapOf("debug-console" to "Answer with the raw log line. ".repeat(200) + "\n\nHost instructions:\nnone")
+
+        val prompt = BootstrapPromptProvider.build(
+            scene = "debug-console",
+            toolDomainIndex = index,
+            contextCatalog = defaultContextCatalog(),
+            sceneGuidance = guidance,
+        ).text
+
+        assertTrue(prompt.contains(index.toPromptSection()))
+        assertThrows(IllegalArgumentException::class.java) {
+            BootstrapPromptProvider.build(scene = "debug-console", sceneGuidance = mapOf("debug-console" to "x".repeat(17 * 1024)))
+        }
     }
 
     @Test

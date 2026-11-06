@@ -1,7 +1,10 @@
 package cc.noharry.agent.kernel.core.loop
+import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.model.ModelMessage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -15,6 +18,19 @@ class RepeatToolCallReminderTest {
         assertTrue(reminders[2]!!.startsWith("You are repeating the exact same tool call"))
         assertNull(reminders[3])
         assertTrue(reminders[4]!!.contains("- tool: search_tools\n- consecutive_calls: 5"))
+    }
+
+    @Test
+    @OptIn(ExperimentalAgentRuntimeApi::class)
+    fun aHostsLimitsSetWhenTheModelIsReminded() {
+        val limits = LoopLimits(repeatReminders = listOf(2))
+        val reminder = RepeatToolCallReminder(limits.repeatReminders)
+        val call = call("lookup", """{"q":"x"}""")
+        assertNull(reminder.after(round(call)))
+        assertNotNull(reminder.after(round(call)))
+        assertThrows(IllegalArgumentException::class.java) { LoopLimits(repeatReminders = listOf(1)) }
+        assertThrows(IllegalArgumentException::class.java) { LoopLimits(failuresPerCall = 3, failuresPerTool = 2) }
+        assertEquals(listOf(3, 5, 8), LoopLimits().repeatReminders)
     }
 
     @Test

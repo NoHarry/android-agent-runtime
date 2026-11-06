@@ -18,6 +18,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -62,6 +63,34 @@ class LoopSettingsBuilderTest {
         val assembled = withWorkspace.first().system.orEmpty()
         assertFalse("bing.com" in assembled)
         assertTrue("- Answer in one sentence." in assembled)
+        root.deleteRecursively()
+    }
+
+    @Test
+    fun aScenesRulesReachTheModelOnlyInThatScene() = runBlocking<Unit> {
+        val root = Files.createTempDirectory("scenes").toFile()
+        for (workspace in listOf(null, root)) {
+            val seen = mutableListOf<ModelRequest>()
+            val runtime = AgentRuntimeBuilder.create()
+                .modelClient(finishingWith("done", seen))
+                .apply { workspace?.let(::workspaceRoot) }
+                .sceneAgentsMd("debug-console", "Answer with the raw log line.")
+                .sceneAgentsMd("cabin", "Rules that a blank call takes back.")
+                .sceneAgentsMd("cabin", " ")
+                .build()
+            runtime.run(request("in-scene").copy(scene = "debug-console")).toList()
+            runtime.run(request("elsewhere").copy(scene = "cabin")).toList()
+            runtime.run(request("no-scene")).toList()
+            runtime.close()
+            val (inScene, elsewhere, noScene) = seen.map { it.system.orEmpty() }
+            assertTrue("Current scene: debug-console\nScene rules:\nAnswer with the raw log line." in inScene)
+            assertFalse("raw log line" in elsewhere || "takes back" in elsewhere)
+            assertFalse("raw log line" in noScene)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            AgentRuntimeBuilder.create().sceneAgentsMd("big", "x".repeat(17 * 1024))
+        }
+        assertThrows(IllegalArgumentException::class.java) { AgentRuntimeBuilder.create().sceneAgentsMd(" ", "Rules.") }
         root.deleteRecursively()
     }
 

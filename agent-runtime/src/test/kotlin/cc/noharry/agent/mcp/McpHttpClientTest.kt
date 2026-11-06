@@ -2,16 +2,17 @@
 
 package cc.noharry.agent.mcp
 
+import cc.noharry.agent.kernel.api.ProviderConcurrencyMode
 import cc.noharry.agent.transport.HttpEvent
 import cc.noharry.agent.transport.HttpRequest
 import cc.noharry.agent.transport.HttpResponse
 import cc.noharry.agent.transport.HttpTransport
-import cc.noharry.agent.kernel.api.ProviderConcurrencyMode
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.runBlocking
@@ -23,6 +24,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -201,6 +203,29 @@ class McpHttpClientTest {
             else json("""{"jsonrpc":"2.0","id":$id,"result":{"protocolVersion":"2025-06-18"}}""")
         }))
         assertEquals("tools/list failed: no tools", listing.problem)
+    }
+
+    @Test
+    fun aHostSetsHowLongRequestsMayWait() = runBlocking<Unit> {
+        val answering = FakeServer { _, id, _ -> json("""{"jsonrpc":"2.0","id":$id,"result":{"protocolVersion":"2025-06-18"}}""") }
+        val slowLists = object : HttpTransport by answering {
+            override suspend fun execute(request: HttpRequest): HttpResponse =
+                if ("tools/list" in request.body!!.toString(Charsets.UTF_8)) awaitCancellation() else answering.execute(request)
+        }
+        val silent = object : HttpTransport by answering {
+            override suspend fun execute(request: HttpRequest): HttpResponse = awaitCancellation()
+        }
+        val started = System.nanoTime()
+
+        val listing = listMcpTools(McpHttpClient("https://mcp.test/mcp", { emptyMap() }, slowLists, "sample", "1.0", exchangeTimeoutMillis = 100))
+        val down = McpHttpClient("https://mcp.test/mcp", { emptyMap() }, silent, "sample", "1.0", initializeTimeoutMillis = 100).connect()
+
+        assertTrue(listing.problem != null)
+        assertFalse(down.ok)
+        assertTrue((System.nanoTime() - started) / 1_000_000 < 5_000)
+        assertThrows(IllegalArgumentException::class.java) {
+            McpHttpClient("https://mcp.test/mcp", { emptyMap() }, silent, "sample", "1.0", exchangeTimeoutMillis = 0)
+        }
     }
 
     @Test

@@ -42,9 +42,17 @@ class McpHttpClient(
     private val nowMillis: () -> Long = { System.nanoTime() / 1_000_000 },
     private val retryScope: CoroutineScope? = null,
     private val messages: McpClientMessages = McpClientMessages.Default,
+    /** How long one request may wait for its reply; a tool doing real work answers well inside 30 s. */
+    private val exchangeTimeoutMillis: Long = EXCHANGE_TIMEOUT_MS,
+    /** How long opening a session may take; a run waits this long at most for a server that is down. */
+    private val initializeTimeoutMillis: Long = INITIALIZE_TIMEOUT_MS,
 ) : McpRpcClient {
     private val ids = AtomicInteger(1)
     private val lock = Mutex()
+
+    init {
+        require(exchangeTimeoutMillis > 0 && initializeTimeoutMillis > 0) { "MCP timeouts must be positive." }
+    }
 
     /** When the server last could not be reached, and what connecting said then. */
     @Volatile
@@ -117,7 +125,7 @@ class McpHttpClient(
                 put("version", clientVersion)
             })
         }
-        val reply = exchange(rpcRequest("initialize", params), null, INITIALIZE_TIMEOUT_MS)
+        val reply = exchange(rpcRequest("initialize", params), null, initializeTimeoutMillis)
         reply.problem?.let { problem ->
             return McpConnectResult(McpStatus.CONNECT_ERROR, reply.raw, problem).also { failed ->
                 // No HTTP answer at all (timed out, refused, no route); a server that answered with an error is tried again.
@@ -134,7 +142,7 @@ class McpHttpClient(
         exchange(buildJsonObject {
             put("jsonrpc", JSON_RPC_VERSION)
             put("method", "notifications/initialized")
-        }, established, INITIALIZE_TIMEOUT_MS)
+        }, established, initializeTimeoutMillis)
         session = established
         return OK_RESULT
     }
@@ -146,7 +154,7 @@ class McpHttpClient(
         put("params", params)
     }
 
-    private suspend fun exchange(message: JsonObject, session: Session?, timeoutMillis: Long = EXCHANGE_TIMEOUT_MS): Reply {
+    private suspend fun exchange(message: JsonObject, session: Session?, timeoutMillis: Long = exchangeTimeoutMillis): Reply {
         val requestHeaders = buildMap {
             putAll(headers())
             put("Content-Type", "application/json")
@@ -160,7 +168,7 @@ class McpHttpClient(
             // A dead or hung server must not hold up every run (and the client's lock) for OkHttp's minutes.
             withTimeoutOrNull(timeoutMillis) {
                 http.execute(HttpRequest("POST", withQuery(url, query()), requestHeaders, message.toString().toByteArray(Charsets.UTF_8)))
-            } ?: return Reply(0, null, "", null, messages.timedOut(timeoutMillis / 1000))
+            } ?: return Reply(0, null, "", null, messages.timedOut((timeoutMillis + 999) / 1000))
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {

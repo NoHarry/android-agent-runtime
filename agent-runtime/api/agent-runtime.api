@@ -120,8 +120,8 @@ public final class cc/noharry/agent/mcp/McpConnectResult {
 public final class cc/noharry/agent/mcp/McpHttpClient : cc/noharry/agent/mcp/McpRpcClient {
 	public static final field Companion Lcc/noharry/agent/mcp/McpHttpClient$Companion;
 	public static final field PROTOCOL_VERSION Ljava/lang/String;
-	public fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/transport/HttpTransport;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;JLkotlin/jvm/functions/Function0;Lkotlinx/coroutines/CoroutineScope;Lcc/noharry/agent/mcp/McpClientMessages;)V
-	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/transport/HttpTransport;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;JLkotlin/jvm/functions/Function0;Lkotlinx/coroutines/CoroutineScope;Lcc/noharry/agent/mcp/McpClientMessages;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/transport/HttpTransport;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;JLkotlin/jvm/functions/Function0;Lkotlinx/coroutines/CoroutineScope;Lcc/noharry/agent/mcp/McpClientMessages;JJ)V
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/transport/HttpTransport;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;JLkotlin/jvm/functions/Function0;Lkotlinx/coroutines/CoroutineScope;Lcc/noharry/agent/mcp/McpClientMessages;JJILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun close ()V
 	public fun connect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun sendRequest (Ljava/lang/String;Lkotlinx/serialization/json/JsonObject;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -740,6 +740,10 @@ public abstract interface class cc/noharry/agent/transport/HttpTransport {
 
 public final class cc/noharry/agent/transport/OkHttpHttpTransport : cc/noharry/agent/transport/HttpTransport {
 	public fun <init> ()V
+	public fun <init> (J)V
+	public fun <init> (JJ)V
+	public fun <init> (JJLjava/net/Proxy;)V
+	public synthetic fun <init> (JJLjava/net/Proxy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun execute (Lcc/noharry/agent/transport/HttpRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun stream (Lcc/noharry/agent/transport/HttpRequest;)Lkotlinx/coroutines/flow/Flow;
 }

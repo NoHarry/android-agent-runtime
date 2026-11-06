@@ -31,9 +31,22 @@ import java.util.concurrent.TimeUnit
  * call of every run gets the n-th answer, so a read after a write is read again and the same call made twice runs
  * twice. A run whose calls differ from the earlier runs (it depends on Math.random or the time) stops there, before
  * any tool runs again.
+ *
+ * [maxToolCalls] bounds the tool calls one script makes (0: none). [memoryLimitBytes] and [maxStackSizeBytes] bound
+ * QuickJS itself, null keeping QuickJS's own; the stack is the calling thread's, so it is at most 512 KiB.
  */
 @OptIn(EngineApi::class)
-class ZiplineExecEngine : ExecEngine {
+class ZiplineExecEngine @JvmOverloads constructor(
+    private val maxToolCalls: Int = MAX_HOST_CALLS,
+    private val memoryLimitBytes: Long? = null,
+    private val maxStackSizeBytes: Long? = null,
+) : ExecEngine {
+    init {
+        require(maxToolCalls >= 0) { "maxToolCalls must not be negative." }
+        require((memoryLimitBytes ?: 1) > 0) { "memoryLimitBytes must be positive." }
+        require((maxStackSizeBytes ?: 1) in 1..MAX_STACK_SIZE_BYTES) { "maxStackSizeBytes must be 1 to $MAX_STACK_SIZE_BYTES." }
+    }
+
     /** Explicit serialized override; QuickJS evaluation is not reentrant. */
     override val providerConcurrency: ProviderConcurrencyDeclaration =
         ProviderConcurrencyDeclaration.serialized()
@@ -42,7 +55,7 @@ class ZiplineExecEngine : ExecEngine {
         val deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(request.timeoutMillis)
         val hostResults = mutableListOf<Pair<HostCall, String>>()
         return try {
-            repeat(MAX_HOST_CALLS + 1) { attempt ->
+            for (attempt in 0..maxToolCalls) {
                 val result = evaluate(request, deadlineNanos, hostResults)
                 if (result.hostCall == null) {
                     val output = OutputBudget(request.outputTokenBudget)
@@ -51,7 +64,9 @@ class ZiplineExecEngine : ExecEngine {
                     if (finalOutput.isNotEmpty()) bridge.emitOutput(finalOutput)
                     return ExecResult(ok = true, output = finalOutput)
                 }
-                if (attempt >= MAX_HOST_CALLS) throw ExecBridgeException("Too many nested exec tool calls.")
+                if (attempt >= maxToolCalls) {
+                    throw ExecBridgeException(if (maxToolCalls == 0) "exec_js scripts cannot call tools here." else "Too many nested exec tool calls.")
+                }
                 hostResults += result.hostCall to bridge.callTool(result.hostCall.name, result.hostCall.argumentsJson)
             }
             ExecResult(ok = false, errorCode = RuntimeErrorCode.EXEC_FAILED.wireCode, message = "JavaScript exec failed.")
@@ -82,6 +97,8 @@ class ZiplineExecEngine : ExecEngine {
         runInterruptible {
             QuickJs.create().use { quickJs ->
                 quickJs.interruptHandler = InterruptHandler { System.nanoTime() > deadlineNanos }
+                memoryLimitBytes?.let { quickJs.memoryLimit = it }
+                maxStackSizeBytes?.let { quickJs.maxStackSize = it }
                 try {
                     val value = quickJs.evaluate(scriptFor(request.code, hostResults), EXEC_SOURCE_NAME)?.toString().orEmpty()
                     EvaluationResult.from(value).also { if (it.mismatch) throw ExecBridgeException(REPLAY_MISMATCH_MESSAGE) }
@@ -214,6 +231,8 @@ private const val EXEC_SOURCE_NAME = "exec_js"
 private const val EMPTY_JSON = "{}"
 private const val MIN_OUTPUT_TOKENS = 1
 private const val CHARS_PER_TOKEN = 4
+/** A Java thread's stack is about 1 MiB on Android; QuickJS's own limit is 256 KiB. */
+private const val MAX_STACK_SIZE_BYTES = 512L * 1024
 private const val MAX_HOST_CALLS = 32
 private const val HOST_CALL_PREFIX = "__AGENT_EXEC_HOST_CALL__"
 private const val REPLAY_MISMATCH_PREFIX = "__AGENT_EXEC_REPLAY_MISMATCH__"

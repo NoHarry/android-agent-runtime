@@ -58,7 +58,10 @@ class ContextBootstrapPromptResolver @JvmOverloads constructor(
     private val toolDomainIndexProvider: suspend () -> ToolDomainIndex? = { null },
     private val tools: ProtocolTools = ProtocolTools(),
     private val protocolRules: ProtocolRules = ProtocolRules.DEFAULT,
+    sceneGuidance: Map<String, String> = emptyMap(),
 ) : BootstrapPromptResolver {
+    private val sceneGuidance = sceneGuidance.toMap()
+
     override suspend fun resolve(scene: String?, sessionId: String?): BootstrapPrompt =
         BootstrapPromptProvider.build(
             hostPrompt = hostPrompt,
@@ -69,6 +72,7 @@ class ContextBootstrapPromptResolver @JvmOverloads constructor(
             toolDomainIndex = toolDomainIndexProvider(),
             tools = tools,
             protocolRules = protocolRules,
+            sceneGuidance = sceneGuidance,
         )
 }
 
@@ -96,13 +100,20 @@ object BootstrapPromptProvider {
         toolDomainIndex: ToolDomainIndex? = null,
         tools: ProtocolTools = ProtocolTools(),
         protocolRules: ProtocolRules = ProtocolRules.DEFAULT,
+        /** Each scene's own rules, shown under the current scene when a run is in it. */
+        sceneGuidance: Map<String, String> = emptyMap(),
     ): BootstrapPrompt {
         hostPrompt?.takeIf { it.isNotBlank() }?.let(::validateHostSystemPrompt)
-        val sceneSection = scene?.takeIf { it.isNotBlank() }?.let { buildSceneSection(it, sceneRules) }
+        val currentScene = scene?.takeIf { it.isNotBlank() }
+        val guidance = currentScene?.let { sceneGuidance[it] }?.takeIf { it.isNotBlank() }?.also { validateSceneRules(currentScene, it) }
+        val sceneSection = currentScene?.let { buildSceneSection(it, sceneRules, guidance) }
+        // The host wrote the scene's rules as it wrote its prompt: like that prompt they do not count against the budget,
+        // which is measured without them.
+        val measuredSceneSection = if (guidance == null) sceneSection else buildSceneSection(currentScene, emptySet(), null)
         val contextSection = contextCatalog?.takeIf { it.paths.isNotEmpty() }?.toPromptSection()
         val protocol = protocolPrompt(tools, protocolRules)
-        fun assemble(tools: String?, skills: String?): String = listOfNotNull(
-            protocol, tools, contextSection, skills, sceneSection,
+        fun assemble(tools: String?, skills: String?, scenePart: String? = sceneSection): String = listOfNotNull(
+            protocol, tools, contextSection, skills, scenePart,
             hostPrompt?.takeIf { it.isNotBlank() }?.let { "Host instructions:\n$it" },
         ).joinToString(separator = "\n\n")
 
@@ -118,8 +129,11 @@ object BootstrapPromptProvider {
             domains?.toCompactPromptSection(MAX_LISTED_DOMAINS) to skills?.toPromptSection(),
             domains?.toCompactPromptSection(MAX_LISTED_DOMAINS) to skills?.toPromptSection(MAX_SKILL_DESCRIPTION_CHARS),
         )
-        val text = attempts.map { (tools, skillText) -> assemble(tools, skillText) }
-            .firstOrNull { computeStaticBytesExcludingHost(it) <= STATIC_PROMPT_SOFT_BUDGET_BYTES }
+        val text = attempts
+            .firstOrNull { (tools, skillText) ->
+                computeStaticBytesExcludingHost(assemble(tools, skillText, measuredSceneSection)) <= STATIC_PROMPT_SOFT_BUDGET_BYTES
+            }
+            ?.let { (tools, skillText) -> assemble(tools, skillText) }
             ?: assemble(domains?.toCompactPromptSection(MAX_LISTED_DOMAINS), skills?.toPromptSection(MAX_SKILL_DESCRIPTION_CHARS))
         return BootstrapPrompt(
             version = BOOTSTRAP_PROMPT_VERSION,
@@ -128,11 +142,12 @@ object BootstrapPromptProvider {
     }
 }
 
-private fun buildSceneSection(scene: String, sceneRules: Set<String>): String =
+private fun buildSceneSection(scene: String, sceneRules: Set<String>, guidance: String?): String =
     buildList {
         add("Current scene: $scene")
-        if (scene in sceneRules) {
-            add("Scene-specific runtime rules are applied by the runtime.")
+        when {
+            !guidance.isNullOrBlank() -> add("Scene rules:\n${guidance.trim()}")
+            scene in sceneRules -> add("Scene-specific runtime rules are applied by the runtime.")
         }
     }.joinToString("\n")
 
@@ -150,6 +165,13 @@ private fun computeStaticBytesExcludingHost(text: String): Int {
 }
 
 const val MAX_HOST_SYSTEM_PROMPT_BYTES = 16 * 1024
+
+/** A scene's own rules (`AgentRuntimeBuilder.sceneAgentsMd`) are held to the host prompt's size. */
+fun validateSceneRules(scene: String, text: String) {
+    require(text.toByteArray(Charsets.UTF_8).size <= MAX_HOST_SYSTEM_PROMPT_BYTES) {
+        "Rules for scene $scene must be at most ${MAX_HOST_SYSTEM_PROMPT_BYTES / 1024} KiB."
+    }
+}
 
 /** First line of the message that carries a host's run context (see NativeToolLoop's runContext). */
 const val RUN_CONTEXT_HEADER = "From the app, not typed by the user: context for the request above."
