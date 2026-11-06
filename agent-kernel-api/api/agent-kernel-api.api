@@ -798,6 +798,15 @@ public final class cc/noharry/agent/kernel/api/KernelApiVersions {
 	public final fun getCURRENT ()Lcc/noharry/agent/kernel/api/KernelApiVersion;
 }
 
+public abstract interface class cc/noharry/agent/kernel/api/NarrationCheck {
+	public static final field Companion Lcc/noharry/agent/kernel/api/NarrationCheck$Companion;
+	public abstract fun isNarration (Ljava/lang/String;)Z
+}
+
+public final class cc/noharry/agent/kernel/api/NarrationCheck$Companion {
+	public final fun getNONE ()Lcc/noharry/agent/kernel/api/NarrationCheck;
+}
+
 public final class cc/noharry/agent/kernel/api/PendingConfirmation {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V

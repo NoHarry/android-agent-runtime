@@ -43,6 +43,26 @@ class RuntimeMemoryRetrieverTest {
     }
 
     @Test
+    fun aHostsOwnTopicsReplaceTheRuntimes() {
+        val kitchen = MemoryTopic("kitchen", strongTerms = setOf("oven", "kettle"), excludedPhrases = setOf("kettlebell"))
+        val retriever = RuntimeMemoryRetriever(topics = listOf(kitchen))
+        val lessons = listOf(
+            lesson("oven", "Observed capability set: oven preheat"),
+            lesson("hvac", "Observed capability set: ac set temperature"),
+        )
+
+        assertEquals(listOf("oven"), retriever.retrieve("Preheat the oven please", lessons).lessons.map { it.id })
+        assertEquals(listOf("kitchen"), retriever.retrieve("Preheat the oven please", lessons).matches.single().matchedDomains.toList())
+        // The runtime's climate topic is not one of this host's.
+        assertTrue(retriever.retrieve("有点热", lessons).lessons.isEmpty())
+        assertTrue(MemoryTopic.DEFAULTS.map { it.name }.containsAll(listOf("hvac", "navigation", "media", "web", "display", "phone")))
+        // A host's terms are read as the request is: "Wi-Fi" in any case, "Oven" as "oven".
+        val net = RuntimeMemoryRetriever(topics = listOf(MemoryTopic("Net", strongTerms = setOf("Wi-Fi", "Oven"))))
+        val wifi = listOf(lesson("wifi", "Observed capability set: wi fi toggle"))
+        assertEquals(listOf("net"), net.retrieve("Turn the WI-FI back on", wifi).matches.single().matchedDomains.toList())
+    }
+
+    @Test
     fun relevantPrewarmLessonIsSelectedForChineseRequest() {
         val selection = RuntimeMemoryRetriever().retrieve(
             requestText = "有点热",

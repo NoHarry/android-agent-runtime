@@ -61,6 +61,7 @@ class NativeToolLoop(
     private val nativeWebSearchEnabled: Boolean = false,
     /** The host's kinds of subagent, offered as spawn_agent's `agent`. */
     private val subagentTypes: List<NativeSubagentType> = emptyList(),
+    private val judgements: LoopJudgements = LoopJudgements(),
 ) {
     private val obligationLedger = RuntimeObligationLedger()
 
@@ -98,8 +99,9 @@ class NativeToolLoop(
         ModelImageRequestView(imageInputEnabled = loopBudget.imageInputEnabled),
         textNeedsFinish = textNeedsFinish,
         userReachable = userReachable,
+        narrationCheck = judgements.narration,
     )
-    private val memoryRetriever = RuntimeMemoryRetriever()
+    private val memoryRetriever = judgements.memory
     private val finishResponseRetryRuns = mutableSetOf<String>()
     private val emptyCompletionContinueRuns = mutableSetOf<String>()
     private val obligationCorrectionRuns = mutableSetOf<String>()

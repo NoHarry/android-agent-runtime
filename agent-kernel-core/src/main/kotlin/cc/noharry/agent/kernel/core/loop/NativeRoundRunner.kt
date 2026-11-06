@@ -1,6 +1,7 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.kernel.core.loop
+import cc.noharry.agent.kernel.api.NarrationCheck
 import cc.noharry.agent.kernel.api.ToolUse
 import cc.noharry.agent.kernel.api.model.ModelClient
 import cc.noharry.agent.kernel.api.model.ModelClientException
@@ -55,6 +56,8 @@ class NativeRoundRunner(
     private val textNeedsFinish: Boolean = false,
     /** False in a subagent's run: nobody answers ask or ask_async there, so they return an error instead of waiting. */
     private val userReachable: Boolean = true,
+    /** Which final answers only announce what the agent will do ([NarrationCheck]). */
+    private val narrationCheck: NarrationCheck = RuntimeNarrationCheck,
 ) {
     private val userInteraction = NativeUserInteraction(steeringQueue)
     private val readOnlyBatchExecutor = NativeReadOnlyToolBatchExecutor(toolUseController, sessionRecorder)
@@ -268,7 +271,7 @@ class NativeRoundRunner(
     private fun implicitFinishOutcome(response: String, allowRetry: Boolean, runId: String): RoundOutcome {
         // A subagent that only said what it is about to do ("我将检索…") would hand that back as its result.
         val nudge = textNeedsFinish && allowRetry
-        if (!nudge && !invalidFinishResponseText(response) && !response.isEchoedData()) {
+        if (!nudge && !invalidFinishResponseText(response, narrationCheck) && !response.isEchoedData()) {
             return RoundOutcome.Finished(response, sealed = steeringQueue.sealIfIdle(runId))
         }
         if (!allowRetry) return RoundOutcome.Failed(
@@ -763,7 +766,7 @@ class NativeRoundRunner(
         event: ModelEvent.ToolCall,
         context: RoundCollectContext,
     ): RoundOutcome {
-        if (invalidFinishArguments(event.argumentsJson)) return rejectInvalidFinish(event, context)
+        if (invalidFinishArguments(event.argumentsJson, narrationCheck)) return rejectInvalidFinish(event, context)
         val authorization = toolUseController.prepareTerminalTool(event, context.toolContext)
         val toolUse = when (authorization) {
             is ToolAuthorization.Allowed -> authorization.toolUse
@@ -778,12 +781,13 @@ class NativeRoundRunner(
             )
         }
         val finishEvent = event.copy(argumentsJson = toolUse.argumentsJson)
-        if (invalidFinishArguments(finishEvent.argumentsJson)) return rejectInvalidFinish(finishEvent, context)
+        if (invalidFinishArguments(finishEvent.argumentsJson, narrationCheck)) return rejectInvalidFinish(finishEvent, context)
         val response = extractFinishResponse(finishEvent.argumentsJson)
         val finishDecision = decideFinish(
             argumentsJson = finishEvent.argumentsJson,
             ledger = context.obligationLedger,
             correctionAlreadyUsed = !context.allowObligationCorrection,
+            narration = narrationCheck,
         )
         if (!finishDecision.accept) {
             if (finishDecision.retryable) {

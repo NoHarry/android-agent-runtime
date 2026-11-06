@@ -1,6 +1,7 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.kernel.core.loop
+import cc.noharry.agent.kernel.api.NarrationCheck
 import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -16,12 +17,14 @@ data class FinishDecision(
     val safeCode: String? = null,
 )
 
+@JvmOverloads
 fun decideFinish(
     argumentsJson: String,
     ledger: RuntimeObligationLedger,
     correctionAlreadyUsed: Boolean,
+    narration: NarrationCheck = RuntimeNarrationCheck,
 ): FinishDecision {
-    if (invalidFinishArguments(argumentsJson)) return FinishDecision(
+    if (invalidFinishArguments(argumentsJson, narration)) return FinishDecision(
         accept = false,
         outcome = RuntimeCompletionOutcome.FAILED,
         retryable = !correctionAlreadyUsed,

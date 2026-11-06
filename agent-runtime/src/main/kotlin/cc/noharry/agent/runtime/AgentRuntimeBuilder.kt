@@ -7,6 +7,7 @@ import cc.noharry.agent.kernel.api.AgentRuntime
 import cc.noharry.agent.kernel.api.ExecEngine
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.HookFailurePolicy
+import cc.noharry.agent.kernel.api.NarrationCheck
 import cc.noharry.agent.kernel.api.RuntimeContextProvider
 import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
 import cc.noharry.agent.kernel.api.RuntimeHook
@@ -30,7 +31,12 @@ import cc.noharry.agent.kernel.core.loop.DEFAULT_MAX_MODEL_ROUNDS
 import cc.noharry.agent.kernel.core.loop.DEFAULT_MAX_TOOL_CALLS_PER_RUN
 import cc.noharry.agent.kernel.core.loop.DEFAULT_MODEL_RETRY_MAX_ATTEMPTS
 import cc.noharry.agent.kernel.core.loop.LoopBudgetConfig
+import cc.noharry.agent.kernel.core.loop.LoopJudgements
 import cc.noharry.agent.kernel.core.loop.ModelRetryConfig
+import cc.noharry.agent.kernel.core.loop.RuntimeNarrationCheck
+import cc.noharry.agent.kernel.core.memory.MemoryTopic
+import cc.noharry.agent.kernel.core.memory.RuntimeMemoryPolicy
+import cc.noharry.agent.kernel.core.memory.RuntimeMemoryRetriever
 import cc.noharry.agent.kernel.core.plugin.ProfileCompiler
 import cc.noharry.agent.kernel.core.plugin.RuntimeBlueprint
 import cc.noharry.agent.kernel.core.plugin.RuntimeCapabilityDeclarations
@@ -143,6 +149,10 @@ class AgentRuntimeBuilder {
     private var subagents: Subagents? = null
     private var webSearchProvider: WebSearchProvider? = null
     private var webFetchFallback: WebFetchFallback? = null
+    private var narrationCheck: NarrationCheck = RuntimeNarrationCheck
+    private var memoryTopics: List<MemoryTopic> = MemoryTopic.DEFAULTS
+    private var memoryPolicy: RuntimeMemoryPolicy = RuntimeMemoryPolicy()
+    private var lessons: Boolean = true
     private var deferredBackendTools: Boolean = false
     private var nativeDeferredTools: Boolean = false
     private var runContextAsSystem: Boolean = false
@@ -376,6 +386,40 @@ class AgentRuntimeBuilder {
     @ExperimentalAgentRuntimeApi
     fun webSearch(provider: WebSearchProvider?): AgentRuntimeBuilder = apply {
         webSearchProvider = provider
+    }
+
+    /**
+     * Which final answers only say what the agent will do; such an answer goes back to the model once for a real one.
+     * The runtime's own check knows English and Chinese phrasings ([NarrationCheck]). A subagent's runtime, which the
+     * host builds, takes its own. Candidate API.
+     */
+    @ExperimentalAgentRuntimeApi
+    fun narrationCheck(check: NarrationCheck): AgentRuntimeBuilder = apply {
+        narrationCheck = check
+    }
+
+    /**
+     * What the lessons learnt across runs are matched on ([MemoryTopic]; the runtime's own topics by default, an empty
+     * list matches by the words alone). Candidate API.
+     */
+    @ExperimentalAgentRuntimeApi
+    fun memoryTopics(topics: List<MemoryTopic>): AgentRuntimeBuilder = apply {
+        memoryTopics = topics.toList()
+    }
+
+    /** How many lessons reach a run and which runs teach one ([RuntimeMemoryPolicy]). Candidate API. */
+    @ExperimentalAgentRuntimeApi
+    fun memoryPolicy(policy: RuntimeMemoryPolicy): AgentRuntimeBuilder = apply {
+        memoryPolicy = policy
+    }
+
+    /**
+     * Whether runs learn lessons (which tools did what was asked) and later runs get the fitting ones, including those
+     * saved before; on by default when the runtime has a workspace to keep them in. Candidate API.
+     */
+    @ExperimentalAgentRuntimeApi
+    fun lessons(enabled: Boolean): AgentRuntimeBuilder = apply {
+        lessons = enabled
     }
 
     /**
@@ -720,6 +764,7 @@ class AgentRuntimeBuilder {
             subagents = subagents,
             webSearchProvider = webSearchProvider,
             webFetchFallback = webFetchFallback,
+            judgements = LoopJudgements(narrationCheck, RuntimeMemoryRetriever(memoryPolicy, memoryTopics)),
         )
     }
 
@@ -777,8 +822,11 @@ class AgentRuntimeBuilder {
     ): ContextInfrastructure {
         val memoryDir = workspaceRoot?.let { File(it, MEMORY_WORKSPACE_DIR) }
         val todoStore = memoryDir?.let(::TodoStore)
-        val memoryStore = memoryDir?.let { RuntimeMemoryStore(it, nowEpochMillis) }
-            ?: virtualWorkspace?.let { RuntimeMemoryStore(it, nowEpochMillis) }
+        val memoryStore = if (lessons) {
+            memoryDir?.let { RuntimeMemoryStore(it, nowEpochMillis) } ?: virtualWorkspace?.let { RuntimeMemoryStore(it, nowEpochMillis) }
+        } else {
+            null
+        }
         val skillRegistry = SkillRegistry(hostSkills.toList(), virtualWorkspace)
         val contextRouter = ContextMaterializerRouter(
             storage = reliabilityStorage,

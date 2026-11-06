@@ -40,6 +40,7 @@ import cc.noharry.agent.kernel.core.context.SessionHistoryStore
 import cc.noharry.agent.kernel.core.context.SimpleBootstrapPromptResolver
 import cc.noharry.agent.kernel.core.loop.CONFIRMATION_CANCELLED_CODE
 import cc.noharry.agent.kernel.core.loop.LoopBudgetConfig
+import cc.noharry.agent.kernel.core.loop.LoopJudgements
 import cc.noharry.agent.kernel.core.loop.ModelRetryConfig
 import cc.noharry.agent.kernel.core.loop.NativeLoopOutcome
 import cc.noharry.agent.kernel.core.loop.NativeLoopSummary
@@ -161,6 +162,7 @@ internal class DefaultAgentRuntime(
     private val webSearchProvider: WebSearchProvider? = null,
     /** Gets pages web_fetch's own request could not (see [WebFetchFallback]). */
     private val webFetchFallback: WebFetchFallback? = null,
+    private val judgements: LoopJudgements = LoopJudgements(),
 ) : AgentRuntime {
     private val closed = AtomicBoolean(false)
     private val stateLocks = RunStateLockRegistry()
@@ -255,6 +257,7 @@ internal class DefaultAgentRuntime(
         conversationCompactor = conversationCompactor,
         subagents = subagents,
         nativeWebSearchEnabled = webSearchProvider != null,
+        judgements = judgements,
     )
     private val userInputResumeController = UserInputResumeController(
         runStateController = runStateController,
@@ -644,7 +647,7 @@ internal class DefaultAgentRuntime(
         runtimeIo {
             runStateController.recordNativeLoopSummary(runId, loopOutcome.summary)
             memoryStore?.let { store ->
-                for (candidate in extractMemoryCandidates(loopOutcome.summary, loopOutcome.result)) {
+                for (candidate in extractMemoryCandidates(loopOutcome.summary, loopOutcome.result, judgements.memory.policy)) {
                     store.promote(candidate, request.scene, candidate.lessonMode())
                 }
             }

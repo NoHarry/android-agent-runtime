@@ -38,8 +38,8 @@ internal object AgentProtocolCatalog {
         ),
         "AgentRuntimeBuilder methods" to tokens(
             """
-            agentsMd build buildAsync contextProvider contextWindow create defaultWorkspace deferredBackendTools disabledNativeTools execEngine hook hookTimeoutMillis imageInput loopBudget
-            modelClient modelConcurrency modelRetry nativeDeferredTools nativeWebFetchEnabled networkConfirmationPolicy nowEpochMillis
+            agentsMd build buildAsync contextProvider contextWindow create defaultWorkspace deferredBackendTools disabledNativeTools execEngine hook hookTimeoutMillis imageInput lessons loopBudget
+            memoryPolicy memoryTopics modelClient modelConcurrency modelRetry narrationCheck nativeDeferredTools nativeWebFetchEnabled networkConfirmationPolicy nowEpochMillis
             plugin policyConfig policyConfigJson policyConfigPath policyRule profile runContext runContextAsSystem runtimeEvidence sceneAgentsMd
             sessionActivationInheritance sessionConcurrency sessionEventLog sessionEventLogRoot sessionHistory sessionStore sessionToolActivations skill subagents systemPrompt toolConcurrency toolProvider toolProviders traceRedactor turnObserver virtualWorkspace webFetchFallback webSearch workspace
             workspaceRoot

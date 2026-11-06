@@ -277,6 +277,7 @@ private val CANDIDATE_PUBLIC_API_CLASS_NAMES = listOf(
     "cc.noharry.agent.kernel.api.HookDecision",
     "cc.noharry.agent.kernel.api.HookFailurePolicy",
     "cc.noharry.agent.kernel.api.KernelApiRange",
+    "cc.noharry.agent.kernel.api.NarrationCheck",
     "cc.noharry.agent.kernel.api.KernelApiVersion",
     "cc.noharry.agent.kernel.api.KernelApiVersions",
     "cc.noharry.agent.kernel.api.PluginVersion",

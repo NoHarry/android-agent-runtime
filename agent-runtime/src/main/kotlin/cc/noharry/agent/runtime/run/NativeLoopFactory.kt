@@ -21,6 +21,7 @@ import cc.noharry.agent.kernel.core.context.ConversationCompactor
 import cc.noharry.agent.kernel.core.context.HistoryCompactor
 import cc.noharry.agent.kernel.core.context.SessionHistoryStore
 import cc.noharry.agent.kernel.core.loop.LoopBudgetConfig
+import cc.noharry.agent.kernel.core.loop.LoopJudgements
 import cc.noharry.agent.kernel.core.loop.ModelRetryConfig
 import cc.noharry.agent.kernel.core.loop.NativeLoopOutcome
 import cc.noharry.agent.kernel.core.loop.NativeLoopSummary
@@ -88,6 +89,7 @@ internal class NativeLoopFactory(
     private val conversationCompactor: ConversationCompactor? = null,
     private val subagents: Subagents? = null,
     private val nativeWebSearchEnabled: Boolean = false,
+    private val judgements: LoopJudgements = LoopJudgements(),
 ) {
     /** Unique per Runtime instance for Probe hub isolation. */
     val runtimeInstanceId: String = UUID.randomUUID().toString()
@@ -312,6 +314,7 @@ internal class NativeLoopFactory(
             textNeedsFinish = childRun,
             userReachable = !childRun,
             nativeWebSearchEnabled = nativeWebSearchEnabled,
+            judgements = judgements,
         )
 
     private fun materializer(): VirtualFileMaterializer =

@@ -1,11 +1,24 @@
 package cc.noharry.agent.kernel.core.loop
+import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.kernel.api.NarrationCheck
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+@OptIn(ExperimentalAgentRuntimeApi::class)
 class FinishArgumentValidationTest {
+    @Test fun aHostsNarrationCheckDecidesWhichAnswersOnlyAnnounce() {
+        val announcing = "I'll now look up the weather and provide the final answer."
+        assertTrue(invalidFinishResponseText(announcing))
+        assertFalse(invalidFinishResponseText(announcing, NarrationCheck.NONE))
+        val german = NarrationCheck { it.startsWith("Ich werde") }
+        assertTrue(invalidFinishArguments(buildJsonObject { put("response", "Ich werde das Wetter prüfen.") }.toString(), german))
+        assertTrue(decideFinish("""{"response":"Ich werde das Wetter prüfen."}""", RuntimeObligationLedger(), false).accept)
+        assertFalse(decideFinish("""{"response":"Ich werde das Wetter prüfen."}""", RuntimeObligationLedger(), false, german).accept)
+    }
+
     @Test fun rejectsInvalidShapeAndOutcomeInsteadOfDefaultingToSuccess() {
         listOf("broken", "[]", "{}", """{"response":23}""", """{"response":" "}""",
             """{"response":"done","outcome":null}""", """{"response":"done","outcome":true}""",

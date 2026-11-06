@@ -24,11 +24,14 @@ data class RuntimeMemorySelection(
  * Selects only explicitly prewarm-eligible lessons that are relevant to the
  * current request. Legacy and query-only lessons deliberately return no match.
  */
-class RuntimeMemoryRetriever(
-    private val policy: RuntimeMemoryPolicy = RuntimeMemoryPolicy(),
+class RuntimeMemoryRetriever @JvmOverloads constructor(
+    /** How many lessons reach a run and which count, also for learning them ([RuntimeMemoryPolicy]). */
+    val policy: RuntimeMemoryPolicy = RuntimeMemoryPolicy(),
+    /** What requests and lessons are about ([MemoryTopic]); a request on none is matched by its words alone. */
+    private val topics: List<MemoryTopic> = MemoryTopic.DEFAULTS,
 ) {
     fun retrieve(requestText: String, lessons: List<RuntimeLesson>): RuntimeMemorySelection {
-        val request = retrievalProfile(requestText)
+        val request = retrievalProfile(requestText, topics)
         if (request.isEmpty() || policy.maxRetrievedLessons <= 0) return emptySelection()
         val ranked = lessons.asSequence()
             .filter { it.isPrewarmEligible() }
@@ -49,14 +52,14 @@ class RuntimeMemoryRetriever(
             evidenceRunKeys.size >= policy.minPrewarmHitCount
 
     private fun relevanceMatch(request: RetrievalProfile, lesson: RuntimeLesson): RuntimeMemoryMatch? {
-        val lessonProfile = retrievalProfile(lessonSearchText(lesson))
+        val lessonProfile = retrievalProfile(lessonSearchText(lesson), topics)
         val domains = request.domains.intersect(lessonProfile.domains)
         val score = relevanceScore(request, lessonProfile, domains)
         if (score < policy.minRelevanceScore) return null
         return RuntimeMemoryMatch(
             lesson = lesson,
             relevanceScore = score,
-            matchedDomains = domains.mapTo(linkedSetOf()) { it.name.lowercase() },
+            matchedDomains = domains.mapTo(linkedSetOf()) { it.name },
         )
     }
 
@@ -83,7 +86,7 @@ class RuntimeMemoryRetriever(
             .sortedWith(scoredCapabilityQueryOrder())
             .toList()
         val queries = mutableListOf<String>()
-        val coveredDomains = linkedSetOf<MemoryDomain>()
+        val coveredDomains = linkedSetOf<MemoryTopic>()
         for (candidate in ranked) {
             if (queries.size >= policy.maxPreactivatedTools.coerceAtLeast(0)) break
             if (candidate.matchedDomains.isNotEmpty() && coveredDomains.containsAll(candidate.matchedDomains)) continue
@@ -94,7 +97,7 @@ class RuntimeMemoryRetriever(
     }
 
     private fun String.relevanceTo(request: RetrievalProfile): ScoredCapabilityQuery? {
-        val profile = retrievalProfile(this)
+        val profile = retrievalProfile(this, topics)
         val matchedDomains = request.domains.intersect(profile.domains)
         val score = relevanceScore(request, profile, matchedDomains)
         return takeIf { score >= policy.minRelevanceScore }
@@ -119,7 +122,7 @@ private data class ScoredCapabilityQuery(
     val query: String,
     val score: Float,
     val specificity: Int,
-    val matchedDomains: Set<MemoryDomain>,
+    val matchedDomains: Set<MemoryTopic>,
 )
 
 private fun scoredCapabilityQueryOrder(): Comparator<ScoredCapabilityQuery> =
@@ -128,65 +131,87 @@ private fun scoredCapabilityQueryOrder(): Comparator<ScoredCapabilityQuery> =
 
 private data class RetrievalProfile(
     val tokens: Set<String>,
-    val domains: Set<MemoryDomain>,
+    val domains: Set<MemoryTopic>,
 ) {
     fun isEmpty(): Boolean = tokens.isEmpty() && domains.isEmpty()
 }
 
-private enum class MemoryDomain(
-    val strongTerms: Set<String>,
-    val weakTerms: Set<String> = emptySet(),
-    val excludedPhrases: Set<String> = emptySet(),
+/**
+ * A topic requests and lessons are matched on: any of its strong terms in a text, or two of its weak terms, puts the
+ * text on it, unless the term only appears inside one of its excluded phrases (「路线图」 is no route). Terms are read as
+ * the text is (lower case, punctuation as spaces: "Wi-Fi" is "wi fi"); a term of ASCII letters and digits matches a whole
+ * word, any other term anywhere in the text. [name] is how matches name the topic, in lower case.
+ */
+class MemoryTopic(
+    name: String,
+    strongTerms: Set<String>,
+    weakTerms: Set<String> = emptySet(),
+    excludedPhrases: Set<String> = emptySet(),
 ) {
-    HVAC(
-        strongTerms = setOf(
-            "hvac", "ac", "climate", "cooling", "heating", "air conditioner", "空调", "内循环", "外循环",
-            "有点热", "太热", "很热", "好热", "热了", "屋里热", "室内热", "制冷", "降温", "凉快",
-            "有点冷", "太冷", "很冷", "好冷", "冷了", "屋里冷", "室内冷", "制热", "升温", "暖和",
-        ),
-        weakTerms = setOf("temperature", "hot", "cold", "fan speed", "温度", "风量", "风速"),
-        excludedPhrases = setOf("冷笑话", "温度计", "温度传感器", "风速仪"),
-    ),
-    NAVIGATION(
-        strongTerms = setOf(
-            "navigation", "navigate", "navi", "destination", "poi", "map", "导航", "目的地", "地图",
-        ),
-        weakTerms = setOf("route", "highway", "toll", "路线", "高速", "收费"),
-        excludedPhrases = setOf("技术路线", "产品路线", "路线图", "导航栏", "高速缓存", "收费标准"),
-    ),
-    MEDIA(
-        strongTerms = setOf("music", "audio", "song", "playlist", "volume", "音乐", "歌曲", "音量"),
-        weakTerms = setOf("playback", "pause", "播放", "暂停"),
-    ),
-    WEB(
-        strongTerms = setOf(
-            "browser", "web", "url", "http", "fetch", "网页", "浏览器", "网址", "联网", "上网", "访问网页", "打开网页",
-        ),
-    ),
-    DISPLAY(strongTerms = setOf("brightness", "screen", "display", "亮度", "屏幕")),
-    PHONE(
-        strongTerms = setOf("phone", "电话", "通话", "拨号"),
-        weakTerms = setOf("call", "contact", "联系人"),
-    ),
-    ;
+    val name: String = name.trim().lowercase()
+    val strongTerms: Set<String> = strongTerms.normalizedTerms()
+    val weakTerms: Set<String> = weakTerms.normalizedTerms()
+    val excludedPhrases: Set<String> = excludedPhrases.normalizedTerms()
 
-    fun matches(normalized: String, tokens: Set<String>): Boolean {
+    init {
+        require(this.name.isNotEmpty()) { "A memory topic needs a name" }
+    }
+
+    internal fun matches(normalized: String, tokens: Set<String>): Boolean {
         if (strongTerms.any { normalized.containsDomainTerm(it, tokens, excludedPhrases) }) {
             return true
         }
         val weakMatches = weakTerms.count { normalized.containsDomainTerm(it, tokens, excludedPhrases) }
         return weakMatches >= MIN_WEAK_DOMAIN_TERM_MATCHES
     }
+
+    companion object {
+        /** The runtime's own topics, in English and Chinese: climate, navigation, media, the web, the display, calls. */
+        val DEFAULTS: List<MemoryTopic> = listOf(
+            MemoryTopic(
+                "hvac",
+                strongTerms = setOf(
+                    "hvac", "ac", "climate", "cooling", "heating", "air conditioner", "空调", "内循环", "外循环",
+                    "有点热", "太热", "很热", "好热", "热了", "屋里热", "室内热", "制冷", "降温", "凉快",
+                    "有点冷", "太冷", "很冷", "好冷", "冷了", "屋里冷", "室内冷", "制热", "升温", "暖和",
+                ),
+                weakTerms = setOf("temperature", "hot", "cold", "fan speed", "温度", "风量", "风速"),
+                excludedPhrases = setOf("冷笑话", "温度计", "温度传感器", "风速仪"),
+            ),
+            MemoryTopic(
+                "navigation",
+                strongTerms = setOf("navigation", "navigate", "navi", "destination", "poi", "map", "导航", "目的地", "地图"),
+                weakTerms = setOf("route", "highway", "toll", "路线", "高速", "收费"),
+                excludedPhrases = setOf("技术路线", "产品路线", "路线图", "导航栏", "高速缓存", "收费标准"),
+            ),
+            MemoryTopic(
+                "media",
+                strongTerms = setOf("music", "audio", "song", "playlist", "volume", "音乐", "歌曲", "音量"),
+                weakTerms = setOf("playback", "pause", "播放", "暂停"),
+            ),
+            MemoryTopic(
+                "web",
+                strongTerms = setOf(
+                    "browser", "web", "url", "http", "fetch", "网页", "浏览器", "网址", "联网", "上网", "访问网页", "打开网页",
+                ),
+            ),
+            MemoryTopic("display", strongTerms = setOf("brightness", "screen", "display", "亮度", "屏幕")),
+            MemoryTopic(
+                "phone",
+                strongTerms = setOf("phone", "电话", "通话", "拨号"),
+                weakTerms = setOf("call", "contact", "联系人"),
+            ),
+        )
+    }
 }
 
-private fun retrievalProfile(value: String): RetrievalProfile {
+private fun retrievalProfile(value: String, topics: List<MemoryTopic>): RetrievalProfile {
     val normalized = normalizeRetrievalText(value)
     val tokens = RETRIEVAL_TOKEN_PATTERN.findAll(normalized)
         .map { it.value }
         .filterNot { it in RETRIEVAL_STOP_WORDS }
         .toSet()
-    val domains = MemoryDomain.entries
-        .filterTo(linkedSetOf()) { domain -> domain.matches(normalized, tokens) }
+    val domains = topics.filterTo(linkedSetOf()) { topic -> topic.matches(normalized, tokens) }
     return RetrievalProfile(tokens = tokens, domains = domains)
 }
 
@@ -196,7 +221,7 @@ private fun lessonSearchText(lesson: RuntimeLesson): String = memoryCapabilityQu
 private fun relevanceScore(
     request: RetrievalProfile,
     lesson: RetrievalProfile,
-    matchedDomains: Set<MemoryDomain>,
+    matchedDomains: Set<MemoryTopic>,
 ): Float {
     val lexical = lexicalOverlap(request.tokens, lesson.tokens)
     // A request outside the known topics: the words alone decide, and must mostly agree.
@@ -226,6 +251,9 @@ private fun String.containsDomainTerm(
     } else {
         contains(term) && excludedPhrases.none { phrase -> phrase.contains(term) && contains(phrase) }
     }
+
+private fun Set<String>.normalizedTerms(): Set<String> =
+    mapNotNullTo(linkedSetOf()) { term -> normalizeRetrievalText(term).takeIf(String::isNotEmpty) }
 
 private fun normalizeRetrievalText(value: String): String =
     CAMEL_CASE_RETRIEVAL_BOUNDARY.replace(value, "$1 $2")

@@ -317,13 +317,17 @@ public final class cc/noharry/agent/runtime/AgentRuntimeBuilder {
 	public static synthetic fun hook$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;Lcc/noharry/agent/kernel/api/RuntimeHook;Lcc/noharry/agent/kernel/api/ToolMatcher;Ljava/lang/Long;Lcc/noharry/agent/kernel/api/HookFailurePolicy;ILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun hookTimeoutMillis (J)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun imageInput (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun lessons (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun loopBudget (IILjava/lang/Long;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public static synthetic fun loopBudget$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;IILjava/lang/Long;ILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun memoryPolicy (Lcc/noharry/agent/kernel/core/memory/RuntimeMemoryPolicy;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun memoryTopics (Ljava/util/List;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun modelClient (Lcc/noharry/agent/kernel/api/model/ModelClient;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun modelConcurrency (I)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public static synthetic fun modelConcurrency$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;IILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun modelRetry (IJJLjava/util/List;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public static synthetic fun modelRetry$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;IJJLjava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun narrationCheck (Lcc/noharry/agent/kernel/api/NarrationCheck;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun nativeDeferredTools (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public static synthetic fun nativeDeferredTools$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;ZILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun nativeWebFetchEnabled (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;

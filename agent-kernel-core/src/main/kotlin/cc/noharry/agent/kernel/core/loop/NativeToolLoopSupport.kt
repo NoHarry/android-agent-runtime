@@ -2,6 +2,7 @@
 
 package cc.noharry.agent.kernel.core.loop
 import cc.noharry.agent.kernel.api.HookContext
+import cc.noharry.agent.kernel.api.NarrationCheck
 import cc.noharry.agent.kernel.api.ToolSource
 import cc.noharry.agent.kernel.api.ToolUse
 import cc.noharry.agent.kernel.api.ToolUseResult
@@ -120,6 +121,11 @@ fun todoUpdatedResult(items: List<TodoItem>): String =
 
 fun invalidFinishResponseResult(): String =
     """{"ok":false,"code":"$INVALID_FINISH_RESPONSE_CODE","message":"$INVALID_FINISH_RESPONSE_MESSAGE"}"""
+
+/** The runtime's own [NarrationCheck]: English and Chinese announcements of what the agent will do, with no result in them. */
+object RuntimeNarrationCheck : NarrationCheck {
+    override fun isNarration(answer: String): Boolean = isPureNarrationFinishResponse(answer)
+}
 
 fun isPureNarrationFinishResponse(response: String): Boolean {
     val normalized = response.trim().replace(Regex("""\s+"""), " ")

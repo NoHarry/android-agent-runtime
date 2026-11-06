@@ -6,8 +6,9 @@ called out.
 ## Unreleased
 
 Fixes for Claude and OpenAI hosts, and nothing in Chinese or about a car unless the host is. **Breaking** in behaviour
-where noted, and for binaries compiled against the old constructors of `AnthropicModelClient`, `OpenAiModelClient` and
-`A2aServerConfig` (Kotlin source that names its arguments is unchanged).
+where noted, and for binaries compiled against the old constructors of `AnthropicModelClient`, `OpenAiModelClient`,
+`A2aServerConfig` and the kernel's loop classes `NativeToolLoop` and `NativeRoundRunner` (Kotlin source that names its
+arguments is unchanged).
 
 - **Claude's thinking.** Opus 4.7 and later, Sonnet 5 and later, Haiku 5.5 and newer families refuse a `budget_tokens`
   with a 400, and Opus and Sonnet 4.6 deprecate it. The `low`, `medium`, `high` and `max` variants now send
@@ -56,6 +57,16 @@ where noted, and for binaries compiled against the old constructors of `Anthropi
   was `OpenAI` or `Anthropic` (in any case), so `ModelRef("deepseek", "deepseek-v4-pro", "high")` ran with the model's
   default (DeepSeek's thinking off). It now applies whenever it names the model being called, sent as the host chose it.
   `ModelVariantRegistry.resolve` still keeps only variants it knows for the `providerId` given.
+- **A host's own content judgements.** What the runtime judges about content in its users' language and its domain
+  can now be set, with today's behaviour as the default: `AgentRuntimeBuilder.narrationCheck(…)` decides which final
+  answers only announce what the agent will do and go back once for a real answer (`NarrationCheck`; the runtime's own,
+  `RuntimeNarrationCheck`, knows English and Chinese phrasings; a subagent's runtime takes its own); `memoryTopics(…)`
+  sets what lessons from earlier runs are matched on (`MemoryTopic`, its terms read as the request is: lower case,
+  punctuation as spaces; `MemoryTopic.DEFAULTS` are the runtime's six: climate, navigation, media, the web, the display,
+  calls); `memoryPolicy(…)` how many reach a run and which runs teach one; `lessons(false)` keeps runs from learning
+  lessons or using saved ones. The builder methods are experimental.
+  The defaults are expected to become neutral in a later release (no built-in topics, a narration check without
+  language-specific phrasings), so a host that relies on them should set them explicitly.
 - **Dependencies users compile against.** `agent-kernel-core` exposes `kotlinx-serialization-json` (its API takes and
   returns `JsonObject`) and `agent-a2a-client-official` exposes `agent-a2a` (its module is an `A2aClientModule`) as API
   dependencies; 0.4.0 published them as runtime-only, so code using those types did not compile.

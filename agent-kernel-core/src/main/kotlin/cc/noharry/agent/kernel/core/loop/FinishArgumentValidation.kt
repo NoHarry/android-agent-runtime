@@ -1,22 +1,26 @@
 package cc.noharry.agent.kernel.core.loop
+import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.kernel.api.NarrationCheck
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 /** Check the terminal protocol before accepting a completion or asking for its one correction. */
-internal fun invalidFinishArguments(argumentsJson: String): Boolean {
+@OptIn(ExperimentalAgentRuntimeApi::class)
+internal fun invalidFinishArguments(argumentsJson: String, narration: NarrationCheck = RuntimeNarrationCheck): Boolean {
     val args = runCatching { Json.parseToJsonElement(argumentsJson) as? JsonObject }.getOrNull() ?: return true
     if (args.keys.any { it !in FINISH_ARGUMENT_NAMES }) return true
     val response = (args["response"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return true
-    if (invalidFinishResponseText(response)) return true
+    if (invalidFinishResponseText(response, narration)) return true
     // Preserve the documented response-only legacy form, but never coerce an invalid outcome to success.
     if ("outcome" !in args) return false
     val outcome = (args["outcome"] as? JsonPrimitive)?.takeIf { it.isString }?.content
     return outcome !in FINISH_OUTCOMES
 }
 
-internal fun invalidFinishResponseText(response: String): Boolean {
-    if (response.isBlank() || isPureNarrationFinishResponse(response)) return true
+@OptIn(ExperimentalAgentRuntimeApi::class)
+internal fun invalidFinishResponseText(response: String, narration: NarrationCheck = RuntimeNarrationCheck): Boolean {
+    if (response.isBlank() || narration.isNarration(response)) return true
     // Quoted code can legitimately explain the protocol; only unquoted tool-call syntax is spillover.
     val prose = response.replace(FENCED_CODE, "").replace(INLINE_CODE, "")
     if (FINISH_PARAMETER_SPILL.containsMatchIn(prose)) return true
