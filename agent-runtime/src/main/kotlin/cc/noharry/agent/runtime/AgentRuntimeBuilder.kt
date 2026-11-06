@@ -613,9 +613,10 @@ class AgentRuntimeBuilder {
     }
 
     /**
-     * How the run's public results, events and summaries hide personal data: [DefaultTraceRedactor] unless set. A
+     * How the run's public events, summaries and failure reports hide personal data: [DefaultTraceRedactor] unless set;
+     * the agent's answers and questions to the user go out as written, for the host to filter if it wants. A
      * [StandardTraceRedactor][cc.noharry.agent.kernel.core.trace.StandardTraceRedactor] keeps phone numbers or coordinates
-     * where an app needs them shown. Secrets are hidden after [redactor] whatever it does.
+     * in events and summaries where an app needs them shown. Secrets are hidden after [redactor] whatever it does.
      */
     @ExperimentalAgentRuntimeApi
     fun traceRedactor(redactor: TraceRedactor): AgentRuntimeBuilder = apply {

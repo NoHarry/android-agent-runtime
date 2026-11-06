@@ -12,47 +12,33 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PublicQueryPrivacyTest {
     @Test
-    fun aHostMayKeepPhoneNumbersAndCoordinatesButNeverSecrets() = runBlocking {
+    fun theAnswerGoesOutAsWrittenWhateverItHolds() = runBlocking {
+        val answer = "order 13800138000 token=sk-querysecret123 lat=31.2304, 2^40 is 1099511627776"
         val runtime = AgentRuntimeBuilder.create()
             .modelClient(
                 PrivacyModel(
-                    ModelEvent.ToolCall(
-                        id = "tool-1",
-                        name = "finish",
-                        argumentsJson = """{"response":"order 13800138000 token=sk-querysecret123 lat=31.2304"}""",
-                    ),
+                    ModelEvent.ToolCall(id = "tool-1", name = "finish", argumentsJson = """{"response":"$answer"}"""),
                     ModelEvent.Completed,
                 ),
             )
-            .traceRedactor(StandardTraceRedactor(phones = false, locations = false))
             .build() as DefaultAgentRuntime
 
-        val result = runtime.run(agentRequest()).toList().filterIsInstance<AgentEvent.ResultAvailable>().single().result
-        assertTrue(result.response, result.response.contains("13800138000") && result.response.contains("lat=31.2304"))
-        assertTrue(result.response.contains("[REDACTED_SECRET]") && !result.response.contains("sk-querysecret123"))
+        val events = runtime.run(agentRequest()).toList()
 
-        // A host's own redactor that hides nothing still leaves no secret.
-        val open = AgentRuntimeBuilder.create()
-            .modelClient(
-                PrivacyModel(
-                    ModelEvent.ToolCall(id = "tool-1", name = "finish", argumentsJson = """{"response":"done token=sk-querysecret123"}"""),
-                    ModelEvent.Completed,
-                ),
-            )
-            .traceRedactor { it }
-            .build() as DefaultAgentRuntime
-        val opened = open.run(agentRequest()).toList().filterIsInstance<AgentEvent.ResultAvailable>().single().result
-        assertFalse(opened.response, opened.response.contains("sk-querysecret123"))
+        assertEquals(answer, events.filterIsInstance<AgentEvent.ResultAvailable>().single().result.response)
+        assertEquals(answer, requireNotNull(runtime.getRuntimeResult("request-1")).response)
+        assertEquals(answer, events.filterIsInstance<AgentEvent.TextDelta>().joinToString("") { it.text })
     }
 
     @Test
-    fun publicResultQueryAndEventsRedactSecretPhoneAndLocation() = runBlocking {
+    fun summariesOfTheRunStillHideSecretPhoneAndLocation() = runBlocking {
         val runtime = AgentRuntimeBuilder.create()
             .modelClient(
                 PrivacyModel(
@@ -68,23 +54,47 @@ class PublicQueryPrivacyTest {
             )
             .build() as DefaultAgentRuntime
 
-        val events = runtime.run(agentRequest()).toList()
-        val resultEvent = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
+        runtime.run(agentRequest()).toList()
         val result = requireNotNull(runtime.getRuntimeResult("request-1"))
         val evidence = requireNotNull(runtime.getRuntimeEvidence(result.evidenceIds.single()))
         val workpad = requireNotNull(runtime.getRuntimeWorkpad("request-1"))
-        val publicText = listOf(
-            resultEvent.response,
-            result.response,
+        val summaries = listOf(
             evidence.summary,
             workpad.planSummaries.joinToString(),
             workpad.writeArtifacts.joinToString(),
         ).joinToString()
 
-        assertNoPii(publicText)
-        assertTrue(publicText.contains("[REDACTED_SECRET]"))
-        assertTrue(publicText.contains("[REDACTED_PHONE]"))
-        assertTrue(publicText.contains("[REDACTED_LOCATION]"))
+        assertNoPii(summaries)
+        assertTrue(summaries, summaries.contains("[REDACTED_SECRET]"))
+        assertTrue(summaries, summaries.contains("[REDACTED_PHONE]"))
+        assertTrue(summaries, summaries.contains("[REDACTED_LOCATION]"))
+    }
+
+    @Test
+    fun aFailureReportNeverCarriesASecretWhateverTheHostsRedactor() = runBlocking {
+        val runtime = AgentRuntimeBuilder.create()
+            .modelClient(
+                object : ModelClient {
+                    override val providerConcurrency: ProviderConcurrencyDeclaration =
+                        ProviderConcurrencyDeclaration.serialized()
+
+                    override fun complete(request: ModelRequest): Flow<ModelEvent> {
+                        throw IllegalStateException("provider exploded token=sk-failsecret123 order 13800138000")
+                    }
+                },
+            )
+            .traceRedactor { it }
+            .build()
+
+        val events = runtime.run(agentRequest()).toList()
+        val report = listOf(
+            events.filterIsInstance<AgentEvent.Failed>().single().message,
+            requireNotNull(runtime.getRuntimeResult("request-1")).response,
+        ).joinToString()
+
+        assertFalse(report, report.contains("sk-failsecret123"))
+        // The host's redactor keeps phone numbers in reports; only secrets are always hidden.
+        assertTrue(report, report.contains("13800138000"))
     }
 
     @Test

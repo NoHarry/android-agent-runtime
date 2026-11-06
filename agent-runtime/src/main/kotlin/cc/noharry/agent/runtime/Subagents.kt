@@ -4,7 +4,6 @@ package cc.noharry.agent.runtime
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.model.ModelRef
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
 import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.tools.TERMINAL_TOOLS
 import kotlinx.coroutines.CancellationException
@@ -57,8 +56,6 @@ class Subagents(
 
     private val lock = Any()
     private val children = linkedMapOf<String, Child>()
-    /** Children's answers as their model wrote them, by child session, until their public (redacted) result arrives. */
-    private val answers = mutableMapOf<String, String>()
     private val activeRuns = hashSetOf<String>()
     private val pendingReports = mutableListOf<SubagentReport>()
     private var listener: ((SubagentReport) -> Unit)? = null
@@ -117,13 +114,6 @@ class Subagents(
             WAIT_AGENT -> waitFor(arguments, call)
             CANCEL_AGENT -> cancel(arguments, call)
             else -> failure("UNSUPPORTED_SUBAGENT_TOOL", "Unknown subagent tool $toolName.")
-        }
-    }
-
-    /** A child run's own result, before the host's redacted copy: dates and numbers reach the parent as written. */
-    internal fun childAnswered(sessionId: String, result: RuntimeResult) {
-        synchronized(lock) {
-            if (children.values.any { it.spec.sessionId == sessionId && !it.state.finished }) answers[sessionId] = result.response
         }
     }
 
@@ -278,10 +268,7 @@ class Subagents(
         if (event is AgentEvent.ResultAvailable) {
             val result = event.result
             when (result.status) {
-                RuntimeRunStatus.COMPLETED -> {
-                    val answer = synchronized(lock) { answers[child.spec.sessionId] } ?: result.response
-                    settle(child, SubagentState.COMPLETED, result = answer)
-                }
+                RuntimeRunStatus.COMPLETED -> settle(child, SubagentState.COMPLETED, result = result.response)
                 RuntimeRunStatus.CANCELLED -> settle(child, SubagentState.CANCELLED, error = result.errorCode ?: "Cancelled.")
                 else -> settle(child, SubagentState.FAILED, error = listOfNotNull(result.errorCode, result.response.takeIf { it.isNotBlank() }, result.status.name).first())
             }
@@ -291,7 +278,6 @@ class Subagents(
     private fun settle(child: Child, state: SubagentState, result: String = "", error: String = "") {
         val report = synchronized(lock) {
             if (child.state.finished) return
-            answers.remove(child.spec.sessionId)
             child.state = state
             child.result = result.take(MAX_RESULT_CHARS)
             child.error = error.take(MAX_LATEST_CHARS)
@@ -478,11 +464,7 @@ data class SubagentType(
 
 private val SUBAGENT_TYPE_NAME = Regex("[a-z][a-z0-9-]{0,39}")
 
-/**
- * Runs one child to its end, e.g. on a runtime built for it; [Subagents] reads progress and the result from the events.
- * Build that runtime with the same [Subagents]: its answer then reaches the parent as written, not as the host's
- * redacted copy in the events (where a venue's phone number reads [REDACTED_PHONE]).
- */
+/** Runs one child to its end, e.g. on a runtime built for it; [Subagents] reads progress and the result from the events. */
 @ExperimentalAgentRuntimeApi
 fun interface SubagentLauncher {
     fun launch(spec: SubagentSpec): Flow<AgentEvent>

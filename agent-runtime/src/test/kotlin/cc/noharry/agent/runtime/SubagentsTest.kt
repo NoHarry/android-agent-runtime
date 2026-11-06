@@ -232,7 +232,7 @@ class SubagentsTest {
 
         val waited = subagents.execute("wait_agent", """{"timeout_seconds":5}""", parent)
 
-        // The host's copy of the child's result reads "[REDACTED_PHONE]" for the number; the parent's model must not.
+        // The child's answer reaches the parent's model as written, numbers and all.
         assertTrue(waited, waited.contains("020-87654321"))
     }
 

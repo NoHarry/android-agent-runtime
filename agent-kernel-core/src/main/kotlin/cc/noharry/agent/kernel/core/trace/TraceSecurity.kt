@@ -45,7 +45,11 @@ sealed interface DebugRawTraceAccessDecision {
     data class Denied(val reason: String) : DebugRawTraceAccessDecision
 }
 
-/** What a run shows outside its own trace (results, events, summaries) passes through this first. */
+/**
+ * What a run shows outside its own trace (thinking, tool events, summaries, the report of a run that did not complete)
+ * passes through this first. The agent's words to the user (its text, a completed run's response, its questions and
+ * question cards) go out as written.
+ */
 fun interface TraceRedactor {
     fun redact(value: String): String
 }
@@ -53,8 +57,8 @@ fun interface TraceRedactor {
 /**
  * Hides secrets (API keys, `token=…`, `secret=…`), phone numbers and coordinates (`lat=…`, `longitude=…`) in what a run
  * shows outside its own trace. Secrets are always hidden; [phones] off keeps long runs of digits (ten characters or
- * more of digits, spaces and dashes) as they are, for an app whose answers carry order or tracking numbers, and
- * [locations] off keeps coordinates, for one that answers with them on purpose. A date such as 2026-10-18 is never taken
+ * more of digits, spaces and dashes) as they are, for an app whose events and summaries carry order or tracking
+ * numbers, and [locations] off keeps coordinates, for one that shows them there on purpose. A date such as 2026-10-18 is never taken
  * for a phone number.
  */
 class StandardTraceRedactor(

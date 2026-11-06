@@ -6,10 +6,12 @@ import cc.noharry.agent.kernel.api.ProtocolRequestCloseLoopResult
 import cc.noharry.agent.kernel.api.model.ModelRef
 import cc.noharry.agent.kernel.api.reliability.OpenConfusion
 import cc.noharry.agent.kernel.api.reliability.RuntimeBlocker
+import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.api.reliability.RuntimeEvidence
 import cc.noharry.agent.kernel.api.reliability.RuntimeHandoff
 import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequest
 import cc.noharry.agent.kernel.api.reliability.RuntimeResult
+import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.api.reliability.RuntimeWorkpad
 import cc.noharry.agent.kernel.core.loop.LoopBudgetWarning
 import kotlinx.serialization.json.Json
@@ -33,11 +35,12 @@ class NativePublicEventBuffer(
         )
     }
 
+    /** What the agent says to the user (its answer, its question) goes out as written; a host filters it if it wants. */
     suspend fun recordText(text: String) {
         add(
             AgentEvent.TextDelta(
                 runId = runId,
-                text = redactor.redact(text),
+                text = text,
             ),
         )
     }
@@ -145,11 +148,9 @@ class NativePublicEventBuffer(
         )
     }
 
-    /** Public content is redacted; the original is recorded by LoopSessionRecorder. */
+    /** A question card is the agent's words to the user, so its text and options go out as written. */
     suspend fun recordInteraction(fact: cc.noharry.agent.kernel.api.SessionEventPayload.UserInteraction) {
-        add(AgentEvent.UserInteraction(runId, fact.copy(
-            text = redactor.redact(fact.text), options = fact.options.map(redactor::redact),
-        )))
+        add(AgentEvent.UserInteraction(runId, fact))
     }
 
     suspend fun recordStarted(toolCallId: String, toolName: String, argumentsJson: String) {
@@ -174,8 +175,8 @@ class NativePublicEventBuffer(
     /**
      * Tool results are metadata-redacted for hosts, with one exception: `update_todo` is a
      * progress/display protocol (ACP `plan_update` equivalent), so its normalized todo list
-     * passes through [TraceRedactor] — the same treatment as streamed model text — letting
-     * hosts render plan boards from the event stream without reading workspace state.
+     * passes through [TraceRedactor] whole, letting hosts render plan boards from the event
+     * stream without reading workspace state.
      */
     private fun publicResultJson(toolName: String, resultJson: String): String =
         if (toolName == UPDATE_TODO_TOOL_NAME) {
@@ -242,8 +243,12 @@ class NativePublicEventBuffer(
     }
 }
 
+/**
+ * A completed run's response is the agent's answer to the user and goes out as written; any other run's response is
+ * the runtime's own report (a failure, a block), which [redactor] filters.
+ */
 fun RuntimeResult.redactedForPublic(redactor: TraceRedactor): RuntimeResult =
-    copy(response = redactor.redact(response))
+    if (status == RuntimeRunStatus.COMPLETED) this else copy(response = redactor.redact(response))
 
 fun RuntimeHandoff.redactedForPublic(redactor: TraceRedactor): RuntimeHandoff =
     copy(
@@ -256,12 +261,14 @@ fun RuntimeHandoff.redactedForPublic(redactor: TraceRedactor): RuntimeHandoff =
         doNotRepeat = doNotRepeat.map(redactor::redact),
     )
 
-fun OpenConfusion.redactedForPublic(redactor: TraceRedactor): OpenConfusion =
-    copy(question = redactor.redact(question))
+/** The open question is the agent's question to the user and goes out as written. */
+@Suppress("UNUSED_PARAMETER")
+fun OpenConfusion.redactedForPublic(redactor: TraceRedactor): OpenConfusion = this
 
+/** A run waiting for the user carries the agent's question as its message, which goes out as written. */
 fun RuntimeBlocker.redactedForPublic(redactor: TraceRedactor): RuntimeBlocker =
     copy(
-        message = redactor.redact(message),
+        message = if (code == RuntimeErrorCode.WAITING_USER_INPUT.wireCode) message else redactor.redact(message),
         handoff = handoff?.redactedForPublic(redactor),
     )
 

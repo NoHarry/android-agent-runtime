@@ -30,6 +30,13 @@ The API is cleaned up for use as a public library. **Breaking** for hosts that u
   crashed the host instead of returning a failure, and requests failed without core library desugaring.
 - **API docs for the JVM artifacts.** The javadoc jars of `agent-kernel-api`, `agent-kernel-core` and `agent-runtime`
   were empty; they now hold the API docs, like the other artifacts'.
+- **The answer goes out as written** (behaviour change). The agent's words to the user went through the trace
+  redactor, which turned long numbers (2^40 is 1099511627776, an order number) into `[REDACTED_PHONE]` and hid
+  coordinates and key-shaped text. Its text (`AgentEvent.TextDelta`), a completed run's `RuntimeResult.response`, its
+  questions (the waiting run's blocker message, `getOpenConfusion`, `AgentEvent.UserInteraction` cards) now go out
+  exactly as the model wrote them. Thinking, tool events, summaries and the reports of runs that did not complete are
+  filtered as before; a host that wants the answer filtered applies a redactor itself, on the whole text or the result
+  (`DefaultTraceRedactor.redact(…)`).
 - **A runtime without a workspace reaches its tools.** Tools from providers (`functionTools`, MCP) are found with
   `search_tools`, which only a workspace ran: without one, the model was offered `search_tools` and the file tools, all
   answering `WORKSPACE_NOT_CONFIGURED`, and could call only the tools a `ToolPrefetchProvider` had brought in.

@@ -50,6 +50,26 @@ class NativeAskResumeTest {
         }
     }
 
+    @Test fun theQuestionGoesOutAsWritten() = runBlocking<Unit> {
+        val question = "2^40 = 1099511627776, right? Reply to 13800138000 or lat=31.2304?"
+        val model = object : ModelClient {
+            override val providerConcurrency = ProviderConcurrencyDeclaration.serialized()
+            override fun complete(request: ModelRequest) =
+                flowOf(ModelEvent.ToolCall("ask-1", "ask", """{"question":"$question"}"""))
+        }
+        val runtime = AgentRuntimeBuilder.create().modelClient(model).build()
+        try {
+            val events = runtime.run(AgentRequest("q", "s", "Count.")).toList()
+            val run = events.filterIsInstance<AgentEvent.Started>().single().runId
+
+            assertEquals(question, runtime.getOpenConfusion(run)?.question)
+            assertEquals(question, events.filterIsInstance<AgentEvent.RuntimeBlocked>().single().blocker.message)
+            assertEquals(question, events.filterIsInstance<AgentEvent.TextDelta>().joinToString("") { it.text })
+        } finally {
+            runtime.close()
+        }
+    }
+
     @Test fun invalidAskIsCorrectableAndDoesNotPause() = runBlocking {
         var rounds = 0
         val model = object : ModelClient {

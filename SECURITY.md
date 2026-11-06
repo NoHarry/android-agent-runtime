@@ -32,6 +32,11 @@ actions the model may take is your decision.
 - **The A2A server** listens on the loopback address, where every app on the device can reach it. Give it an
   authorizer (`A2aServerConfig(authorizer = A2aAuthorizer.bearer(token))`); it listens on another address only with
   one, behind an `https` public URL.
-- **Results, events and trace summaries** hide keys and tokens, and by default phone numbers and coordinates
-  (`traceRedactor`). This catches common shapes, not everything, and the session event log and session store keep the
-  conversation as it was: treat them, and logs, as sensitive.
+- **The answer goes out as the model wrote it.** The agent's text to the user, its questions (`ask`, question cards)
+  and a completed run's response are not filtered, so a key or a number a tool returned reaches the user if the model
+  repeats it. A host whose users must not see such things filters them itself, on the whole text or the result
+  (`DefaultTraceRedactor.redact(…)`): a number can be split across streamed pieces.
+- **Everything else a run shows** hides keys and tokens, and by default phone numbers and coordinates
+  (`traceRedactor`): thinking, tool events, the reports of runs that did not complete, and summaries (the evidence and
+  trace summaries keep the answer filtered). This catches common shapes, not everything, and the session event log and
+  session store keep the conversation as it was: treat them, and logs, as sensitive.
