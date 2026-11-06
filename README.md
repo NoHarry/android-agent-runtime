@@ -106,6 +106,20 @@ Three ways in: an app depends on `agent-runtime-android`; a server, desktop tool
 of your own builds on `agent-kernel-api` and `agent-kernel-core` (`samples/minimal` is the smallest one). Optional
 modules depend at most on the kernel API.
 
+## API stability
+
+The project is 0.x: a minor release (0.6 to 0.7) may break the API, and the [changelog](CHANGELOG.md) calls out every
+break, in source and in binaries; a patch release never breaks it.
+
+- Declarations marked `@ExperimentalAgentRuntimeApi` or `@ExperimentalA2aClientApi` are the likeliest to change, and
+  ask for an opt-in (without one, the runtime's are a compile error and the A2A client's a warning).
+- Declarations marked `@InternalAgentRuntimeApi` are not API: they are there for the runtime's own modules and tests,
+  and may change or go in any release.
+- The public API of every module is recorded in its `api/*.api`, which CI compares with the code, so no change to it
+  goes unnoticed.
+
+Security reports: see [SECURITY.md](SECURITY.md).
+
 ## Building from source
 
 To try changes not yet released, clone this repository next to your project and let Gradle build it from source; the
@@ -123,8 +137,8 @@ public MCP servers, plans that watch a server's state, generative UI, and a simu
 
 ## Building
 
-JDK 17 and the Android SDK. `./gradlew ciCheck` runs what CI runs: the source rules, the API compatibility check, every
-unit test and the sample builds. See [CONTRIBUTING.md](CONTRIBUTING.md).
+JDK 17 and the Android SDK. `./gradlew ciCheck` runs what CI runs: the source rules, the API compatibility check, the
+Android API level checks and lint, every unit test and the sample builds. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

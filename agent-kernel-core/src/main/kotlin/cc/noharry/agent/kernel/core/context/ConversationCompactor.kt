@@ -21,7 +21,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.collect
 
 /**
- * Session-level compaction, after Codex and dsh (deepseek-harness). When the latest request comes near the context
+ * Session-level compaction, after Codex and DeepSeek Harness (dsh). When the latest request comes near the context
  * window, the session's oldest runs become one checkpoint message and the newest runs stay as they were.
  *
  * The summary request repeats the system prompt, the tool list and those oldest runs exactly as the last request sent

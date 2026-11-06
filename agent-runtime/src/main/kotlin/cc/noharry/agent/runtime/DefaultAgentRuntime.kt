@@ -657,7 +657,7 @@ internal class DefaultAgentRuntime(
         }
         // A child's answer goes back to its parent's model as written; only the host's copy below is redacted.
         subagents?.childAnswered(request.sessionId, loopOutcome.result)
-        // Persist Runtime result/session first, then observers (design §9.2 / §10.4).
+        // Persist Runtime result/session first, then observers.
         emitTerminalResult(loopOutcome.result, workspaceId)
     }
 

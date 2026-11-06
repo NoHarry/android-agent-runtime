@@ -6,7 +6,7 @@ import cc.noharry.agent.kernel.api.reliability.RuntimeResult
 import cc.noharry.agent.kernel.core.loop.NativeLoopSummary
 
 /**
- * Extracts memory candidates from a terminal run summary (SPEC-CDR-005).
+ * Extracts memory candidates from a terminal run summary.
  *
  * Candidates are not durable lessons; they must pass the confidence gate in
  * [RuntimeMemoryStore] before becoming active (a candidate is not a durable lesson).

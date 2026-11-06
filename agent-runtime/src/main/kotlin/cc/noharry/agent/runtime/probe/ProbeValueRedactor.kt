@@ -1,7 +1,7 @@
 package cc.noharry.agent.runtime.probe
 
 /**
- * Value-level redaction for probe attrs (SPEC-RPB-009).
+ * Value-level redaction for probe attrs.
  * Attribute keys are already filtered by catalog; this redacts sensitive values.
  */
 internal object ProbeValueRedactor {

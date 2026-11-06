@@ -9,8 +9,8 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 
 /**
- * Flattens one display's visible windows into [ScreenNode]s, walking every window the way 可见即可说
- * does, and keeps the live nodes of each display's latest read so actions can reach them by handle.
+ * Flattens one display's visible windows into [ScreenNode]s, walking every window the way "say what you see"
+ * voice control does, and keeps the live nodes of each display's latest read so actions can reach them by handle.
  */
 internal class AccessibilityScreenReader(
     private val ownPackage: String,

@@ -3,8 +3,8 @@ import okhttp3.HttpUrl
 
 /**
  * The picture a page names for itself (og:image, then twitter:image), as an absolute https URL, or null. Text
- * extraction drops every image, so without it a model that read the page has no real picture to show (owner
- * 2026-10-17: 这种查询如果能带图片的最好是图文的); a host may still refuse to load it.
+ * extraction drops every image, so without it a model that read the page has no real picture to show beside its
+ * answer; a host may still refuse to load it.
  */
 internal fun webPageLeadImage(html: String, page: HttpUrl): String? {
     val metas = META_TAG.findAll(html.take(MAX_LEAD_IMAGE_SCAN_CHARS)).map { it.value }.toList()

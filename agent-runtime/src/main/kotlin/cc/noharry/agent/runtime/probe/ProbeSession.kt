@@ -1,8 +1,8 @@
 package cc.noharry.agent.runtime.probe
 
 /**
- * Observe-only probe session for one run (SPEC-RPB-001/002).
- * Emit helpers cover the seven mandatory P0 stage families.
+ * Observe-only probe session for one run.
+ * Emit helpers cover the seven mandatory stage families.
  * Never throws into the control path; failures bump error counters only.
  */
 internal class ProbeSession(
@@ -20,7 +20,7 @@ internal class ProbeSession(
             val redacted = ProbeValueRedactor.redactAttrs(attrs)
             val known = factory.isKnownStage(stageId)
             val accepted = bus.accept(factory.next(stageId = stageId, probeId = probeId, attrs = redacted))
-            // Unknown stage: still fail-open, but leave probe.error evidence (SPEC-RPB-001).
+            // Unknown stage: still fail-open, but leave probe.error evidence.
             if (!known && stageId != "probe.error" && packs.isNotEmpty()) {
                 emitProbeError(
                     code = "UNKNOWN_STAGE",
@@ -249,7 +249,7 @@ internal class ProbeSession(
     /**
      * Terminal path: run.finish → primary drain → probe.error? + probe.completeness
      * (real enqueued/written from primary drain) → secondary drain → side-car writeFinal.
-     * Completeness side-car remains the analyzer truth source (detail-design B2).
+     * Completeness side-car remains the analyzer truth source.
      */
     suspend fun finish(drainTimeoutMillis: Long = DEFAULT_PROBE_DRAIN_TIMEOUT_MILLIS): ProbeCompleteness {
         emitRunFinish()
@@ -264,7 +264,7 @@ internal class ProbeSession(
      */
     private fun emitCaseFamilyAfterPrimaryDrain(primary: ProbeCompleteness) {
         if (packs.isEmpty()) return
-        // Redundant event stream only when sink is still healthy (design §361-362).
+        // Redundant event stream only when sink is still healthy.
         // Side-car remains the analyzer truth even if these events never land.
         if (primary.sinkIoFailed) return
         if (primary.drainTimedOut || primary.error > 0L || primary.dropped > 0L) {

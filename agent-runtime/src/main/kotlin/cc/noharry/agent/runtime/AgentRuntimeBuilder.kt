@@ -261,7 +261,7 @@ class AgentRuntimeBuilder {
     /**
      * Adds a scaffold ProtocolRequest emitted during each run.
      *
-     * This is a development hook for design-to-code validation, not a frozen API contract.
+     * This is a development hook for validation, not a frozen API contract.
      */
     internal fun protocolRequestOnRun(
         kind: String,
@@ -351,7 +351,7 @@ class AgentRuntimeBuilder {
         hostSkills += hostSkill
     }
 
-    /** Enables session-level tool activation inheritance (SPEC-CDR-003). Candidate API. */
+    /** Enables session-level tool activation inheritance. Candidate API. */
     fun sessionActivationInheritance(enabled: Boolean = true): AgentRuntimeBuilder = apply {
         sessionActivationInheritance = enabled
     }
@@ -638,7 +638,7 @@ class AgentRuntimeBuilder {
      * case binding metadata. Unknown pack ids and illegal case/hash combinations
      * throw [IllegalArgumentException] at configuration time.
      *
-     * Not an API freeze. Expanding beyond debug/local requires a separate owner review.
+     * Not an API freeze.
      *
      * Does **not** accept internal [ProbePack] instances (no ProbePack in public/JVM ABI).
      */

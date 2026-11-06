@@ -1,6 +1,6 @@
 package cc.noharry.agent.a2a
 
-/** Marks the Phase 0 outbound A2A client candidate API, which is not yet frozen. */
+/** Marks the outbound A2A client API, which is experimental and may change in a minor release. */
 @RequiresOptIn(
     level = RequiresOptIn.Level.WARNING,
     message = "The Phase 0 A2A client facade is experimental and may change.",

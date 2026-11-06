@@ -1,8 +1,8 @@
 package cc.noharry.agent.runtime.probe
 
 /**
- * Internal observe-only probe envelope (SPEC-RPB-001).
- * Not part of public API; Phase 0 does not freeze this surface.
+ * Internal observe-only probe envelope.
+ * Not part of public API; this surface is not frozen.
  */
 internal const val PROBE_ENVELOPE_SCHEMA_VERSION: Int = 1
 internal const val PROBE_ATTRS_MAX_BYTES: Int = 8 * 1024
@@ -87,7 +87,7 @@ internal interface ProbeFactoryCounters {
 }
 
 /**
- * Frozen completeness predicate (detail-design §2).
+ * The completeness predicate. Stored runs and the tools that read them depend on it, so it does not change.
  * Empty idle/disabled runs may still report complete=true with probesDisabled.
  */
 internal fun isProbeComplete(

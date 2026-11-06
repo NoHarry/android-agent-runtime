@@ -23,7 +23,7 @@ interface ReliabilityStorage {
      * Returns the most recent run snapshots for a session, newest first.
      *
      * Used by [SessionContextMaterializer] to build `/context/session/current.json`
-     * for session continuity (SPEC-CDR-003).
+     * for session continuity.
      */
     fun recentRunsForSession(sessionId: String, limit: Int = 3): List<RuntimeRunSnapshot>
 

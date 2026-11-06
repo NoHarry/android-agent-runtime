@@ -137,7 +137,7 @@ internal class AndroidUseActionRunner(
     /**
      * Scrolls a list toward [ScrollDirection] (where the wanted content is: down shows what is below) with one
      * unhurried drag across the middle of its bounds. The model names a direction, never a start point or a sign:
-     * on the bench it swiped the wrong way, on the picture beside the list, or in steps too short to move it.
+     * given those, a model swipes the wrong way, on the picture beside the list, or in steps too short to move it.
      * Without elementId, the largest scrollable element on screen.
      */
     private suspend fun scroll(args: JsonObject, observation: Observation): ActionOutcome {

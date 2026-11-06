@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Independent durable completeness side-car (SPEC-RPB-002 / B2).
+ * Independent durable completeness side-car.
  * Must survive event sink IO failure; writes via temp + rename.
  */
 internal interface CompletenessStore {

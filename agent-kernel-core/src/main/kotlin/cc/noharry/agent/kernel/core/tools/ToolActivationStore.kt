@@ -109,7 +109,7 @@ class ToolActivationStore(
 
     /**
      * Copies activated tools from the session-level cache into a new run.
-     * Called at run start to provide session continuity (SPEC-CDR-003).
+     * Called at run start to provide session continuity.
      */
     fun inheritSessionActivations(runId: String, sessionId: String) {
         val runActivations = run(runId)

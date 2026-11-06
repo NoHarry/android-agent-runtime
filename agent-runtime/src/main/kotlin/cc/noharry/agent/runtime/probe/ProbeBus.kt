@@ -1,7 +1,7 @@
 package cc.noharry.agent.runtime.probe
 
 /**
- * Probe bus: producer allowlist + enqueue only (SPEC-RPB-002 / B1).
+ * Probe bus: producer allowlist + enqueue only.
  * No fan-out transform; accept never throws to control path.
  */
 internal interface ProbeBus {
@@ -11,7 +11,7 @@ internal interface ProbeBus {
     /**
      * Primary drain → optional post-drain hook (e.g. emit probe.completeness) →
      * secondary drain for those events → independent completeness side-car writeFinal.
-     * Side-car must not depend on event sink health (B2).
+     * Side-car must not depend on event sink health.
      */
     suspend fun onRunFinished(
         drainTimeoutMillis: Long = DEFAULT_PROBE_DRAIN_TIMEOUT_MILLIS,

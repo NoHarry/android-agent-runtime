@@ -392,7 +392,7 @@ internal class RuntimeTerminalCoordinator(
 
     /**
      * Finish-time run-meta: toolset must reflect the advertised model catalog (native +
-     * activated backend tools), not an empty list. Empty toolset + comparable=true violates A6.
+     * activated backend tools), not an empty list. An empty toolset must never be marked comparable=true.
      */
     private fun buildProbeRunMeta(
         request: AgentRequest,

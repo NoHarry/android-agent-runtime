@@ -47,7 +47,7 @@ internal fun openFileProbeSession(
     )
 }
 
-/** Persist run-meta.json next to probes (SPEC-RPB-003). Never throws to control path. */
+/** Persist run-meta.json next to probes. Never throws to control path. */
 internal fun writeRunMetaJson(reliabilityRoot: File, meta: RunMeta): Boolean =
     try {
         val dir = probeRunDirectory(reliabilityRoot, meta.runId)

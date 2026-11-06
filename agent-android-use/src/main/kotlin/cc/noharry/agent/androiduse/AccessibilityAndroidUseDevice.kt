@@ -127,8 +127,9 @@ internal class AccessibilityAndroidUseDevice(private val context: Context, obser
     }
 
     /**
-     * The 可见即可说 click: refresh, then click the node or its nearest clickable ancestor. Each step is a blocking
-     * IPC that no coroutine timeout can interrupt, so the walk gives up (and the caller taps) once [deadline] passes.
+     * The "say what you see" click: refresh, then click the node or its nearest clickable ancestor. Each step is a
+     * blocking IPC that no coroutine timeout can interrupt, so the walk gives up (and the caller taps) once [deadline]
+     * passes.
      */
     private fun clickChain(start: AccessibilityNodeInfo, deadline: Long): Boolean {
         if (!start.refresh()) return false

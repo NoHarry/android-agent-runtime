@@ -1,7 +1,7 @@
 # Changelog
 
 All notable changes are listed here. The project is 0.x: a minor release may break the API, and every break is
-called out.
+called out; a patch release does not break it.
 
 ## Unreleased (0.6.0)
 

@@ -222,7 +222,7 @@ class NativeToolLoop(
         return outcome
     }
 
-    // --- Observe-only mid-loop probe emission (SPEC-RPB-001/004) ---
+    // --- Observe-only mid-loop probe emission ---
     private fun emitProbeModelRoundStart(roundIndex: Int) {
         try {
             probeSink.emitModelRoundStart(roundIndex)

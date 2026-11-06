@@ -14,9 +14,9 @@ import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.add
 
 /**
- * The search behind the native `web_search` tool (owner 2026-10-17: DeepSeek's Search API instead of the provider's
- * server-side search, whose queries and results never reach the host). Results go to the model and the event log
- * like any tool result. Candidate API; not frozen.
+ * The search behind the native `web_search` tool, an alternative to the provider's server-side search, whose queries
+ * and results never reach the host. Results go to the model and the event log like any tool result. Candidate API;
+ * not frozen.
  */
 @ExperimentalAgentRuntimeApi
 interface WebSearchProvider {
@@ -29,8 +29,8 @@ interface WebSearchProvider {
 
 /**
  * Fetches a page for web_fetch when the device's own request was refused or failed (a site that blocks the device, a dead
- * route), e.g. through a provider's fetch API. Separate from [WebSearchProvider] (owner 2026-10-18: 拆成独立选项), so a
- * runtime that keeps the provider's server-side search can still have it. Candidate API; not frozen.
+ * route), e.g. through a provider's fetch API. A separate option from [WebSearchProvider], so a runtime that keeps the
+ * provider's server-side search can still have it. Candidate API; not frozen.
  */
 @ExperimentalAgentRuntimeApi
 interface WebFetchFallback {

@@ -132,7 +132,7 @@ internal class NativeLoopFactory(
                     runId = runId,
                     status = RuntimeRunStatus.FAILED,
                     // The cause in one short line: without it a failure seen on someone else's device cannot be told
-                    // from any other (owner 2026-10-12, a screenshot of two such failures).
+                    // from any other.
                     response = "Native loop failed: ${loopFailureCause(error)}",
                     errorCode = RuntimeErrorCode.MODEL_LOOP_FAILED.wireCode,
                     recoverable = false,

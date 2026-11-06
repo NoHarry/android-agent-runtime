@@ -866,9 +866,9 @@ internal fun deleteLegacySessionEventLogV1(root: File) {
 }
 
 internal fun probeWritable(root: File) {
-    // Each open probes with its own file: two runtimes opening one session's log at once (a voice turn arriving while
-    // the last one finished, 2026-10-21) shared one name, and the loser's rename found the staging file gone and failed
-    // the run with 「The source file doesn't exist」.
+    // Each open probes with its own file: two runtimes can open one session's log at once (a voice turn arriving
+    // while the last one finishes), and with one shared name the loser's rename would find the staging file gone
+    // and fail the run.
     val probe = containedFile(root, "$EVENT_LOG_OPEN_PROBE_FILE-${java.util.UUID.randomUUID()}")
     try {
         writeForcedText(probe, "ok")

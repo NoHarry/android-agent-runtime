@@ -58,7 +58,7 @@ internal class VirtualFileMaterializer(
         if (!isMaterializedPath(path)) {
             return MaterializerReadResult.NotMaterialized
         }
-        // Context paths do not require a capability backend (SPEC-CDR-002)
+        // Context paths do not require a capability backend
         if (path == AGENTS_INDEX) {
             return contextRouter?.readAgentsIndex() ?: contextRouterMissing()
         }
@@ -94,7 +94,7 @@ internal class VirtualFileMaterializer(
         if (!isMaterializedPath(path)) {
             return MaterializerListResult.NotMaterialized
         }
-        // Context paths do not require a capability backend (SPEC-CDR-002)
+        // Context paths do not require a capability backend
         if (isContextPath(path) || isSkillPath(path)) {
             return contextRouter?.list(path, context) ?: MaterializerListResult.Error(
                 code = RuntimeErrorCode.CAPABILITY_BACKEND_NOT_CONFIGURED.wireCode,

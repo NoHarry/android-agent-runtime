@@ -1,7 +1,7 @@
 package cc.noharry.agent.runtime.probe
 
 /**
- * Run identity + fingerprints for multi-arm comparability (SPEC-RPB-003 / B3).
+ * Run identity + fingerprints for multi-arm comparability.
  * Internal only; host may inject buildId / isolation / case binding.
  */
 internal data class IsolationDeclaration(
@@ -51,7 +51,7 @@ internal data class RunMeta(
     val incompleteReasons: List<String> = emptyList(),
 )
 
-/** Allowed Variable IDs for declaredVariables (B3). */
+/** Allowed Variable IDs for declaredVariables. */
 internal val ALLOWED_VARIABLE_IDS: Set<String> = setOf(
     "provider", "protocol", "model", "modelRef", "profile", "variant",
     "baseUrlHost", "searchMode", "fetchMode", "stream", "backend", "buildId",
@@ -136,7 +136,7 @@ internal fun buildRunMeta(
     if (model.isBlank()) reasons += "missing model"
     if (baseUrlHost.isBlank()) reasons += "missing baseUrlHost"
     reasons += validateDeclaredVariables(declaredVariables)
-    // A6: incomplete toolset fingerprints must fail closed (never comparable=true).
+    // Incomplete toolset fingerprints must fail closed (never comparable=true).
     for (tool in toolset) {
         if (tool.schemaDigest.isBlank() ||
             tool.schemaDigest == SCHEMA_DIGEST_ERROR ||
@@ -218,8 +218,8 @@ internal fun buildRunMeta(
 }
 
 /**
- * Multi-arm R1–R8 comparability (SPEC-RPB-003).
- * Returns null if comparable; otherwise reason codes.
+ * Multi-arm R1–R8 comparability.
+ * Returns an empty list if comparable; otherwise reason codes.
  */
 internal fun compareArms(metas: List<RunMeta>): List<String> {
     if (metas.isEmpty()) return listOf("empty")

@@ -399,7 +399,7 @@ class NativeRoundRunner(
         event: ModelEvent.ToolCall,
         context: RoundCollectContext,
     ): RoundOutcome? {
-        // TODO tool is a management tool and does not consume loop budget (Q-CDR-006)
+        // The todo tool is a management tool and does not count against the tool-call budget.
         val isTodo = context.toolSet.sourceFor(event.name) == DynamicToolSource.NATIVE_TODO
         if (!isTodo) {
             context.budgetTracker.recordToolCall()?.let { return RoundOutcome.Failed(it) }

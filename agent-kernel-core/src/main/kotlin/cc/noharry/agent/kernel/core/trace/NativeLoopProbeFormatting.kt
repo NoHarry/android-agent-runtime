@@ -33,7 +33,7 @@ internal fun probeToolExecutionResult(toolName: String, resultJson: String?): cc
         else -> toolUseResult(resultJson)
     }
 
-/** Tool args default to digest-only evidence (Q-RPB-008); raw args stay out of probe events. */
+/** Tool args default to digest-only evidence; raw args stay out of probe events. */
 internal fun probeArgsDigest(argumentsJson: String?): String? =
     argumentsJson
         ?.takeIf { it.isNotBlank() }

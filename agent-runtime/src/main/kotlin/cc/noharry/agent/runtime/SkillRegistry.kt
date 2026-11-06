@@ -13,10 +13,10 @@ import cc.noharry.agent.vfs.VfsReadResult
  *
  * The compact catalog (name + description) is injected into the L2 system prompt.
  * Full `SKILL.md` content is loaded on demand via `read_file("/.agents/skills/{name}/SKILL.md")`
- * (progressive disclosure, SPEC-CDR-008).
+ * (progressive disclosure).
  *
- * The catalog is cached after the first successful load (Q-CDR-004: first run
- * awaits `listSkills()`, subsequent runs read the cache).
+ * The catalog is cached after the first successful load (the first run lists
+ * the workspace's skills, subsequent runs read the cache).
  */
 internal class SkillRegistry(
     hostSkills: List<HostSkill>,

@@ -23,8 +23,8 @@ import kotlinx.serialization.json.putJsonArray
 /**
  * Persists todo state per session in the runtime workspace.
  *
- * File names are encoded via [encodeFileName] to prevent path traversal
- * (mem-008: run artifact directories must not use raw request/session ids).
+ * File names are encoded via [encodeFileName] to prevent path traversal;
+ * raw request and session ids never name a file or directory.
  */
 internal class TodoStore private constructor(
     private val root: File?,

@@ -5,7 +5,7 @@ import java.security.MessageDigest
 import java.util.Locale
 
 /**
- * ConfigCanonical + SchemaCanonical (SPEC-RPB-003 / B6).
+ * ConfigCanonical + SchemaCanonical.
  * Schema numbers use exact BigDecimal only — never Double/Float.
  */
 internal object FingerprintCanonicalizer {
@@ -56,7 +56,7 @@ internal object FingerprintCanonicalizer {
         return BigDecimal(token)
     }
 
-    /** Emit canonical number string from exact decimal (B6.2b step 3). */
+    /** Emit canonical number string from exact decimal. */
     fun emitExactDecimal(d: BigDecimal): String {
         val normalized = d.stripTrailingZeros()
         return if (normalized.scale() <= 0) {

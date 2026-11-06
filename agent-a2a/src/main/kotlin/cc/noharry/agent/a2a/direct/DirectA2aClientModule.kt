@@ -5,7 +5,7 @@ import cc.noharry.agent.a2a.A2aClientModule
 import cc.noharry.agent.a2a.ExperimentalA2aClientApi
 import okhttp3.OkHttpClient
 
-/** Phase 0 direct JSON-RPC/SSE implementation module. */
+/** The A2A client module over a direct JSON-RPC/SSE transport. */
 @ExperimentalA2aClientApi
 public class DirectA2aClientModule public constructor() : A2aClientModule {
     private val baseClient: OkHttpClient = OkHttpClient()

@@ -261,9 +261,9 @@ internal class VirtualWorkspace(
 
     /**
      * Returns the qualified names now in the model's tool list with their full input schema. Every match is activated:
-     * activating only the top 5 (2026-10-17, tablet bench) meant more searches in later runs of the session, and each
-     * one changes the tool list, so the session history after it is recomputed; the extra matches often serve a later
-     * request (searching the AC temperature also brings the seat temperature).
+     * activating only the top 5 would mean more searches in later runs of the session, and each one changes the tool list,
+     * so the session history after it is recomputed; the extra matches often serve a later request (searching the AC
+     * temperature also brings the seat temperature).
      */
     private fun activateSearchHits(hits: List<McpToolSearchHit>, context: MaterializerContext): Set<String> {
         val store = activationStore ?: return emptySet()

@@ -1,6 +1,6 @@
 package cc.noharry.agent.runtime.probe
 
-/** Stable producer ids bound by ProbePacks (SPEC-RPB-001/002). */
+/** Stable producer ids bound by ProbePacks. */
 internal object ProbeProducerIds {
     const val LIFECYCLE_RUN = "lifecycle.run"
     const val REQUEST_CONFIG = "request.config"
@@ -11,7 +11,7 @@ internal object ProbeProducerIds {
     const val CASE_COMPLETENESS = "case.completeness"
 }
 
-/** Default bench_core pack enables all P0 mandatory producers once. */
+/** Default bench_core pack enables all mandatory producers once. */
 internal fun benchCorePack(): ProbePack =
     ProbePack(
         packId = "bench_core",
@@ -26,7 +26,7 @@ internal fun benchCorePack(): ProbePack =
         ),
     )
 
-/** Seven mandatory stage families (goal-contract). */
+/** The seven stage families every complete probe run reports. */
 internal enum class ProbeStageFamily {
     RUN,
     REQUEST_SESSION_CONFIG,

@@ -19,11 +19,11 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 
-/** Digest placeholder when schema JSON cannot be canonicalized (A6 fail-closed). */
+/** Digest placeholder when schema JSON cannot be canonicalized (fail-closed). */
 internal const val SCHEMA_DIGEST_ERROR = "schema-error"
 
 /**
- * Builds the advertised model tool catalog for run-meta fingerprints (A6 / SPEC-RPB-003).
+ * Builds the advertised model tool catalog for run-meta fingerprints.
  * Snapshot at finish time so progressive MCP activations are included.
  * Never throws into the control path — schema failures use [SCHEMA_DIGEST_ERROR], which
  * [buildRunMeta] treats as incomplete so comparable=false.

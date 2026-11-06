@@ -1,8 +1,8 @@
 package cc.noharry.agent.runtime.probe
 
 /**
- * Stage catalog for envelope validation (SPEC-RPB-001).
- * P0 ships a minimal mandatory set; unknown stages still fail-open with error evidence.
+ * Stage catalog for envelope validation.
+ * Ships a minimal mandatory set; unknown stages still fail-open with error evidence.
  */
 internal data class ProbeStageSpec(
     val stageId: String,

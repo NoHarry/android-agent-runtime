@@ -3,7 +3,7 @@ package cc.noharry.agent.runtime.probe
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Run-scoped atomic sequence + attrs budget/redaction (SPEC-RPB-001).
+ * Run-scoped atomic sequence + attrs budget/redaction.
  * Concurrent next() must not produce duplicate sequences.
  */
 internal class ProbeEventFactory(

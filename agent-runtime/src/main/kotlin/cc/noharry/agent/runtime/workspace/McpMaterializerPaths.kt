@@ -16,7 +16,7 @@ internal val TOOL_PATH = Regex("""^/mcp/tools/[^/]+$""")
 internal val TOOL_CARD_PATH = Regex("""^/mcp/tools/[^/]+/card\.json$""")
 internal val TOOL_SCHEMA_PATH = Regex("""^/mcp/tools/[^/]+/schema\.json$""")
 
-// Context-driven runtime virtual FS paths (SPEC-CDR-002)
+// Context-driven runtime virtual FS paths
 internal const val AGENTS_INDEX = "/AGENTS.md"
 internal const val CONTEXT_ROOT = "/context"
 internal const val CONTEXT_MEMORY = "$CONTEXT_ROOT/memory"

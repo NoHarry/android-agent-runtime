@@ -10,8 +10,8 @@ import kotlinx.serialization.json.buildJsonObject
 /**
  * Candidate single source for the current agent-runtime API and wire token inventory.
  *
- * This catalog is mechanical evidence only. It is not an API-freeze approval, and
- * any change to these groups still requires owner review before freeze closure.
+ * This catalog is mechanical evidence only. It is not an API freeze; these groups
+ * may still change before the API is frozen.
  */
 internal object AgentProtocolCatalog {
     const val SCHEMA_VERSION: Int = 1

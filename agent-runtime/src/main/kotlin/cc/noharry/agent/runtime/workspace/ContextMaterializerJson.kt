@@ -20,7 +20,7 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 
 /**
- * Shared JSON builders for context materializer output (SPEC-CDR-002).
+ * Shared JSON builders for context materializer output.
  * All output is provider-neutral JSON consumed by the model via read_file.
  */
 

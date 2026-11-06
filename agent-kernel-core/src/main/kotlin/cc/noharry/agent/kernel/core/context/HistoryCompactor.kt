@@ -23,12 +23,13 @@ import kotlinx.serialization.json.buildJsonObject
 
 /**
  * Candidate compactor: an explicit input-token threshold disables legacy byte pressure.
- * Without it, retains the legacy byte/usage budget behavior (SPEC-CDR-007).
+ * Without it, retains the legacy byte/usage budget behavior.
  *
- * Main strategy: LLM summarization (decision 5.b). Messages are classified into
+ * Main strategy: LLM summarization. Messages are classified into
  * Critical (never dropped/compressed), Compressible (LLM-summarized), and Droppable
  * (discarded first). When the model client is unavailable or summarization fails,
- * falls back to rule-based compression (mem-012: cancellation must not become failure).
+ * falls back to rule-based compression. A cancelled summary is rethrown as
+ * cancellation, never turned into a failure or a fallback.
  */
 class HistoryCompactor(
     private val modelClient: ModelClient?,

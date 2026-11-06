@@ -63,8 +63,8 @@ internal class ObservationBook(private val maxElements: Int, private val jsonDes
 }
 
 /**
- * Nodes worth naming, the 可见即可说 way: labelled nodes that can be clicked (or sit inside something
- * clickable), editable fields and scrollable containers. The host's own windows never count.
+ * Nodes worth naming, as in "say what you see" voice control, where any visible label can be spoken to act on it: labelled nodes that can be clicked (or sit inside something clickable), editable fields and scrollable
+ * containers. The host's own windows never count.
  */
 internal fun selectElements(nodes: List<ScreenNode>, ownPackage: String?, systemAreas: List<PixelRect> = emptyList()): List<ScreenNode> =
     nodes.asSequence()

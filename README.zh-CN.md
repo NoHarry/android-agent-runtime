@@ -92,6 +92,16 @@ val runtime = AgentRuntimeBuilder.create()
 
 三种用法：App 依赖 `agent-runtime-android`；服务端、桌面工具或测试依赖 `agent-runtime`；自己重建运行时就基于 `agent-kernel-api` 和 `agent-kernel-core`（最小的例子见 `samples/minimal`）。可选模块最多依赖内核 API。
 
+## API 稳定性
+
+项目还在 0.x：次版本（0.6 到 0.7）可能破坏 API，每一处破坏（源码层面和二进制层面）都写在 [CHANGELOG](CHANGELOG.md) 里；补丁版本不会破坏。
+
+- 标了 `@ExperimentalAgentRuntimeApi` 或 `@ExperimentalA2aClientApi` 的声明最可能变化，需要 opt-in（不加时，运行时的会编译报错，A2A 客户端的只是警告）。
+- 标了 `@InternalAgentRuntimeApi` 的声明不算 API：只给运行时自己的模块和测试用，任何版本都可能改或删。
+- 每个模块的公开 API 都记录在它的 `api/*.api` 里，CI 会和代码比对，API 的任何变化都不会悄悄发生。
+
+安全问题报告见 [SECURITY.md](SECURITY.md)。
+
 ## 从源码构建
 
 想用还没发布的改动，把本仓库 clone 到你的工程旁边，让 Gradle 从源码构建，同样的坐标会自动指向它：
@@ -107,7 +117,7 @@ includeBuild("../android-agent-runtime")
 
 ## 构建
 
-需要 JDK 17 和 Android SDK。`./gradlew ciCheck` 跑的就是 CI 跑的内容：源码规则、API 兼容检查、全部单元测试和示例构建。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+需要 JDK 17 和 Android SDK。`./gradlew ciCheck` 跑的就是 CI 跑的内容：源码规则、API 兼容检查、Android API 级别检查和 lint、全部单元测试和示例构建。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可证
 

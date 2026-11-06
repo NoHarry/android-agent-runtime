@@ -141,9 +141,8 @@ private val PHONE_PATTERN = Regex("""(?<!\d)(?:\+?\d[\d -]{8,}\d)(?!\d)""")
 
 /**
  * Dates read like numbers to [PHONE_PATTERN]: "2026-10-18", "10-18 10-19", "2026-10-17 2026-10-18". A match whose
- * groups are all years (19xx/20xx) or month/day numbers (up to 31) is a date, not a phone number, and stays (owner
- * 2026-10-17: a subagent's "时间窗：2026-09-18 至 2026-10-18" reached the card as [REDACTED_PHONE]). A number in pairs
- * ("06 12 34 56 78") has pairs no month or day reaches, so it is still hidden.
+ * groups are all years (19xx/20xx) or month/day numbers (up to 31) is a date, not a phone number, and stays. A
+ * number in pairs ("06 12 34 56 78") has pairs no month or day reaches, so it is still hidden.
  */
 private fun String.isDateLike(): Boolean =
     split(' ', '-').filter(String::isNotEmpty).all { group ->

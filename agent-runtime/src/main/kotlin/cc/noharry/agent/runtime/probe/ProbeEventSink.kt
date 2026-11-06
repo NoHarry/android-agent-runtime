@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Bounded queue → probes.jsonl writer (SPEC-RPB-002).
+ * Bounded queue → probes.jsonl writer.
  * Distinguishes enqueued vs written; never throws to bus callers.
  */
 internal interface ProbeEventSink {
