@@ -1,0 +1,792 @@
+public final class cc/noharry/agent/a2a/A2aAgentCard {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/net/URI;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/net/URI;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/net/URI;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/net/URI;Ljava/lang/String;Z)Lcc/noharry/agent/a2a/A2aAgentCard;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aAgentCard;Ljava/lang/String;Ljava/lang/String;Ljava/net/URI;Ljava/lang/String;ZILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aAgentCard;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getProtocolVersion ()Ljava/lang/String;
+	public final fun getStreaming ()Z
+	public final fun getUrl ()Ljava/net/URI;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aArtifact {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcc/noharry/agent/a2a/A2aValue$ObjectValue;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcc/noharry/agent/a2a/A2aValue$ObjectValue;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Lcc/noharry/agent/a2a/A2aValue$ObjectValue;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcc/noharry/agent/a2a/A2aValue$ObjectValue;)Lcc/noharry/agent/a2a/A2aArtifact;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aArtifact;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcc/noharry/agent/a2a/A2aValue$ObjectValue;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aArtifact;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArtifactId ()Ljava/lang/String;
+	public final fun getMetadata ()Lcc/noharry/agent/a2a/A2aValue$ObjectValue;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getParts ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aAuthContext {
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/a2a/A2aMethod;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcc/noharry/agent/a2a/A2aMethod;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lcc/noharry/agent/a2a/A2aMethod;Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aAuthContext;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aAuthContext;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aMethod;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aAuthContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMethod ()Lcc/noharry/agent/a2a/A2aMethod;
+	public final fun getRemoteId ()Ljava/lang/String;
+	public final fun getRequestId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/a2a/A2aAuthProvider {
+	public abstract fun headers (Lcc/noharry/agent/a2a/A2aAuthContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/a2a/A2aAuthProvider$None : cc/noharry/agent/a2a/A2aAuthProvider {
+	public static final field INSTANCE Lcc/noharry/agent/a2a/A2aAuthProvider$None;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun headers (Lcc/noharry/agent/a2a/A2aAuthContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/a2a/A2aClient : java/lang/AutoCloseable {
+	public abstract fun cancelTask (Lcc/noharry/agent/a2a/RemoteAgentRef;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun close ()V
+	public abstract fun getAgentCard (Lcc/noharry/agent/a2a/RemoteAgentRef;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getTask (Lcc/noharry/agent/a2a/RemoteAgentRef;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun resubscribeTask (Lcc/noharry/agent/a2a/RemoteAgentRef;Ljava/lang/String;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun sendMessage (Lcc/noharry/agent/a2a/RemoteAgentRef;Lcc/noharry/agent/a2a/A2aSendMessageRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun streamMessage (Lcc/noharry/agent/a2a/RemoteAgentRef;Lcc/noharry/agent/a2a/A2aSendMessageRequest;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class cc/noharry/agent/a2a/A2aClientConfig {
+	public static final field DEFAULT_MAX_DOCUMENT_BYTES J
+	public static final field DEFAULT_MAX_STREAM_BUFFER_EVENTS I
+	public static final field HARD_MAX_DOCUMENT_BYTES J
+	public static final field HARD_MAX_STREAM_BUFFER_EVENTS I
+	public fun <init> ()V
+	public synthetic fun <init> (JJJJILcc/noharry/agent/a2a/A2aAuthProvider;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JJJJILcc/noharry/agent/a2a/A2aAuthProvider;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-UwyO8pc ()J
+	public final fun component2-UwyO8pc ()J
+	public final fun component3-UwyO8pc ()J
+	public final fun component4 ()J
+	public final fun component5 ()I
+	public final fun component6 ()Lcc/noharry/agent/a2a/A2aAuthProvider;
+	public final fun component7 ()Z
+	public final fun copy-tfH5p8Q (JJJJILcc/noharry/agent/a2a/A2aAuthProvider;Z)Lcc/noharry/agent/a2a/A2aClientConfig;
+	public static synthetic fun copy-tfH5p8Q$default (Lcc/noharry/agent/a2a/A2aClientConfig;JJJJILcc/noharry/agent/a2a/A2aAuthProvider;ZILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aClientConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAllowLoopbackHttpForDebug ()Z
+	public final fun getAuthProvider ()Lcc/noharry/agent/a2a/A2aAuthProvider;
+	public final fun getConnectTimeout-UwyO8pc ()J
+	public final fun getMaxDocumentBytes ()J
+	public final fun getMaxStreamBufferEvents ()I
+	public final fun getRequestTimeout-UwyO8pc ()J
+	public final fun getStreamReadTimeout-UwyO8pc ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun validate ()Lcc/noharry/agent/a2a/A2aClientError$Configuration;
+}
+
+public abstract interface class cc/noharry/agent/a2a/A2aClientError {
+	public abstract fun getReason ()Ljava/lang/String;
+	public abstract fun getRetryHint ()Lcc/noharry/agent/a2a/A2aRetryHint;
+}
+
+public final class cc/noharry/agent/a2a/A2aClientError$Authentication : cc/noharry/agent/a2a/A2aClientError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aClientError$Authentication;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aClientError$Authentication;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aClientError$Authentication;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getReason ()Ljava/lang/String;
+	public fun getRetryHint ()Lcc/noharry/agent/a2a/A2aRetryHint;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aClientError$Cancelled : cc/noharry/agent/a2a/A2aClientError {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aClientError$Cancelled;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aClientError$Cancelled;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aClientError$Cancelled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getReason ()Ljava/lang/String;
+	public fun getRetryHint ()Lcc/noharry/agent/a2a/A2aRetryHint;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aClientError$Configuration : cc/noharry/agent/a2a/A2aClientError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aClientError$Configuration;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aClientError$Configuration;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aClientError$Configuration;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getReason ()Ljava/lang/String;
+	public fun getRetryHint ()Lcc/noharry/agent/a2a/A2aRetryHint;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aClientError$Discovery : cc/noharry/agent/a2a/A2aClientError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aClientError$Discovery;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aClientError$Discovery;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aClientError$Discovery;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getReason ()Ljava/lang/String;
+	public fun getRetryHint ()Lcc/noharry/agent/a2a/A2aRetryHint;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aClientError$Incomplete : cc/noharry/agent/a2a/A2aClientError {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aClientError$Incomplete;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aClientError$Incomplete;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aClientError$Incomplete;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getReason ()Ljava/lang/String;
+	public fun getRetryHint ()Lcc/noharry/agent/a2a/A2aRetryHint;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aClientError$Protocol : cc/noharry/agent/a2a/A2aClientError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aClientError$Protocol;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aClientError$Protocol;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aClientError$Protocol;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getReason ()Ljava/lang/String;
+	public fun getRetryHint ()Lcc/noharry/agent/a2a/A2aRetryHint;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aClientError$Rpc : cc/noharry/agent/a2a/A2aClientError {
+	public fun <init> (ILjava/lang/String;)V
+	public synthetic fun <init> (ILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (ILjava/lang/String;)Lcc/noharry/agent/a2a/A2aClientError$Rpc;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aClientError$Rpc;ILjava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aClientError$Rpc;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()I
+	public fun getReason ()Ljava/lang/String;
+	public fun getRetryHint ()Lcc/noharry/agent/a2a/A2aRetryHint;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aClientError$Timeout : cc/noharry/agent/a2a/A2aClientError {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aClientError$Timeout;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aClientError$Timeout;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aClientError$Timeout;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getReason ()Ljava/lang/String;
+	public fun getRetryHint ()Lcc/noharry/agent/a2a/A2aRetryHint;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aClientError$Transport : cc/noharry/agent/a2a/A2aClientError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aClientError$Transport;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aClientError$Transport;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aClientError$Transport;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getReason ()Ljava/lang/String;
+	public fun getRetryHint ()Lcc/noharry/agent/a2a/A2aRetryHint;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/a2a/A2aClientFactory {
+	public abstract fun create (Lcc/noharry/agent/a2a/A2aClientConfig;)Lcc/noharry/agent/a2a/A2aClient;
+}
+
+public abstract interface class cc/noharry/agent/a2a/A2aClientModule {
+	public abstract fun factory ()Lcc/noharry/agent/a2a/A2aClientFactory;
+}
+
+public final class cc/noharry/agent/a2a/A2aMessage {
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/a2a/A2aMessage$Role;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aValue$ObjectValue;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcc/noharry/agent/a2a/A2aMessage$Role;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aValue$ObjectValue;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcc/noharry/agent/a2a/A2aMessage$Role;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Lcc/noharry/agent/a2a/A2aValue$ObjectValue;
+	public final fun copy (Ljava/lang/String;Lcc/noharry/agent/a2a/A2aMessage$Role;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aValue$ObjectValue;)Lcc/noharry/agent/a2a/A2aMessage;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aMessage;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aMessage$Role;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aValue$ObjectValue;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContextId ()Ljava/lang/String;
+	public final fun getMessageId ()Ljava/lang/String;
+	public final fun getMetadata ()Lcc/noharry/agent/a2a/A2aValue$ObjectValue;
+	public final fun getParts ()Ljava/util/List;
+	public final fun getRole ()Lcc/noharry/agent/a2a/A2aMessage$Role;
+	public final fun getTaskId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aMessage$Role : java/lang/Enum {
+	public static final field AGENT Lcc/noharry/agent/a2a/A2aMessage$Role;
+	public static final field USER Lcc/noharry/agent/a2a/A2aMessage$Role;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aMessage$Role;
+	public static fun values ()[Lcc/noharry/agent/a2a/A2aMessage$Role;
+}
+
+public final class cc/noharry/agent/a2a/A2aMethod : java/lang/Enum {
+	public static final field CANCEL_TASK Lcc/noharry/agent/a2a/A2aMethod;
+	public static final field GET_AGENT_CARD Lcc/noharry/agent/a2a/A2aMethod;
+	public static final field GET_TASK Lcc/noharry/agent/a2a/A2aMethod;
+	public static final field RESUBSCRIBE_TASK Lcc/noharry/agent/a2a/A2aMethod;
+	public static final field SEND_MESSAGE Lcc/noharry/agent/a2a/A2aMethod;
+	public static final field STREAM_MESSAGE Lcc/noharry/agent/a2a/A2aMethod;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aMethod;
+	public static fun values ()[Lcc/noharry/agent/a2a/A2aMethod;
+}
+
+public abstract interface class cc/noharry/agent/a2a/A2aPart {
+}
+
+public final class cc/noharry/agent/a2a/A2aPart$Data : cc/noharry/agent/a2a/A2aPart {
+	public fun <init> (Lcc/noharry/agent/a2a/A2aValue;)V
+	public final fun component1 ()Lcc/noharry/agent/a2a/A2aValue;
+	public final fun copy (Lcc/noharry/agent/a2a/A2aValue;)Lcc/noharry/agent/a2a/A2aPart$Data;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aPart$Data;Lcc/noharry/agent/a2a/A2aValue;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aPart$Data;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Lcc/noharry/agent/a2a/A2aValue;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aPart$Text : cc/noharry/agent/a2a/A2aPart {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aPart$Text;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aPart$Text;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aPart$Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aProtectedHeaders {
+	public static final field Companion Lcc/noharry/agent/a2a/A2aProtectedHeaders$Companion;
+	public synthetic fun <init> (Ljava/util/Map;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun forEachValue (Lkotlin/jvm/functions/Function2;)V
+	public final fun names ()Ljava/util/Set;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aProtectedHeaders$Companion {
+	public final fun empty ()Lcc/noharry/agent/a2a/A2aProtectedHeaders;
+	public final fun of (Ljava/util/Map;)Lcc/noharry/agent/a2a/A2aProtectedHeaders;
+}
+
+public abstract interface class cc/noharry/agent/a2a/A2aResult {
+}
+
+public final class cc/noharry/agent/a2a/A2aResult$Failure : cc/noharry/agent/a2a/A2aResult {
+	public fun <init> (Lcc/noharry/agent/a2a/A2aClientError;)V
+	public final fun component1 ()Lcc/noharry/agent/a2a/A2aClientError;
+	public final fun copy (Lcc/noharry/agent/a2a/A2aClientError;)Lcc/noharry/agent/a2a/A2aResult$Failure;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aResult$Failure;Lcc/noharry/agent/a2a/A2aClientError;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aResult$Failure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lcc/noharry/agent/a2a/A2aClientError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aResult$Success : cc/noharry/agent/a2a/A2aResult {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lcc/noharry/agent/a2a/A2aResult$Success;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aResult$Success;Ljava/lang/Object;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aResult$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aRetryHint : java/lang/Enum {
+	public static final field AFTER_AUTH_REFRESH Lcc/noharry/agent/a2a/A2aRetryHint;
+	public static final field CONDITIONAL Lcc/noharry/agent/a2a/A2aRetryHint;
+	public static final field NEVER Lcc/noharry/agent/a2a/A2aRetryHint;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aRetryHint;
+	public static fun values ()[Lcc/noharry/agent/a2a/A2aRetryHint;
+}
+
+public final class cc/noharry/agent/a2a/A2aSendMessageRequest {
+	public fun <init> (Lcc/noharry/agent/a2a/A2aMessage;)V
+	public final fun component1 ()Lcc/noharry/agent/a2a/A2aMessage;
+	public final fun copy (Lcc/noharry/agent/a2a/A2aMessage;)Lcc/noharry/agent/a2a/A2aSendMessageRequest;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aSendMessageRequest;Lcc/noharry/agent/a2a/A2aMessage;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aSendMessageRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Lcc/noharry/agent/a2a/A2aMessage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/a2a/A2aSendMessageResult {
+}
+
+public final class cc/noharry/agent/a2a/A2aSendMessageResult$Message : cc/noharry/agent/a2a/A2aSendMessageResult {
+	public fun <init> (Lcc/noharry/agent/a2a/A2aMessage;)V
+	public final fun component1 ()Lcc/noharry/agent/a2a/A2aMessage;
+	public final fun copy (Lcc/noharry/agent/a2a/A2aMessage;)Lcc/noharry/agent/a2a/A2aSendMessageResult$Message;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aSendMessageResult$Message;Lcc/noharry/agent/a2a/A2aMessage;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aSendMessageResult$Message;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Lcc/noharry/agent/a2a/A2aMessage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aSendMessageResult$Task : cc/noharry/agent/a2a/A2aSendMessageResult {
+	public fun <init> (Lcc/noharry/agent/a2a/A2aTask;)V
+	public final fun component1 ()Lcc/noharry/agent/a2a/A2aTask;
+	public final fun copy (Lcc/noharry/agent/a2a/A2aTask;)Lcc/noharry/agent/a2a/A2aSendMessageResult$Task;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aSendMessageResult$Task;Lcc/noharry/agent/a2a/A2aTask;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aSendMessageResult$Task;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Lcc/noharry/agent/a2a/A2aTask;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/a2a/A2aStreamEvent {
+}
+
+public final class cc/noharry/agent/a2a/A2aStreamEvent$Artifact : cc/noharry/agent/a2a/A2aStreamEvent {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aArtifact;ZZ)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aArtifact;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcc/noharry/agent/a2a/A2aArtifact;
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aArtifact;ZZ)Lcc/noharry/agent/a2a/A2aStreamEvent$Artifact;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aStreamEvent$Artifact;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aArtifact;ZZILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aStreamEvent$Artifact;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAppend ()Z
+	public final fun getArtifact ()Lcc/noharry/agent/a2a/A2aArtifact;
+	public final fun getContextId ()Ljava/lang/String;
+	public final fun getLastChunk ()Z
+	public final fun getTaskId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aStreamEvent$Completed : cc/noharry/agent/a2a/A2aStreamEvent {
+	public static final field INSTANCE Lcc/noharry/agent/a2a/A2aStreamEvent$Completed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aStreamEvent$Failed : cc/noharry/agent/a2a/A2aStreamEvent {
+	public fun <init> (Lcc/noharry/agent/a2a/A2aClientError;)V
+	public final fun component1 ()Lcc/noharry/agent/a2a/A2aClientError;
+	public final fun copy (Lcc/noharry/agent/a2a/A2aClientError;)Lcc/noharry/agent/a2a/A2aStreamEvent$Failed;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aStreamEvent$Failed;Lcc/noharry/agent/a2a/A2aClientError;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aStreamEvent$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lcc/noharry/agent/a2a/A2aClientError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aStreamEvent$Incomplete : cc/noharry/agent/a2a/A2aStreamEvent {
+	public fun <init> (Lcc/noharry/agent/a2a/A2aClientError$Incomplete;)V
+	public final fun component1 ()Lcc/noharry/agent/a2a/A2aClientError$Incomplete;
+	public final fun copy (Lcc/noharry/agent/a2a/A2aClientError$Incomplete;)Lcc/noharry/agent/a2a/A2aStreamEvent$Incomplete;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aStreamEvent$Incomplete;Lcc/noharry/agent/a2a/A2aClientError$Incomplete;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aStreamEvent$Incomplete;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lcc/noharry/agent/a2a/A2aClientError$Incomplete;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aStreamEvent$Message : cc/noharry/agent/a2a/A2aStreamEvent {
+	public fun <init> (Lcc/noharry/agent/a2a/A2aMessage;)V
+	public final fun component1 ()Lcc/noharry/agent/a2a/A2aMessage;
+	public final fun copy (Lcc/noharry/agent/a2a/A2aMessage;)Lcc/noharry/agent/a2a/A2aStreamEvent$Message;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aStreamEvent$Message;Lcc/noharry/agent/a2a/A2aMessage;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aStreamEvent$Message;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Lcc/noharry/agent/a2a/A2aMessage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aStreamEvent$Task : cc/noharry/agent/a2a/A2aStreamEvent {
+	public fun <init> (Lcc/noharry/agent/a2a/A2aTask;Lcc/noharry/agent/a2a/A2aValue$ObjectValue;)V
+	public synthetic fun <init> (Lcc/noharry/agent/a2a/A2aTask;Lcc/noharry/agent/a2a/A2aValue$ObjectValue;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcc/noharry/agent/a2a/A2aTask;
+	public final fun component2 ()Lcc/noharry/agent/a2a/A2aValue$ObjectValue;
+	public final fun copy (Lcc/noharry/agent/a2a/A2aTask;Lcc/noharry/agent/a2a/A2aValue$ObjectValue;)Lcc/noharry/agent/a2a/A2aStreamEvent$Task;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aStreamEvent$Task;Lcc/noharry/agent/a2a/A2aTask;Lcc/noharry/agent/a2a/A2aValue$ObjectValue;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aStreamEvent$Task;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMetadata ()Lcc/noharry/agent/a2a/A2aValue$ObjectValue;
+	public final fun getValue ()Lcc/noharry/agent/a2a/A2aTask;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aTask {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aTask$Status;Lcc/noharry/agent/a2a/A2aMessage;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aTask$Status;Lcc/noharry/agent/a2a/A2aMessage;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcc/noharry/agent/a2a/A2aTask$Status;
+	public final fun component4 ()Lcc/noharry/agent/a2a/A2aMessage;
+	public final fun component5 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aTask$Status;Lcc/noharry/agent/a2a/A2aMessage;Ljava/util/List;)Lcc/noharry/agent/a2a/A2aTask;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aTask;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/A2aTask$Status;Lcc/noharry/agent/a2a/A2aMessage;Ljava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aTask;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArtifacts ()Ljava/util/List;
+	public final fun getContextId ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getStatus ()Lcc/noharry/agent/a2a/A2aTask$Status;
+	public final fun getStatusMessage ()Lcc/noharry/agent/a2a/A2aMessage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aTask$Status : java/lang/Enum {
+	public static final field CANCELLED Lcc/noharry/agent/a2a/A2aTask$Status;
+	public static final field COMPLETED Lcc/noharry/agent/a2a/A2aTask$Status;
+	public static final field FAILED Lcc/noharry/agent/a2a/A2aTask$Status;
+	public static final field INPUT_REQUIRED Lcc/noharry/agent/a2a/A2aTask$Status;
+	public static final field SUBMITTED Lcc/noharry/agent/a2a/A2aTask$Status;
+	public static final field UNKNOWN Lcc/noharry/agent/a2a/A2aTask$Status;
+	public static final field WORKING Lcc/noharry/agent/a2a/A2aTask$Status;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aTask$Status;
+	public static fun values ()[Lcc/noharry/agent/a2a/A2aTask$Status;
+}
+
+public abstract interface class cc/noharry/agent/a2a/A2aValue {
+}
+
+public final class cc/noharry/agent/a2a/A2aValue$BooleanValue : cc/noharry/agent/a2a/A2aValue {
+	public fun <init> (Z)V
+	public final fun component1 ()Z
+	public final fun copy (Z)Lcc/noharry/agent/a2a/A2aValue$BooleanValue;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aValue$BooleanValue;ZILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aValue$BooleanValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aValue$ListValue : cc/noharry/agent/a2a/A2aValue {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcc/noharry/agent/a2a/A2aValue$ListValue;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aValue$ListValue;Ljava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aValue$ListValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValues ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aValue$Null : cc/noharry/agent/a2a/A2aValue {
+	public static final field INSTANCE Lcc/noharry/agent/a2a/A2aValue$Null;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aValue$NumberValue : cc/noharry/agent/a2a/A2aValue {
+	public fun <init> (D)V
+	public final fun component1 ()D
+	public final fun copy (D)Lcc/noharry/agent/a2a/A2aValue$NumberValue;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aValue$NumberValue;DILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aValue$NumberValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aValue$ObjectValue : cc/noharry/agent/a2a/A2aValue {
+	public fun <init> (Ljava/util/Map;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun copy (Ljava/util/Map;)Lcc/noharry/agent/a2a/A2aValue$ObjectValue;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aValue$ObjectValue;Ljava/util/Map;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aValue$ObjectValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValues ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/A2aValue$StringValue : cc/noharry/agent/a2a/A2aValue {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcc/noharry/agent/a2a/A2aValue$StringValue;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/A2aValue$StringValue;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/A2aValue$StringValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface annotation class cc/noharry/agent/a2a/ExperimentalA2aClientApi : java/lang/annotation/Annotation {
+}
+
+public final class cc/noharry/agent/a2a/RemoteAgentRef {
+	public fun <init> (Ljava/lang/String;Ljava/net/URI;Ljava/net/URI;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/net/URI;Ljava/net/URI;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/net/URI;
+	public final fun component3 ()Ljava/net/URI;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/net/URI;Ljava/net/URI;Ljava/lang/String;)Lcc/noharry/agent/a2a/RemoteAgentRef;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/RemoteAgentRef;Ljava/lang/String;Ljava/net/URI;Ljava/net/URI;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/RemoteAgentRef;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCardUrl ()Ljava/net/URI;
+	public final fun getEndpoint ()Ljava/net/URI;
+	public final fun getExpectedIdentity ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/direct/DirectA2aClientModule : cc/noharry/agent/a2a/A2aClientModule {
+	public fun <init> ()V
+	public fun factory ()Lcc/noharry/agent/a2a/A2aClientFactory;
+}
+
+public abstract interface class cc/noharry/agent/a2a/server/A2aAuthorizer {
+	public static final field Companion Lcc/noharry/agent/a2a/server/A2aAuthorizer$Companion;
+	public abstract fun allows (Ljava/util/Map;)Z
+}
+
+public final class cc/noharry/agent/a2a/server/A2aAuthorizer$Companion {
+	public final fun bearer (Ljava/lang/String;)Lcc/noharry/agent/a2a/server/A2aAuthorizer;
+}
+
+public final class cc/noharry/agent/a2a/server/A2aInputReceipt {
+	public fun <init> (ZZLjava/lang/String;)V
+	public synthetic fun <init> (ZZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (ZZLjava/lang/String;)Lcc/noharry/agent/a2a/server/A2aInputReceipt;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/server/A2aInputReceipt;ZZLjava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/server/A2aInputReceipt;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAccepted ()Z
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getDuplicate ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/a2a/server/A2aOutput {
+}
+
+public final class cc/noharry/agent/a2a/server/A2aOutput$Question : cc/noharry/agent/a2a/server/A2aOutput {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)Lcc/noharry/agent/a2a/server/A2aOutput$Question;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/server/A2aOutput$Question;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/server/A2aOutput$Question;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOptions ()Ljava/util/List;
+	public final fun getQuestionId ()Ljava/lang/String;
+	public final fun getState ()Ljava/lang/String;
+	public final fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/server/A2aOutput$Result : cc/noharry/agent/a2a/server/A2aOutput {
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/a2a/server/A2aOutput$State;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcc/noharry/agent/a2a/server/A2aOutput$State;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcc/noharry/agent/a2a/server/A2aOutput$State;
+	public final fun copy (Ljava/lang/String;Lcc/noharry/agent/a2a/server/A2aOutput$State;)Lcc/noharry/agent/a2a/server/A2aOutput$Result;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/server/A2aOutput$Result;Ljava/lang/String;Lcc/noharry/agent/a2a/server/A2aOutput$State;ILjava/lang/Object;)Lcc/noharry/agent/a2a/server/A2aOutput$Result;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getState ()Lcc/noharry/agent/a2a/server/A2aOutput$State;
+	public final fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/server/A2aOutput$Speech : cc/noharry/agent/a2a/server/A2aOutput {
+	public fun <init> (Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun copy (Ljava/lang/String;Z)Lcc/noharry/agent/a2a/server/A2aOutput$Speech;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/server/A2aOutput$Speech;Ljava/lang/String;ZILjava/lang/Object;)Lcc/noharry/agent/a2a/server/A2aOutput$Speech;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFinal ()Z
+	public final fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/server/A2aOutput$State : java/lang/Enum {
+	public static final field CANCELED Lcc/noharry/agent/a2a/server/A2aOutput$State;
+	public static final field COMPLETED Lcc/noharry/agent/a2a/server/A2aOutput$State;
+	public static final field FAILED Lcc/noharry/agent/a2a/server/A2aOutput$State;
+	public static final field INPUT_REQUIRED Lcc/noharry/agent/a2a/server/A2aOutput$State;
+	public static final field REJECTED Lcc/noharry/agent/a2a/server/A2aOutput$State;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/a2a/server/A2aOutput$State;
+	public static fun values ()[Lcc/noharry/agent/a2a/server/A2aOutput$State;
+}
+
+public final class cc/noharry/agent/a2a/server/A2aOutput$Status : cc/noharry/agent/a2a/server/A2aOutput {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/a2a/server/A2aOutput$Status;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/server/A2aOutput$Status;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/server/A2aOutput$Status;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPhase ()Ljava/lang/String;
+	public final fun getText ()Ljava/lang/String;
+	public final fun getToolCallId ()Ljava/lang/String;
+	public final fun getToolName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/server/A2aRequest {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lcc/noharry/agent/a2a/server/A2aRequest;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/server/A2aRequest;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lcc/noharry/agent/a2a/server/A2aRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContextId ()Ljava/lang/String;
+	public final fun getMetadata ()Ljava/util/Map;
+	public final fun getTaskId ()Ljava/lang/String;
+	public final fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class cc/noharry/agent/a2a/server/A2aRequestHandler {
+	public abstract fun execute (Lcc/noharry/agent/a2a/server/A2aRequest;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun postInput (Lcc/noharry/agent/a2a/server/A2aRequest;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/a2a/server/A2aRequestHandler$DefaultImpls {
+	public static fun postInput (Lcc/noharry/agent/a2a/server/A2aRequestHandler;Lcc/noharry/agent/a2a/server/A2aRequest;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/a2a/server/A2aServer : java/lang/AutoCloseable {
+	public static final field CONTROL_WORKERS I
+	public static final field HEARTBEAT_MS J
+	public static final field RPC_PATH Ljava/lang/String;
+	public static final field WORKER_IDLE_SECONDS J
+	public fun <init> (Lcc/noharry/agent/a2a/server/A2aServerConfig;Lcc/noharry/agent/a2a/server/A2aRequestHandler;)V
+	public synthetic fun <init> (Lcc/noharry/agent/a2a/server/A2aServerConfig;Lcc/noharry/agent/a2a/server/A2aRequestHandler;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public final fun getLocalPort ()I
+	public final fun start ()I
+}
+
+public final class cc/noharry/agent/a2a/server/A2aServerConfig {
+	public static final field LOOPBACK Ljava/lang/String;
+	public static final field MAX_ACTIVE_TASKS I
+	public static final field MAX_RETAINED_TASKS I
+	public fun <init> ()V
+	public fun <init> (ILjava/lang/String;IIJLjava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/server/A2aServerMessages;Lcc/noharry/agent/a2a/server/A2aAuthorizer;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (ILjava/lang/String;IIJLjava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/server/A2aServerMessages;Lcc/noharry/agent/a2a/server/A2aAuthorizer;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component10 ()Ljava/lang/String;
+	public final fun component11 ()Ljava/lang/String;
+	public final fun component12 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()J
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Lcc/noharry/agent/a2a/server/A2aServerMessages;
+	public final fun component9 ()Lcc/noharry/agent/a2a/server/A2aAuthorizer;
+	public final fun copy (ILjava/lang/String;IIJLjava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/server/A2aServerMessages;Lcc/noharry/agent/a2a/server/A2aAuthorizer;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/a2a/server/A2aServerConfig;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/server/A2aServerConfig;ILjava/lang/String;IIJLjava/lang/String;Ljava/lang/String;Lcc/noharry/agent/a2a/server/A2aServerMessages;Lcc/noharry/agent/a2a/server/A2aAuthorizer;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/server/A2aServerConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthorizer ()Lcc/noharry/agent/a2a/server/A2aAuthorizer;
+	public final fun getBindAddress ()Ljava/lang/String;
+	public final fun getCardVersion ()Ljava/lang/String;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getMaxActiveTasks ()I
+	public final fun getMaxRetainedTasks ()I
+	public final fun getMessages ()Lcc/noharry/agent/a2a/server/A2aServerMessages;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPort ()I
+	public final fun getPublicUrl ()Ljava/lang/String;
+	public final fun getSkillDescription ()Ljava/lang/String;
+	public final fun getTaskTimeoutMillis ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/a2a/server/A2aServerMessages {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/a2a/server/A2aServerMessages;
+	public static synthetic fun copy$default (Lcc/noharry/agent/a2a/server/A2aServerMessages;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/a2a/server/A2aServerMessages;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAccepted ()Ljava/lang/String;
+	public final fun getCanceled ()Ljava/lang/String;
+	public final fun getDeliveryFailed ()Ljava/lang/String;
+	public final fun getFailed ()Ljava/lang/String;
+	public final fun getInterrupted ()Ljava/lang/String;
+	public final fun getNoResult ()Ljava/lang/String;
+	public final fun getStarted ()Ljava/lang/String;
+	public final fun getTimedOut ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

@@ -1,0 +1,149 @@
+public final class cc/noharry/agent/androiduse/AndroidUseAccessibility {
+	public static final field INSTANCE Lcc/noharry/agent/androiduse/AndroidUseAccessibility;
+	public final fun disable (Landroid/content/Context;)Z
+	public final fun enable (Landroid/content/Context;)Z
+	public final fun foregroundApp (Landroid/content/Context;)Lcc/noharry/agent/androiduse/ForegroundApp;
+	public final fun isConnected ()Z
+	public final fun isEnabled (Landroid/content/Context;)Z
+	public final fun settingsIntent ()Landroid/content/Intent;
+}
+
+public final class cc/noharry/agent/androiduse/AndroidUseAccessibilityService : android/accessibilityservice/AccessibilityService {
+	public fun <init> ()V
+	public fun onAccessibilityEvent (Landroid/view/accessibility/AccessibilityEvent;)V
+	public fun onDestroy ()V
+	public fun onInterrupt ()V
+	public fun onUnbind (Landroid/content/Intent;)Z
+}
+
+public final class cc/noharry/agent/androiduse/AndroidUseGesturePreview {
+	public fun <init> (Lcc/noharry/agent/androiduse/AndroidUseGesturePreview$Kind;IIIIIJ)V
+	public synthetic fun <init> (Lcc/noharry/agent/androiduse/AndroidUseGesturePreview$Kind;IIIIIJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcc/noharry/agent/androiduse/AndroidUseGesturePreview$Kind;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun component7 ()J
+	public final fun copy (Lcc/noharry/agent/androiduse/AndroidUseGesturePreview$Kind;IIIIIJ)Lcc/noharry/agent/androiduse/AndroidUseGesturePreview;
+	public static synthetic fun copy$default (Lcc/noharry/agent/androiduse/AndroidUseGesturePreview;Lcc/noharry/agent/androiduse/AndroidUseGesturePreview$Kind;IIIIIJILjava/lang/Object;)Lcc/noharry/agent/androiduse/AndroidUseGesturePreview;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDisplayId ()I
+	public final fun getDurationMs ()J
+	public final fun getKind ()Lcc/noharry/agent/androiduse/AndroidUseGesturePreview$Kind;
+	public final fun getToX ()I
+	public final fun getToY ()I
+	public final fun getX ()I
+	public final fun getY ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/androiduse/AndroidUseGesturePreview$Kind : java/lang/Enum {
+	public static final field LONG_PRESS Lcc/noharry/agent/androiduse/AndroidUseGesturePreview$Kind;
+	public static final field SWIPE Lcc/noharry/agent/androiduse/AndroidUseGesturePreview$Kind;
+	public static final field TAP Lcc/noharry/agent/androiduse/AndroidUseGesturePreview$Kind;
+	public static final field TYPE Lcc/noharry/agent/androiduse/AndroidUseGesturePreview$Kind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/androiduse/AndroidUseGesturePreview$Kind;
+	public static fun values ()[Lcc/noharry/agent/androiduse/AndroidUseGesturePreview$Kind;
+}
+
+public final class cc/noharry/agent/androiduse/AndroidUseOptions {
+	public fun <init> ()V
+	public fun <init> (ZIIJJZZZZZJ)V
+	public synthetic fun <init> (ZIIJJZZZZZJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component10 ()Z
+	public final fun component11 ()J
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()Z
+	public final fun component7 ()Z
+	public final fun component8 ()Z
+	public final fun component9 ()Z
+	public final fun copy (ZIIJJZZZZZJ)Lcc/noharry/agent/androiduse/AndroidUseOptions;
+	public static synthetic fun copy$default (Lcc/noharry/agent/androiduse/AndroidUseOptions;ZIIJJZZZZZJILjava/lang/Object;)Lcc/noharry/agent/androiduse/AndroidUseOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFallbackOnly ()Z
+	public final fun getJsonDescriptionActions ()Z
+	public final fun getLeaseIdleMillis ()J
+	public final fun getMaxElements ()I
+	public final fun getMaxScreenshotPixels ()I
+	public final fun getObserveOwnApp ()Z
+	public final fun getPreloadTools ()Z
+	public final fun getPresenterTimeoutMillis ()J
+	public final fun getProtectSystemBars ()Z
+	public final fun getRunStartTimeoutMillis ()J
+	public final fun getScreenshots ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/androiduse/AndroidUseOptionsKt {
+	public static final field DEFAULT_LEASE_IDLE_MILLIS J
+	public static final field DEFAULT_MAX_ELEMENTS I
+	public static final field DEFAULT_MAX_SCREENSHOT_PIXELS I
+	public static final field RUN_START_TIMEOUT_MILLIS J
+}
+
+public abstract interface class cc/noharry/agent/androiduse/AndroidUsePresenter {
+	public static final field Companion Lcc/noharry/agent/androiduse/AndroidUsePresenter$Companion;
+	public abstract fun afterCapture (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun afterGesture (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun beforeCapture (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun beforeGesture (Lcc/noharry/agent/androiduse/AndroidUseGesturePreview;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun onRunStarted (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/androiduse/AndroidUsePresenter$Companion {
+	public final fun getNone ()Lcc/noharry/agent/androiduse/AndroidUsePresenter;
+}
+
+public final class cc/noharry/agent/androiduse/AndroidUsePresenter$DefaultImpls {
+	public static fun afterCapture (Lcc/noharry/agent/androiduse/AndroidUsePresenter;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun afterGesture (Lcc/noharry/agent/androiduse/AndroidUsePresenter;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun beforeCapture (Lcc/noharry/agent/androiduse/AndroidUsePresenter;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun beforeGesture (Lcc/noharry/agent/androiduse/AndroidUsePresenter;Lcc/noharry/agent/androiduse/AndroidUseGesturePreview;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun onRunStarted (Lcc/noharry/agent/androiduse/AndroidUsePresenter;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/androiduse/AndroidUsePresenterKt {
+	public static final field PRESENTER_TIMEOUT_MILLIS J
+}
+
+public final class cc/noharry/agent/androiduse/AndroidUseToolProvider : cc/noharry/agent/kernel/api/ToolPrefetchProvider, cc/noharry/agent/kernel/api/mcp/McpClientProvider {
+	public fun <init> (Landroid/content/Context;Lcc/noharry/agent/androiduse/AndroidUsePresenter;Lcc/noharry/agent/androiduse/AndroidUseOptions;)V
+	public synthetic fun <init> (Landroid/content/Context;Lcc/noharry/agent/androiduse/AndroidUsePresenter;Lcc/noharry/agent/androiduse/AndroidUseOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun callTool (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/api/ToolCallContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getDisplayName ()Ljava/lang/String;
+	public fun getPrefetchOnSearch ()Z
+	public fun getPrefetchTimeoutMillis ()J
+	public fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
+	public fun getProviderId ()Ljava/lang/String;
+	public fun getRemotePrefetchEnabled ()Z
+	public fun getServerId ()Ljava/lang/String;
+	public fun initialize (Lcc/noharry/agent/kernel/api/ToolInitializeContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun listPrompts (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun listResources (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun listTools (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun localToolNames (Lcc/noharry/agent/kernel/api/ToolPrefetchRequest;)Ljava/util/List;
+	public fun prefetchTools (Lcc/noharry/agent/kernel/api/ToolPrefetchRequest;Lcc/noharry/agent/kernel/api/ToolPrefetchTrace;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/androiduse/ForegroundApp {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/androiduse/ForegroundApp;
+	public static synthetic fun copy$default (Lcc/noharry/agent/androiduse/ForegroundApp;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/androiduse/ForegroundApp;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getPackageName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

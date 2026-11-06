@@ -1,0 +1,40 @@
+public final class cc/noharry/agent/a2a/official/OfficialA2aClientModule : cc/noharry/agent/a2a/A2aClientModule {
+	public fun <init> ()V
+	public fun factory ()Lcc/noharry/agent/a2a/A2aClientFactory;
+}
+
+public final class org/a2aproject/sdk/client/AndroidClientFactory {
+	public static fun create (Lorg/a2aproject/sdk/spec/AgentCard;Lorg/a2aproject/sdk/client/config/ClientConfig;Lorg/a2aproject/sdk/client/transport/spi/ClientTransport;)Lorg/a2aproject/sdk/client/Client;
+}
+
+public final class org/a2aproject/sdk/common/A2AErrorMessages {
+	public static final field AUTHENTICATION_FAILED Ljava/lang/String;
+	public static final field AUTHORIZATION_FAILED Ljava/lang/String;
+}
+
+public final class org/a2aproject/sdk/common/A2AHeaders {
+	public static final field A2A_EXTENSIONS Ljava/lang/String;
+	public static final field A2A_VERSION Ljava/lang/String;
+	public static final field X_A2A_NOTIFICATION_TOKEN Ljava/lang/String;
+}
+
+public abstract interface class org/a2aproject/sdk/common/MediaType {
+	public static final field APPLICATION_JSON Ljava/lang/String;
+}
+
+public final class org/a2aproject/sdk/util/Assert {
+	public static fun checkNotNullParam (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+	public static fun isValidJsonRpcId (Ljava/lang/Object;)V
+}
+
+public final class org/a2aproject/sdk/util/HtmlEscapeUtils {
+	public static fun removeHtmlEscaping (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class org/a2aproject/sdk/util/HttpHeaderUtils {
+	public static fun copyOfCaseInsensitive (Ljava/util/Map;)Ljava/util/Map;
+}
+
+public abstract interface annotation class org/a2aproject/sdk/util/NotNull : java/lang/annotation/Annotation {
+}
+

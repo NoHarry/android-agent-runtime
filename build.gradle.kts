@@ -100,16 +100,60 @@ val checkSourceRules by tasks.registering(SourceRulesTask::class) {
 
 tasks.named("check") { dependsOn(checkSourceRules) }
 
+// The Android libraries' API dumps, as the JVM modules': apiDump writes api/<module>.api from the release classes
+// (Kotlin and Java), apiCheck (part of check and ciCheck) fails when they differ. The validator's plugin finds Kotlin
+// Android code only through the kotlin-android plugin, which AGP 9's built-in Kotlin replaces, so its tasks are set up
+// here; they read the same apiValidation settings, and run on a classpath of their own as the plugin's do.
+val validation = apiValidation
+subprojects {
+    plugins.withId("com.android.library") {
+        if (name in validation.ignoredProjects || validation.validationDisabled) return@withId
+        val apiReader = configurations.create("androidApiReader") {
+            isCanBeConsumed = false
+        }
+        dependencies {
+            // What binary-compatibility-validator 0.18.2 reads classes with; follow it when the validator is updated.
+            apiReader("org.ow2.asm:asm:9.6")
+            apiReader("org.ow2.asm:asm-tree:9.6")
+            apiReader("org.jetbrains.kotlin:kotlin-metadata-jvm:${org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion(logger)}")
+        }
+        val dumpName = "${project.name}.api"
+        val built = tasks.register<kotlinx.validation.KotlinApiBuildTask>("androidApiBuild") {
+            // Looked up when the task is configured, after AGP has made the release tasks: a missing one fails here.
+            inputClassesDirs.from(
+                tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>("compileReleaseKotlin").flatMap { it.destinationDirectory },
+                tasks.named<JavaCompile>("compileReleaseJavaWithJavac").flatMap { it.destinationDirectory },
+            )
+            runtimeClasspath.from(apiReader)
+            outputApiFile.set(layout.buildDirectory.file("api/$dumpName"))
+        }
+        val check = tasks.register<kotlinx.validation.KotlinApiCompareTask>("apiCheck") {
+            group = "verification"
+            projectApiFile.set(layout.projectDirectory.file("api/$dumpName"))
+            generatedApiFile.set(built.flatMap { it.outputApiFile })
+        }
+        tasks.register<Copy>("apiDump") {
+            group = "other"
+            from(built.flatMap { it.outputApiFile })
+            into(layout.projectDirectory.dir("api"))
+        }
+        tasks.named("check") { dependsOn(check) }
+        rootProject.tasks.named("ciCheck") { dependsOn(check) }
+    }
+}
+
 /** What CI runs: the source rules, the API dumps, every unit test and the samples' builds. */
 val ciCheck by tasks.registering {
     group = "verification"
     description = "Source rules, API dumps, unit tests and sample builds."
-    // The JVM modules' build runs their check, which includes the API dump check.
+    // The JVM modules' build runs their check, which includes the API dump check; the Android libraries add theirs below.
     dependsOn(checkSourceRules)
 }
 
 subprojects {
     plugins.withId("org.jetbrains.kotlin.jvm") { rootProject.tasks.named("ciCheck") { dependsOn(tasks.named("build")) } }
-    plugins.withId("com.android.library") { rootProject.tasks.named("ciCheck") { dependsOn(tasks.named("testDebugUnitTest")) } }
+    plugins.withId("com.android.library") {
+        rootProject.tasks.named("ciCheck") { dependsOn(tasks.named("testDebugUnitTest")) }
+    }
     plugins.withId("com.android.application") { rootProject.tasks.named("ciCheck") { dependsOn(tasks.named("assembleDebug")) } }
 }

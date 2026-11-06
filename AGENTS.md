@@ -21,7 +21,8 @@ An embeddable agent runtime for Android and the JVM. Gradle project at the repos
 - No Android API in the JVM modules. Optional modules depend at most on `agent-kernel-api`; the runtime depends on none.
 - First-party providers declare `providerConcurrency` explicitly.
 - Files at most 1000 lines, functions at most 50 (`checkSourceRules`).
-- Public API changes in the JVM modules need `./gradlew apiDump` and a `CHANGELOG.md` note when breaking.
+- Public API changes need `./gradlew apiDump` (every published module but the BOM has an `api/*.api`) and a
+  `CHANGELOG.md` note when breaking.
 - Host-visible messages default to English and are replaceable.
 - Never commit `local.properties`, keys or build output.
 

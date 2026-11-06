@@ -14,10 +14,9 @@ runs what CI runs:
 
 - **Source rules** (`checkSourceRules`): a file has at most 1000 lines, a function at most 50, and nothing prints to
   stdout. Split a long function rather than raising a limit.
-- **API compatibility** (`apiCheck`): the public API of the JVM modules (`agent-kernel-api`, `agent-kernel-core`,
-  `agent-runtime`) is recorded in each module's `api/*.api`. When you change it on
-  purpose, run `./gradlew apiDump`, commit the new dump, and note any breaking change in `CHANGELOG.md`. The Android
-  modules are not covered yet: the validator does not see Kotlin compiled by the Android Gradle plugin.
+- **API compatibility** (`apiCheck`): the public API of every published module but the BOM is recorded in its
+  `api/*.api` (the Android modules' from their release classes, Kotlin and Java). When you change it on purpose, run
+  `./gradlew apiDump`, commit the new dump, and note any breaking change in `CHANGELOG.md`.
 - **Unit tests** of every module, and the samples' builds.
 
 Device tests (`./gradlew :agent-runtime-android:connectedDebugAndroidTest`, `:agent-exec-js:connectedDebugAndroidTest`)
