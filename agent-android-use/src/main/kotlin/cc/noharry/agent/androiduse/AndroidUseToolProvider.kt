@@ -40,21 +40,28 @@ class AndroidUseToolProvider internal constructor(
         context: Context,
         presenter: AndroidUsePresenter = AndroidUsePresenter.None,
         options: AndroidUseOptions = AndroidUseOptions(),
-    ) : this(AccessibilityAndroidUseDevice(context.applicationContext), presenter, options, AndroidUseLease.process, SystemClock::elapsedRealtime)
+    ) : this(
+        AccessibilityAndroidUseDevice(context.applicationContext, options.observeOwnApp),
+        presenter,
+        options,
+        AndroidUseLease.process,
+        SystemClock::elapsedRealtime,
+    )
 
     override val serverId: String = ANDROID_USE_SERVER_ID
     override val displayName: String = "Android Use"
 
     override val providerConcurrency: ProviderConcurrencyDeclaration = ProviderConcurrencyDeclaration.serialized()
 
-    private val book = ObservationBook(options.maxElements)
+    private val book = ObservationBook(options.maxElements, options.jsonDescriptionActions)
     private val runner = AndroidUseActionRunner(device, presenter, options.presenterTimeoutMillis)
     private val announcedRuns = mutableSetOf<String>()
 
     override suspend fun initialize(context: ToolInitializeContext): ToolInitializeResult =
         if (device.isConnected()) ToolInitializeResult.connected() else ToolInitializeResult.failed(NOT_CONNECTED_MESSAGE)
 
-    override suspend fun listTools(): List<ToolDescriptor> = listOf(observeToolDescriptor(), actionToolDescriptor())
+    override suspend fun listTools(): List<ToolDescriptor> =
+        listOf(observeToolDescriptor(options.fallbackOnly), actionToolDescriptor(options.fallbackOnly))
 
     override val remotePrefetchEnabled: Boolean get() = false
 
@@ -66,7 +73,7 @@ class AndroidUseToolProvider internal constructor(
     override suspend fun callTool(toolName: String, argumentsJson: String, context: ToolCallContext): ToolCallResult {
         val args = parseArguments(argumentsJson) ?: return failureResult(ARGUMENT_INVALID, "Arguments must be a JSON object.")
         if (!device.isConnected()) return failureResult(SERVICE_NOT_CONNECTED, NOT_CONNECTED_MESSAGE)
-        if (!lease.acquire(context.sessionId, context.runId, nowMillis())) {
+        if (!lease.acquire(context.sessionId, context.runId, nowMillis(), options.leaseIdleMillis)) {
             return failureResult(DEVICE_BUSY, "Another task is using the screen. Try again shortly.")
         }
         return try {
@@ -127,8 +134,8 @@ class AndroidUseToolProvider internal constructor(
 
     private suspend fun observe(displayId: Int): Observation {
         val (capture, note) = captureScreen(displayId)
-        val state = device.readScreen(displayId)
-        return book.record(state, capture, device.ownPackage(), note)
+        val state = device.readScreen(displayId).let { if (options.protectSystemBars) it else it.copy(systemAreas = emptyList()) }
+        return book.record(state, capture, device.ownPackage().takeUnless { options.observeOwnApp }, note)
     }
 
     private suspend fun captureScreen(displayId: Int): Pair<ScreenCapture?, String> {

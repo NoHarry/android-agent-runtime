@@ -23,7 +23,7 @@ class DeviceNotificationMcpProviderTest {
     fun exposesNotificationTools() = runBlocking {
         val tools = DeviceNotificationMcpProvider(FakeNotificationGateway()).listTools().map { it.name }
 
-        assertEquals(listOf("notification.list", "notification.create"), tools)
+        assertEquals(listOf("notification.create"), tools)
     }
 
     @Test

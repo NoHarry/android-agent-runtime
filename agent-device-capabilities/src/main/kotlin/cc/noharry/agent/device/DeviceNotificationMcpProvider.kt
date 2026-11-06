@@ -15,21 +15,29 @@ import cc.noharry.agent.kernel.api.ToolCatalogCacheIdentity
 import cc.noharry.agent.kernel.api.mcp.McpClientProvider
 import cc.noharry.agent.kernel.api.ToolDescriptor
 
-/** Optional Android notification MCP provider backed by NotificationManager. */
+/**
+ * Optional Android notification MCP provider backed by NotificationManager: the agent posts notifications, each its own,
+ * on a channel the host names ([channelName], shown in the system's settings).
+ */
 class DeviceNotificationMcpProvider internal constructor(
     private val gateway: DeviceNotificationGateway,
 ) : McpClientProvider, ToolCatalogCacheIdentity {
     override val serverId: String = NOTIFICATION_SERVER_ID
     override val displayName: String = "Device Notifications"
-    override val catalogCacheIdentity: String = "$NOTIFICATION_SERVER_ID:v1"
+    override val catalogCacheIdentity: String = "$NOTIFICATION_SERVER_ID:v2"
     @OptIn(ExperimentalAgentRuntimeApi::class)
     override val providerConcurrency: ProviderConcurrencyDeclaration =
         ProviderConcurrencyDeclaration.serialized()
 
-    constructor(context: Context) : this(AndroidDeviceNotificationGateway(context.applicationContext))
+    @JvmOverloads
+    constructor(
+        context: Context,
+        channelName: String = CHANNEL_NAME,
+        channelId: String = CHANNEL_ID,
+    ) : this(AndroidDeviceNotificationGateway(context.applicationContext, channelId, channelName))
 
-    override suspend fun listTools(): List<ToolDescriptor> =
-        listOf(notificationListTool(), notificationCreateTool())
+    // Reading other apps' notifications needs a NotificationListenerService of the host's, so no listing tool is offered.
+    override suspend fun listTools(): List<ToolDescriptor> = listOf(notificationCreateTool())
 
     override suspend fun callTool(toolName: String, argumentsJson: String, context: ToolCallContext): ToolCallResult =
         when (toolName) {
@@ -55,35 +63,40 @@ internal interface DeviceNotificationGateway {
     fun createNotification(title: String, body: String): Int
 }
 
-private class AndroidDeviceNotificationGateway(private val context: Context) : DeviceNotificationGateway {
+private class AndroidDeviceNotificationGateway(
+    private val context: Context,
+    private val channelId: String,
+    private val channelName: String,
+) : DeviceNotificationGateway {
     override fun canPostNotifications(): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
     override fun createNotification(title: String, body: String): Int {
         val manager = context.getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        // A channel the host already has keeps its name and importance.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && manager.getNotificationChannel(channelId) == null) {
             manager.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT),
+                NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT),
             )
         }
-        val notification = Notification.Builder(context, CHANNEL_ID)
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(context, channelId)
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(context)
+        }
+        val notification = builder
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(body)
             .build()
-        manager.notify(DEFAULT_NOTIFICATION_ID, notification)
-        return DEFAULT_NOTIFICATION_ID
+        // Each its own, under a tag of the runtime's, so it replaces neither the last one nor any of the host's.
+        val id = NEXT_ID.getAndIncrement()
+        manager.notify(NOTIFICATION_TAG, id, notification)
+        return id
     }
 }
-
-private fun notificationListTool(): ToolDescriptor =
-    ToolDescriptor(
-        name = NOTIFICATION_LIST,
-        title = "List notifications",
-        description = "List notifications when the host supplies a NotificationListenerService.",
-        inputSchemaJson = """{"type":"object","properties":{}}""",
-    )
 
 private fun notificationCreateTool(): ToolDescriptor =
     ToolDescriptor(
@@ -101,4 +114,8 @@ private const val NOTIFICATION_LIST = "notification.list"
 private const val NOTIFICATION_CREATE = "notification.create"
 private const val CHANNEL_ID = "agent_runtime_device_capabilities"
 private const val CHANNEL_NAME = "Agent Runtime Device Capabilities"
-private const val DEFAULT_NOTIFICATION_ID = 7001
+private const val FIRST_NOTIFICATION_ID = 7001
+private const val NOTIFICATION_TAG = "agent_runtime_device_notification"
+
+/** One count for the process, so two runtimes' notifications do not replace each other. */
+private val NEXT_ID = java.util.concurrent.atomic.AtomicInteger(FIRST_NOTIFICATION_ID)

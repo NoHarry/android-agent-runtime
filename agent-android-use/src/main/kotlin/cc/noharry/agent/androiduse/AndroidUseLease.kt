@@ -10,19 +10,22 @@ package cc.noharry.agent.androiduse
  * Times come from a monotonic clock (elapsed realtime on the device), so a wall-clock correction such as the device's
  * GNSS time sync can neither stretch nor skip the idle wait.
  */
-internal class AndroidUseLease(private val idleMillis: Long = LEASE_IDLE_MILLIS) {
+internal class AndroidUseLease(private val idleMillis: Long = DEFAULT_LEASE_IDLE_MILLIS) {
     private var owner: String? = null
     private var ownerSession: String? = null
     private var lastUsedAt = 0L
+    private var holderIdleMillis = idleMillis
 
+    /** [idleMillis]: how long this run, once it holds the screen, must be idle before another conversation's takes it. */
     @Synchronized
-    fun acquire(sessionId: String, runId: String, nowMillis: Long): Boolean {
+    fun acquire(sessionId: String, runId: String, nowMillis: Long, idleMillis: Long = this.idleMillis): Boolean {
         val holder = owner
         val sameSession = ownerSession == sessionId
-        if (holder != null && holder != runId && !sameSession && nowMillis - lastUsedAt < idleMillis) return false
+        if (holder != null && holder != runId && !sameSession && nowMillis - lastUsedAt < holderIdleMillis) return false
         owner = runId
         ownerSession = sessionId
         lastUsedAt = nowMillis
+        holderIdleMillis = idleMillis
         return true
     }
 
@@ -38,4 +41,3 @@ internal class AndroidUseLease(private val idleMillis: Long = LEASE_IDLE_MILLIS)
     }
 }
 
-private const val LEASE_IDLE_MILLIS = 10_000L

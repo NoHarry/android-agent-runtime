@@ -5,25 +5,37 @@ import android.os.Build
 import cc.noharry.agent.kernel.api.ToolDescriptor
 import java.util.Locale
 
-internal fun observeToolDescriptor(): ToolDescriptor =
+/** [fallbackOnly]: the model is told to look for a dedicated tool first ([AndroidUseOptions.fallbackOnly]). */
+internal fun observeToolDescriptor(fallbackOnly: Boolean = true): ToolDescriptor =
     ToolDescriptor(
         name = ANDROID_OBSERVE,
         title = "Observe screen",
-        // A fallback, said so up front (owner 2026-10-14): models opened apps by tapping while the host had an API.
-        description = "Android Use, a fallback: look at the screen only to find something on it, or when no dedicated " +
-            "tool fits; for opening or closing an app, going home or opening a page, search_tools for a dedicated tool " +
-            "first. Returns observationId, a screenshot and elements (id, text, bounds in screenshot pixels), for " +
+        // A fallback, said so up front: models opened apps by tapping while the host had a tool for it.
+        description = (
+            if (fallbackOnly) {
+                "Android Use, a fallback: look at the screen only to find something on it, or when no dedicated tool " +
+                    "fits; for opening or closing an app, going home or opening a page, search_tools for a dedicated tool first. "
+            } else {
+                "Android Use: look at the screen. "
+            }
+            ) + "Returns observationId, a screenshot and elements (id, text, bounds in screenshot pixels), for " +
             "android_action." + chineseWords("看屏幕 / 截图：返回当前屏幕的截图和可操作元素（id、文字、坐标）。"),
         inputSchemaJson = OBSERVE_SCHEMA,
         effectKind = EFFECT_READ_ONLY,
     )
 
-internal fun actionToolDescriptor(): ToolDescriptor =
+internal fun actionToolDescriptor(fallbackOnly: Boolean = true): ToolDescriptor =
     ToolDescriptor(
         name = ANDROID_ACTION,
         title = "Act on screen",
-        description = "Android Use, a fallback: open an app (launch_app) or go home (key) only when search_tools finds " +
-            "no dedicated tool or that tool fails. One UI action (tap, long press, swipe, scroll a list, type, set a " +
+        description = (
+            if (fallbackOnly) {
+                "Android Use, a fallback: open an app (launch_app) or go home (key) only when search_tools finds " +
+                    "no dedicated tool or that tool fails. "
+            } else {
+                "Android Use: open an app (launch_app) or go home (key); otherwise "
+            }
+            ) + (if (fallbackOnly) "One" else "one") + " UI action (tap, long press, swipe, scroll a list, type, set a " +
             "slider, back) on the latest observation, then returns the new observation with a screenshot. Prefer " +
             "elementId; x/y are screenshot pixels. To see more of a list use scroll with direction (down shows what is " +
             "below); keep swipe for drags that are not scrolling." +

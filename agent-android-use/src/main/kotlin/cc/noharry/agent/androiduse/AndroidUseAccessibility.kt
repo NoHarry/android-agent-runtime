@@ -1,6 +1,7 @@
 package cc.noharry.agent.androiduse
 
 import android.content.Context
+import android.content.Intent
 import android.provider.Settings
 import android.view.accessibility.AccessibilityWindowInfo
 
@@ -9,7 +10,7 @@ import android.view.accessibility.AccessibilityWindowInfo
  *
  * Enabling writes secure settings, so the host needs WRITE_SECURE_SETTINGS (granted to platform-signed
  * apps). It appends this service to the enabled list and removes only this entry, keeping every other
- * service enabled, such as the device's 可见即可说.
+ * service enabled, such as the device's own voice control. An ordinary app asks the user instead ([settingsIntent]).
  */
 object AndroidUseAccessibility {
     /** True while the service is bound and ready for tools. */
@@ -26,6 +27,9 @@ object AndroidUseAccessibility {
         Settings.Secure.putString(resolver, ENABLED_SERVICES, updated) &&
             Settings.Secure.putString(resolver, Settings.Secure.ACCESSIBILITY_ENABLED, ACCESSIBILITY_ON)
     }.getOrDefault(false)
+
+    /** Opens the system's accessibility settings, where the user turns the service on (an app that may not [enable] it). */
+    fun settingsIntent(): Intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     /** Removes only this service from the enabled list. */
     fun disable(context: Context): Boolean = runCatching {

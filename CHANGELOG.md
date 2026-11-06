@@ -7,8 +7,8 @@ called out.
 
 Fixes for Claude and OpenAI hosts, and nothing in Chinese or about a car unless the host is. **Breaking** in behaviour
 where noted, and for binaries compiled against the old constructors of `AnthropicModelClient`, `OpenAiModelClient`,
-`A2aServerConfig` and the kernel's loop classes `NativeToolLoop`, `NativeRoundRunner`, `NativeToolUseController` and
-`ToolCallFailureBreaker` (Kotlin source that names its arguments is unchanged).
+`A2aServerConfig`, `AndroidUseOptions` and the kernel's loop classes `NativeToolLoop`, `NativeRoundRunner`,
+`NativeToolUseController` and `ToolCallFailureBreaker` (Kotlin source that names its arguments is unchanged).
 
 - **Claude's thinking.** Opus 4.7 and later, Sonnet 5 and later, Haiku 5.5 and newer families refuse a `budget_tokens`
   with a 400, and Opus and Sonnet 4.6 deprecate it. The `low`, `medium`, `high` and `max` variants now send
@@ -76,6 +76,19 @@ where noted, and for binaries compiled against the old constructors of `Anthropi
   (Japanese kana, Korean, Thai, Lao, Khmer, Myanmar, and the rarer Chinese characters) is read in pairs of characters
   as Chinese was, so `コーヒー` or `조명` finds the tool whose description holds it; English and common Chinese are read as
   before.
+- **Android Use's own rules can be set** (`AndroidUseOptions`, defaults as before): `fallbackOnly` (the tools tell the
+  model to look for a dedicated tool first), `protectSystemBars` (the status bar and dock stay out of reach),
+  `observeOwnApp` (the host's own app windows are seen too, never its overlays), `jsonDescriptionActions` (a JSON
+  contentDescription is read for its `action` label) and `leaseIdleMillis` (how long another conversation waits for the
+  screen after this provider's run used it).
+  `AndroidUseAccessibility.settingsIntent()` opens the accessibility settings for an app that may not turn the service
+  on itself.
+- **Device notifications and calendar.** `notification.list` is no longer offered: it always failed, since reading other
+  apps' notifications needs the host's own listener (behaviour change). Each `notification.create` posts its own
+  notification instead of replacing the last (or one of the host's: they carry a tag of their own), on a channel the
+  host may name (`DeviceNotificationMcpProvider(context, channelName, channelId)`; an existing channel is left as it
+  is), and before Android 8.0 too. `calendar.create_event` adds to the device's primary calendar it may write, else the
+  first, unless `calendarId` names one (finding it needs READ_CALENDAR as well); nothing listed the ids it required.
 - **Dependencies users compile against.** `agent-kernel-core` exposes `kotlinx-serialization-json` (its API takes and
   returns `JsonObject`) and `agent-a2a-client-official` exposes `agent-a2a` (its module is an `A2aClientModule`) as API
   dependencies; 0.4.0 published them as runtime-only, so code using those types did not compile.

@@ -14,6 +14,8 @@ import android.view.accessibility.AccessibilityWindowInfo
  */
 internal class AccessibilityScreenReader(
     private val ownPackage: String,
+    /** The host's own app windows count too; its overlays (the presenter's, over other apps) never do. */
+    private val observeOwnApp: Boolean = false,
 ) {
     private val live = LiveNodeTables<AccessibilityNodeInfo>()
 
@@ -21,7 +23,10 @@ internal class AccessibilityScreenReader(
     fun node(handle: Int): AccessibilityNodeInfo? = live.resolve(handle)
 
     fun read(service: AccessibilityService, displayId: Int): ScreenState {
-        val windows = windowsOf(service, displayId).filter { it.root?.packageName?.toString() != ownPackage }
+        val windows = windowsOf(service, displayId).filter { window ->
+            window.root?.packageName?.toString() != ownPackage ||
+                (observeOwnApp && window.type == AccessibilityWindowInfo.TYPE_APPLICATION)
+        }
         val nodes = mutableListOf<ScreenNode>()
         val liveNodes = HashMap<Int, AccessibilityNodeInfo>()
         windows.forEach { window -> window.root?.let { root -> walk(root, nodes, liveNodes) } }

@@ -19,6 +19,8 @@ internal class Observation(
     val elements: List<ObservedElement>,
     val elementsTruncated: Boolean,
     val screenshotNote: String,
+    /** A JSON contentDescription is read for its `action` label ([AndroidUseOptions.jsonDescriptionActions]). */
+    val jsonDescriptionActions: Boolean = true,
 ) {
     fun element(id: String?): ObservedElement? = id?.let { wanted -> elements.firstOrNull { it.id == wanted } }
 
@@ -34,11 +36,12 @@ internal class Observation(
 }
 
 /** Latest observation per display. Actions must name the latest one; anything older is stale. */
-internal class ObservationBook(private val maxElements: Int) {
+internal class ObservationBook(private val maxElements: Int, private val jsonDescriptionActions: Boolean = true) {
     private var counter = 0
     private val latest = mutableMapOf<Int, Observation>()
 
-    fun record(state: ScreenState, capture: ScreenCapture?, ownPackage: String, screenshotNote: String): Observation {
+    /** [ownPackage]: the host's package, whose nodes are left out; null keeps them ([AndroidUseOptions.observeOwnApp]). */
+    fun record(state: ScreenState, capture: ScreenCapture?, ownPackage: String?, screenshotNote: String): Observation {
         val selected = selectElements(state.nodes, ownPackage, state.systemAreas)
         val scale = capture?.let { it.width.toDouble() / state.width.coerceAtLeast(1) } ?: 1.0
         counter += 1
@@ -50,6 +53,7 @@ internal class ObservationBook(private val maxElements: Int) {
             elements = elementIds(selected.take(maxElements)),
             elementsTruncated = selected.size > maxElements,
             screenshotNote = screenshotNote,
+            jsonDescriptionActions = jsonDescriptionActions,
         )
         latest[state.displayId] = observation
         return observation
@@ -62,9 +66,9 @@ internal class ObservationBook(private val maxElements: Int) {
  * Nodes worth naming, the 可见即可说 way: labelled nodes that can be clicked (or sit inside something
  * clickable), editable fields and scrollable containers. The host's own windows never count.
  */
-internal fun selectElements(nodes: List<ScreenNode>, ownPackage: String, systemAreas: List<PixelRect> = emptyList()): List<ScreenNode> =
+internal fun selectElements(nodes: List<ScreenNode>, ownPackage: String?, systemAreas: List<PixelRect> = emptyList()): List<ScreenNode> =
     nodes.asSequence()
-        .filter { it.packageName != ownPackage && !it.bounds.isEmpty() }
+        .filter { (ownPackage == null || it.packageName != ownPackage) && !it.bounds.isEmpty() }
         .filter { node -> systemAreas.none { it.contains(node.bounds.centerX, node.bounds.centerY) } }
         .filter { node ->
             val labelled = node.text.isNotBlank() || node.description.isNotBlank()
@@ -91,12 +95,12 @@ internal fun elementIds(nodes: List<ScreenNode>): List<ObservedElement> {
 }
 
 /**
- * A readable description. Some car apps put a JSON protocol for 可见即可说 in contentDescription; only its
- * `action` label ("收藏", "[打开]") means anything to the model, so the rest is dropped.
+ * A readable description. Some apps put a voice-control protocol in contentDescription as JSON; only its `action` label
+ * ("收藏", "[打开]") means anything to the model, so the rest is dropped unless [jsonActions] is off.
  */
-internal fun readableDescription(description: String): String {
+internal fun readableDescription(description: String, jsonActions: Boolean = true): String {
     val trimmed = description.trim()
-    if (!trimmed.startsWith("{")) return trimmed
+    if (!jsonActions || !trimmed.startsWith("{")) return trimmed
     return ACTION_FIELD.find(trimmed)?.groupValues?.get(1).orEmpty()
 }
 

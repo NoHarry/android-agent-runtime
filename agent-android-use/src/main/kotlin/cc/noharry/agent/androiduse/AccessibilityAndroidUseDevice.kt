@@ -22,8 +22,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 
 /** [AndroidUseDevice] over the connected [AndroidUseAccessibilityService]. */
-internal class AccessibilityAndroidUseDevice(private val context: Context) : AndroidUseDevice {
-    private val reader = AccessibilityScreenReader(context.packageName)
+/** [observeOwnApp]: the host's own app windows are read too (never its overlays). */
+internal class AccessibilityAndroidUseDevice(private val context: Context, observeOwnApp: Boolean = false) : AndroidUseDevice {
+    private val reader = AccessibilityScreenReader(context.packageName, observeOwnApp)
 
     private val service: AndroidUseAccessibilityService?
         get() = AndroidUseServiceHolder.service

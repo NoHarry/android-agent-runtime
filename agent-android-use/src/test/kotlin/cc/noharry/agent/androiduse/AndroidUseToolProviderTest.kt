@@ -279,6 +279,57 @@ class AndroidUseToolProviderTest {
         assertFalse("stroke" in device.calls)
     }
 
+    @Test
+    fun aHostMayLetTheAgentReachTheBarsItsOwnWindowsAndRawDescriptions() = runTest {
+        device.systemAreas = listOf(PixelRect(0, 1100, 2560, 1216))
+        device.extraNodes = listOf(device.node(7, description = """{"action":"收藏","id":3}""", bounds = PixelRect(900, 300, 1100, 400), clickable = true))
+        val open = provider(AndroidUseOptions(protectSystemBars = false, observeOwnApp = true, jsonDescriptionActions = false))
+        val observation = open.callTool(ANDROID_OBSERVE, "{}", CONTEXT).observation()
+        val labels = observation.elements().map { it.text("text") ?: it.text("desc") }
+
+        assertTrue(observation["blockedAreas"] == null)
+        val dockY = (1150 * observation["image"]!!.jsonObject.int("width") / 2560.0).toInt()
+        val tap = open.callTool(ANDROID_ACTION, """{"observationId":"obs_1","action":"tap","x":100,"y":$dockY}""", CONTEXT)
+        assertTrue(tap.success)
+        assertTrue("助手" in labels)
+        assertTrue("""{"action":"收藏","id":3}""" in labels)
+        val guarded = provider().callTool(ANDROID_OBSERVE, "{}", CONTEXT).observation().elements().map { it.text("text") ?: it.text("desc") }
+        assertFalse("助手" in guarded)
+        assertTrue("收藏" in guarded)
+    }
+
+    @Test
+    fun theToolsSayTheyAreAFallbackUnlessTheHostSaysOtherwise() = runTest {
+        val fallback = provider().listTools()
+        val primary = provider(AndroidUseOptions(fallbackOnly = false)).listTools()
+        // The default words stay exactly as they were: the tool catalog's cache goes by them.
+        assertTrue(fallback[0].description.startsWith(
+            "Android Use, a fallback: look at the screen only to find something on it, or when no dedicated tool fits; " +
+                "for opening or closing an app, going home or opening a page, search_tools for a dedicated tool first. " +
+                "Returns observationId, a screenshot and elements (id, text, bounds in screenshot pixels), for android_action.",
+        ))
+        assertTrue(fallback[1].description.startsWith(
+            "Android Use, a fallback: open an app (launch_app) or go home (key) only when search_tools finds no dedicated " +
+                "tool or that tool fails. One UI action (tap, long press, swipe, scroll a list, type, set a slider, back) on the " +
+                "latest observation, then returns the new observation with a screenshot.",
+        ))
+        assertTrue(primary.none { "search_tools" in it.description })
+        assertTrue(primary[1].description.startsWith("Android Use: open an app (launch_app) or go home (key); otherwise one UI action"))
+    }
+
+    @Test
+    fun anotherConversationWaitsAsLongAsTheHoldersProviderSays() = runTest {
+        val other = ToolCallContext(sessionId = "other-session", runId = "other-run", requestId = "other-request")
+        val third = ToolCallContext(sessionId = "third-session", runId = "third-run", requestId = "third-request")
+        // A holder whose provider waits 1 s gives the screen up after 2 s, whatever the newcomer's provider says.
+        provider(AndroidUseOptions(leaseIdleMillis = 1_000)).callTool(ANDROID_OBSERVE, "{}", CONTEXT)
+        now += 2_000
+        assertTrue(provider().callTool(ANDROID_OBSERVE, "{}", other).success)
+        // That holder's provider waits the default 10 s, so a quick newcomer is refused after 2 s.
+        now += 2_000
+        assertEquals(DEVICE_BUSY, provider(AndroidUseOptions(leaseIdleMillis = 0)).callTool(ANDROID_OBSERVE, "{}", third).json().text("code"))
+    }
+
     @OptIn(ExperimentalAgentRuntimeApi::class)
     @Test
     fun bothToolsArePreloadedUnlessTheHostOptsOut() {
@@ -417,7 +468,7 @@ private class FakeDevice : AndroidUseDevice {
         if (staleHandles) throw StaleNodeException(handle)
     }
 
-    private fun node(
+    fun node(
         handle: Int,
         text: String = "",
         description: String = "",

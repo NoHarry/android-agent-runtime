@@ -80,7 +80,7 @@ private fun ObservedElement.toJson(observation: Observation): JsonObject = build
     val scale = observation.scale
     put("id", id)
     node.text.takeIf { it.isNotBlank() }?.let { put("text", it.take(MAX_ELEMENT_TEXT)) }
-    readableDescription(node.description).takeIf { it.isNotBlank() }?.let { put("desc", it.take(MAX_ELEMENT_TEXT)) }
+    readableDescription(node.description, observation.jsonDescriptionActions).takeIf { it.isNotBlank() }?.let { put("desc", it.take(MAX_ELEMENT_TEXT)) }
     node.viewId.substringAfter(VIEW_ID_SEPARATOR).takeIf { it.isNotBlank() }?.let { put("viewId", it) }
     if (node.clickable || node.inClickableContext) put("clickable", true)
     if (node.editable) put("editable", true)

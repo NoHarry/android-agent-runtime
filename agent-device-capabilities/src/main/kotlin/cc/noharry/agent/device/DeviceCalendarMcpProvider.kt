@@ -20,7 +20,7 @@ class DeviceCalendarMcpProvider internal constructor(
 ) : McpClientProvider, ToolCatalogCacheIdentity {
     override val serverId: String = CALENDAR_SERVER_ID
     override val displayName: String = "Device Calendar"
-    override val catalogCacheIdentity: String = "$CALENDAR_SERVER_ID:v1"
+    override val catalogCacheIdentity: String = "$CALENDAR_SERVER_ID:v2"
     @OptIn(ExperimentalAgentRuntimeApi::class)
     override val providerConcurrency: ProviderConcurrencyDeclaration =
         ProviderConcurrencyDeclaration.serialized()
@@ -53,7 +53,13 @@ class DeviceCalendarMcpProvider internal constructor(
         val json = parseObject(argumentsJson) ?: return failed(DEVICE_ARGUMENT_INVALID, "Expected JSON object arguments.")
         val request = CalendarCreateRequest.fromJson(json) ?: return failed(DEVICE_ARGUMENT_INVALID, "Missing calendar event fields.")
         return runCatching {
-            val uri = gateway.createEvent(request)
+            // Finding the default calendar reads the calendar list, which takes the read permission too.
+            if (request.calendarId == null && !gateway.canReadCalendar()) {
+                return failed(DEVICE_PERMISSION_DENIED, "Calendar read permission denied: it is needed to find the default calendar.")
+            }
+            val calendarId = request.calendarId ?: gateway.defaultCalendarId()
+                ?: return failed(DEVICE_CAPABILITY_UNAVAILABLE, "There is no calendar on the device to add events to.")
+            val uri = gateway.createEvent(request.copy(calendarId = calendarId))
             ToolCallResult(true, deviceSuccessJson(""""uri":"${uri.escapeJson()}""""))
         }.getOrElse { failed(DEVICE_CALL_FAILED, it.message ?: "Calendar create failed.", retryable = true) }
     }
@@ -64,6 +70,9 @@ internal interface DeviceCalendarGateway {
     fun canWriteCalendar(): Boolean
     fun searchEvents(query: String, maxResults: Int): List<DeviceCalendarEvent>
     fun createEvent(request: CalendarCreateRequest): String
+
+    /** The calendar an event goes to when none is named: the primary one the app may write, else the first. */
+    fun defaultCalendarId(): Long?
 }
 
 internal data class DeviceCalendarEvent(
@@ -77,14 +86,17 @@ internal data class DeviceCalendarEvent(
 }
 
 internal data class CalendarCreateRequest(
-    val calendarId: Long,
+    /** Null for the device's default calendar ([DeviceCalendarGateway.defaultCalendarId]). */
+    val calendarId: Long?,
     val title: String,
     val beginMillis: Long,
     val endMillis: Long,
 ) {
     companion object {
         fun fromJson(json: kotlinx.serialization.json.JsonObject): CalendarCreateRequest? {
-            val calendarId = json.longField("calendarId") ?: return null
+            // A calendarId given but not a number is a mistake, not a request for the default calendar.
+            val calendarId = json.longField("calendarId")
+            if (calendarId == null && json["calendarId"] != null && json["calendarId"] !is kotlinx.serialization.json.JsonNull) return null
             val title = json.stringField("title")?.takeIf { it.isNotBlank() } ?: return null
             val beginMillis = json.longField("beginMillis") ?: return null
             val endMillis = json.longField("endMillis") ?: return null
@@ -120,6 +132,22 @@ private class AndroidDeviceCalendarGateway(private val context: Context) : Devic
             }.orEmpty()
     }
 
+    override fun defaultCalendarId(): Long? {
+        val projection = arrayOf(CalendarContract.Calendars._ID, CalendarContract.Calendars.IS_PRIMARY)
+        val writable = "${CalendarContract.Calendars.VISIBLE} = 1 AND " +
+            "${CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL} >= ${CalendarContract.Calendars.CAL_ACCESS_CONTRIBUTOR}"
+        return context.contentResolver.query(CalendarContract.Calendars.CONTENT_URI, projection, writable, null, null)
+            ?.use { cursor ->
+                var first: Long? = null
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(0)
+                    if (cursor.getInt(1) == 1) return@use id
+                    if (first == null) first = id
+                }
+                first
+            }
+    }
+
     override fun createEvent(request: CalendarCreateRequest): String {
         val values = ContentValues().apply {
             put(CalendarContract.Events.CALENDAR_ID, request.calendarId)
@@ -146,8 +174,8 @@ private fun calendarCreateTool(): ToolDescriptor =
     ToolDescriptor(
         name = CALENDAR_CREATE_EVENT,
         title = "Create calendar event",
-        description = "Create a device calendar event.",
-        inputSchemaJson = """{"type":"object","required":["calendarId","title","beginMillis","endMillis"],"properties":{"calendarId":{"type":"integer"},"title":{"type":"string"},"beginMillis":{"type":"integer"},"endMillis":{"type":"integer"}}}""",
+        description = "Create a device calendar event, in the device's default calendar unless calendarId names one.",
+        inputSchemaJson = """{"type":"object","required":["title","beginMillis","endMillis"],"properties":{"calendarId":{"type":"integer"},"title":{"type":"string"},"beginMillis":{"type":"integer","description":"Start, epoch milliseconds"},"endMillis":{"type":"integer","description":"End, epoch milliseconds"}}}""",
     )
 
 private fun failed(code: String, message: String, retryable: Boolean = false): ToolCallResult =

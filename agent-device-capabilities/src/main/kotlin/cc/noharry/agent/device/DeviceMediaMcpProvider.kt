@@ -361,7 +361,7 @@ private const val MEDIA_CONTROL = "media.control"
 private const val MEDIA_VOLUME = "media.volume"
 private const val MEDIA_PLAY_FROM_SEARCH = "media.play_from_search"
 private const val NO_ACCESS = "Notification access is not granted, so other apps' media sessions cannot be seen."
-private const val UNTOLD_SOUND = "Sound is playing, but no app's media session says it is: a video app (Douyin, for one) often keeps a " +
+private const val UNTOLD_SOUND = "Sound is playing, but no app's media session says it is: a short-video app, for one, often keeps a " +
     "session that reads stopped while it plays. Do not say nothing plays: send media.control to the app in front first " +
     "(foregroundPackage); only if the sound goes on after it (soundPlaying), do it on screen."
 private const val ENABLED_LISTENERS = "enabled_notification_listeners"
