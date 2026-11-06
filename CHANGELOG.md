@@ -3,7 +3,27 @@
 All notable changes are listed here. The project is 0.x: a minor release may break the API, and every break is
 called out.
 
-## Unreleased
+## Unreleased (0.6.0)
+
+The API is cleaned up for use as a public library. **Breaking** for hosts that use what is removed or hidden below.
+
+- **Test seams and internal diagnostics are not API.** These are marked `@InternalAgentRuntimeApi`: Kotlin callers
+  need an opt-in (Java and existing binaries are unaffected), the API dumps leave them out, and they may change in any
+  release.
+  - `SessionRunScheduler`'s `beforeClaimGrantedForTest`, `beforeNonCancellableMutexForTest`, `afterAttachJobForTest`,
+    `holdMutexForTest` and `snapshot()`, with `SessionRunSchedulerSnapshot`.
+  - The cache counters of `ToolProviderRegistry` and `ProviderConcurrencyLimiter`, and `ToolProviderRegistry`'s
+    companion with `clearEnvironmentProviderCatalogCacheForTests()`.
+  - `RuntimeVfsPerformanceCounters`. Its counter names, the `RUNTIME_COUNTER_*` constants, stay public, since the
+    per-run deltas are recorded under them.
+- **The probe emitter hub is gone** (`RuntimeProbeEmitterHub`, `RuntimeProbeStageEmitter`, `ProbeEmitterRegistration`).
+  The runtime never installed an emitter, so `emitterFor` always returned null. Probe evidence
+  (`runtimeEvidence(RuntimeEvidenceConfig(…))`) is unchanged.
+- **The Dream scaffold is gone** (`cc.noharry.agent.dream`: `DreamWorker`, `DreamRequest`, `DreamMode`, `DreamResult`,
+  `NoOpDreamWorker`, `MemoryIndexRebuilder`). Nothing in the runtime ran it. A host that called `MemoryIndexRebuilder`
+  to rebuild `/memory/MEMORY.md` from the memory files writes that index itself.
+
+## 0.5.0 (unreleased)
 
 Fixes for Claude and OpenAI hosts, and nothing in Chinese or about a car unless the host is. **Breaking** in behaviour
 where noted, and for binaries compiled against the old constructors of `AnthropicModelClient`, `OpenAiModelClient`,

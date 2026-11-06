@@ -114,9 +114,8 @@ internal object AgentProtocolCatalog {
             CapabilityCardinality CapabilityKey ExecEngine ExecRequest ExecResult ExecToolBridge HookDecision
             HookFailurePolicy KernelApiRange KernelApiVersion KernelApiVersions MinimalAgent
             ModelMessage.assistantText ModelMessage.toolAdditions ModelRequest.promptCacheKey ModelRequest.toolChoice ModelTool.deferred ModelTool.description PluginVersion
-            ProbeEmitterRegistration
             ProviderConcurrencyDeclaration ProviderConcurrencyMode
-            RuntimeContextProvider RuntimeHook RuntimeHookRegistration RuntimeProbeEmitterHub RuntimeProbeStageEmitter
+            RuntimeContextProvider RuntimeHook RuntimeHookRegistration
             RuntimeObserverActionPreflight RuntimeTurnObserver SessionAttachmentRef SessionCapabilityContext
             SessionCapabilityFactory SessionEvent SessionEventAppend SessionEventLog SessionEventLogDurability
             SessionEventLogHealth SessionEventLogHealthStatus SessionEventPayload SessionEventQuery
@@ -135,12 +134,6 @@ internal object AgentProtocolCatalog {
             """,
         ),
         "ModelClientException fields" to tokens("code message recoverable"),
-        // Public hub surface is exact (runtimeId, runId) lookup plus install/uninstall.
-        // No runId-only latest map — emitterFor requires (runtimeId, runId).
-        "RuntimeProbeEmitterHub methods" to tokens(
-            "emitterFor install uninstall uninstallAllForRuntime",
-        ),
-        "ProbeEmitterRegistration fields" to tokens("runId runtimeId"),
         "RuntimeContextRequest fields" to
             tokens(
                 "currentStateKeys deadlineEpochMillis input referenceTimeEpochMillis requestId runId runtimeInstanceId scene sessionId",

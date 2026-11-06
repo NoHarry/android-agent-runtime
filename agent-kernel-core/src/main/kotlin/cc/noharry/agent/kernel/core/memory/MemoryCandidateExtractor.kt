@@ -9,8 +9,7 @@ import cc.noharry.agent.kernel.core.loop.NativeLoopSummary
  * Extracts memory candidates from a terminal run summary (SPEC-CDR-005).
  *
  * Candidates are not durable lessons; they must pass the confidence gate in
- * [RuntimeMemoryStore] before becoming active (mem-005: Dream candidate is not
- * durable promotion).
+ * [RuntimeMemoryStore] before becoming active (a candidate is not a durable lesson).
  */
 fun extractMemoryCandidates(
     summary: NativeLoopSummary,

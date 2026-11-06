@@ -10,6 +10,7 @@ import cc.noharry.agent.kernel.api.ConfirmationChoice
 import cc.noharry.agent.kernel.api.ConfirmationDecision
 import cc.noharry.agent.kernel.api.ConfirmationResumeResult
 import cc.noharry.agent.kernel.api.ExecEngine
+import cc.noharry.agent.kernel.api.InternalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.PendingConfirmation
 import cc.noharry.agent.kernel.api.PostUserInputRequest
 import cc.noharry.agent.kernel.api.PostUserInputResult
@@ -431,6 +432,7 @@ internal class DefaultAgentRuntime(
 
     internal fun runtimeBlueprintForTest(): RuntimeBlueprint? = blueprint
 
+    @OptIn(InternalAgentRuntimeApi::class)
     internal fun providerLimiterEntryCountForTests(): Int =
         mcpRegistry.cachedLimiterEntryCountForTests()
 
@@ -464,6 +466,7 @@ internal class DefaultAgentRuntime(
     @Volatile
     internal var beforePersistQueuedForTest: (() -> Unit)? = null
 
+    @OptIn(InternalAgentRuntimeApi::class)
     internal suspend fun sessionSchedulerSnapshotForTest(): SessionRunSchedulerSnapshot =
         sessionAdmission.scheduler.snapshot()
 

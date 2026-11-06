@@ -22,8 +22,7 @@ import kotlinx.coroutines.sync.withLock
 /**
  * Stores cross-run runtime lessons per scene in the runtime workspace.
  *
- * Candidate promotion follows the harness memory governance model (mem-005:
- * Dream candidate is not durable promotion): a single low-confidence candidate
+ * A candidate is not a durable lesson: a single low-confidence candidate
  * does not become an active lesson until its confidence crosses [CONFIDENCE_GATE]
  * via accumulated evidence.
  *

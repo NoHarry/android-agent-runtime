@@ -1,6 +1,9 @@
+@file:OptIn(InternalAgentRuntimeApi::class)
+
 package cc.noharry.agent.kernel.core.tools
 import cc.noharry.agent.kernel.api.AgentCapabilities
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.kernel.api.InternalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.SessionCapabilityContext
 import cc.noharry.agent.kernel.api.ToolCallContext
 import cc.noharry.agent.kernel.api.ToolCallResult
@@ -320,9 +323,11 @@ class ToolProviderRegistry(
         }
     }
 
+    @InternalAgentRuntimeApi
     suspend fun cachedSnapshotCountForTests(): Int =
         snapshotLock.withLock { snapshotCache.size }
 
+    @InternalAgentRuntimeApi
     fun cachedLimiterEntryCountForTests(): Int =
         concurrencyLimiter.cachedEntryCountForTests()
 
@@ -334,6 +339,7 @@ class ToolProviderRegistry(
         }
     }
 
+    @InternalAgentRuntimeApi
     companion object {
         private val environmentProviderCatalogLock = Mutex()
         private val environmentProviderCatalogCache = linkedMapOf<String, McpProviderCatalog>()

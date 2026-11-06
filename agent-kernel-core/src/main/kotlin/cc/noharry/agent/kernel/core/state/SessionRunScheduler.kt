@@ -1,4 +1,8 @@
+@file:OptIn(InternalAgentRuntimeApi::class)
+
 package cc.noharry.agent.kernel.core.state
+import cc.noharry.agent.kernel.api.InternalAgentRuntimeApi
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -7,7 +11,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.coroutineContext
 
 /**
  * Process-local session/run admission and fair execution permits.
@@ -32,24 +35,18 @@ class SessionRunScheduler(
     private var nextDrainGeneration = 0L
     private var closed = false
 
-    /**
-     * Test-only seam: invoked after a grant is decided and before the lease is
-     * claimed. Production callers must leave this null.
-     */
+    /** Test seam: runs after a grant is decided and before the lease is claimed. Null in production. */
+    @InternalAgentRuntimeApi
     @Volatile
     var beforeClaimGrantedForTest: (suspend () -> Unit)? = null
 
-    /**
-     * Test-only seam: invoked inside NonCancellable cleanup immediately before
-     * the mutex is acquired. Production callers must leave this null.
-     */
+    /** Test seam: runs inside NonCancellable cleanup just before the mutex is taken. Null in production. */
+    @InternalAgentRuntimeApi
     @Volatile
     var beforeNonCancellableMutexForTest: (() -> Unit)? = null
 
-    /**
-     * Test-only seam: invoked after [attachJob] applies and releases the mutex,
-     * before the caller persists RUNNING. Production callers must leave this null.
-     */
+    /** Test seam: runs after [attachJob] applies and releases the mutex, before the caller persists RUNNING. */
+    @InternalAgentRuntimeApi
     @Volatile
     var afterAttachJobForTest: (suspend () -> Unit)? = null
 
@@ -141,6 +138,7 @@ class SessionRunScheduler(
     suspend fun close(): SessionRunCloseSnapshot = mutate { signals -> closeLocked(signals) }
 
     /** Bounded diagnostic snapshot: counts and ids only, no payload or business data. */
+    @InternalAgentRuntimeApi
     suspend fun snapshot(): SessionRunSchedulerSnapshot = mutex.withLock { snapshotLocked() }
 
     /**
@@ -176,10 +174,8 @@ class SessionRunScheduler(
             if (owner.phase == SessionLaneOwnerPhase.WAITING_CONTROL) owner.lease else null
         }
 
-    /**
-     * Test-only: hold the scheduler mutex while [block] runs so cancellation can
-     * race cleanup that is queued on the same mutex. Production must not call this.
-     */
+    /** Test seam: holds the mutex while [block] runs, so cancellation can race cleanup queued on it. */
+    @InternalAgentRuntimeApi
     suspend fun holdMutexForTest(block: suspend () -> Unit) {
         mutex.withLock { block() }
     }

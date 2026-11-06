@@ -775,6 +775,9 @@ public final class cc/noharry/agent/kernel/api/HookFailurePolicy : java/lang/Enu
 	public static fun values ()[Lcc/noharry/agent/kernel/api/HookFailurePolicy;
 }
 
+public abstract interface annotation class cc/noharry/agent/kernel/api/InternalAgentRuntimeApi : java/lang/annotation/Annotation {
+}
+
 public final class cc/noharry/agent/kernel/api/KernelApiRange {
 	public fun <init> (Lcc/noharry/agent/kernel/api/KernelApiVersion;Lcc/noharry/agent/kernel/api/KernelApiVersion;)V
 	public final fun contains (Lcc/noharry/agent/kernel/api/KernelApiVersion;)Z
@@ -929,11 +932,6 @@ public final class cc/noharry/agent/kernel/api/PostUserInputResult$RunNotActive 
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-}
-
-public final class cc/noharry/agent/kernel/api/ProbeEmitterRegistration {
-	public final fun getRunId ()Ljava/lang/String;
-	public final fun getRuntimeId ()Ljava/lang/String;
 }
 
 public final class cc/noharry/agent/kernel/api/ProtocolRequestCancellation {
@@ -1382,18 +1380,6 @@ public final class cc/noharry/agent/kernel/api/RuntimeObserverActionPreflight {
 	public final fun getObserverId ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-}
-
-public final class cc/noharry/agent/kernel/api/RuntimeProbeEmitterHub {
-	public static final field INSTANCE Lcc/noharry/agent/kernel/api/RuntimeProbeEmitterHub;
-	public final fun emitterFor (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/kernel/api/RuntimeProbeStageEmitter;
-	public final fun install (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/api/RuntimeProbeStageEmitter;)Lcc/noharry/agent/kernel/api/ProbeEmitterRegistration;
-	public final fun uninstall (Lcc/noharry/agent/kernel/api/ProbeEmitterRegistration;)Z
-	public final fun uninstallAllForRuntime (Ljava/lang/String;)V
-}
-
-public abstract interface class cc/noharry/agent/kernel/api/RuntimeProbeStageEmitter {
-	public abstract fun emit (Ljava/lang/String;Ljava/util/Map;)Z
 }
 
 public final class cc/noharry/agent/kernel/api/RuntimeTurnInput {

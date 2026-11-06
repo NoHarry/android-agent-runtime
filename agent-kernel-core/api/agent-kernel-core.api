@@ -2256,19 +2256,11 @@ public final class cc/noharry/agent/kernel/core/state/SessionRunScheduler {
 	public final fun complete (Lcc/noharry/agent/kernel/core/state/SessionRunLease;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun completeAndQueryDrain (Lcc/noharry/agent/kernel/core/state/SessionRunLease;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun finishSessionDrain (Lcc/noharry/agent/kernel/core/state/SessionCapabilityDrainLease;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun getAfterAttachJobForTest ()Lkotlin/jvm/functions/Function1;
-	public final fun getBeforeClaimGrantedForTest ()Lkotlin/jvm/functions/Function1;
-	public final fun getBeforeNonCancellableMutexForTest ()Lkotlin/jvm/functions/Function0;
-	public final fun holdMutexForTest (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun isCurrentExecutingOwner (Lcc/noharry/agent/kernel/core/state/SessionRunLease;Lkotlinx/coroutines/Job;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun isSessionDrained (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun markFinalizing (Lcc/noharry/agent/kernel/core/state/SessionRunLease;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun markWaitingControl (Lcc/noharry/agent/kernel/core/state/SessionRunLease;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun ownerQuery (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun setAfterAttachJobForTest (Lkotlin/jvm/functions/Function1;)V
-	public final fun setBeforeClaimGrantedForTest (Lkotlin/jvm/functions/Function1;)V
-	public final fun setBeforeNonCancellableMutexForTest (Lkotlin/jvm/functions/Function0;)V
-	public final fun snapshot (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun waitingOwnerLease (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
@@ -2292,30 +2284,6 @@ public final class cc/noharry/agent/kernel/core/state/SessionRunSchedulerContrac
 	public static final field DEFAULT_MAX_QUEUED_RUNS_GLOBAL I
 	public static final field DEFAULT_MAX_QUEUED_RUNS_PER_SESSION I
 	public static final fun defaultSessionRunSchedulerConfig ()Lcc/noharry/agent/kernel/core/state/SessionRunSchedulerConfig;
-}
-
-public final class cc/noharry/agent/kernel/core/state/SessionRunSchedulerSnapshot {
-	public fun <init> (IILjava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;Ljava/util/List;)V
-	public synthetic fun <init> (IILjava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()I
-	public final fun component2 ()I
-	public final fun component3 ()Ljava/util/Map;
-	public final fun component4 ()Ljava/util/List;
-	public final fun component5 ()Ljava/util/List;
-	public final fun component6 ()Ljava/util/Map;
-	public final fun component7 ()Ljava/util/List;
-	public final fun copy (IILjava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;Ljava/util/List;)Lcc/noharry/agent/kernel/core/state/SessionRunSchedulerSnapshot;
-	public static synthetic fun copy$default (Lcc/noharry/agent/kernel/core/state/SessionRunSchedulerSnapshot;IILjava/util/Map;Ljava/util/List;Ljava/util/List;Ljava/util/Map;Ljava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/kernel/core/state/SessionRunSchedulerSnapshot;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getActiveExecutionCount ()I
-	public final fun getDrainingSessionIds ()Ljava/util/List;
-	public final fun getOwnerPhases ()Ljava/util/Map;
-	public final fun getOwners ()Ljava/util/Map;
-	public final fun getQueuedCount ()I
-	public final fun getReadySessionIds ()Ljava/util/List;
-	public final fun getWaitingOwnerRunIds ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class cc/noharry/agent/kernel/core/state/SessionRunTransition {
@@ -3420,7 +3388,6 @@ public final class cc/noharry/agent/kernel/core/tools/ParsedToolArgumentsKt {
 
 public final class cc/noharry/agent/kernel/core/tools/ProviderConcurrencyLimiter {
 	public fun <init> ()V
-	public final fun cachedEntryCountForTests ()I
 	public final fun close ()V
 	public final fun evict (Ljava/lang/Object;)V
 	public final fun withPermit (Lcc/noharry/agent/kernel/api/ExecEngine;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -3626,13 +3593,10 @@ public final class cc/noharry/agent/kernel/core/tools/ToolExecutionLimiterKt {
 }
 
 public final class cc/noharry/agent/kernel/core/tools/ToolProviderRegistry {
-	public static final field Companion Lcc/noharry/agent/kernel/core/tools/ToolProviderRegistry$Companion;
 	public fun <init> ()V
 	public fun <init> (Ljava/util/List;Lcc/noharry/agent/kernel/core/tools/ProviderConcurrencyLimiter;Lcc/noharry/agent/kernel/core/plugin/RuntimeBlueprint;)V
 	public synthetic fun <init> (Ljava/util/List;Lcc/noharry/agent/kernel/core/tools/ProviderConcurrencyLimiter;Lcc/noharry/agent/kernel/core/plugin/RuntimeBlueprint;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun allTools (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun cachedLimiterEntryCountForTests ()I
-	public final fun cachedSnapshotCountForTests (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun callTool (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun close (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun closeSession (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -3649,10 +3613,6 @@ public final class cc/noharry/agent/kernel/core/tools/ToolProviderRegistry {
 	public final fun toolsForServer (Ljava/lang/String;Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun toolsIndexJson (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun toolsJson (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class cc/noharry/agent/kernel/core/tools/ToolProviderRegistry$Companion {
-	public final fun clearEnvironmentProviderCatalogCacheForTests (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class cc/noharry/agent/kernel/core/tools/ToolProviderRegistryKt {
@@ -3850,15 +3810,6 @@ public final class cc/noharry/agent/kernel/core/trace/RuntimeBuildType : java/la
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/kernel/core/trace/RuntimeBuildType;
 	public static fun values ()[Lcc/noharry/agent/kernel/core/trace/RuntimeBuildType;
-}
-
-public final class cc/noharry/agent/kernel/core/trace/RuntimeVfsPerformanceCounters {
-	public static final field INSTANCE Lcc/noharry/agent/kernel/core/trace/RuntimeVfsPerformanceCounters;
-	public final fun deltaSince (Ljava/util/Map;)Ljava/util/Map;
-	public final fun increment (Ljava/lang/String;J)V
-	public static synthetic fun increment$default (Lcc/noharry/agent/kernel/core/trace/RuntimeVfsPerformanceCounters;Ljava/lang/String;JILjava/lang/Object;)V
-	public final fun reset ()V
-	public final fun snapshot ()Ljava/util/Map;
 }
 
 public final class cc/noharry/agent/kernel/core/trace/RuntimeVfsPerformanceCountersKt {

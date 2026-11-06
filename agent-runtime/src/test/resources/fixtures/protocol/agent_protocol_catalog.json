@@ -353,14 +353,11 @@
       "ModelTool.deferred",
       "ModelTool.description",
       "PluginVersion",
-      "ProbeEmitterRegistration",
       "ProviderConcurrencyDeclaration",
       "ProviderConcurrencyMode",
       "RuntimeContextProvider",
       "RuntimeHook",
       "RuntimeHookRegistration",
-      "RuntimeProbeEmitterHub",
-      "RuntimeProbeStageEmitter",
       "RuntimeObserverActionPreflight",
       "RuntimeTurnObserver",
       "SessionAttachmentRef",
@@ -413,16 +410,6 @@
       "code",
       "message",
       "recoverable"
-    ],
-    "RuntimeProbeEmitterHub methods": [
-      "emitterFor",
-      "install",
-      "uninstall",
-      "uninstallAllForRuntime"
-    ],
-    "ProbeEmitterRegistration fields": [
-      "runId",
-      "runtimeId"
     ],
     "RuntimeContextRequest fields": [
       "currentStateKeys",

@@ -7,7 +7,6 @@ import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
 import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.runtime.RuntimeProbeEmitterHubTestAccess
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
 import cc.noharry.agent.runtime.AgentRuntimeBuilder
@@ -31,9 +30,8 @@ class ProbeTerminalFinalizeMatrixTest {
     val temp = TemporaryFolder()
 
     @Test
-    fun normal_terminal_finalizes_hub_before_close_and_disk_has_single_run_terminal() =
+    fun normal_terminal_finalizes_before_close_and_disk_has_single_run_terminal() =
         runBlocking {
-            RuntimeProbeEmitterHubTestAccess.clearAll()
             val root = temp.newFolder("term-a")
             val runtime =
                 AgentRuntimeBuilder.create()
@@ -50,8 +48,6 @@ class ProbeTerminalFinalizeMatrixTest {
                     .build()
             try {
                 runtime.run(AgentRequest("term-run", "s", "hello")).toList()
-                // After terminal path: hub for this run must already be uninstalled.
-                assertEquals(0, RuntimeProbeEmitterHubTestAccess.sizeForTest())
                 val text = collectText(root)
                 assertTrue("must have probe artifacts: $text", text.isNotEmpty())
                 // Completeness side-car is written exactly once per finishAndPersist.
@@ -63,15 +59,12 @@ class ProbeTerminalFinalizeMatrixTest {
                 )
             } finally {
                 runtime.close()
-                assertEquals(0, RuntimeProbeEmitterHubTestAccess.sizeForTest())
-                RuntimeProbeEmitterHubTestAccess.clearAll()
             }
         }
 
     @Test
     fun two_runtimes_same_runId_close_a_does_not_wipe_b_disk() =
         runBlocking {
-            RuntimeProbeEmitterHubTestAccess.clearAll()
             val rootA = temp.newFolder("ta")
             val rootB = temp.newFolder("tb")
             val a =
@@ -100,16 +93,11 @@ class ProbeTerminalFinalizeMatrixTest {
                     )
                     .nowEpochMillis { 1L }
                     .build()
-            try {
-                a.run(AgentRequest("same", "s", "a")).toList()
-                b.run(AgentRequest("same", "s", "b")).toList()
-                a.close()
-                assertTrue(collectText(rootB).isNotEmpty())
-                b.close()
-            } finally {
-                RuntimeProbeEmitterHubTestAccess.clearAll()
-            }
-            assertEquals(0, RuntimeProbeEmitterHubTestAccess.sizeForTest())
+            a.run(AgentRequest("same", "s", "a")).toList()
+            b.run(AgentRequest("same", "s", "b")).toList()
+            a.close()
+            assertTrue(collectText(rootB).isNotEmpty())
+            b.close()
         }
 
     private fun finishClient(): ModelClient =

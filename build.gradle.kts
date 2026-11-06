@@ -24,6 +24,8 @@ allprojects {
 apiValidation {
     // Samples and the BOM have no API of their own.
     ignoredProjects += listOf("quickstart-jvm", "quickstart-android", "minimal", "agent-bom")
+    // Public only for the runtime's own modules and tests.
+    nonPublicMarkers += "cc.noharry.agent.kernel.api.InternalAgentRuntimeApi"
 }
 
 // Unit tests create temp dirs (createTempDirectory, TemporaryFolder, Robolectric) and rarely delete them,
@@ -43,6 +45,10 @@ subprojects {
         compilerOptions.jvmDefault.set(org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode.DISABLE)
         compilerOptions.languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
         compilerOptions.apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
+        // Tests reach the runtime's internal seams (InternalAgentRuntimeApi); agent-a2a and its client don't see kernel-api.
+        if (name.endsWith("TestKotlin") && project.name !in setOf("agent-a2a", "agent-a2a-client-official")) {
+            compilerOptions.optIn.add("cc.noharry.agent.kernel.api.InternalAgentRuntimeApi")
+        }
     }
     tasks.withType<Test>().configureEach {
         val testTmp = project.layout.buildDirectory.dir("tmp/test-tmp/$name").get().asFile

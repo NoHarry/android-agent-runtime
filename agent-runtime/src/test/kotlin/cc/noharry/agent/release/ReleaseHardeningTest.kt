@@ -30,7 +30,6 @@ class ReleaseHardeningTest {
         assertTrue(rules.contains("-keep class cc.noharry.agent.runtime.HostSkill { *; }"))
         assertTrue(rules.contains("-keep class cc.noharry.agent.runtime.NetworkToolConfirmationPolicy { *; }"))
         assertTrue(rules.contains("-keep class cc.noharry.agent.runtime.eventlog.DurableSessionEventLogPlugin { *; }"))
-        assertTrue(rules.contains("-keep class cc.noharry.agent.dream.** { *; }"))
         assertTrue(rules.contains("-keep class cc.noharry.agent.mcp.** { *; }"))
         assertTrue(rules.contains("-keep class cc.noharry.agent.model.** { *; }"))
         assertTrue(rules.contains("-keep class cc.noharry.agent.policy.** { *; }"))
@@ -179,7 +178,6 @@ private val KERNEL_API_TYPE_DECL = Regex(
 private val KERNEL_API_PACKAGE = Regex("""(?m)^package\s+([A-Za-z_][A-Za-z0-9_.]*)\s*$""")
 
 private val SANCTIONED_HOST_API_PREFIXES = listOf(
-    "cc.noharry.agent.dream.",
     "cc.noharry.agent.mcp.",
     "cc.noharry.agent.model.",
     "cc.noharry.agent.policy.",
@@ -223,12 +221,12 @@ private val CANDIDATE_PUBLIC_API_CLASS_NAMES = listOf(
     "cc.noharry.agent.kernel.api.CapabilityCardinality",
     "cc.noharry.agent.kernel.api.CapabilityKey",
     "cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi",
+    "cc.noharry.agent.kernel.api.InternalAgentRuntimeApi",
     "cc.noharry.agent.kernel.api.CompletionImpact",
     "cc.noharry.agent.kernel.api.ContextStability",
     "cc.noharry.agent.kernel.api.PluginContractMessages",
     "cc.noharry.agent.kernel.api.PostUserInputRequest",
     "cc.noharry.agent.kernel.api.PostUserInputResult",
-    "cc.noharry.agent.kernel.api.ProbeEmitterRegistration",
     "cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration",
     "cc.noharry.agent.kernel.api.ProviderConcurrencyMode",
     "cc.noharry.agent.kernel.api.RuntimeActionOutcome",
@@ -245,8 +243,6 @@ private val CANDIDATE_PUBLIC_API_CLASS_NAMES = listOf(
     "cc.noharry.agent.kernel.api.RuntimeEffectKind",
     "cc.noharry.agent.kernel.api.RuntimeEvidenceConfig",
     "cc.noharry.agent.kernel.api.RuntimeObserverActionPreflight",
-    "cc.noharry.agent.kernel.api.RuntimeProbeEmitterHub",
-    "cc.noharry.agent.kernel.api.RuntimeProbeStageEmitter",
     "cc.noharry.agent.kernel.api.RuntimeTurnInput",
     "cc.noharry.agent.kernel.api.RuntimeTurnObserver",
     "cc.noharry.agent.kernel.api.SessionEvent",
@@ -312,12 +308,6 @@ private val CANDIDATE_PUBLIC_API_CLASS_NAMES = listOf(
     "cc.noharry.agent.kernel.api.WorkspaceExecutionResult",
     "cc.noharry.agent.kernel.api.WorkspaceExecutionTelemetry",
     "cc.noharry.agent.kernel.api.WorkspacePort",
-    "cc.noharry.agent.dream.DreamWorker",
-    "cc.noharry.agent.dream.DreamRequest",
-    "cc.noharry.agent.dream.DreamMode",
-    "cc.noharry.agent.dream.DreamResult",
-    "cc.noharry.agent.dream.NoOpDreamWorker",
-    "cc.noharry.agent.dream.MemoryIndexRebuilder",
     "cc.noharry.agent.policy.PolicyRule",
     "cc.noharry.agent.policy.PolicyAction",
     "cc.noharry.agent.policy.PolicyContext",

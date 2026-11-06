@@ -1,9 +1,6 @@
 @file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.dream.DreamMode
-import cc.noharry.agent.dream.DreamRequest
-import cc.noharry.agent.dream.NoOpDreamWorker
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.ConfirmationResumeResult
 import cc.noharry.agent.kernel.api.SessionRunConflictPolicy
@@ -267,9 +264,6 @@ class GoldenMatrixTest {
         val runtime = runtime(model, backend, root).build()
 
         runtime.run(goldenRequest()).toList()
-        val dream = NoOpDreamWorker().run(
-            DreamRequest(root, File(root, "trace"), File(root, "memory"), DreamMode.CONSOLIDATE_MEMORY),
-        )
 
         assertTrue(model.seenRequests.any { request ->
             request.messages.any { it.content.contains("SCHEMA_VALIDATION_FAILED") }
@@ -278,7 +272,6 @@ class GoldenMatrixTest {
         assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRuntimeResult("request-1")?.status)
         assertTrue(runtime.getRuntimeTraceEvents("request-1").hasEvents("RESULT_WRITTEN"))
         assertTrue(runtime.getRuntimeResult("request-1")?.evidenceIds.orEmpty().isNotEmpty())
-        assertTrue(dream.candidates.isEmpty())
         assertFalse(File(root, "memory/user").listFiles().orEmpty().any { it.isFile })
     }
 

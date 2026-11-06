@@ -4,9 +4,7 @@ package cc.noharry.agent.runtime.run
 import cc.noharry.agent.kernel.api.AgentEvent
 import cc.noharry.agent.kernel.api.AgentRequest
 import cc.noharry.agent.kernel.api.ExecEngine
-import cc.noharry.agent.kernel.api.ProbeEmitterRegistration
 import cc.noharry.agent.kernel.api.RuntimeContextProvider
-import cc.noharry.agent.kernel.api.RuntimeProbeEmitterHub
 import cc.noharry.agent.kernel.api.RuntimeTurnObserver
 import cc.noharry.agent.kernel.api.model.ModelClient
 import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
@@ -91,12 +89,11 @@ internal class NativeLoopFactory(
     private val nativeWebSearchEnabled: Boolean = false,
     private val loopSettings: LoopSettings = LoopSettings(),
 ) {
-    /** Unique per Runtime instance for Probe hub isolation. */
+    /** Unique per runtime instance. */
     val runtimeInstanceId: String = UUID.randomUUID().toString()
 
     /** Survives confirmation / user-input pause until terminal finishAndPersist. */
     private val probeAttachments = ConcurrentHashMap<String, ProbeRunAttachment>()
-    private val probeRegistrations = ConcurrentHashMap<String, ProbeEmitterRegistration>()
     private val workspaces = ConcurrentHashMap<String, VfsFileSystem>()
     private val discoveries = ConcurrentHashMap<String, cc.noharry.agent.kernel.core.tools.OnDemandToolDiscovery>()
 
@@ -206,8 +203,7 @@ internal class NativeLoopFactory(
 
     /**
      * Close/abort cleanup: persist remaining paused/in-flight probes as CANCELLED (never
-     * rewrite an already-finalized status to ABORTED), uninstall Hub entries for this
-     * Runtime only (compare-and-remove), clear maps.
+     * rewrite an already-finalized status to ABORTED), clear maps.
      *
      * Only paused/in-flight runs (still in the map) are finished with ABORTED; runs already
      * terminalized by [finishProbeRun] are absent from the map, so their status is never
@@ -215,8 +211,6 @@ internal class NativeLoopFactory(
      */
     fun closeAll() {
         persistRemainingProbes(RuntimeRunStatus.CANCELLED.name)
-        RuntimeProbeEmitterHub.uninstallAllForRuntime(runtimeInstanceId)
-        probeRegistrations.clear()
         probeAttachments.clear()
         workspaces.clear()
         discoveries.clear()
@@ -225,7 +219,7 @@ internal class NativeLoopFactory(
     /**
      * Exact runtime-scoped terminal finalizer. Idempotent: second call for the same runId is a
      * no-op (CAS on ProbeRunAttachment). Order for hosts: notify turn observers first, then this
-     * (finishAndPersist + hub uninstall + map cleanup). [incompleteReason] records an explicit
+     * (finishAndPersist + map cleanup). [incompleteReason] records an explicit
      * incomplete cause in run-meta/probe evidence when observers could not all complete.
      */
     internal suspend fun finishProbeRun(
@@ -234,15 +228,8 @@ internal class NativeLoopFactory(
         incompleteReason: String? = null,
     ) {
         val probe = probeAttachments.remove(runId)
-        val reg = probeRegistrations.remove(runId)
         workspaces.remove(runId)
         discoveries.remove(runId)
-        if (reg != null) {
-            try {
-                RuntimeProbeEmitterHub.uninstall(reg)
-            } catch (_: Exception) {
-            }
-        }
         if (probe != null) {
             try {
                 // Idempotent on ProbeRunAttachment (exactly-once terminal drain).
@@ -253,8 +240,6 @@ internal class NativeLoopFactory(
     }
 
     internal fun hasProbeAttachment(runId: String): Boolean = probeAttachments.containsKey(runId)
-
-    internal fun hasProbeRegistration(runId: String): Boolean = probeRegistrations.containsKey(runId)
 
 
     private fun loop(

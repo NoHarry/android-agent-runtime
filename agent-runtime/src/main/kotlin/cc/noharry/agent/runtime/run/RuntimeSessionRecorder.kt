@@ -1,7 +1,8 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class, InternalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.run
 import cc.noharry.agent.kernel.api.AgentRequest
+import cc.noharry.agent.kernel.api.InternalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.SessionAttachmentRef
 import cc.noharry.agent.kernel.api.SessionEvent
 import cc.noharry.agent.kernel.api.SessionEventAppend

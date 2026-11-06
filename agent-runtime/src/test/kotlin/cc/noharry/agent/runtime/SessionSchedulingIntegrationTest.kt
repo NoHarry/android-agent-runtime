@@ -477,7 +477,6 @@ private suspend fun assertHostCollectorThrowPersistedOnce(
     assertEquals(1, log.replay(SESSION_A, RUN_A1).count { it.type == SessionEventType.RUN_FINISHED })
     // Started throw is before loop/probe attach; finalize must not invent probe artifacts.
     assertEquals(0, countProbeTerminals(probeRoot, RUN_A1))
-    assertEquals(0, RuntimeProbeEmitterHubTestAccess.sizeForTest())
 }
 
 private suspend fun assertNextRunAllowedAfterCollectorThrow(
@@ -496,5 +495,4 @@ private suspend fun assertNextRunAllowedAfterCollectorThrow(
     assertEquals(1, log.replay(SESSION_A, RUN_A2).count { it.type == SessionEventType.RUN_FINISHED })
     assertEquals(0, countProbeTerminals(probeRoot, RUN_A1))
     assertEquals(1, countProbeTerminals(probeRoot, RUN_A2))
-    assertEquals(0, RuntimeProbeEmitterHubTestAccess.sizeForTest())
 }

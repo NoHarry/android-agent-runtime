@@ -38,7 +38,7 @@ class NativeToolLoop(
     private val probeSink: LoopProbeSink = LoopProbeSink.noop(),
     private val contextProviders: List<RuntimeContextProvider> = emptyList(),
     private val turnObservers: List<RuntimeTurnObserver> = emptyList(),
-    /** Exact Probe hub routing key; never fall back to runId-only. */
+    /** The runtime instance that owns the runs, passed to context providers and turn observers. */
     private val runtimeInstanceId: String? = null,
     disabledNativeTools: Set<String> = emptySet(),
     /** Per-run host context, sent after the input so the system prompt (and its prompt cache) stays the same. */

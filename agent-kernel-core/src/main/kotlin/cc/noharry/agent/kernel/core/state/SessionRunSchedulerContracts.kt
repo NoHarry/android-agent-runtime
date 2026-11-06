@@ -1,4 +1,5 @@
 package cc.noharry.agent.kernel.core.state
+import cc.noharry.agent.kernel.api.InternalAgentRuntimeApi
 import kotlinx.coroutines.Job
 
 const val DEFAULT_MAX_ACTIVE_SESSIONS = 4
@@ -85,6 +86,7 @@ sealed interface SessionRunTransition {
     data class Rejected(val reason: SessionRunTransitionReason) : SessionRunTransition
 }
 
+@InternalAgentRuntimeApi
 data class SessionRunSchedulerSnapshot(
     val activeExecutionCount: Int,
     val queuedCount: Int,

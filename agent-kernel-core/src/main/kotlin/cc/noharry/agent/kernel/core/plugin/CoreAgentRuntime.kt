@@ -10,6 +10,7 @@ import cc.noharry.agent.kernel.api.CancelPendingResult
 import cc.noharry.agent.kernel.api.ConfirmationDecision
 import cc.noharry.agent.kernel.api.ConfirmationResumeResult
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.kernel.api.InternalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.PendingConfirmation
 import cc.noharry.agent.kernel.api.PostUserInputRequest
 import cc.noharry.agent.kernel.api.PostUserInputResult
@@ -115,6 +116,7 @@ class CoreAgentRuntime internal constructor(
 
     internal fun limitedExecForTest(): ConcurrencyLimitedExecEngine? = limitedExec
 
+    @OptIn(InternalAgentRuntimeApi::class)
     internal fun providerLimiterEntryCountForTests(): Int =
         mcpRegistry.cachedLimiterEntryCountForTests()
 

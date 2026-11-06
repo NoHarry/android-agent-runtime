@@ -59,8 +59,8 @@ data class RuntimeContextRequest(
     /** Trusted typed host/runtime state keys that override historical provider defaults. */
     val currentStateKeys: Set<String> = emptySet(),
     /**
-     * Owning runtime instance id for exact Probe hub routing (runtimeId+runId).
-     * Null only for host-local/test calls without Probe.
+     * The runtime instance that owns this run, so two runtimes' runs with one runId stay apart; null for host-local
+     * calls.
      */
     val runtimeInstanceId: String? = null,
 )

@@ -1,5 +1,10 @@
 package cc.noharry.agent.kernel.core.tools
+import cc.noharry.agent.kernel.api.ExecEngine
+import cc.noharry.agent.kernel.api.ExecRequest
+import cc.noharry.agent.kernel.api.ExecResult
+import cc.noharry.agent.kernel.api.ExecToolBridge
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.kernel.api.InternalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.PluginContractMessages
 import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.api.ProviderConcurrencyMode
@@ -15,10 +20,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import cc.noharry.agent.kernel.api.ExecEngine
-import cc.noharry.agent.kernel.api.ExecRequest
-import cc.noharry.agent.kernel.api.ExecResult
-import cc.noharry.agent.kernel.api.ExecToolBridge
 
 /**
  * Per-provider hard-cap limiter keyed by provider object identity, not serverId/string.
@@ -71,6 +72,7 @@ class ProviderConcurrencyLimiter {
         semaphores.remove(key)
     }
 
+    @InternalAgentRuntimeApi
     fun cachedEntryCountForTests(): Int = semaphores.size
 
     private fun semaphoreFor(

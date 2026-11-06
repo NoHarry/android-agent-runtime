@@ -1,4 +1,7 @@
+@file:OptIn(InternalAgentRuntimeApi::class)
+
 package cc.noharry.agent.runtime.workspace
+import cc.noharry.agent.kernel.api.InternalAgentRuntimeApi
 import cc.noharry.agent.kernel.core.state.decodeOrNull
 import cc.noharry.agent.kernel.core.state.encodeFileName
 import cc.noharry.agent.kernel.core.state.writeReliabilityText
