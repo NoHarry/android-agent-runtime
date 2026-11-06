@@ -28,6 +28,7 @@ class A2aServer(
         { action -> Thread(action, "a2a-http").apply { isDaemon = true } },
     )
     @Volatile private var listener: ServerSocket? = null
+    private var listenerThread: Thread? = null
     @Volatile private var closed = false
 
     /** Actual port after [start], including when port zero requests an ephemeral test port. */
@@ -47,7 +48,7 @@ class A2aServer(
             throw error
         }
         listener = socket
-        Thread({ accept(socket) }, "a2a-listener").apply { isDaemon = true; start() }
+        listenerThread = Thread({ accept(socket) }, "a2a-listener").apply { isDaemon = true; start() }
         return socket.localPort
     }
 
@@ -60,6 +61,15 @@ class A2aServer(
         scope.cancel()
         clients.forEach { runCatching { it.close() } }
         workers.shutdownNow()
+        // On Linux a ServerSocket closed while a thread waits in accept() keeps listening until that thread wakes: wait
+        // for it, so the port is free when close() returns (a host may start again on it).
+        val stopping = listenerThread
+        listenerThread = null
+        try {
+            stopping?.takeIf { it !== Thread.currentThread() }?.join(LISTENER_STOP_MILLIS)
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
     }
 
     private fun accept(server: ServerSocket) {
@@ -193,3 +203,6 @@ class A2aServer(
         const val HEARTBEAT_MS = 1_000L
     }
 }
+
+/** How long close() waits for the listener thread to leave accept(). */
+private const val LISTENER_STOP_MILLIS = 1_000L

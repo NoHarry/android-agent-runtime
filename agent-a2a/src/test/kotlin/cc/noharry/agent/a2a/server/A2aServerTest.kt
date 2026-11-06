@@ -1,5 +1,8 @@
 package cc.noharry.agent.a2a.server
 
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -338,7 +341,11 @@ class A2aServerTest {
             assertTrue(entered.await(2, TimeUnit.SECONDS))
         } finally { server.close() }
         assertTrue(cleaned.await(2, TimeUnit.SECONDS))
-        assertTrue(runCatching { Socket("127.0.0.1", port).use { } }.isFailure)
+        // Released when close() returns: the port can be bound again.
+        ServerSocket().use { socket ->
+            socket.reuseAddress = true
+            socket.bind(InetSocketAddress(InetAddress.getLoopbackAddress(), port))
+        }
         server.close()
     }
 
