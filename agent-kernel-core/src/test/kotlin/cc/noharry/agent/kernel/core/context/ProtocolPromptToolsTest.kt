@@ -1,5 +1,6 @@
 package cc.noharry.agent.kernel.core.context
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -31,5 +32,27 @@ class ProtocolPromptToolsTest {
         assertFalse(text.contains("Workspace writes"))
         assertFalse(text.contains("update_todo"))
         assertTrue(text.contains("finish(response)"))
+    }
+
+    @Test
+    fun theDefaultProtocolSectionStaysWordForWordAndAHostsRulesReplaceIt() {
+        // The prompt is cached while it stays the same: these words change only on purpose.
+        val expected = listOf(
+            "Model-driven harness protocol v1.",
+            "- Use the provided tools directly and keep backend tools as the primary work when they are present.",
+            "- Search with search_tools(query) to discover backend tools by keyword. Call matches marked callable directly; a match that comes with its schema is called through call_tool(name, arguments). Neither needs a schema.json read.",
+            "- Issue independent tool calls together in the same round.",
+            "- For multi-step tasks, maintain update_todo and emit it in the same round as the related backend or workspace calls, including the first useful business call.",
+            "- Prefer finish(response) as the explicit completion signal and call it exactly once when the useful result is ready. A finish with outcome success closes the remaining checklist items, so do not spend a round only to mark todos completed.",
+            "- Read skill or context files only when the compact catalog is insufficient for the current task.",
+            "- Workspace writes are limited to /scratch and /memory through write_file or edit_file.",
+            "- web_fetch returns extracted page text for HTML. For web search call https://www.bing.com/search?q={query}&format=rss first (XML results); do not refetch the same URL with a larger max_bytes.",
+            "- Read only the context you need for the current task; do not enumerate everything.",
+        ).joinToString("\n")
+        assertEquals(expected, BootstrapPromptProvider.build().text)
+        val own = BootstrapPromptProvider.build(protocolRules = ProtocolRules { listOf("Use the tools.") }).text
+        assertEquals("Use the tools.", own)
+        // No lines leave the section out rather than opening the prompt with a blank line.
+        assertEquals("Host instructions:\nBe brief.", BootstrapPromptProvider.build("Be brief.", protocolRules = ProtocolRules { emptyList() }).text)
     }
 }

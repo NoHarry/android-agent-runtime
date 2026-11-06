@@ -7,8 +7,10 @@ called out.
 
 Fixes for Claude and OpenAI hosts, and nothing in Chinese or about a car unless the host is. **Breaking** in behaviour
 where noted, and for binaries compiled against the old constructors of `AnthropicModelClient`, `OpenAiModelClient`,
-`A2aServerConfig`, `AndroidUseOptions` and the kernel's loop classes `NativeToolLoop`, `NativeRoundRunner`,
-`NativeToolUseController` and `ToolCallFailureBreaker` (Kotlin source that names its arguments is unchanged).
+`A2aServerConfig`, `AndroidUseOptions`, `SessionHistory`, the kernel's loop classes `NativeToolLoop`, `NativeRoundRunner`,
+`NativeToolUseController` and `ToolCallFailureBreaker`, and its prompt pieces `BootstrapPromptProvider.build`,
+`ContextBootstrapPromptResolver`, `SessionHistoryStore` and `RuntimeContextHooks.collectContextSystemSuffix` (Kotlin
+source that names its arguments is unchanged; new parameters come with defaults).
 
 - **Claude's thinking.** Opus 4.7 and later, Sonnet 5 and later, Haiku 5.5 and newer families refuse a `budget_tokens`
   with a 400, and Opus and Sonnet 4.6 deprecate it. The `low`, `medium`, `high` and `max` variants now send
@@ -57,21 +59,25 @@ where noted, and for binaries compiled against the old constructors of `Anthropi
   was `OpenAI` or `Anthropic` (in any case), so `ModelRef("deepseek", "deepseek-v4-pro", "high")` ran with the model's
   default (DeepSeek's thinking off). It now applies whenever it names the model being called, sent as the host chose it.
   `ModelVariantRegistry.resolve` still keeps only variants it knows for the `providerId` given.
-- **A host's own content judgements.** What the runtime judges about content in its users' language and its domain
-  can now be set, with today's behaviour as the default: `AgentRuntimeBuilder.narrationCheck(…)` decides which final
-  answers only announce what the agent will do and go back once for a real answer (`NarrationCheck`; the runtime's own,
-  `RuntimeNarrationCheck`, knows English and Chinese phrasings; a subagent's runtime takes its own); `memoryTopics(…)`
-  sets what lessons from earlier runs are matched on (`MemoryTopic`, its terms read as the request is: lower case,
-  punctuation as spaces; `MemoryTopic.DEFAULTS` are the runtime's six: climate, navigation, media, the web, the display,
-  calls); `memoryPolicy(…)` how many reach a run and which runs teach one; `lessons(false)` keeps runs from learning
-  lessons or using saved ones; `serviceAnswerCheck(…)` which failed tool results are a service's answer in its own
-  terms (no route found), passed to the model as written and not counted toward the failures that stop a tool
-  (`ServiceAnswerCheck`; the runtime's own, `RuntimeServiceAnswerCheck`, reads an MCP `structuredContent.status.name`);
-  `toolDomains(…)` how tools are grouped into the areas the prompt lists (`ToolDomainNaming`; the runtime's own groups
-  `command_<area>_…` names, then by MCP server). The builder methods are experimental and on `AgentRuntimeBuilder`;
+- **A host's own content judgements and loop timing.** `AgentRuntimeBuilder.loopSettings(LoopSettings(…))` sets what
+  the runtime judges about content in the host's users' language and its domain, with today's behaviour as the
+  default: `narration`, which final answers only announce what the agent will do and go back once for a real answer
+  (`NarrationCheck`; the runtime's own, `RuntimeNarrationCheck`, knows English and Chinese phrasings); `memory`, a
+  `RuntimeMemoryRetriever(policy, topics)` for what lessons from earlier runs are matched on (`MemoryTopic`, its terms
+  read as the request is: lower case, punctuation as spaces; `MemoryTopic.DEFAULTS` are the runtime's six: climate,
+  navigation, media, the web, the display, calls) and how many reach a run; `serviceAnswer`, which tool results that
+  report a problem are a service's answer in its own terms (no route found), passed to the model as written and not
+  counted toward the failures that stop a tool (`ServiceAnswerCheck`; the runtime's own, `RuntimeServiceAnswerCheck`,
+  reads an MCP `structuredContent.status.name`); `contextTimeoutMillis`, how long context providers have together
+  (20 ms). A subagent's runtime takes its own. `lessons(false)` keeps runs from learning lessons or using saved ones;
+  `toolDomains(…)` sets how tools are grouped into the areas the prompt lists (`ToolDomainNaming`; the runtime's own
+  groups `command_<area>_…` names, then by MCP server); `protocolRules(…)` rewords, drops or adds lines of the protocol
+  section (`ProtocolRules`), such as the Bing RSS search it suggests when no search provider is set.
+  `SessionHistory(maxBytesPerSession, maxSessions, maxRunsInFlight)` keeps more than 16 sessions and follows more than
+  64 runs at once for a server with many users. The builder methods are experimental and on `AgentRuntimeBuilder`;
   `KernelRuntimeBuilder` keeps the defaults.
   The defaults are expected to become neutral in a later release (no built-in topics, a narration check without
-  language-specific phrasings), so a host that relies on them should set them explicitly.
+  language-specific phrasings, no suggested search site), so a host that relies on them should set them explicitly.
 - **Tool search reads Japanese, Korean and Thai.** Text in a script whose words run together or carry their particles
   (Japanese kana, Korean, Thai, Lao, Khmer, Myanmar, and the rarer Chinese characters) is read in pairs of characters
   as Chinese was, so `コーヒー` or `조명` finds the tool whose description holds it; English and common Chinese are read as

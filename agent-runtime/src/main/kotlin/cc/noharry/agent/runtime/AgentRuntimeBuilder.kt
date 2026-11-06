@@ -7,13 +7,11 @@ import cc.noharry.agent.kernel.api.AgentRuntime
 import cc.noharry.agent.kernel.api.ExecEngine
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.HookFailurePolicy
-import cc.noharry.agent.kernel.api.NarrationCheck
 import cc.noharry.agent.kernel.api.RuntimeContextProvider
 import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
 import cc.noharry.agent.kernel.api.RuntimeHook
 import cc.noharry.agent.kernel.api.RuntimeHookRegistration
 import cc.noharry.agent.kernel.api.RuntimeTurnObserver
-import cc.noharry.agent.kernel.api.ServiceAnswerCheck
 import cc.noharry.agent.kernel.api.SessionEventLog
 import cc.noharry.agent.kernel.api.ToolMatcher
 import cc.noharry.agent.kernel.api.ToolProvider
@@ -24,6 +22,7 @@ import cc.noharry.agent.kernel.core.context.BootstrapPromptResolver
 import cc.noharry.agent.kernel.core.context.ContextBootstrapPromptResolver
 import cc.noharry.agent.kernel.core.context.ConversationCompactor
 import cc.noharry.agent.kernel.core.context.HistoryCompactor
+import cc.noharry.agent.kernel.core.context.ProtocolRules
 import cc.noharry.agent.kernel.core.context.ProtocolTools
 import cc.noharry.agent.kernel.core.context.SimpleBootstrapPromptResolver
 import cc.noharry.agent.kernel.core.context.validateHostSystemPrompt
@@ -32,12 +31,8 @@ import cc.noharry.agent.kernel.core.loop.DEFAULT_MAX_MODEL_ROUNDS
 import cc.noharry.agent.kernel.core.loop.DEFAULT_MAX_TOOL_CALLS_PER_RUN
 import cc.noharry.agent.kernel.core.loop.DEFAULT_MODEL_RETRY_MAX_ATTEMPTS
 import cc.noharry.agent.kernel.core.loop.LoopBudgetConfig
-import cc.noharry.agent.kernel.core.loop.LoopJudgements
+import cc.noharry.agent.kernel.core.loop.LoopSettings
 import cc.noharry.agent.kernel.core.loop.ModelRetryConfig
-import cc.noharry.agent.kernel.core.loop.RuntimeNarrationCheck
-import cc.noharry.agent.kernel.core.memory.MemoryTopic
-import cc.noharry.agent.kernel.core.memory.RuntimeMemoryPolicy
-import cc.noharry.agent.kernel.core.memory.RuntimeMemoryRetriever
 import cc.noharry.agent.kernel.core.plugin.ProfileCompiler
 import cc.noharry.agent.kernel.core.plugin.RuntimeBlueprint
 import cc.noharry.agent.kernel.core.plugin.RuntimeCapabilityDeclarations
@@ -62,7 +57,6 @@ import cc.noharry.agent.kernel.core.tools.DEFAULT_MAX_CONCURRENT_MODEL_CALLS
 import cc.noharry.agent.kernel.core.tools.DEFAULT_MAX_CONCURRENT_TOOL_CALLS
 import cc.noharry.agent.kernel.core.tools.MaterializerContext
 import cc.noharry.agent.kernel.core.tools.ProviderConcurrencyLimiter
-import cc.noharry.agent.kernel.core.tools.RuntimeServiceAnswerCheck
 import cc.noharry.agent.kernel.core.tools.ToolActivationStore
 import cc.noharry.agent.kernel.core.tools.ToolDomainIndexer
 import cc.noharry.agent.kernel.core.tools.ToolDomainNaming
@@ -152,12 +146,10 @@ class AgentRuntimeBuilder {
     private var subagents: Subagents? = null
     private var webSearchProvider: WebSearchProvider? = null
     private var webFetchFallback: WebFetchFallback? = null
-    private var narrationCheck: NarrationCheck = RuntimeNarrationCheck
-    private var memoryTopics: List<MemoryTopic> = MemoryTopic.DEFAULTS
-    private var memoryPolicy: RuntimeMemoryPolicy = RuntimeMemoryPolicy()
+    private var loopSettings: LoopSettings = LoopSettings()
     private var lessons: Boolean = true
-    private var serviceAnswerCheck: ServiceAnswerCheck = RuntimeServiceAnswerCheck
     private var toolDomains: ToolDomainNaming = ToolDomainIndexer.CONVENTIONS
+    private var protocolRules: ProtocolRules = ProtocolRules.DEFAULT
     private var deferredBackendTools: Boolean = false
     private var nativeDeferredTools: Boolean = false
     private var runContextAsSystem: Boolean = false
@@ -394,28 +386,14 @@ class AgentRuntimeBuilder {
     }
 
     /**
-     * Which final answers only say what the agent will do; such an answer goes back to the model once for a real one.
-     * The runtime's own check knows English and Chinese phrasings ([NarrationCheck]). A subagent's runtime, which the
-     * host builds, takes its own. Candidate API.
+     * What the loop judges about content in the host's users' language and its domain, and its timing ([LoopSettings]):
+     * which final answers only announce what the agent will do, what lessons are about and how many reach a run, which
+     * failed tool results are a service's answer, how long context providers have. A subagent's runtime, which the host
+     * builds, takes its own. Candidate API.
      */
     @ExperimentalAgentRuntimeApi
-    fun narrationCheck(check: NarrationCheck): AgentRuntimeBuilder = apply {
-        narrationCheck = check
-    }
-
-    /**
-     * What the lessons learnt across runs are matched on ([MemoryTopic]; the runtime's own topics by default, an empty
-     * list matches by the words alone). Candidate API.
-     */
-    @ExperimentalAgentRuntimeApi
-    fun memoryTopics(topics: List<MemoryTopic>): AgentRuntimeBuilder = apply {
-        memoryTopics = topics.toList()
-    }
-
-    /** How many lessons reach a run and which runs teach one ([RuntimeMemoryPolicy]). Candidate API. */
-    @ExperimentalAgentRuntimeApi
-    fun memoryPolicy(policy: RuntimeMemoryPolicy): AgentRuntimeBuilder = apply {
-        memoryPolicy = policy
+    fun loopSettings(settings: LoopSettings): AgentRuntimeBuilder = apply {
+        loopSettings = settings
     }
 
     /**
@@ -428,12 +406,13 @@ class AgentRuntimeBuilder {
     }
 
     /**
-     * Which failed tool results are a service's answer in its own terms (no route found, out of stock): they reach the
-     * model as written and do not count toward the failures that stop a tool ([ServiceAnswerCheck]). Candidate API.
+     * The lines of the protocol section that tells the model how to use the runtime's tools ([ProtocolRules]): reword,
+     * drop or add lines, such as the web search fallback offered when no search provider is set, or the folders the
+     * workspace may be written in. Candidate API.
      */
     @ExperimentalAgentRuntimeApi
-    fun serviceAnswerCheck(check: ServiceAnswerCheck): AgentRuntimeBuilder = apply {
-        serviceAnswerCheck = check
+    fun protocolRules(rules: ProtocolRules): AgentRuntimeBuilder = apply {
+        protocolRules = rules
     }
 
     /** How tools are grouped into the areas the prompt lists for the model ([ToolDomainNaming]). Candidate API. */
@@ -746,7 +725,7 @@ class AgentRuntimeBuilder {
             traceRedactor = traceRedactor,
             reliabilityStorage = infrastructure.storage.reliabilityStorage,
             materializerSchemaCache = infrastructure.storage.schemaCache,
-            bootstrapPrompt = BootstrapPromptProvider.build(hostSystemPrompt, tools = protocolTools()),
+            bootstrapPrompt = BootstrapPromptProvider.build(hostSystemPrompt, tools = protocolTools(), protocolRules = protocolRules),
             promptResolver = infrastructure.context.promptResolver,
             contextRouter = infrastructure.context.contextRouter,
             todoStore = infrastructure.context.todoStore,
@@ -784,7 +763,7 @@ class AgentRuntimeBuilder {
             subagents = subagents,
             webSearchProvider = webSearchProvider,
             webFetchFallback = webFetchFallback,
-            judgements = LoopJudgements(narrationCheck, RuntimeMemoryRetriever(memoryPolicy, memoryTopics), serviceAnswerCheck),
+            loopSettings = loopSettings,
         )
     }
 
@@ -865,9 +844,10 @@ class AgentRuntimeBuilder {
                     ToolDomainIndexer.index(tools, toolDomains)
                 },
                 tools = protocolTools(),
+                protocolRules = protocolRules,
             )
         } else {
-            SimpleBootstrapPromptResolver(BootstrapPromptProvider.build(hostSystemPrompt, tools = protocolTools()))
+            SimpleBootstrapPromptResolver(BootstrapPromptProvider.build(hostSystemPrompt, tools = protocolTools(), protocolRules = protocolRules))
         }
         return ContextInfrastructure(todoStore, memoryStore, contextRouter, promptResolver)
     }

@@ -18,6 +18,22 @@ data class ProtocolTools(
 )
 
 /**
+ * The lines of the runtime's protocol section, which tells the model how to use the runtime's own tools: a host rewords,
+ * drops or adds lines ([defaults] are the runtime's, for the tools on offer; the first names the protocol; no lines
+ * leave the section out). It is asked each time the prompt is assembled: keep it quick and pure, since the prompt is
+ * cached as long as it stays the same. Its lines count toward the prompt's soft budget, so long ones shorten the list of
+ * tool areas and skills that follows.
+ */
+fun interface ProtocolRules {
+    fun rules(defaults: List<String>): List<String>
+
+    companion object {
+        /** The runtime's own lines. */
+        val DEFAULT: ProtocolRules = ProtocolRules { it }
+    }
+}
+
+/**
  * Resolves the system prompt for each loop round.
  *
  * Static prompts (no scene/skills) use [SimpleBootstrapPromptResolver].
@@ -34,13 +50,14 @@ class SimpleBootstrapPromptResolver(
     override suspend fun resolve(scene: String?, sessionId: String?): BootstrapPrompt = prompt
 }
 
-class ContextBootstrapPromptResolver(
+class ContextBootstrapPromptResolver @JvmOverloads constructor(
     private val hostPrompt: String?,
     private val skillRegistry: SkillCatalogPort?,
     private val contextCatalog: ContextCatalog = defaultContextCatalog(),
     private val sceneRules: Set<String> = emptySet(),
     private val toolDomainIndexProvider: suspend () -> ToolDomainIndex? = { null },
     private val tools: ProtocolTools = ProtocolTools(),
+    private val protocolRules: ProtocolRules = ProtocolRules.DEFAULT,
 ) : BootstrapPromptResolver {
     override suspend fun resolve(scene: String?, sessionId: String?): BootstrapPrompt =
         BootstrapPromptProvider.build(
@@ -51,6 +68,7 @@ class ContextBootstrapPromptResolver(
             sceneRules = sceneRules,
             toolDomainIndex = toolDomainIndexProvider(),
             tools = tools,
+            protocolRules = protocolRules,
         )
 }
 
@@ -68,6 +86,7 @@ fun defaultContextCatalog(): ContextCatalog = ContextCatalog(
 )
 
 object BootstrapPromptProvider {
+    @JvmOverloads
     fun build(
         hostPrompt: String? = null,
         scene: String? = null,
@@ -76,13 +95,14 @@ object BootstrapPromptProvider {
         sceneRules: Set<String> = emptySet(),
         toolDomainIndex: ToolDomainIndex? = null,
         tools: ProtocolTools = ProtocolTools(),
+        protocolRules: ProtocolRules = ProtocolRules.DEFAULT,
     ): BootstrapPrompt {
         hostPrompt?.takeIf { it.isNotBlank() }?.let(::validateHostSystemPrompt)
         val sceneSection = scene?.takeIf { it.isNotBlank() }?.let { buildSceneSection(it, sceneRules) }
         val contextSection = contextCatalog?.takeIf { it.paths.isNotEmpty() }?.toPromptSection()
-        val protocolTools = tools
+        val protocol = protocolPrompt(tools, protocolRules)
         fun assemble(tools: String?, skills: String?): String = listOfNotNull(
-            protocolPrompt(protocolTools), tools, contextSection, skills, sceneSection,
+            protocol, tools, contextSection, skills, sceneSection,
             hostPrompt?.takeIf { it.isNotBlank() }?.let { "Host instructions:\n$it" },
         ).joinToString(separator = "\n\n")
 
@@ -151,8 +171,13 @@ const val MAX_SKILL_DESCRIPTION_CHARS = 40
 
 private const val BOOTSTRAP_PROMPT_VERSION = "context-driven-runtime-bootstrap-v10"
 
-/** The protocol rules, each about a tool only when the runtime offers that tool. */
-private fun protocolPrompt(tools: ProtocolTools): String = listOfNotNull(
+/** The protocol rules, each about a tool only when the runtime offers that tool, as the host words them ([rules]). */
+private fun protocolPrompt(tools: ProtocolTools, rules: ProtocolRules): String? = rules.rules(defaultProtocolLines(tools))
+    .filter(String::isNotBlank)
+    .takeIf { it.isNotEmpty() }
+    ?.joinToString("\n")
+
+private fun defaultProtocolLines(tools: ProtocolTools): List<String> = listOfNotNull(
     "Model-driven harness protocol v1.",
     "- Use the provided tools directly and keep backend tools as the primary work when they are present.",
     "- Search with search_tools(query) to discover backend tools by keyword. Call matches marked callable directly; a match that comes with its schema is called through call_tool(name, arguments). Neither needs a schema.json read.",
@@ -169,4 +194,4 @@ private fun protocolPrompt(tools: ProtocolTools): String = listOfNotNull(
         else -> "- web_fetch returns extracted page text for HTML. For web search call https://www.bing.com/search?q={query}&format=rss first (XML results); do not refetch the same URL with a larger max_bytes."
     },
     "- Read only the context you need for the current task; do not enumerate everything.",
-).joinToString("\n")
+)

@@ -28,8 +28,10 @@ class RuntimeMemoryRetriever @JvmOverloads constructor(
     /** How many lessons reach a run and which count, also for learning them ([RuntimeMemoryPolicy]). */
     val policy: RuntimeMemoryPolicy = RuntimeMemoryPolicy(),
     /** What requests and lessons are about ([MemoryTopic]); a request on none is matched by its words alone. */
-    private val topics: List<MemoryTopic> = MemoryTopic.DEFAULTS,
+    topics: List<MemoryTopic> = MemoryTopic.DEFAULTS,
 ) {
+    private val topics: List<MemoryTopic> = topics.toList()
+
     fun retrieve(requestText: String, lessons: List<RuntimeLesson>): RuntimeMemorySelection {
         val request = retrievalProfile(requestText, topics)
         if (request.isEmpty() || policy.maxRetrievedLessons <= 0) return emptySelection()

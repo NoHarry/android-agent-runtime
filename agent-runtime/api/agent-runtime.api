@@ -320,14 +320,12 @@ public final class cc/noharry/agent/runtime/AgentRuntimeBuilder {
 	public final fun lessons (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun loopBudget (IILjava/lang/Long;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public static synthetic fun loopBudget$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;IILjava/lang/Long;ILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
-	public final fun memoryPolicy (Lcc/noharry/agent/kernel/core/memory/RuntimeMemoryPolicy;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
-	public final fun memoryTopics (Ljava/util/List;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun loopSettings (Lcc/noharry/agent/kernel/core/loop/LoopSettings;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun modelClient (Lcc/noharry/agent/kernel/api/model/ModelClient;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun modelConcurrency (I)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public static synthetic fun modelConcurrency$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;IILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun modelRetry (IJJLjava/util/List;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public static synthetic fun modelRetry$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;IJJLjava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
-	public final fun narrationCheck (Lcc/noharry/agent/kernel/api/NarrationCheck;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun nativeDeferredTools (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public static synthetic fun nativeDeferredTools$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;ZILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun nativeWebFetchEnabled (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
@@ -339,12 +337,12 @@ public final class cc/noharry/agent/runtime/AgentRuntimeBuilder {
 	public final fun policyConfigPath (Ljava/lang/String;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun policyRule (Lcc/noharry/agent/policy/PolicyRule;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun profile (Lcc/noharry/agent/kernel/api/AgentProfile;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun protocolRules (Lcc/noharry/agent/kernel/core/context/ProtocolRules;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun runContext (Ljava/lang/String;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun runContextAsSystem (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public static synthetic fun runContextAsSystem$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;ZILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun runtimeEvidence (Lcc/noharry/agent/kernel/api/RuntimeEvidenceConfig;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun sceneAgentsMd (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
-	public final fun serviceAnswerCheck (Lcc/noharry/agent/kernel/api/ServiceAnswerCheck;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun sessionActivationInheritance (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public static synthetic fun sessionActivationInheritance$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;ZILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun sessionConcurrency (III)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
@@ -427,7 +425,9 @@ public final class cc/noharry/agent/runtime/RuntimeWorkspaceRef {
 public final class cc/noharry/agent/runtime/SessionHistory {
 	public fun <init> ()V
 	public fun <init> (I)V
-	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (II)V
+	public fun <init> (III)V
+	public synthetic fun <init> (IIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun clearAll ()V
 	public final fun clearSession (Ljava/lang/String;)V
 	public final fun messages (Ljava/lang/String;)Ljava/util/List;

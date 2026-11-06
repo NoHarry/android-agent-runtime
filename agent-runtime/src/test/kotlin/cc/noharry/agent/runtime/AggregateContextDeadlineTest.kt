@@ -68,6 +68,35 @@ class AggregateContextDeadlineTest {
         }
 
     @Test
+    fun a_hosts_longer_deadline_keeps_slower_providers() =
+        runBlocking {
+            val clock = AtomicLong(0L)
+            val slow = object : RuntimeContextProvider {
+                override val id: String = "slow-1"
+
+                override suspend fun provide(request: RuntimeContextRequest): RuntimeContextContribution {
+                    clock.addAndGet(21_000_000L)
+                    return fact(id, "slow_fact", "SLOW1")
+                }
+            }
+            val next = object : RuntimeContextProvider {
+                override val id: String = "slow-2"
+
+                override suspend fun provide(request: RuntimeContextRequest): RuntimeContextContribution =
+                    fact(id, "slow_fact_2", "SLOW2")
+            }
+            val suffix = RuntimeContextHooks.collectContextSystemSuffix(
+                contextProviders = listOf(slow, next),
+                request = AgentRequest("agg-2", "s", "ping"),
+                runId = "agg-2",
+                referenceTimeEpochMillis = 0L,
+                timeoutMillis = 50,
+                monotonicNanos = clock::get,
+            )
+            assertTrue(suffix.contains("SLOW1") && suffix.contains("SLOW2"))
+        }
+
+    @Test
     fun provider_exception_fail_open_continues_remaining_budget() =
         runBlocking {
             val boomCalls = AtomicInteger(0)

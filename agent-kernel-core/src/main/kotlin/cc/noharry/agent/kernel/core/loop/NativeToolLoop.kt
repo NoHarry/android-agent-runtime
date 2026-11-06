@@ -61,7 +61,7 @@ class NativeToolLoop(
     private val nativeWebSearchEnabled: Boolean = false,
     /** The host's kinds of subagent, offered as spawn_agent's `agent`. */
     private val subagentTypes: List<NativeSubagentType> = emptyList(),
-    private val judgements: LoopJudgements = LoopJudgements(),
+    private val loopSettings: LoopSettings = LoopSettings(),
 ) {
     private val obligationLedger = RuntimeObligationLedger()
 
@@ -85,9 +85,9 @@ class NativeToolLoop(
         mcpDebugTraceSink,
         sessionRecorder,
         toolExecutionLimiter = toolExecutionLimiter,
-        failureBreaker = ToolCallFailureBreaker(serviceAnswer = judgements.serviceAnswer),
+        failureBreaker = ToolCallFailureBreaker(serviceAnswer = loopSettings.serviceAnswer),
         obligationLedger = obligationLedger,
-        serviceAnswer = judgements.serviceAnswer,
+        serviceAnswer = loopSettings.serviceAnswer,
     )
     private val roundRunner = NativeRoundRunner(
         toolRegistry,
@@ -101,9 +101,9 @@ class NativeToolLoop(
         ModelImageRequestView(imageInputEnabled = loopBudget.imageInputEnabled),
         textNeedsFinish = textNeedsFinish,
         userReachable = userReachable,
-        narrationCheck = judgements.narration,
+        narrationCheck = loopSettings.narration,
     )
-    private val memoryRetriever = judgements.memory
+    private val memoryRetriever = loopSettings.memory
     private val finishResponseRetryRuns = mutableSetOf<String>()
     private val emptyCompletionContinueRuns = mutableSetOf<String>()
     private val obligationCorrectionRuns = mutableSetOf<String>()
@@ -173,6 +173,7 @@ class NativeToolLoop(
                 runId,
                 nowEpochMillis(),
                 runtimeInstanceId = runtimeInstanceId,
+                timeoutMillis = loopSettings.contextTimeoutMillis,
             )
         persistedContextSuffix = contextSuffix
         val activePromptResolver = promptResolver.withContextSuffix(contextSuffix)
@@ -914,6 +915,7 @@ class NativeToolLoop(
                 referenceTime,
                 inputOverride = answer,
                 runtimeInstanceId = runtimeInstanceId,
+                timeoutMillis = loopSettings.contextTimeoutMillis,
             )
         persistedContextSuffix = contextSuffix
         val activePromptResolver = promptResolver.withContextSuffix(contextSuffix)

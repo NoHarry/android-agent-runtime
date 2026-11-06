@@ -152,13 +152,15 @@ object RuntimeContextHooks {
         referenceTimeEpochMillis: Long,
         inputOverride: String? = null,
         runtimeInstanceId: String? = null,
+        /** The providers' time together, from the host ([LoopSettings][cc.noharry.agent.kernel.core.loop.LoopSettings]). */
+        timeoutMillis: Long = CONTEXT_AGGREGATE_TIMEOUT_MS,
         monotonicNanos: () -> Long = System::nanoTime,
     ): String {
         if (contextProviders.isEmpty()) return ""
         val contributions = mutableListOf<RuntimeContextContribution>()
         val seenProviderIds = mutableSetOf<String>()
-        val deadlineNanos = monotonicNanos() + CONTEXT_AGGREGATE_TIMEOUT_MS * 1_000_000L
-        val wallDeadline = referenceTimeEpochMillis + CONTEXT_AGGREGATE_TIMEOUT_MS
+        val deadlineNanos = monotonicNanos() + timeoutMillis * 1_000_000L
+        val wallDeadline = referenceTimeEpochMillis + timeoutMillis
         for (provider in contextProviders) {
             if (!seenProviderIds.add(provider.id)) continue
             val remainingMs = ((deadlineNanos - monotonicNanos()) / 1_000_000L).coerceAtLeast(0L)

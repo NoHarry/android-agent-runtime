@@ -13,8 +13,16 @@ public final class cc/noharry/agent/kernel/core/context/BootstrapPrompt {
 
 public final class cc/noharry/agent/kernel/core/context/BootstrapPromptProvider {
 	public static final field INSTANCE Lcc/noharry/agent/kernel/core/context/BootstrapPromptProvider;
+	public final fun build ()Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
+	public final fun build (Ljava/lang/String;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
+	public final fun build (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
+	public final fun build (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/ContextCatalog;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
+	public final fun build (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Lcc/noharry/agent/kernel/core/context/SkillsCatalog;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
+	public final fun build (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Lcc/noharry/agent/kernel/core/context/SkillsCatalog;Ljava/util/Set;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
+	public final fun build (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Lcc/noharry/agent/kernel/core/context/SkillsCatalog;Ljava/util/Set;Lcc/noharry/agent/kernel/core/tools/ToolDomainIndex;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
 	public final fun build (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Lcc/noharry/agent/kernel/core/context/SkillsCatalog;Ljava/util/Set;Lcc/noharry/agent/kernel/core/tools/ToolDomainIndex;Lcc/noharry/agent/kernel/core/context/ProtocolTools;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
-	public static synthetic fun build$default (Lcc/noharry/agent/kernel/core/context/BootstrapPromptProvider;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Lcc/noharry/agent/kernel/core/context/SkillsCatalog;Ljava/util/Set;Lcc/noharry/agent/kernel/core/tools/ToolDomainIndex;Lcc/noharry/agent/kernel/core/context/ProtocolTools;ILjava/lang/Object;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
+	public final fun build (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Lcc/noharry/agent/kernel/core/context/SkillsCatalog;Ljava/util/Set;Lcc/noharry/agent/kernel/core/tools/ToolDomainIndex;Lcc/noharry/agent/kernel/core/context/ProtocolTools;Lcc/noharry/agent/kernel/core/context/ProtocolRules;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
+	public static synthetic fun build$default (Lcc/noharry/agent/kernel/core/context/BootstrapPromptProvider;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Lcc/noharry/agent/kernel/core/context/SkillsCatalog;Ljava/util/Set;Lcc/noharry/agent/kernel/core/tools/ToolDomainIndex;Lcc/noharry/agent/kernel/core/context/ProtocolTools;Lcc/noharry/agent/kernel/core/context/ProtocolRules;ILjava/lang/Object;)Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;
 }
 
 public final class cc/noharry/agent/kernel/core/context/BootstrapPromptProviderKt {
@@ -62,8 +70,13 @@ public final class cc/noharry/agent/kernel/core/context/CompactionResult$Unchang
 }
 
 public final class cc/noharry/agent/kernel/core/context/ContextBootstrapPromptResolver : cc/noharry/agent/kernel/core/context/BootstrapPromptResolver {
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SkillCatalogPort;)V
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SkillCatalogPort;Lcc/noharry/agent/kernel/core/context/ContextCatalog;)V
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SkillCatalogPort;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Ljava/util/Set;)V
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SkillCatalogPort;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Ljava/util/Set;Lkotlin/jvm/functions/Function1;)V
 	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SkillCatalogPort;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Ljava/util/Set;Lkotlin/jvm/functions/Function1;Lcc/noharry/agent/kernel/core/context/ProtocolTools;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SkillCatalogPort;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Ljava/util/Set;Lkotlin/jvm/functions/Function1;Lcc/noharry/agent/kernel/core/context/ProtocolTools;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SkillCatalogPort;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Ljava/util/Set;Lkotlin/jvm/functions/Function1;Lcc/noharry/agent/kernel/core/context/ProtocolTools;Lcc/noharry/agent/kernel/core/context/ProtocolRules;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SkillCatalogPort;Lcc/noharry/agent/kernel/core/context/ContextCatalog;Ljava/util/Set;Lkotlin/jvm/functions/Function1;Lcc/noharry/agent/kernel/core/context/ProtocolTools;Lcc/noharry/agent/kernel/core/context/ProtocolRules;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun resolve (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
@@ -150,6 +163,15 @@ public final class cc/noharry/agent/kernel/core/context/MessageRetention$Droppab
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class cc/noharry/agent/kernel/core/context/ProtocolRules {
+	public static final field Companion Lcc/noharry/agent/kernel/core/context/ProtocolRules$Companion;
+	public abstract fun rules (Ljava/util/List;)Ljava/util/List;
+}
+
+public final class cc/noharry/agent/kernel/core/context/ProtocolRules$Companion {
+	public final fun getDEFAULT ()Lcc/noharry/agent/kernel/core/context/ProtocolRules;
+}
+
 public final class cc/noharry/agent/kernel/core/context/ProtocolTools {
 	public fun <init> ()V
 	public fun <init> (ZZLjava/util/Set;)V
@@ -171,8 +193,8 @@ public final class cc/noharry/agent/kernel/core/context/RuntimeContextHooks {
 	public static final field CONTEXT_AGGREGATE_TIMEOUT_MS J
 	public static final field EXPLICIT_MUTATION_TIMEOUT_MS J
 	public static final field INSTANCE Lcc/noharry/agent/kernel/core/context/RuntimeContextHooks;
-	public final fun collectContextSystemSuffix (Ljava/util/List;Lcc/noharry/agent/kernel/api/AgentRequest;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun collectContextSystemSuffix$default (Lcc/noharry/agent/kernel/core/context/RuntimeContextHooks;Ljava/util/List;Lcc/noharry/agent/kernel/api/AgentRequest;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun collectContextSystemSuffix (Ljava/util/List;Lcc/noharry/agent/kernel/api/AgentRequest;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;JLkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun collectContextSystemSuffix$default (Lcc/noharry/agent/kernel/core/context/RuntimeContextHooks;Ljava/util/List;Lcc/noharry/agent/kernel/api/AgentRequest;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;JLkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun notifyTurnInput (Ljava/util/List;Lcc/noharry/agent/kernel/api/AgentRequest;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/loop/RuntimeObligationLedger;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun notifyTurnInput$default (Lcc/noharry/agent/kernel/core/context/RuntimeContextHooks;Ljava/util/List;Lcc/noharry/agent/kernel/api/AgentRequest;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/core/loop/RuntimeObligationLedger;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
@@ -191,8 +213,10 @@ public final class cc/noharry/agent/kernel/core/context/RuntimeContextRenderer {
 
 public final class cc/noharry/agent/kernel/core/context/SessionHistoryStore {
 	public fun <init> ()V
+	public fun <init> (I)V
 	public fun <init> (II)V
-	public synthetic fun <init> (IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (III)V
+	public synthetic fun <init> (IIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun clearAll ()V
 	public final fun clearSession (Ljava/lang/String;)V
 	public final fun compactedInRun (Ljava/lang/String;)Z
@@ -458,13 +482,21 @@ public final class cc/noharry/agent/kernel/core/loop/LoopBudgetWarning {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class cc/noharry/agent/kernel/core/loop/LoopJudgements {
+public final class cc/noharry/agent/kernel/core/loop/LoopSettings {
 	public fun <init> ()V
+	public fun <init> (Lcc/noharry/agent/kernel/api/NarrationCheck;)V
+	public fun <init> (Lcc/noharry/agent/kernel/api/NarrationCheck;Lcc/noharry/agent/kernel/core/memory/RuntimeMemoryRetriever;)V
 	public fun <init> (Lcc/noharry/agent/kernel/api/NarrationCheck;Lcc/noharry/agent/kernel/core/memory/RuntimeMemoryRetriever;Lcc/noharry/agent/kernel/api/ServiceAnswerCheck;)V
-	public synthetic fun <init> (Lcc/noharry/agent/kernel/api/NarrationCheck;Lcc/noharry/agent/kernel/core/memory/RuntimeMemoryRetriever;Lcc/noharry/agent/kernel/api/ServiceAnswerCheck;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lcc/noharry/agent/kernel/api/NarrationCheck;Lcc/noharry/agent/kernel/core/memory/RuntimeMemoryRetriever;Lcc/noharry/agent/kernel/api/ServiceAnswerCheck;J)V
+	public synthetic fun <init> (Lcc/noharry/agent/kernel/api/NarrationCheck;Lcc/noharry/agent/kernel/core/memory/RuntimeMemoryRetriever;Lcc/noharry/agent/kernel/api/ServiceAnswerCheck;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getContextTimeoutMillis ()J
 	public final fun getMemory ()Lcc/noharry/agent/kernel/core/memory/RuntimeMemoryRetriever;
 	public final fun getNarration ()Lcc/noharry/agent/kernel/api/NarrationCheck;
 	public final fun getServiceAnswer ()Lcc/noharry/agent/kernel/api/ServiceAnswerCheck;
+}
+
+public final class cc/noharry/agent/kernel/core/loop/LoopSettingsKt {
+	public static final field MAX_CONTEXT_TIMEOUT_MILLIS J
 }
 
 public final class cc/noharry/agent/kernel/core/loop/ModelImageRequestView {
@@ -647,8 +679,8 @@ public final class cc/noharry/agent/kernel/core/loop/NativeRoundRunner {
 }
 
 public final class cc/noharry/agent/kernel/core/loop/NativeToolLoop {
-	public fun <init> (Lcc/noharry/agent/kernel/api/model/ModelClient;Lcc/noharry/agent/kernel/core/tools/ToolProviderRegistry;Lcc/noharry/agent/kernel/api/WorkspacePort;Lcc/noharry/agent/kernel/core/trace/TraceRedactor;Lcc/noharry/agent/kernel/core/loop/HookChainPort;Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;Lcc/noharry/agent/kernel/core/context/BootstrapPromptResolver;Lcc/noharry/agent/kernel/core/loop/LoopBudgetConfig;Lcc/noharry/agent/kernel/core/tools/ToolExecutionLimiter;Lcc/noharry/agent/kernel/core/state/LoopHistoryStore;Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/kernel/core/tools/ToolActivationStore;Lcc/noharry/agent/kernel/core/tools/RuntimeMcpDebugTraceSink;Lcc/noharry/agent/kernel/core/context/TodoStorePort;Lcc/noharry/agent/kernel/core/memory/RuntimeMemoryPort;Lcc/noharry/agent/kernel/core/context/HistoryCompactor;Lcc/noharry/agent/kernel/core/trace/LoopSessionRecorder;Lkotlin/jvm/functions/Function2;Lcc/noharry/agent/kernel/core/loop/ModelRetryConfig;Lcc/noharry/agent/kernel/api/ExecEngine;Lcc/noharry/agent/kernel/core/tools/NetworkToolPort;ZLcc/noharry/agent/kernel/core/loop/RuntimeSteeringQueue;Lcc/noharry/agent/kernel/core/trace/LoopProbeSink;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SessionHistoryStore;Lcc/noharry/agent/kernel/core/tools/BackendToolExposure;ZLcc/noharry/agent/kernel/core/context/ConversationCompactor;ZZZZLjava/util/List;Lcc/noharry/agent/kernel/core/loop/LoopJudgements;)V
-	public synthetic fun <init> (Lcc/noharry/agent/kernel/api/model/ModelClient;Lcc/noharry/agent/kernel/core/tools/ToolProviderRegistry;Lcc/noharry/agent/kernel/api/WorkspacePort;Lcc/noharry/agent/kernel/core/trace/TraceRedactor;Lcc/noharry/agent/kernel/core/loop/HookChainPort;Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;Lcc/noharry/agent/kernel/core/context/BootstrapPromptResolver;Lcc/noharry/agent/kernel/core/loop/LoopBudgetConfig;Lcc/noharry/agent/kernel/core/tools/ToolExecutionLimiter;Lcc/noharry/agent/kernel/core/state/LoopHistoryStore;Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/kernel/core/tools/ToolActivationStore;Lcc/noharry/agent/kernel/core/tools/RuntimeMcpDebugTraceSink;Lcc/noharry/agent/kernel/core/context/TodoStorePort;Lcc/noharry/agent/kernel/core/memory/RuntimeMemoryPort;Lcc/noharry/agent/kernel/core/context/HistoryCompactor;Lcc/noharry/agent/kernel/core/trace/LoopSessionRecorder;Lkotlin/jvm/functions/Function2;Lcc/noharry/agent/kernel/core/loop/ModelRetryConfig;Lcc/noharry/agent/kernel/api/ExecEngine;Lcc/noharry/agent/kernel/core/tools/NetworkToolPort;ZLcc/noharry/agent/kernel/core/loop/RuntimeSteeringQueue;Lcc/noharry/agent/kernel/core/trace/LoopProbeSink;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SessionHistoryStore;Lcc/noharry/agent/kernel/core/tools/BackendToolExposure;ZLcc/noharry/agent/kernel/core/context/ConversationCompactor;ZZZZLjava/util/List;Lcc/noharry/agent/kernel/core/loop/LoopJudgements;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lcc/noharry/agent/kernel/api/model/ModelClient;Lcc/noharry/agent/kernel/core/tools/ToolProviderRegistry;Lcc/noharry/agent/kernel/api/WorkspacePort;Lcc/noharry/agent/kernel/core/trace/TraceRedactor;Lcc/noharry/agent/kernel/core/loop/HookChainPort;Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;Lcc/noharry/agent/kernel/core/context/BootstrapPromptResolver;Lcc/noharry/agent/kernel/core/loop/LoopBudgetConfig;Lcc/noharry/agent/kernel/core/tools/ToolExecutionLimiter;Lcc/noharry/agent/kernel/core/state/LoopHistoryStore;Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/kernel/core/tools/ToolActivationStore;Lcc/noharry/agent/kernel/core/tools/RuntimeMcpDebugTraceSink;Lcc/noharry/agent/kernel/core/context/TodoStorePort;Lcc/noharry/agent/kernel/core/memory/RuntimeMemoryPort;Lcc/noharry/agent/kernel/core/context/HistoryCompactor;Lcc/noharry/agent/kernel/core/trace/LoopSessionRecorder;Lkotlin/jvm/functions/Function2;Lcc/noharry/agent/kernel/core/loop/ModelRetryConfig;Lcc/noharry/agent/kernel/api/ExecEngine;Lcc/noharry/agent/kernel/core/tools/NetworkToolPort;ZLcc/noharry/agent/kernel/core/loop/RuntimeSteeringQueue;Lcc/noharry/agent/kernel/core/trace/LoopProbeSink;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SessionHistoryStore;Lcc/noharry/agent/kernel/core/tools/BackendToolExposure;ZLcc/noharry/agent/kernel/core/context/ConversationCompactor;ZZZZLjava/util/List;Lcc/noharry/agent/kernel/core/loop/LoopSettings;)V
+	public synthetic fun <init> (Lcc/noharry/agent/kernel/api/model/ModelClient;Lcc/noharry/agent/kernel/core/tools/ToolProviderRegistry;Lcc/noharry/agent/kernel/api/WorkspacePort;Lcc/noharry/agent/kernel/core/trace/TraceRedactor;Lcc/noharry/agent/kernel/core/loop/HookChainPort;Lcc/noharry/agent/kernel/core/context/BootstrapPrompt;Lcc/noharry/agent/kernel/core/context/BootstrapPromptResolver;Lcc/noharry/agent/kernel/core/loop/LoopBudgetConfig;Lcc/noharry/agent/kernel/core/tools/ToolExecutionLimiter;Lcc/noharry/agent/kernel/core/state/LoopHistoryStore;Lkotlin/jvm/functions/Function0;Lcc/noharry/agent/kernel/core/tools/ToolActivationStore;Lcc/noharry/agent/kernel/core/tools/RuntimeMcpDebugTraceSink;Lcc/noharry/agent/kernel/core/context/TodoStorePort;Lcc/noharry/agent/kernel/core/memory/RuntimeMemoryPort;Lcc/noharry/agent/kernel/core/context/HistoryCompactor;Lcc/noharry/agent/kernel/core/trace/LoopSessionRecorder;Lkotlin/jvm/functions/Function2;Lcc/noharry/agent/kernel/core/loop/ModelRetryConfig;Lcc/noharry/agent/kernel/api/ExecEngine;Lcc/noharry/agent/kernel/core/tools/NetworkToolPort;ZLcc/noharry/agent/kernel/core/loop/RuntimeSteeringQueue;Lcc/noharry/agent/kernel/core/trace/LoopProbeSink;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/util/Set;Ljava/lang/String;Lcc/noharry/agent/kernel/core/context/SessionHistoryStore;Lcc/noharry/agent/kernel/core/tools/BackendToolExposure;ZLcc/noharry/agent/kernel/core/context/ConversationCompactor;ZZZZLjava/util/List;Lcc/noharry/agent/kernel/core/loop/LoopSettings;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun resumeConfirmedToolUse (Lcc/noharry/agent/kernel/core/loop/PendingNativeToolUse;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun resumeConfirmedToolUse$default (Lcc/noharry/agent/kernel/core/loop/NativeToolLoop;Lcc/noharry/agent/kernel/core/loop/PendingNativeToolUse;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun resumeUserInput (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/api/model/ModelRef;Ljava/util/Set;Ljava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

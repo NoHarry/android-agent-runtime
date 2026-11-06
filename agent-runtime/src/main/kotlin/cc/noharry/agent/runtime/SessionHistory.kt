@@ -20,12 +20,22 @@ import cc.noharry.agent.kernel.core.context.SessionHistoryStore
  * it, and the model no longer sees them. Keep it well above what the context window holds before compaction.
  */
 @ExperimentalAgentRuntimeApi
-class SessionHistory(maxBytesPerSession: Int = DEFAULT_MAX_BYTES_PER_SESSION) {
+class SessionHistory @JvmOverloads constructor(
+    maxBytesPerSession: Int = DEFAULT_MAX_BYTES_PER_SESSION,
+    /** How many of the most recently used sessions are kept (a multi-user server keeps more). */
+    maxSessions: Int = DEFAULT_MAX_SESSIONS,
+    /**
+     * How many runs at once are followed from start to end (a paused run counts until it ends); past it the oldest is
+     * forgotten: it is not recorded, and its later requests go without the session's history.
+     */
+    maxRunsInFlight: Int = DEFAULT_MAX_RUNS_IN_FLIGHT,
+) {
     init {
         require(maxBytesPerSession > 0) { "maxBytesPerSession must be positive" }
+        require(maxSessions > 0 && maxRunsInFlight > 0) { "maxSessions and maxRunsInFlight must be positive" }
     }
 
-    internal val store = SessionHistoryStore(maxBytesPerSession)
+    internal val store = SessionHistoryStore(maxBytesPerSession, maxSessions, maxRunsInFlight)
 
     /** The messages [sessionId]'s next run will start with; empty for a new session or after a restart. */
     fun messages(sessionId: String): List<ModelMessage> = store.messages(sessionId)
@@ -42,3 +52,6 @@ class SessionHistory(maxBytesPerSession: Int = DEFAULT_MAX_BYTES_PER_SESSION) {
 }
 
 private const val DEFAULT_MAX_BYTES_PER_SESSION = 4 * 1024 * 1024
+
+private const val DEFAULT_MAX_SESSIONS = 16
+private const val DEFAULT_MAX_RUNS_IN_FLIGHT = 64

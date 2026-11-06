@@ -11,12 +11,14 @@ import cc.noharry.agent.kernel.api.model.ModelMessage
  * them, and loop history saved for resume holds only them. Runs are kept whole. [maxBytes] is a memory guard
  * ([ConversationCompactor] keeps the length down): past it the oldest runs go, down to half of it, so the history then
  * stays put for a while instead of shifting (and breaking the cache) every run.
- * Memory only: after a restart a session starts empty. Only the [maxSessions] most recently used sessions are kept: a
- * car that opens a new session at every wake would otherwise hold every conversation since it started.
+ * Memory only: after a restart a session starts empty. Only the [maxSessions] most recently used sessions are kept: an
+ * app that opens a new session at every wake would otherwise hold every conversation since it started. Runs are followed
+ * from start to end, at most [maxRunsInFlight] at once; past it the oldest is forgotten and not recorded.
  */
-class SessionHistoryStore(
+class SessionHistoryStore @JvmOverloads constructor(
     private val maxBytes: Int = Int.MAX_VALUE,
     private val maxSessions: Int = MAX_SESSIONS,
+    private val maxRunsInFlight: Int = MAX_TRACKED_RUNS,
 ) {
     private val sessions = object : LinkedHashMap<String, SessionRuns>(16, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, SessionRuns>?): Boolean =
@@ -24,7 +26,7 @@ class SessionHistoryStore(
     }
     private val started = object : LinkedHashMap<String, RunStart>() {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, RunStart>?): Boolean =
-            size > MAX_TRACKED_RUNS
+            size > maxRunsInFlight
     }
 
     /** Called when a run starts; the run's requests then begin with the session's messages as they are now. */
