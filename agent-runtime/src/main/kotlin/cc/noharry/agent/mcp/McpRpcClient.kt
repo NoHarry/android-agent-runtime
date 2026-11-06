@@ -5,7 +5,7 @@ import kotlinx.serialization.json.JsonObject
 /**
  * An MCP server spoken to in JSON-RPC, such as a standard MCP server over Streamable HTTP ([McpHttpClient]).
  * [McpToolProvider] lists and calls tools through it; a response's [McpRpcResponse.dataJson] is the JSON-RPC response
- * object (`result` or `error`). Candidate API, not frozen.
+ * object (`result` or `error`).
  */
 interface McpRpcClient {
     suspend fun connect(): McpConnectResult

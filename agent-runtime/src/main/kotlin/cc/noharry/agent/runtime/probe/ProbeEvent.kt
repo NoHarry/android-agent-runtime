@@ -2,7 +2,7 @@ package cc.noharry.agent.runtime.probe
 
 /**
  * Internal observe-only probe envelope.
- * Not part of public API; this surface is not frozen.
+ * Not part of public API.
  */
 internal const val PROBE_ENVELOPE_SCHEMA_VERSION: Int = 1
 internal const val PROBE_ATTRS_MAX_BYTES: Int = 8 * 1024

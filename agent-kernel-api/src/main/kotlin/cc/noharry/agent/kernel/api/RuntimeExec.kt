@@ -1,7 +1,7 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Candidate host-provided JavaScript exec engine boundary. Not frozen until API review closes.
+ * Host-provided JavaScript exec engine boundary.
  *
  * [providerConcurrency] is metadata only. Implementations must declare
  * threadSafe, serialized, or sessionFactory explicitly. Execution limiting is
@@ -14,7 +14,7 @@ interface ExecEngine {
     suspend fun run(request: ExecRequest, bridge: ExecToolBridge): ExecResult
 }
 
-/** Candidate exec request passed to optional engine modules. Not frozen until API review closes. */
+/** Exec request passed to optional engine modules. */
 @ExperimentalAgentRuntimeApi
 data class ExecRequest(
     val runId: String,
@@ -23,7 +23,7 @@ data class ExecRequest(
     val outputTokenBudget: Int,
 )
 
-/** Candidate bridge exposed to exec engines for nested runtime tool calls. */
+/** Bridge exposed to exec engines for nested runtime tool calls. */
 @ExperimentalAgentRuntimeApi
 interface ExecToolBridge {
     suspend fun callTool(name: String, argumentsJson: String): String
@@ -31,7 +31,7 @@ interface ExecToolBridge {
     suspend fun emitOutput(text: String)
 }
 
-/** Candidate exec result returned by optional engine modules. Not frozen until API review closes. */
+/** Exec result returned by optional engine modules. */
 @ExperimentalAgentRuntimeApi
 data class ExecResult(
     val ok: Boolean,

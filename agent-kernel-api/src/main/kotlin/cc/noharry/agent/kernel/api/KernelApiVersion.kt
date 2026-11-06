@@ -1,6 +1,6 @@
 package cc.noharry.agent.kernel.api
 
-/** Candidate Kernel API version used for plugin range checks. */
+/** Kernel API version used for plugin range checks. */
 @ExperimentalAgentRuntimeApi
 class KernelApiVersion(
     val major: Int,

@@ -7,7 +7,7 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-/** Host adapter for controlled Room/SQLite virtual resources. Candidate API. */
+/** Host adapter for controlled Room/SQLite virtual resources. */
 interface VfsRoomResourceAdapter {
     fun schemaJson(): String
 

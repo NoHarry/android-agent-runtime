@@ -13,7 +13,7 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
 
 /**
- * Candidate A2A 0.3 JSON-RPC/SSE loopback server. Owns bounded in-memory tasks and workers.
+ * A2A 0.3 JSON-RPC/SSE loopback server. Owns bounded in-memory tasks and workers.
  * Start once and [close] with the host lifecycle. It does not create an Android service.
  */
 class A2aServer(

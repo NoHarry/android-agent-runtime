@@ -9,7 +9,7 @@ import cc.noharry.agent.kernel.core.tools.ToolActivationStore
  * for every run passes the same instance to each [AgentRuntimeBuilder.sessionToolActivations]; a run then starts with
  * the tools its session's earlier runs found, in the order they found them, so the model can call one again without
  * searching and the tool list (and the provider's prompt cache over it) carries over. Tools found by memory hints
- * are not carried. Candidate API; not frozen.
+ * are not carried.
  *
  * @param maxToolsPerSession most tools a session carries; past it the oldest go, down to half of it.
  */

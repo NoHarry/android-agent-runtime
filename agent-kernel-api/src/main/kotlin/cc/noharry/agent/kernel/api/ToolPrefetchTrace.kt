@@ -1,7 +1,7 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Writes logical selector payloads to the run's canonical EventLog. Candidate API.
+ * Writes logical selector payloads to the run's canonical EventLog.
  * Never include transport headers, credentials, URLs containing credentials, or cookies.
  */
 @ExperimentalAgentRuntimeApi

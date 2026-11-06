@@ -22,7 +22,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Keeps an MCP server's tool list between runs, so a run need not wait on `tools/list`: [get] returns the kept list or
- * loads it with `fetch`. Candidate API, not frozen.
+ * loads it with `fetch`.
  */
 fun interface McpToolCatalog {
     suspend fun get(fetch: suspend () -> List<ToolDescriptor>): List<ToolDescriptor>
@@ -33,7 +33,7 @@ fun interface McpToolCatalog {
  * ([McpHttpClient]). It speaks JSON-RPC `tools/list` and `tools/call`; [catalog] keeps the tool list between runs, and
  * [describe] may adjust each tool before the model sees it. Over [McpHttpClient] up to four calls run at once (each is
  * its own request, and MCP lets a session have several in flight), so a round's read-only calls run together; through
- * another client, one at a time. Candidate API, not frozen.
+ * another client, one at a time.
  */
 class McpToolProvider(
     private val client: McpRpcClient,
@@ -94,10 +94,10 @@ class McpToolProvider(
 suspend fun listMcpToolsCatalog(client: McpRpcClient): List<ToolDescriptor> =
     listMcpTools(client).let { if (it.problem == null) it.tools else emptyList() }
 
-/** A server's whole tool list, or why it could not be read. Candidate API, not frozen. */
+/** A server's whole tool list, or why it could not be read. */
 class McpToolsListing(val tools: List<ToolDescriptor>, val problem: String? = null)
 
-/** Reads every page of the server's `tools/list`; [messages] words a problem. Candidate API, not frozen. */
+/** Reads every page of the server's `tools/list`; [messages] words a problem. */
 suspend fun listMcpTools(
     client: McpRpcClient,
     messages: McpClientMessages = McpClientMessages.Default,

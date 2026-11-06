@@ -8,7 +8,7 @@ import org.a2aproject.sdk.spec.AgentCard;
 /**
  * Creates an official SDK client from an Android-compatible, prebuilt transport.
  *
- * <p>This candidate adapter entry point avoids the SDK's ServiceLoader-based builder path, which
+ * <p>This adapter entry point avoids the SDK's ServiceLoader-based builder path, which
  * uses Java 9 APIs that are unavailable on supported Android API levels.
  */
 public final class AndroidClientFactory {

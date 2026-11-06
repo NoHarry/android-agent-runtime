@@ -1,7 +1,7 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Candidate filter for querying a session event history.
+ * Filter for querying a session event history.
  *
  * [afterSequenceExclusive] is stream-local and therefore requires [runId]. A null [limit]
  * returns the complete matching snapshot.

@@ -6,7 +6,7 @@ import android.provider.Settings
 import android.view.accessibility.AccessibilityWindowInfo
 
 /**
- * Candidate switch for [AndroidUseAccessibilityService]. Not frozen.
+ * Switch for [AndroidUseAccessibilityService].
  *
  * Enabling writes secure settings, so the host needs WRITE_SECURE_SETTINGS (granted to platform-signed
  * apps). It appends this service to the enabled list and removes only this entry, keeping every other
@@ -60,7 +60,7 @@ object AndroidUseAccessibility {
         "${context.packageName}/${AndroidUseAccessibilityService::class.java.name}"
 }
 
-/** An app in front: its package and the name it shows. Candidate API, not frozen. */
+/** An app in front: its package and the name it shows. */
 data class ForegroundApp(val packageName: String, val label: String)
 
 /** Entries of an `enabled_accessibility_services` value, short `pkg/.Cls` forms expanded to `pkg/pkg.Cls`. */

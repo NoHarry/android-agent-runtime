@@ -42,7 +42,7 @@ import kotlinx.serialization.json.putJsonArray
  * [SubagentConfig.maxDurationMillis] is stopped. While the run that spawned or last waited for a child is going, its
  * result or stall reaches the model through wait_agent; whatever that run did not collect before it ended goes to
  * [onReport], for the host to deliver as a new turn: one report per run's children, once none of them still works (or
- * the first news has waited [SubagentConfig.reportHoldMillis]). Children live in memory only. Candidate API; not frozen.
+ * the first news has waited [SubagentConfig.reportHoldMillis]). Children live in memory only.
  */
 @ExperimentalAgentRuntimeApi
 class Subagents(
@@ -411,7 +411,7 @@ class Subagents(
     }
 }
 
-/** Limits and defaults for [Subagents]. Candidate API; not frozen. */
+/** Limits and defaults for [Subagents]. */
 @ExperimentalAgentRuntimeApi
 data class SubagentConfig(
     /** 1: subagents cannot start their own (dsh and Codex default). */
@@ -439,7 +439,7 @@ data class SubagentConfig(
     }
 }
 
-/** One child for the host to run. Candidate API; not frozen. */
+/** One child for the host to run. */
 @ExperimentalAgentRuntimeApi
 data class SubagentSpec(
     val id: String,
@@ -462,7 +462,6 @@ data class SubagentSpec(
 /**
  * A kind of subagent the host offers (such as one that looks up train and flight times): the model names it in
  * spawn_agent's `agent`, and the host's launcher runs that child with the type's own instructions, tools and limits.
- * Candidate API; not frozen.
  */
 @ExperimentalAgentRuntimeApi
 data class SubagentType(

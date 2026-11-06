@@ -2,7 +2,7 @@ package cc.noharry.agent.mcp
 
 /**
  * What [McpHttpClient] and [listMcpTools] say when a server cannot be used, for a settings row or a run's tool error.
- * Every message has an English default; an app passes its own to speak its users' language. Candidate API, not frozen.
+ * Every message has an English default; an app passes its own to speak its users' language.
  */
 interface McpClientMessages {
     /** No answer within [seconds]. */

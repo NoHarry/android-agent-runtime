@@ -118,7 +118,7 @@ private fun parseScenes(value: String?): List<String> =
 
 private fun skillPath(name: String): String = "$AGENTS_SKILLS_ROOT/$name/SKILL.md"
 
-/** Host-provided skill definition (via `AgentRuntimeBuilder.skill(...)`). Candidate API. */
+/** Host-provided skill definition (via `AgentRuntimeBuilder.skill(...)`). */
 data class HostSkill(
     val name: String,
     val description: String,

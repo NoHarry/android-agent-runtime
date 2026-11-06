@@ -1,7 +1,7 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Candidate immutable profile declaration compiled with plugins into a
+ * Immutable profile declaration compiled with plugins into a
  * runtime blueprint. Not a second runtime builder.
  */
 @ExperimentalAgentRuntimeApi

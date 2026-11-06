@@ -1,7 +1,7 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Candidate immutable envelope returned by [SessionEventLog].
+ * Immutable envelope returned by [SessionEventLog].
  *
  * [schemaVersion] is 2 for lossless typed payloads. [sequence] is allocated within one
  * `(sessionId, runId)` stream. Causal source sequences use that same stream and always refer

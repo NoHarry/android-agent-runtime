@@ -2,7 +2,7 @@ package cc.noharry.agent.kernel.api
 
 /**
  * Optional advisory discovery extension implemented alongside [ToolProvider].
- * Candidate API: selects original names from the supplied catalog, never executes tools.
+ * Selects original names from the supplied catalog, never executes tools.
  */
 @ExperimentalAgentRuntimeApi
 interface ToolPrefetchProvider {
@@ -12,7 +12,7 @@ interface ToolPrefetchProvider {
     /** False for local-only hint providers; avoids a synthetic remote discovery call. */
     val remotePrefetchEnabled: Boolean get() = true
 
-    /** Candidate opt-in: invoke remote selection only from search_tools, after a model asks for missing capabilities. */
+    /** Opt-in: invoke remote selection only from search_tools, after a model asks for missing capabilities. */
     val prefetchOnSearch: Boolean get() = false
 
     /** Requested budget, bounded by the Kernel's aggregate prefetch deadline. */

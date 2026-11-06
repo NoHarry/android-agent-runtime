@@ -1,9 +1,7 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Candidate lossless event kinds for [SessionEventLog] v2.
- *
- * This scaffold is experimental and does not freeze the event taxonomy.
+ * Lossless event kinds for [SessionEventLog] v2.
  */
 @ExperimentalAgentRuntimeApi
 enum class SessionEventType {

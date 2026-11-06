@@ -1,7 +1,7 @@
 package cc.noharry.agent.androiduse
 
 /**
- * Candidate host hooks around Android Use, so the host can show where the agent acts. Not frozen.
+ * Host hooks around Android Use, so the host can show where the agent acts.
  *
  * The provider bounds every call ([AndroidUseOptions.presenterTimeoutMillis], and
  * [AndroidUseOptions.runStartTimeoutMillis] for [onRunStarted]), so a slow host never stalls an action.

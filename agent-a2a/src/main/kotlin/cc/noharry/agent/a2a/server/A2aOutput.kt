@@ -1,6 +1,6 @@
 package cc.noharry.agent.a2a.server
 
-/** Candidate host output contract. Status fields must contain brief, credential-free summaries. */
+/** Host output contract. Status fields must contain brief, credential-free summaries. */
 sealed interface A2aOutput {
     /** Nonterminal work progress; tool arguments and raw results must stay in the host EventLog. */
     data class Status(

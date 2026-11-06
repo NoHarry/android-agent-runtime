@@ -1,6 +1,6 @@
 package cc.noharry.agent.kernel.api
 
-/** Candidate semantic version for a packaged [AgentPlugin]. */
+/** Semantic version for a packaged [AgentPlugin]. */
 @ExperimentalAgentRuntimeApi
 class PluginVersion(
     val major: Int,

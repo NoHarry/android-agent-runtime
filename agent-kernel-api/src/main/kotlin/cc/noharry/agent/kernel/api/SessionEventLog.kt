@@ -1,7 +1,7 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Candidate append-only authority for runtime session events.
+ * Append-only authority for runtime session events.
  *
  * Implementations allocate event identity and stream-local sequence atomically. The contract has
  * no update or delete operation; query and replay return stable snapshots in append order.
@@ -30,12 +30,12 @@ interface SessionEventLog {
     fun subscribe(listener: (SessionEvent) -> Unit): AutoCloseable = AutoCloseable { }
 
     /**
-     * Candidate: stores attachment bytes once per session, content-addressed by [ref]'s sha256.
+     * Stores attachment bytes once per session, content-addressed by [ref]'s sha256.
      * Returns false when this log keeps no attachment store or the write failed; callers then keep
      * the bytes inline in the event so nothing model-visible is lost.
      */
     fun putAttachment(sessionId: String, ref: SessionAttachmentRef, bytes: ByteArray): Boolean = false
 
-    /** Candidate: attachment bytes verified against [sha256], or null when missing or corrupt. */
+    /** Attachment bytes verified against [sha256], or null when missing or corrupt. */
     fun readAttachment(sessionId: String, sha256: String): ByteArray? = null
 }

@@ -3,7 +3,7 @@ package cc.noharry.agent.a2a.server
 import java.net.InetAddress
 
 /**
- * Candidate bounded server configuration, on the loopback address unless [bindAddress] says otherwise; use a trusted
+ * Bounded server configuration, on the loopback address unless [bindAddress] says otherwise; use a trusted
  * tunnel for remote access. [description] and [skillDescription] go on the Agent Card; [messages] are the status texts
  * callers see. [authorizer] decides who may use the server (none: anyone who reaches it, on loopback every app on the
  * device). [bindAddress] is an IP address, not a name; one other than loopback needs an authorizer and an `https`

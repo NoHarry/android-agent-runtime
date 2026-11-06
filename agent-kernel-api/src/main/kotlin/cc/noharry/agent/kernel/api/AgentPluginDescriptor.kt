@@ -1,7 +1,7 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Candidate install declaration for an [AgentPlugin].
+ * Install declaration for an [AgentPlugin].
  *
  * [id] is the single identity authority. [namespace:name:major] on
  * provided/required keys is diagnostic only.

@@ -251,7 +251,7 @@ internal class NetworkToolBackend(
         base.resolve(location)?.let { normalizedUrl(it.toString()) }
 }
 
-/** Candidate API: controls whether [NetworkToolBackend] gates web_fetch per host. */
+/** Controls whether [NetworkToolBackend] gates web_fetch per host. */
 enum class NetworkToolConfirmationPolicy {
     /** Default: each new host in a run requires explicit confirmation before transport. */
     REQUIRE_PER_HOST,

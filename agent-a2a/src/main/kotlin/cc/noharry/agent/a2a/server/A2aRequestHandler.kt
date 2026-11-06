@@ -2,7 +2,7 @@ package cc.noharry.agent.a2a.server
 
 import kotlinx.coroutines.flow.Flow
 
-/** Candidate host boundary: reuse the host runtime; cancellation must release its resources. */
+/** Host boundary: reuse the host runtime; cancellation must release its resources. */
 fun interface A2aRequestHandler {
     /** Execute one admitted text task and end with exactly one [A2aOutput.Result]. */
     fun execute(request: A2aRequest): Flow<A2aOutput>

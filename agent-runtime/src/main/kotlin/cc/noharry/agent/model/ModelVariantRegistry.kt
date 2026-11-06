@@ -3,7 +3,7 @@ package cc.noharry.agent.model
 
 import cc.noharry.agent.kernel.api.model.ModelRef
 import cc.noharry.agent.kernel.api.model.ModelVariant
-/** Candidate model variant registry. Provider-specific request options remain internal. */
+/** Model variant registry. Provider-specific request options remain internal. */
 object ModelVariantRegistry {
     fun variants(providerId: String, modelId: String): List<ModelVariant> =
         providerProfile(providerId, modelId).variants

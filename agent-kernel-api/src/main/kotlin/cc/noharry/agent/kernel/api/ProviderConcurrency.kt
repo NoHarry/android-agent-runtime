@@ -1,7 +1,7 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Candidate provider/capability concurrency mode.
+ * Provider/capability concurrency mode.
  *
  * This is metadata only: it does not carry payload, session state, or factory instances.
  * [RUNTIME_SHARED_SERIALIZED] is fail-safe non-reentrant: a same-coroutine nested call waits

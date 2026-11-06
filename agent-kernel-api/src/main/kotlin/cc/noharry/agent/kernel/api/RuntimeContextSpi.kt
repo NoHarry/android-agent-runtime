@@ -1,9 +1,9 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Candidate pre-model context SPI for host-owned context providers.
+ * Pre-model context SPI for host-owned context providers.
  *
- * Experimental — not API freeze. Runtime owns typed contribution AST; providers must not inject
+ * Runtime owns typed contribution AST; providers must not inject
  * free-form system instructions or fake user messages.
  */
 @ExperimentalAgentRuntimeApi
@@ -16,14 +16,14 @@ interface RuntimeContextProvider : AutoCloseable {
 }
 
 /**
- * Candidate turn observer SPI for pre-model explicit mutations and post-terminal enqueue.
+ * Turn observer SPI for pre-model explicit mutations and post-terminal enqueue.
  */
 @ExperimentalAgentRuntimeApi
 interface RuntimeTurnObserver : AutoCloseable {
     val id: String
 
     /**
-     * Candidate preflight for a required mutating observer action. Runtime declares the
+     * Preflight for a required mutating observer action. Runtime declares the
      * obligation before [onTurnInput]. Return null when this turn creates no obligation.
      */
     fun preflightTurnInput(input: RuntimeTurnInput): RuntimeObserverActionPreflight? = null

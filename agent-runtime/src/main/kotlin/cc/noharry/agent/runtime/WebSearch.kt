@@ -15,8 +15,7 @@ import kotlinx.serialization.json.add
 
 /**
  * The search behind the native `web_search` tool, an alternative to the provider's server-side search, whose queries
- * and results never reach the host. Results go to the model and the event log like any tool result. Candidate API;
- * not frozen.
+ * and results never reach the host. Results go to the model and the event log like any tool result.
  */
 @ExperimentalAgentRuntimeApi
 interface WebSearchProvider {
@@ -30,7 +29,7 @@ interface WebSearchProvider {
 /**
  * Fetches a page for web_fetch when the device's own request was refused or failed (a site that blocks the device, a dead
  * route), e.g. through a provider's fetch API. A separate option from [WebSearchProvider], so a runtime that keeps the
- * provider's server-side search can still have it. Candidate API; not frozen.
+ * provider's server-side search can still have it.
  */
 @ExperimentalAgentRuntimeApi
 interface WebFetchFallback {
@@ -41,7 +40,7 @@ interface WebFetchFallback {
     suspend fun fetch(url: String): WebFallbackPage?
 }
 
-/** One search result. Candidate API; not frozen. */
+/** One search result. */
 @ExperimentalAgentRuntimeApi
 data class WebSearchResult(
     val title: String,
@@ -53,7 +52,7 @@ data class WebSearchResult(
     val date: String? = null,
 )
 
-/** A page fetched by a [WebFetchFallback] for web_fetch. Candidate API; not frozen. */
+/** A page fetched by a [WebFetchFallback] for web_fetch. */
 @ExperimentalAgentRuntimeApi
 data class WebFallbackPage(val title: String, val markdown: String)
 

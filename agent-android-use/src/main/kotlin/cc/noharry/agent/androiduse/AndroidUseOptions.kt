@@ -1,6 +1,6 @@
 package cc.noharry.agent.androiduse
 
-/** Candidate Android Use settings. Not frozen. */
+/** Android Use settings. */
 data class AndroidUseOptions(
     /** False for a text-only model: observations then carry elements only. */
     val screenshots: Boolean = true,

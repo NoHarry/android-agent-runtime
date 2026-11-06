@@ -1,6 +1,6 @@
 package cc.noharry.agent.kernel.api
 
-/** Candidate cardinality for a typed runtime capability key. Not frozen until API review closes. */
+/** Cardinality for a typed runtime capability key. */
 @ExperimentalAgentRuntimeApi
 enum class CapabilityCardinality {
     SINGLE,

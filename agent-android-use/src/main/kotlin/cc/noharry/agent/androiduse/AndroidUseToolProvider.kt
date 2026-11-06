@@ -19,8 +19,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.put
 
 /**
- * Candidate Android Use tools over [AndroidUseAccessibilityService]: `android_observe` and
- * `android_action`. Not frozen.
+ * Android Use tools over [AndroidUseAccessibilityService]: `android_observe` and `android_action`.
  *
  * An action must name the latest observation of its display, then returns the next observation, so one
  * step costs one model round. Coordinates are screenshot pixels when a screenshot is attached.

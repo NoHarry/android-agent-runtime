@@ -1,7 +1,7 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Candidate input for appending one event; identity, sequence, and timestamp are log-owned.
+ * Input for appending one event; identity, sequence, and timestamp are log-owned.
  */
 @ExperimentalAgentRuntimeApi
 data class SessionEventAppend(

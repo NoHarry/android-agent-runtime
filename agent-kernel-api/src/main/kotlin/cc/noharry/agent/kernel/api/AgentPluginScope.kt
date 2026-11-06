@@ -1,6 +1,6 @@
 package cc.noharry.agent.kernel.api
 
-/** Candidate installation scope exposed to a host-packaged [AgentPlugin]. */
+/** Installation scope exposed to a host-packaged [AgentPlugin]. */
 @ExperimentalAgentRuntimeApi
 interface AgentPluginScope {
     /**

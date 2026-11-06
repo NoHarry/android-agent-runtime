@@ -171,7 +171,7 @@ internal class VirtualWorkspace(
             VfsReadResult.InvalidPath -> invalidPath()
             VfsReadResult.BinaryUnsupported -> errorResult(
                 RuntimeErrorCode.BINARY_FILE_UNSUPPORTED.wireCode,
-                "Binary files are metadata-only in this scaffold.",
+                "Binary files cannot be read as text.",
             )
             VfsReadResult.ReadDenied -> errorResult(
                 RuntimeErrorCode.WORKSPACE_WRITE_DENIED.wireCode,

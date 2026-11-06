@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface ModelClient {
     /**
-     * Candidate concurrency declaration: how many requests the runtime may send at once. The default,
+     * How many requests the runtime may send at once. The default,
      * [ProviderConcurrencyDeclaration.serialized], sends one at a time; a client that can take overlapping requests
      * declares [ProviderConcurrencyDeclaration.threadSafe] or [ProviderConcurrencyDeclaration.sessionFactory].
      */
@@ -22,15 +22,15 @@ data class ModelRequest(
     val tools: List<ModelTool> = emptyList(),
     val system: String? = null,
     val modelRef: ModelRef? = null,
-    /** Experimental provider prompt-cache hint. Not frozen until API review closes. */
+    /** Provider prompt-cache hint. */
     @property:ExperimentalAgentRuntimeApi
     val promptCacheKey: String? = null,
-    /** Experimental provider tool-selection hint. Not frozen until API review closes. */
+    /** Provider tool-selection hint. */
     @property:ExperimentalAgentRuntimeApi
     val toolChoice: String? = null,
 )
 
-/** Candidate provider/model/variant reference. Not frozen until API review closes. */
+/** Provider/model/variant reference. */
 data class ModelRef(
     val providerId: String,
     val modelId: String,
@@ -59,7 +59,7 @@ data class ModelRef(
     }
 }
 
-/** Candidate model reasoning variant summary. Not frozen until API review closes. */
+/** Model reasoning variant summary. */
 data class ModelVariant(
     val id: String,
     val label: String,
@@ -83,20 +83,20 @@ data class ModelMessage(
     /**
      * Backend tools this message loads into the conversation, for providers with mid-conversation tool changes
      * (DeepSeek's `tool_addition`): a tool sent [ModelTool.deferred] becomes callable from here on, and the request's
-     * tool list need not change. A message carrying them is a system update. Not frozen until API review closes.
+     * tool list need not change. A message carrying them is a system update.
      */
     @property:ExperimentalAgentRuntimeApi
     val toolAdditions: List<String> = emptyList(),
     /**
      * What the model said to the user in the round that made this tool call ("帮你调高一点。"), kept on the round's
      * first call so the next request shows the model its own words; [content] stays the call's reasoning. Empty on
-     * other messages. Not frozen until API review closes.
+     * other messages.
      */
     @property:ExperimentalAgentRuntimeApi
     val assistantText: String = "",
 )
 
-/** Candidate bounded image attachment for provider multimodal requests. */
+/** Bounded image attachment for provider multimodal requests. */
 data class ModelImage(
     val bytes: ByteArray,
     val mediaType: String,
@@ -116,16 +116,16 @@ data class ModelTool(
     val schemaJson: String,
     /**
      * Declared but not loaded (`defer_loading`): it costs no input and cannot be called until a message's
-     * [ModelMessage.toolAdditions] names it. Not frozen until API review closes.
+     * [ModelMessage.toolAdditions] names it.
      */
     @property:ExperimentalAgentRuntimeApi
     val deferred: Boolean = false,
-    /** What the tool does, sent with its definition; native tools keep theirs in the schema. Not frozen until API review closes. */
+    /** What the tool does, sent with its definition; native tools keep theirs in the schema. */
     @property:ExperimentalAgentRuntimeApi
     val description: String = "",
 )
 
-/** Candidate provider web_search capability declaration. Not frozen until API review closes. */
+/** Provider web_search capability declaration. */
 enum class ServerSideSearchCapability(val wireName: String) {
     ANTHROPIC_SERVER_TOOL("anthropic-server-tool"),
     OPENAI_CHAT_OPTIONS("openai-chat-options"),

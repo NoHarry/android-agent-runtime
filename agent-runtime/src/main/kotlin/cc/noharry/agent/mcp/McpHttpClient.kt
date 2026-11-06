@@ -29,7 +29,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
  * not be reached at all is not tried again for [unreachableCooldownMillis], and with a [retryScope] never in a caller's
  * way again: connecting says at once that it is unreachable and tries anew in the background, so the next caller finds
  * it back. A run connects to every switched-on server first, and one the device's network cannot reach would otherwise
- * hold each run up. [messages] words what went wrong. Candidate API, not frozen.
+ * hold each run up. [messages] words what went wrong.
  */
 class McpHttpClient(
     private val url: String,

@@ -1,7 +1,7 @@
 package cc.noharry.agent.a2a.server
 
 /**
- * Candidate inbound text request. IDs are server-owned and safe as opaque session identifiers.
+ * Inbound text request. IDs are server-owned and safe as opaque session identifiers.
  * [metadata] holds the message's top-level scalar metadata as text (bounded); hosts must treat it as
  * untrusted caller hints, never as authorization.
  */

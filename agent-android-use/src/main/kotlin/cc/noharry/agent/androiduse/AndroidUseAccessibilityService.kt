@@ -6,7 +6,7 @@ import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 
 /**
- * Candidate accessibility service behind Android Use. Not frozen.
+ * The accessibility service behind Android Use.
  *
  * The host enables it ([AndroidUseAccessibility.enable]); [AndroidUseToolProvider] drives it. Window
  * events only time the "screen settled" wait after an action; nothing is read until a tool asks.

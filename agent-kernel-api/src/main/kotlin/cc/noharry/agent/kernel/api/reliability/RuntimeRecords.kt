@@ -60,7 +60,7 @@ data class CompletionItem(
     val done: Boolean,
 )
 
-/** Redacted waiting-state handoff. Public API shape remains candidate until API freeze. */
+/** Redacted waiting-state handoff. */
 data class RuntimeHandoff(
     val runId: String,
     val sessionId: String,

@@ -201,7 +201,7 @@ class AgentRuntimeBuilder {
     }
 
     /**
-     * Registers a candidate pre-model [RuntimeContextProvider].
+     * Registers a pre-model [RuntimeContextProvider].
      * IDs must be unique; implementations live outside `agent-runtime`.
      */
     @ExperimentalAgentRuntimeApi
@@ -210,7 +210,7 @@ class AgentRuntimeBuilder {
     }
 
     /**
-     * Registers a candidate [RuntimeTurnObserver] for pre-model / terminal hooks.
+     * Registers a [RuntimeTurnObserver] for pre-model / terminal hooks.
      * IDs must be unique; implementations live outside `agent-runtime`.
      */
     @ExperimentalAgentRuntimeApi
@@ -220,7 +220,7 @@ class AgentRuntimeBuilder {
 
     /**
      * Keeps sessions, runs, messages and usage in the store [factory] opens under the [workspaceRoot]; without a
-     * workspace root there is no session store. `agent-runtime-android` supplies an SQLite store. Candidate API.
+     * workspace root there is no session store. `agent-runtime-android` supplies an SQLite store.
      */
     @ExperimentalAgentRuntimeApi
     fun sessionStore(factory: (workspaceRoot: File) -> SessionStore): AgentRuntimeBuilder = apply {
@@ -234,19 +234,19 @@ class AgentRuntimeBuilder {
         registerWorkspace(RuntimeWorkspaceRef(DEFAULT_WORKSPACE_ID, workspace), makeDefault = true)
     }
 
-    /** Uses a host-configured semantic-free VFS workspace. Candidate API. */
+    /** Uses a host-configured semantic-free VFS workspace. */
     fun virtualWorkspace(workspace: VfsFileSystem): AgentRuntimeBuilder = apply {
         workspaceRoot = null
         virtualWorkspace = workspace
         registerWorkspace(RuntimeWorkspaceRef(DEFAULT_WORKSPACE_ID, workspace), makeDefault = true)
     }
 
-    /** Registers a candidate host workspace selectable by `AgentRequest.workspaceId`. */
+    /** Registers a host workspace selectable by `AgentRequest.workspaceId`. */
     fun workspace(ref: RuntimeWorkspaceRef): AgentRuntimeBuilder = apply {
         registerWorkspace(ref, makeDefault = defaultWorkspaceId == null)
     }
 
-    /** Sets the candidate default workspace id used when a request does not select one. */
+    /** Sets the default workspace id used when a request does not select one. */
     fun defaultWorkspace(workspaceId: String): AgentRuntimeBuilder = apply {
         require(workspaceId.isNotBlank()) { "workspaceId must not be blank." }
         defaultWorkspaceId = workspaceId
@@ -261,7 +261,7 @@ class AgentRuntimeBuilder {
     /**
      * Adds a scaffold ProtocolRequest emitted during each run.
      *
-     * This is a development hook for validation, not a frozen API contract.
+     * This is a development hook for validation.
      */
     internal fun protocolRequestOnRun(
         kind: String,
@@ -280,12 +280,12 @@ class AgentRuntimeBuilder {
         nowEpochMillis = clock
     }
 
-    /** Adds a candidate host policy rule. This API is not frozen until API freeze closes. */
+    /** Adds a host policy rule. */
     fun policyRule(rule: PolicyRule): AgentRuntimeBuilder = apply {
         policyRules += rule
     }
 
-    /** Adds a candidate host runtime hook. This API is not frozen until API freeze closes. */
+    /** Adds a host runtime hook. */
     @ExperimentalAgentRuntimeApi
     fun hook(
         hook: RuntimeHook,
@@ -302,14 +302,14 @@ class AgentRuntimeBuilder {
         )
     }
 
-    /** Sets the candidate pre-hook timeout in milliseconds. */
+    /** Sets the pre-hook timeout in milliseconds. */
     @ExperimentalAgentRuntimeApi
     fun hookTimeoutMillis(timeoutMillis: Long): AgentRuntimeBuilder = apply {
         require(timeoutMillis > 0) { "hookTimeoutMillis must be positive." }
         hookTimeoutMillis = timeoutMillis
     }
 
-    /** Appends candidate host instructions after the internal protocol prompt. */
+    /** Appends host instructions after the internal protocol prompt. */
     fun systemPrompt(text: String): AgentRuntimeBuilder = apply {
         validateHostSystemPrompt(text)
         hostSystemPrompt = text.takeIf { it.isNotBlank() }
@@ -319,7 +319,7 @@ class AgentRuntimeBuilder {
      * Host context for this runtime's runs (a conversation recap, the previous exchange, instructions picked for the
      * request), sent as a user message right after each run's input instead of in [systemPrompt]. Keeping what changes
      * from run to run out of the system prompt lets the provider's prompt cache keep the system prompt and the tool list
-     * across runs. At most 16 KiB. Candidate API.
+     * across runs. At most 16 KiB.
      */
     @ExperimentalAgentRuntimeApi
     fun runContext(text: String): AgentRuntimeBuilder = apply {
@@ -327,14 +327,14 @@ class AgentRuntimeBuilder {
         runContext = text
     }
 
-    /** Supplies an explicit in-memory `/AGENTS.md` fallback. Prefer a real workspace file. Candidate API. */
+    /** Supplies an explicit in-memory `/AGENTS.md` fallback. Prefer a real workspace file. */
     fun agentsMd(content: String): AgentRuntimeBuilder = apply {
         agentsMdContent = content.takeIf { it.isNotBlank() }
     }
 
     /**
      * Rules for runs in [scene]: the system prompt carries [content] under the current scene, and a run in another
-     * scene doesn't see it. Up to 16 KiB, like the host prompt; blank content removes the scene's rules. Candidate API.
+     * scene doesn't see it. Up to 16 KiB, like the host prompt; blank content removes the scene's rules.
      */
     fun sceneAgentsMd(scene: String, content: String): AgentRuntimeBuilder = apply {
         require(scene.isNotBlank()) { "A scene's rules need the scene's name." }
@@ -346,19 +346,19 @@ class AgentRuntimeBuilder {
         }
     }
 
-    /** Registers a host-provided skill for progressive disclosure. Candidate API. */
+    /** Registers a host-provided skill for progressive disclosure. */
     fun skill(hostSkill: HostSkill): AgentRuntimeBuilder = apply {
         hostSkills += hostSkill
     }
 
-    /** Enables session-level tool activation inheritance. Candidate API. */
+    /** Enables session-level tool activation inheritance. */
     fun sessionActivationInheritance(enabled: Boolean = true): AgentRuntimeBuilder = apply {
         sessionActivationInheritance = enabled
     }
 
     /**
      * Keeps tool activations in [activations], which the host shares across the runtimes it builds for one session,
-     * and turns on session inheritance. Candidate API.
+     * and turns on session inheritance.
      */
     @ExperimentalAgentRuntimeApi
     fun sessionToolActivations(activations: SessionToolActivations): AgentRuntimeBuilder = apply {
@@ -368,7 +368,7 @@ class AgentRuntimeBuilder {
 
     /**
      * Starts each run's requests with its session's earlier runs from [history], which the host shares across the
-     * runtimes it builds for one session, and adds the run to it when it ends. Candidate API.
+     * runtimes it builds for one session, and adds the run to it when it ends.
      */
     @ExperimentalAgentRuntimeApi
     fun sessionHistory(history: SessionHistory): AgentRuntimeBuilder = apply {
@@ -378,7 +378,7 @@ class AgentRuntimeBuilder {
     /**
      * Offers spawn_agent / wait_agent / cancel_agent, backed by [subagents], which the host shares across the runtimes
      * it builds (children outlive runs). Needs a workspace. A child's own runtime gets the same instance, so its tool
-     * list matches its parent's; [SubagentConfig.maxDepth] refuses a child's spawn. Candidate API.
+     * list matches its parent's; [SubagentConfig.maxDepth] refuses a child's spawn.
      */
     @ExperimentalAgentRuntimeApi
     fun subagents(subagents: Subagents): AgentRuntimeBuilder = apply {
@@ -388,7 +388,7 @@ class AgentRuntimeBuilder {
     /**
      * Offers the native web_search tool, backed by [provider] (e.g. a provider's search API): queries and results
      * reach the model and the event log, unlike a provider's server-side search, which the host should then turn
-     * off. Null offers no web_search. Candidate API.
+     * off. Null offers no web_search.
      */
     @ExperimentalAgentRuntimeApi
     fun webSearch(provider: WebSearchProvider?): AgentRuntimeBuilder = apply {
@@ -399,7 +399,7 @@ class AgentRuntimeBuilder {
      * What the loop judges about content in the host's users' language and its domain, and its timing ([LoopSettings]):
      * which final answers only announce what the agent will do, what lessons are about and how many reach a run, which
      * failed tool results are a service's answer, how long context providers have. A subagent's runtime, which the host
-     * builds, takes its own. Candidate API.
+     * builds, takes its own.
      */
     @ExperimentalAgentRuntimeApi
     fun loopSettings(settings: LoopSettings): AgentRuntimeBuilder = apply {
@@ -408,7 +408,7 @@ class AgentRuntimeBuilder {
 
     /**
      * Whether runs learn lessons (which tools did what was asked) and later runs get the fitting ones, including those
-     * saved before; on by default when the runtime has a workspace to keep them in. Candidate API.
+     * saved before; on by default when the runtime has a workspace to keep them in.
      */
     @ExperimentalAgentRuntimeApi
     fun lessons(enabled: Boolean): AgentRuntimeBuilder = apply {
@@ -418,14 +418,14 @@ class AgentRuntimeBuilder {
     /**
      * The lines of the protocol section that tells the model how to use the runtime's tools ([ProtocolRules]): reword,
      * drop or add lines, such as the web search fallback offered when no search provider is set, or the folders the
-     * workspace may be written in. Candidate API.
+     * workspace may be written in.
      */
     @ExperimentalAgentRuntimeApi
     fun protocolRules(rules: ProtocolRules): AgentRuntimeBuilder = apply {
         protocolRules = rules
     }
 
-    /** How tools are grouped into the areas the prompt lists for the model ([ToolDomainNaming]). Candidate API. */
+    /** How tools are grouped into the areas the prompt lists for the model ([ToolDomainNaming]). */
     @ExperimentalAgentRuntimeApi
     fun toolDomains(naming: ToolDomainNaming): AgentRuntimeBuilder = apply {
         toolDomains = naming
@@ -434,7 +434,7 @@ class AgentRuntimeBuilder {
     /**
      * Gets a page through [fallback] (e.g. a provider's fetch API) when web_fetch's own request was refused or failed;
      * the result says where it came from (`via`). Works with or without [webSearch]. Null keeps web_fetch to the device's
-     * own requests. Candidate API.
+     * own requests.
      */
     @ExperimentalAgentRuntimeApi
     fun webFetchFallback(fallback: WebFetchFallback?): AgentRuntimeBuilder = apply {
@@ -445,7 +445,7 @@ class AgentRuntimeBuilder {
      * Keeps backend tools out of the model's tool list, as Codex defers tools behind tool_search: search_tools results
      * and a tools-ready message for the run carry their schemas, and the model calls them through `call_tool`. The tool
      * list then stays the same for a whole session, so finding a tool mid-run no longer makes the session history miss
-     * the provider's prompt cache. Hooks, policy, confirmation and events still see the real tool. Candidate API.
+     * the provider's prompt cache. Hooks, policy, confirmation and events still see the real tool.
      */
     @ExperimentalAgentRuntimeApi
     fun deferredBackendTools(enabled: Boolean = true): AgentRuntimeBuilder = apply {
@@ -457,7 +457,7 @@ class AgentRuntimeBuilder {
      * tools are declared `defer_loading` (no input cost) and loaded by `tool_addition` system messages as they are found,
      * so the model calls them natively with schema-checked arguments. Only for providers that support it, such as
      * DeepSeek's official Anthropic endpoint (gateways may drop the fields). Takes precedence over
-     * [deferredBackendTools]. Candidate API.
+     * [deferredBackendTools].
      */
     @ExperimentalAgentRuntimeApi
     fun nativeDeferredTools(enabled: Boolean = true): AgentRuntimeBuilder = apply {
@@ -467,14 +467,14 @@ class AgentRuntimeBuilder {
     /**
      * Sends [runContext] as a system message in history instead of a user message: the same prompt-cache behavior with
      * system weight. Only for providers that accept system messages after the first turn (DeepSeek; not Anthropic's own
-     * API). Candidate API.
+     * API).
      */
     @ExperimentalAgentRuntimeApi
     fun runContextAsSystem(enabled: Boolean = true): AgentRuntimeBuilder = apply {
         runContextAsSystem = enabled
     }
 
-    /** Sets candidate native loop budgets. This API is not frozen until API freeze closes. */
+    /** Sets native loop budgets. */
     fun loopBudget(
         maxModelRounds: Int = DEFAULT_MAX_MODEL_ROUNDS,
         maxToolCallsPerRun: Int = DEFAULT_MAX_TOOL_CALLS_PER_RUN,
@@ -484,7 +484,7 @@ class AgentRuntimeBuilder {
     }
 
     /**
-     * Candidate API: whether the model accepts image input (default true). When false, every image in a
+     * Whether the model accepts image input (default true). When false, every image in a
      * request, such as a tool screenshot, becomes a text placeholder; the EventLog still keeps it.
      */
     fun imageInput(enabled: Boolean): AgentRuntimeBuilder = apply {
@@ -492,9 +492,9 @@ class AgentRuntimeBuilder {
     }
 
     /**
-     * Candidate API: uses the model's context capacity for automatic compaction (default80%).
+     * Uses the model's context capacity for automatic compaction (default 80%).
      * Uses reported inclusive input tokens per model call, not billing totals; disables legacy
-     * byte-triggered compaction/history trimming. Existing defaults remain when unset. Not frozen.
+     * byte-triggered compaction/history trimming. Existing defaults remain when unset.
      */
     fun contextWindow(tokens: Long, compactionThresholdRatio: Double = 0.8): AgentRuntimeBuilder = apply {
         require(tokens > 0) { "Context window must be positive." }
@@ -503,7 +503,7 @@ class AgentRuntimeBuilder {
         contextWindowTokens = tokens
     }
 
-    /** Sets the candidate runtime-wide cap for concurrent tool executions. Not frozen. */
+    /** Sets the runtime-wide cap for concurrent tool executions. */
     fun toolConcurrency(
         maxConcurrentCalls: Int = 4,
     ): AgentRuntimeBuilder = apply {
@@ -512,8 +512,8 @@ class AgentRuntimeBuilder {
     }
 
     /**
-     * Sets the candidate runtime-wide cap for concurrent model completions, including history
-     * compaction. The same wrapper is shared by the loop and [HistoryCompactor]. Not frozen.
+     * Sets the runtime-wide cap for concurrent model completions, including history
+     * compaction. The same wrapper is shared by the loop and [HistoryCompactor].
      */
     fun modelConcurrency(
         maxConcurrentCalls: Int = 4,
@@ -523,10 +523,10 @@ class AgentRuntimeBuilder {
     }
 
     /**
-     * Sets candidate process-local session/run admission budgets. Not frozen until API freeze
-     * closes. All values must be positive. `maxActiveSessions = 1` is the supported rollback
-     * setting. The scheduler is constructed per runtime and ordinary-run admission is wired
-     * in-process; process-restored admission remains deferred.
+     * Sets process-local session/run admission budgets. All values must be positive.
+     * `maxActiveSessions = 1` is the supported rollback setting. The scheduler is constructed
+     * per runtime and ordinary-run admission is wired in-process; process-restored admission
+     * remains deferred.
      */
     fun sessionConcurrency(
         maxActiveSessions: Int = DEFAULT_MAX_ACTIVE_SESSIONS,
@@ -543,7 +543,7 @@ class AgentRuntimeBuilder {
         )
     }
 
-    /** Sets candidate recoverable model retry and fallback behavior. Not frozen until API freeze closes. */
+    /** Sets recoverable model retry and fallback behavior. */
     fun modelRetry(
         maxAttempts: Int = DEFAULT_MODEL_RETRY_MAX_ATTEMPTS,
         initialBackoffMillis: Long = 250L,
@@ -561,7 +561,6 @@ class AgentRuntimeBuilder {
     /**
      * Controls host-level confirmation for `web_fetch`. `ALLOW_ALL_HOSTS` skips the per-host
      * confirmation gate entirely (URL validation and private-address denial still apply).
-     * Not frozen until API freeze closes.
      */
     fun networkConfirmationPolicy(policy: NetworkToolConfirmationPolicy): AgentRuntimeBuilder = apply {
         networkConfirmationPolicy = policy
@@ -570,7 +569,7 @@ class AgentRuntimeBuilder {
     /**
      * When false, the native `web_fetch` tool is omitted from the model toolset. Hosts that
      * expose a model-visible `web_search` server tool should set this false to avoid the model
-     * preferring `web_fetch` over `web_search`. Not frozen until API freeze closes.
+     * preferring `web_fetch` over `web_search`.
      */
     fun nativeWebFetchEnabled(enabled: Boolean): AgentRuntimeBuilder = apply {
         nativeWebFetchEnabled = enabled
@@ -579,29 +578,29 @@ class AgentRuntimeBuilder {
     /**
      * Excludes optional native tools from model requests and direct/nested dispatch.
      * Copies the set; unknown names and protocol-required finish are rejected.
-     * Candidate API, not frozen until API freeze closes. An engine is still required for exec_js.
+     * An engine is still required for exec_js.
      */
     fun disabledNativeTools(names: Set<String>): AgentRuntimeBuilder = apply {
         disabledNativeTools = cc.noharry.agent.kernel.core.tools.snapshotDisabledNativeTools(names)
     }
 
-    /** Registers a candidate host-provided exec engine. Not frozen until API freeze closes. */
+    /** Registers a host-provided exec engine. */
     @ExperimentalAgentRuntimeApi
     fun execEngine(engine: ExecEngine): AgentRuntimeBuilder = apply {
         declarations.execEngine(engine)
     }
 
-    /** Adds candidate JSON policy config text. Build fails fast when config is invalid. */
+    /** Adds JSON policy config text. Build fails fast when config is invalid. */
     fun policyConfigJson(json: String): AgentRuntimeBuilder = apply {
         policyConfigJsons += json
     }
 
-    /** Adds a candidate JSON policy config file. Build fails fast when config is invalid. */
+    /** Adds a JSON policy config file. Build fails fast when config is invalid. */
     fun policyConfig(file: File): AgentRuntimeBuilder = apply {
         policyConfigFiles += file
     }
 
-    /** Adds a candidate JSON policy config from the configured virtual workspace. Candidate API. */
+    /** Adds a JSON policy config from the configured virtual workspace. */
     fun policyConfigPath(path: String): AgentRuntimeBuilder = apply {
         policyConfigPaths += normalizedPolicyConfigPath(path)
     }
@@ -637,8 +636,6 @@ class AgentRuntimeBuilder {
      * Single public entry for reliability root, allowlisted probe pack ids, and
      * case binding metadata. Unknown pack ids and illegal case/hash combinations
      * throw [IllegalArgumentException] at configuration time.
-     *
-     * Not an API freeze.
      *
      * Does **not** accept internal [ProbePack] instances (no ProbePack in public/JVM ABI).
      */
@@ -789,7 +786,7 @@ class AgentRuntimeBuilder {
         return ConversationCompactor(model, threshold, retain, nowEpochMillis)
     }
 
-    /** Candidate API: builds without configuration or storage I/O on the caller context. Not frozen. */
+    /** Builds without configuration or storage I/O on the caller context. */
     suspend fun buildAsync(): AgentRuntime = withContext(Dispatchers.IO) { build() }
 
     private fun buildStorageInfrastructure(): StorageInfrastructure =

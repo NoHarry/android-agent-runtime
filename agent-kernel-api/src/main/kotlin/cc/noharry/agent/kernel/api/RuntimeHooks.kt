@@ -3,30 +3,28 @@ package cc.noharry.agent.kernel.api
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.api.reliability.RuntimeResult
 
-/** Default per-hook timeout used by candidate hook registrations. */
+/** Default per-hook timeout used by hook registrations. */
 const val DEFAULT_HOOK_TIMEOUT_MILLIS: Long = 5_000L
 
 /**
- * Candidate host hook API for observing and controlling runtime tool use.
- *
- * This API is scaffold until the API freeze boundary is signed.
+ * Host hook API for observing and controlling runtime tool use.
  */
 @ExperimentalAgentRuntimeApi
 interface RuntimeHook {
-    /** Candidate pre-tool callback. Returning Deny or RequireConfirmation prevents immediate execution. */
+    /** Pre-tool callback. Returning Deny or RequireConfirmation prevents immediate execution. */
     suspend fun onPreToolUse(call: ToolUse, context: HookContext): HookDecision = HookDecision.Allow()
 
-    /** Candidate post-tool callback. Exceptions are recorded internally and do not fail the run. */
+    /** Post-tool callback. Exceptions are recorded internally and do not fail the run. */
     suspend fun onPostToolUse(call: ToolUse, result: ToolUseResult, context: HookContext) {}
 
-    /** Candidate lifecycle callback for run start. */
+    /** Lifecycle callback for run start. */
     suspend fun onRunStarted(context: HookContext) {}
 
-    /** Candidate lifecycle callback for terminal run completion. */
+    /** Lifecycle callback for terminal run completion. */
     suspend fun onRunFinished(result: RuntimeResult, context: HookContext) {}
 }
 
-/** Candidate record describing a model-visible tool call. */
+/** Record describing a model-visible tool call. */
 data class ToolUse(
     val toolName: String,
     val argumentsJson: String,
@@ -34,7 +32,7 @@ data class ToolUse(
     val toolCallId: String = "",
 )
 
-/** Candidate source taxonomy for runtime tool calls. */
+/** Source taxonomy for runtime tool calls. */
 enum class ToolSource {
     INTERACTION,
     NATIVE_READ,
@@ -46,7 +44,7 @@ enum class ToolSource {
     TERMINAL,
 }
 
-/** Candidate post-tool result record for hook observers. */
+/** Post-tool result record for hook observers. */
 data class ToolUseResult(
     val ok: Boolean,
     val resultJson: String,
@@ -54,7 +52,7 @@ data class ToolUseResult(
     val code: String? = null,
 )
 
-/** Candidate context passed to host hooks and policy rules. */
+/** Context passed to host hooks and policy rules. */
 data class HookContext(
     val sessionId: String,
     val runId: String,
@@ -62,14 +60,14 @@ data class HookContext(
     val approvedConfirmation: Boolean = false,
 )
 
-/** Candidate host hook failure policy for pre-tool callbacks. */
+/** Host hook failure policy for pre-tool callbacks. */
 @ExperimentalAgentRuntimeApi
 enum class HookFailurePolicy {
     FAIL_CLOSED,
     FAIL_OPEN,
 }
 
-/** Candidate host hook registration with a matcher, per-hook timeout, and failure policy. */
+/** Host hook registration with a matcher, per-hook timeout, and failure policy. */
 @ExperimentalAgentRuntimeApi
 data class RuntimeHookRegistration(
     val hook: RuntimeHook,
@@ -82,7 +80,7 @@ data class RuntimeHookRegistration(
     }
 }
 
-/** Candidate matcher used to decide whether a hook registration observes a tool call. */
+/** Matcher used to decide whether a hook registration observes a tool call. */
 @ExperimentalAgentRuntimeApi
 fun interface ToolMatcher {
     fun matches(call: ToolUse): Boolean
@@ -98,7 +96,7 @@ fun interface ToolMatcher {
     }
 }
 
-/** Candidate hook decision. */
+/** Hook decision. */
 @ExperimentalAgentRuntimeApi
 sealed interface HookDecision {
     data class Allow(

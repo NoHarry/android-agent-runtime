@@ -1,6 +1,6 @@
 package cc.noharry.agent.kernel.api
 
-/** Candidate session identity passed to [SessionCapabilityFactory] realizations. */
+/** Session identity passed to [SessionCapabilityFactory] realizations. */
 @ExperimentalAgentRuntimeApi
 class SessionCapabilityContext(
     val sessionId: String,

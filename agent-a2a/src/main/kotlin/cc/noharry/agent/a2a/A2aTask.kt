@@ -10,7 +10,7 @@ public data class A2aTask(
     /** Artifacts carried by the snapshot, in remote order. */
     public val artifacts: List<A2aArtifact> = emptyList(),
 ) {
-    /** Stable task lifecycle states understood by the candidate facade. */
+    /** Task lifecycle states understood by the client facade. */
     public enum class Status {
         /** Work has not started. */
         SUBMITTED,

@@ -1,7 +1,7 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Candidate host-packaged runtime plugin. Dynamic or downloaded executable plugins
+ * Host-packaged runtime plugin. Dynamic or downloaded executable plugins
  * are unsupported. [descriptor] is abstract and the sole install authority.
  * [id] may default to [AgentPluginDescriptor.id].
  */

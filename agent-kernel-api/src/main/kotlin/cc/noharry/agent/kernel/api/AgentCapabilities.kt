@@ -4,7 +4,7 @@ package cc.noharry.agent.kernel.api
 
 import cc.noharry.agent.kernel.api.model.ModelClient
 
-/** Candidate built-in capability keys understood by the runtime Kernel. */
+/** Built-in capability keys understood by the runtime Kernel. */
 @ExperimentalAgentRuntimeApi
 object AgentCapabilities {
     val TOOL_PROVIDER =

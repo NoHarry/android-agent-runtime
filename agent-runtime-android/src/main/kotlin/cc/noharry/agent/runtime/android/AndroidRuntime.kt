@@ -9,13 +9,13 @@ import java.io.File
 
 /**
  * Keeps sessions, runs, messages and usage in an SQLite database under the builder's workspace root
- * (`runtime-session-store.sqlite`). Candidate API, not frozen.
+ * (`runtime-session-store.sqlite`).
  */
 @ExperimentalAgentRuntimeApi
 fun AgentRuntimeBuilder.androidSqliteSessions(): AgentRuntimeBuilder =
     sessionStore { workspaceRoot -> AndroidSqliteSessionStore(File(workspaceRoot, SESSION_STORE_DB_FILE)) }
 
-/** The durable session event log in the app's no-backup storage. Candidate API, not frozen. */
+/** The durable session event log in the app's no-backup storage. */
 @ExperimentalAgentRuntimeApi
 fun DurableSessionEventLogPlugin.Companion.appPrivate(context: Context): DurableSessionEventLogPlugin =
     DurableSessionEventLogPlugin.forRoot(appStorage(context.noBackupFilesDir, DurableSessionEventLogPlugin.ROOT_DIRECTORY))

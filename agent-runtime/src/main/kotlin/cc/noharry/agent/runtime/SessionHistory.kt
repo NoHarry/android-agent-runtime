@@ -11,7 +11,7 @@ import cc.noharry.agent.kernel.core.context.SessionHistoryStore
  * with the session's earlier runs (their inputs, tool calls, results and answers) and the run is appended when it ends,
  * so the conversation grows like one long chat and the provider's prompt cache covers everything before the new input.
  * A host that does this no longer needs to restate the conversation in [AgentRuntimeBuilder.runContext].
- * Memory only. Candidate API; not frozen.
+ * Memory only.
  *
  * Length is kept down by conversation compaction (with [AgentRuntimeBuilder.contextWindowTokens]), which summarizes the
  * oldest runs instead of dropping them.

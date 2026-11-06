@@ -1,6 +1,6 @@
 package cc.noharry.agent.kernel.api
 
-/** Inclusive candidate Kernel API compatibility window declared by a plugin. */
+/** Inclusive Kernel API compatibility window declared by a plugin. */
 @ExperimentalAgentRuntimeApi
 class KernelApiRange(
     val min: KernelApiVersion,

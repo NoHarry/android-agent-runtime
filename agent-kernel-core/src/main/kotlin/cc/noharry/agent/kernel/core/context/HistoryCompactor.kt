@@ -22,7 +22,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 
 /**
- * Candidate compactor: an explicit input-token threshold disables legacy byte pressure.
+ * History compactor: an explicit input-token threshold disables legacy byte pressure.
  * Without it, retains the legacy byte/usage budget behavior.
  *
  * Main strategy: LLM summarization. Messages are classified into

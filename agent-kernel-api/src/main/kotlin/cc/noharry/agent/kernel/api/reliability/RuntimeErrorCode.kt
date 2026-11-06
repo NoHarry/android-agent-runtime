@@ -1,11 +1,10 @@
 package cc.noharry.agent.kernel.api.reliability
 
 /**
- * Candidate public runtime error-code taxonomy.
+ * Public runtime error-code taxonomy.
  *
- * Entries and names remain scaffold until API freeze closes; `wireCode` preserves
- * the current string values exposed through public event, blocker, and tool-result
- * payloads.
+ * `wireCode` is the string value exposed through public event, blocker, and tool-result
+ * payloads. It is the entry's name, and it does not change: hosts and stored records match on it.
  */
 enum class RuntimeErrorCode(
     val wireCode: String,

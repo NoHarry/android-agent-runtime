@@ -39,7 +39,10 @@ interface LoopHistoryStore {
     fun clearCached(runId: String)
 }
 
-/** Candidate storage budget; hosts using token-window compaction can disable legacy byte trimming. */
+/**
+ * Keeps loop histories in memory, each trimmed to [budgetBytes]; `Int.MAX_VALUE`, which the builder passes when a
+ * context window is set, keeps them whole.
+ */
 class InMemoryLoopHistoryStore(private val budgetBytes: Int = MAX_LOOP_HISTORY_BYTES) : LoopHistoryStore {
     init { require(budgetBytes > 0) { "budgetBytes must be positive." } }
     private val histories = ConcurrentHashMap<String, LoopHistory>()

@@ -1,7 +1,7 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Candidate typed identity for a capability supplied by an [AgentPlugin].
+ * Typed identity for a capability supplied by an [AgentPlugin].
  *
  * A key instance is the only runtime lookup identity. [namespace], [localName] and
  * [major] form a diagnostic `namespace:name:major` string and never merge independently

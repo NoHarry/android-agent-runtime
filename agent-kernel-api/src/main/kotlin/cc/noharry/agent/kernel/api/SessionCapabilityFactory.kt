@@ -1,7 +1,7 @@
 package cc.noharry.agent.kernel.api
 
 /**
- * Candidate factory that creates one session-scoped capability instance.
+ * Factory that creates one session-scoped capability instance.
  *
  * Direct [ProviderConcurrencyMode.SESSION_FACTORY] instances are invalid; this
  * factory is the only supported registration route.

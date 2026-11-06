@@ -1,6 +1,6 @@
 package cc.noharry.agent.androiduse
 
-/** Candidate: where an action lands, in display pixels. A tap has `to` equal to `from`. Not frozen. */
+/** Where an action lands, in display pixels. A tap has `to` equal to `from`. */
 data class AndroidUseGesturePreview(
     val kind: Kind,
     val displayId: Int,

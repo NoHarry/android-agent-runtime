@@ -29,7 +29,6 @@ import kotlinx.serialization.json.buildJsonObject
  *
  * A handler gets the call's arguments and returns the result: JSON (an object or an array) as it is, anything else as
  * text. A handler that throws fails that one call, and the model sees why. Calls are made one at a time.
- * Candidate API, not frozen.
  */
 fun functionTools(
     id: String,
@@ -37,7 +36,7 @@ fun functionTools(
     tools: FunctionToolsBuilder.() -> Unit,
 ): ToolProvider = FunctionToolProvider(id, displayName, FunctionToolsBuilder().apply(tools).build())
 
-/** Collects the tools of [functionTools]. Candidate API, not frozen. */
+/** Collects the tools of [functionTools]. */
 class FunctionToolsBuilder internal constructor() {
     private val tools = linkedMapOf<String, FunctionTool>()
 

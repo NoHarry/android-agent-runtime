@@ -13,7 +13,6 @@ class ExecutePlanCompatibilityDeletedInventoryTest {
             File("../agent-kernel-core/src/main"),
             File("src/main"),
             File("../samples/minimal/src/main"),
-            File("src/test/resources/fixtures/protocol"),
         )
         roots.forEach { root ->
             assertTrue("scan root must exist: ${root.canonicalPath}", root.isDirectory)

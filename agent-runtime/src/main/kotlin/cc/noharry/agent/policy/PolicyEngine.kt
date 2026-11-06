@@ -27,15 +27,15 @@ internal class PolicyEngine(
     }
 }
 
-/** Candidate host policy rule API. Not frozen until the API freeze boundary is signed. */
+/** Host policy rule. */
 fun interface PolicyRule {
     /** Evaluates one runtime policy action in the supplied context. */
     fun check(action: PolicyAction, context: PolicyContext): PolicyDecision
 }
 
-/** Candidate policy action taxonomy. */
+/** Policy action taxonomy. */
 sealed interface PolicyAction {
-    /** Candidate tool-call action. `toolName` is the final model-visible injected name. */
+    /** Tool-call action. `toolName` is the final model-visible injected name. */
     data class Call(
         val toolName: String,
         val arguments: JsonObject,
@@ -43,7 +43,7 @@ sealed interface PolicyAction {
     ) : PolicyAction
 }
 
-/** Candidate policy evaluation context. */
+/** Policy evaluation context. */
 data class PolicyContext(
     val sessionId: String,
     val runId: String,
@@ -52,7 +52,7 @@ data class PolicyContext(
     val approvedStepIndex: Int? = null,
 )
 
-/** Candidate policy decision. */
+/** Policy decision. */
 sealed interface PolicyDecision {
     data object Allow : PolicyDecision
 

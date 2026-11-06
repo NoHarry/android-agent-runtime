@@ -2,7 +2,7 @@ package cc.noharry.agent.runtime
 import cc.noharry.agent.vfs.VfsFileSystem
 import java.util.concurrent.ConcurrentHashMap
 
-/** Candidate host-registered workspace reference. Not frozen until API review closes. */
+/** Host-registered workspace reference. */
 data class RuntimeWorkspaceRef(
     val workspaceId: String,
     val fileSystem: VfsFileSystem,

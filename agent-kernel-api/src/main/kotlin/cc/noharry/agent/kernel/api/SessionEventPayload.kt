@@ -11,7 +11,7 @@ package cc.noharry.agent.kernel.api
 sealed class SessionEventPayload {
     data object Empty : SessionEventPayload()
 
-    /** Candidate question/input lifecycle fact. Content is complete; delivery is not model approval. */
+    /** Question/input lifecycle fact. Content is complete; delivery is not model approval. */
     data class UserInteraction(
         val kind: String,
         val state: String,
@@ -81,7 +81,7 @@ sealed class SessionEventPayload {
         val source: String = "",
         val status: String = "",
         val todoCompletion: String = "",
-        /** Candidate: images returned with the result, stored once per session by content hash. */
+        /** Images returned with the result, stored once per session by content hash. */
         val attachments: List<SessionAttachmentRef> = emptyList(),
     ) : SessionEventPayload()
 

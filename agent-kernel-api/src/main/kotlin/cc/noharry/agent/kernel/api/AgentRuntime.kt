@@ -15,7 +15,7 @@ import cc.noharry.agent.kernel.api.reliability.RuntimeTraceEvent
 import kotlinx.coroutines.flow.Flow
 
 interface AgentRuntime {
-    /** Starts a runtime run. Public API is scaffold until API freeze closes. */
+    /** Starts a runtime run. */
     fun run(request: AgentRequest): Flow<AgentEvent>
 
     /** Resumes a pending user confirmation. */
@@ -24,7 +24,7 @@ interface AgentRuntime {
     /** Returns a pending user confirmation, or null when missing, consumed, or expired. */
     suspend fun getPendingConfirmation(pendingId: String): PendingConfirmation?
 
-    /** Candidate pending confirmation cancellation API shape. */
+    /** Cancels a pending user confirmation. */
     suspend fun cancelPendingConfirmation(
         request: CancelPendingConfirmationRequest,
     ): CancelPendingResult
@@ -35,34 +35,30 @@ interface AgentRuntime {
     /** Returns a terminal runtime result, or null when the run is unknown or not terminal. */
     suspend fun getRuntimeResult(runId: String): RuntimeResult?
 
-    /** Candidate redacted handoff query API shape for waiting runs. */
+    /** Queries the redacted handoff of a waiting run. */
     suspend fun getRuntimeHandoff(runId: String): RuntimeHandoff?
 
-    /** Candidate open-confusion query API shape for WAITING_USER_INPUT runs. */
+    /** Queries the open confusion of a WAITING_USER_INPUT run. */
     suspend fun getOpenConfusion(runId: String): OpenConfusion?
 
     /**
-     * Candidate waiting-user-input resume API shape.
+     * Resumes a run waiting for user input.
      *
      * Runtime reliability storage keeps only loop history and safe run metadata.
      * Hosts must re-supply current state and workspace selection when resuming.
      */
     suspend fun resumeUserInput(request: AgentRequest): RuntimeResult?
 
-    /** Candidate in-flight steering API shape for active RUNNING runs. */
+    /** Steers an active RUNNING run with in-flight user input. */
     suspend fun postUserInput(request: PostUserInputRequest): PostUserInputResult
 
-    /**
-     * Candidate ProtocolRequest close-loop API shape.
-     *
-     * Method names and DTOs are not frozen until the API review closes.
-     */
+    /** Resolves a ProtocolRequest, closing its loop. */
     suspend fun resolveRuntimeProtocolRequest(
         decision: ProtocolRequestResolution,
     ): ProtocolRequestCloseLoopResult
 
     /**
-     * Candidate ProtocolRequest rejection API shape.
+     * Rejects a ProtocolRequest.
      *
      * This rejects a host/control-plane request only; it does not replace user confirmation.
      */
@@ -70,21 +66,21 @@ interface AgentRuntime {
         decision: ProtocolRequestRejection,
     ): ProtocolRequestCloseLoopResult
 
-    /** Candidate ProtocolRequest cancellation API shape. */
+    /** Cancels a ProtocolRequest. */
     suspend fun cancelRuntimeProtocolRequest(
         decision: ProtocolRequestCancellation,
     ): ProtocolRequestCloseLoopResult
 
-    /** Candidate pending ProtocolRequest query API shape. */
+    /** Queries pending ProtocolRequests. */
     suspend fun getPendingProtocolRequests(
         sessionId: String? = null,
         runId: String? = null,
     ): List<RuntimeProtocolRequest>
 
-    /** Candidate redacted evidence query API shape. */
+    /** Queries redacted evidence by id. */
     suspend fun getRuntimeEvidence(evidenceId: String): RuntimeEvidence?
 
-    /** Candidate redacted trace query API shape. */
+    /** Queries a run's redacted trace events. */
     suspend fun getRuntimeTraceEvents(runId: String): List<RuntimeTraceEvent>
 
     /** Queries the append-only, privacy-safe event authority for offline analysis. */
@@ -96,7 +92,7 @@ interface AgentRuntime {
     suspend fun replaySessionEvents(sessionId: String, runId: String): List<SessionEvent> = emptyList()
 
     /**
-     * Candidate EventLog health for one `(sessionId, runId)` stream.
+     * EventLog health for one `(sessionId, runId)` stream.
      * Missing, custom, or legacy backends that do not report health return UNKNOWN.
      */
     @ExperimentalAgentRuntimeApi
@@ -123,7 +119,7 @@ interface AgentRuntime {
      * [cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode.RUNTIME_CLOSED]
      * for runs cancelled by close.
      *
-     * Candidate lifecycle close also performs reverse-registration close of context
+     * Lifecycle close also performs reverse-registration close of context
      * providers and turn observers. Idempotent; never throws to hosts.
      */
     @ExperimentalAgentRuntimeApi
@@ -131,7 +127,7 @@ interface AgentRuntime {
 }
 
 /**
- * Candidate same-session run conflict policy.
+ * Same-session run conflict policy.
  *
  * Consulted only when a same-session owner is WAITING_CONTROL. A null
  * [AgentRequest.sessionRunConflictPolicy] requires an explicit host choice then.
@@ -143,7 +139,7 @@ enum class SessionRunConflictPolicy {
 }
 
 /**
- * Candidate run request; [currentStateKeys] is trusted typed host state, never prompt-derived.
+ * Run request; [currentStateKeys] is trusted typed host state, never prompt-derived.
  *
  * Resume rebuilds copy trusted [currentStateKeys] and [workspaceId] from the host request.
  * Those fields are not written to the Runtime reliability store.
@@ -184,22 +180,22 @@ data class AgentRequest(
 sealed interface AgentEvent {
     data class Started(val runId: String) : AgentEvent
 
-    /** Candidate live projection of the canonical question/input fact, never a second content ledger. */
+    /** Live projection of the canonical question/input fact, never a second content ledger. */
     data class UserInteraction(val runId: String, val interaction: SessionEventPayload.UserInteraction) : AgentEvent
 
-    /** Candidate model thinking/status delta. Not frozen until API review closes. */
+    /** Model thinking/status delta. */
     data class ThinkingDelta(
         val runId: String,
         val text: String,
     ) : AgentEvent
 
-    /** Candidate model text delta. Not frozen until API review closes. */
+    /** Model text delta. */
     data class TextDelta(
         val runId: String,
         val text: String,
     ) : AgentEvent
 
-    /** Candidate provider token usage delta. Not frozen until API review closes. */
+    /** Provider token usage delta. */
     data class TokenUsageDelta(
         val runId: String,
         val inputTokens: Int = 0,
@@ -217,7 +213,7 @@ sealed interface AgentEvent {
         val protocolRequest: RuntimeProtocolRequest,
     ) : AgentEvent
 
-    /** Candidate model retry event. Not frozen until API review closes. */
+    /** Model retry event. */
     data class RetryAttempted(
         val runId: String,
         val attempt: Int,
@@ -226,14 +222,14 @@ sealed interface AgentEvent {
         val fallbackModelRef: ModelRef? = null,
     ) : AgentEvent
 
-    /** Candidate loop budget warning event. Not frozen until API review closes. */
+    /** Loop budget warning event. */
     data class BudgetWarning(
         val runId: String,
         val roundsRemaining: Int,
         val toolCallsRemaining: Int,
     ) : AgentEvent
 
-    /** Candidate loop history compaction event. Not frozen until API review closes. */
+    /** Loop history compaction event. */
     data class CompactionApplied(
         val runId: String,
         val beforeMessageCount: Int,
@@ -243,7 +239,7 @@ sealed interface AgentEvent {
     ) : AgentEvent
 
     /**
-     * Candidate empty-completion probe. Not frozen until API review closes.
+     * Empty-completion probe.
      *
      * Emitted by the native tool loop when a model round ends with no tool calls and no
      * accepted finish/implicit-finish. Hosts use this to diagnose continue-vs-fail root
@@ -264,14 +260,14 @@ sealed interface AgentEvent {
         val successfulBackendToolCount: Int,
     ) : AgentEvent
 
-    /** Candidate in-flight steering event. Not frozen until API review closes. */
+    /** In-flight steering event. */
     data class SteeringAccepted(
         val runId: String,
         val requestId: String,
         val textPreview: String,
     ) : AgentEvent
 
-    /** Candidate redacted native tool call event. Not frozen until API review closes. */
+    /** Redacted native tool call event. */
     data class NativeToolCallStarted(
         val runId: String,
         val toolName: String,
@@ -279,7 +275,7 @@ sealed interface AgentEvent {
         val toolCallId: String = "",
     ) : AgentEvent
 
-    /** Candidate redacted native tool result event. Not frozen until API review closes. */
+    /** Redacted native tool result event. */
     data class NativeToolCallFinished(
         val runId: String,
         val toolName: String,
@@ -287,7 +283,7 @@ sealed interface AgentEvent {
         val toolCallId: String = "",
     ) : AgentEvent
 
-    /** Candidate metadata-only network tool activity event. Not frozen until API review closes. */
+    /** Metadata-only network tool activity event. */
     data class NetworkToolActivity(
         val runId: String,
         val toolName: String,
@@ -298,7 +294,7 @@ sealed interface AgentEvent {
         val truncated: Boolean = false,
     ) : AgentEvent
 
-    /** Candidate metadata-only web_search activity event. Not frozen until API review closes. */
+    /** Metadata-only web_search activity event. */
     data class SearchActivity(
         val runId: String,
         val provider: String,
@@ -306,13 +302,13 @@ sealed interface AgentEvent {
         val resultCount: Int? = null,
     ) : AgentEvent
 
-    /** Candidate redacted exec output stream event. Not frozen until API review closes. */
+    /** Redacted exec output stream event. */
     data class ExecOutputDelta(
         val runId: String,
         val text: String,
     ) : AgentEvent
 
-    /** Candidate workspace write visibility event. Not frozen until API review closes. */
+    /** Workspace write visibility event. */
     data class WorkspaceFileChanged(
         val runId: String,
         val path: String,
@@ -325,7 +321,7 @@ sealed interface AgentEvent {
         val diffTimedOut: Boolean = false,
     ) : AgentEvent
 
-    /** Candidate workspace binding visibility event. Not frozen until API review closes. */
+    /** Workspace binding visibility event. */
     data class WorkspaceChanged(
         val runId: String,
         val workspaceId: String,
@@ -368,7 +364,7 @@ data class PendingConfirmation(
     val argumentsJson: String? = null,
 )
 
-/** Candidate in-flight steering request. Not frozen until API review closes. */
+/** In-flight steering request. */
 data class PostUserInputRequest(
     val runId: String,
     val requestId: String,
@@ -377,7 +373,7 @@ data class PostUserInputRequest(
     val questionId: String? = null,
 )
 
-/** Candidate in-flight steering result. Not frozen until API review closes. */
+/** In-flight steering result. */
 sealed interface PostUserInputResult {
     data object Accepted : PostUserInputResult
 
@@ -392,7 +388,7 @@ sealed interface PostUserInputResult {
     data object NotFound : PostUserInputResult
 }
 
-/** Candidate confirmation cancellation request. Not frozen until API review closes. */
+/** Confirmation cancellation request. */
 data class CancelPendingConfirmationRequest(
     val pendingId: String,
     val requestId: String,
@@ -411,7 +407,7 @@ sealed interface ConfirmationResumeResult {
     data class Rejected(val reason: String) : ConfirmationResumeResult
 }
 
-/** Candidate cancellation result for pending user confirmation lifecycle. */
+/** Cancellation result for pending user confirmation lifecycle. */
 sealed interface CancelPendingResult {
     data class Cancelled(
         val pending: PendingConfirmation,
@@ -424,28 +420,28 @@ sealed interface CancelPendingResult {
     data object NotFound : CancelPendingResult
 }
 
-/** Candidate ProtocolRequest resolve request. Not frozen until API review closes. */
+/** ProtocolRequest resolve request. */
 data class ProtocolRequestResolution(
     val protocolRequestId: String,
     val requestId: String,
     val responsePayloadJson: String? = null,
 )
 
-/** Candidate ProtocolRequest reject request. Not frozen until API review closes. */
+/** ProtocolRequest reject request. */
 data class ProtocolRequestRejection(
     val protocolRequestId: String,
     val requestId: String,
     val reason: String,
 )
 
-/** Candidate ProtocolRequest cancel request. Not frozen until API review closes. */
+/** ProtocolRequest cancel request. */
 data class ProtocolRequestCancellation(
     val protocolRequestId: String,
     val requestId: String,
     val reason: String? = null,
 )
 
-/** Candidate close-loop result for ProtocolRequest lifecycle transitions. */
+/** Close-loop result for ProtocolRequest lifecycle transitions. */
 sealed interface ProtocolRequestCloseLoopResult {
     data class Updated(
         val protocolRequest: RuntimeProtocolRequest,

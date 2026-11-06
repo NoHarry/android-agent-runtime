@@ -53,7 +53,7 @@ class DurableSessionEventLogPlugin private constructor(
 
 /**
  * Opens the durable file-backed session event log under [root] directly, the same log [DurableSessionEventLogPlugin]
- * installs. Candidate API, not frozen.
+ * installs.
  */
 @ExperimentalAgentRuntimeApi
 fun openFileBackedSessionEventLog(

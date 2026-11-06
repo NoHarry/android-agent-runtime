@@ -17,7 +17,6 @@ import cc.noharry.agent.runtime.SessionHistory
  *     .toolProvider(myTools)
  *     .build()
  * ```
- * Candidate API, not frozen.
  */
 object AndroidAgentRuntime {
     /**
