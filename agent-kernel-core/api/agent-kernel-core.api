@@ -1792,6 +1792,7 @@ public abstract interface class cc/noharry/agent/kernel/core/state/LoopHistorySt
 	public abstract fun clearCached (Ljava/lang/String;)V
 	public abstract fun read (Ljava/lang/String;)Lcc/noharry/agent/kernel/core/state/LoopHistory;
 	public abstract fun save (Ljava/lang/String;Ljava/util/List;Lcc/noharry/agent/kernel/core/loop/LoopBudgetSnapshot;Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/kernel/core/state/LoopHistory;
+	public static synthetic fun save$default (Lcc/noharry/agent/kernel/core/state/LoopHistoryStore;Ljava/lang/String;Ljava/util/List;Lcc/noharry/agent/kernel/core/loop/LoopBudgetSnapshot;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/kernel/core/state/LoopHistory;
 }
 
 public final class cc/noharry/agent/kernel/core/state/LoopHistoryStore$DefaultImpls {
@@ -1885,6 +1886,7 @@ public abstract interface class cc/noharry/agent/kernel/core/state/ReliabilitySt
 	public abstract fun readTrace (Ljava/lang/String;)Ljava/util/List;
 	public abstract fun readWorkpad (Ljava/lang/String;)Lcc/noharry/agent/kernel/api/reliability/RuntimeWorkpad;
 	public abstract fun recentRunsForSession (Ljava/lang/String;I)Ljava/util/List;
+	public static synthetic fun recentRunsForSession$default (Lcc/noharry/agent/kernel/core/state/ReliabilityStorage;Ljava/lang/String;IILjava/lang/Object;)Ljava/util/List;
 	public abstract fun saveEvidence (Lcc/noharry/agent/kernel/api/reliability/RuntimeEvidence;)V
 	public abstract fun saveHandoff (Lcc/noharry/agent/kernel/api/reliability/RuntimeHandoff;)V
 	public abstract fun saveOpenConfusion (Lcc/noharry/agent/kernel/api/reliability/OpenConfusion;)V
@@ -2333,11 +2335,13 @@ public abstract interface class cc/noharry/agent/kernel/core/state/SessionStore 
 	public abstract fun appendUsage (Lcc/noharry/agent/kernel/core/state/StoredUsageDelta;)V
 	public abstract fun appendVfsOperation (Lcc/noharry/agent/kernel/core/state/StoredVfsOperation;)V
 	public abstract fun listSessions (Lcc/noharry/agent/kernel/core/state/SessionQuery;)Ljava/util/List;
+	public static synthetic fun listSessions$default (Lcc/noharry/agent/kernel/core/state/SessionStore;Lcc/noharry/agent/kernel/core/state/SessionQuery;ILjava/lang/Object;)Ljava/util/List;
 	public abstract fun modelCalls (Ljava/lang/String;)Ljava/util/List;
 	public abstract fun recordToolFinished (Lcc/noharry/agent/kernel/core/state/StoredToolResult;)V
 	public abstract fun recordToolStarted (Lcc/noharry/agent/kernel/core/state/StoredToolEvent;)V
 	public abstract fun toolEvents (Ljava/lang/String;)Ljava/util/List;
 	public abstract fun transcript (Ljava/lang/String;Lcc/noharry/agent/kernel/core/state/TranscriptRange;)Lcc/noharry/agent/kernel/core/state/TranscriptPage;
+	public static synthetic fun transcript$default (Lcc/noharry/agent/kernel/core/state/SessionStore;Ljava/lang/String;Lcc/noharry/agent/kernel/core/state/TranscriptRange;ILjava/lang/Object;)Lcc/noharry/agent/kernel/core/state/TranscriptPage;
 	public abstract fun updateRunStatus (Lcc/noharry/agent/kernel/core/state/StoredRunStatusUpdate;)V
 	public abstract fun upsertRun (Lcc/noharry/agent/kernel/core/state/StoredRun;)V
 	public abstract fun upsertSession (Lcc/noharry/agent/kernel/core/state/StoredSession;)V
@@ -3339,7 +3343,7 @@ public abstract interface class cc/noharry/agent/kernel/core/tools/NetworkToolPo
 	public abstract fun activityDomain (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 	public abstract fun activityResult (Ljava/lang/String;)Lcc/noharry/agent/kernel/core/tools/NetworkToolActivityResult;
 	public abstract fun authorize (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/kernel/core/tools/NetworkToolPolicyDecision;
-	public abstract fun authorize (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/kernel/core/tools/NetworkToolPolicyDecision;
+	public fun authorize (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/kernel/core/tools/NetworkToolPolicyDecision;
 	public abstract fun execute (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun rememberConfirmed (Ljava/lang/String;Ljava/lang/String;)V
 }
@@ -3678,9 +3682,13 @@ public abstract interface class cc/noharry/agent/kernel/core/trace/LoopProbeSink
 	public abstract fun emitRunStart ()V
 	public abstract fun emitSessionIsolate (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun emitToolBatchPlan (ILjava/lang/Integer;)V
+	public static synthetic fun emitToolBatchPlan$default (Lcc/noharry/agent/kernel/core/trace/LoopProbeSink;ILjava/lang/Integer;ILjava/lang/Object;)V
 	public abstract fun emitToolExecuteEnd (Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/Integer;)V
+	public static synthetic fun emitToolExecuteEnd$default (Lcc/noharry/agent/kernel/core/trace/LoopProbeSink;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/Integer;ILjava/lang/Object;)V
 	public abstract fun emitToolExecuteStart (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/String;)V
+	public static synthetic fun emitToolExecuteStart$default (Lcc/noharry/agent/kernel/core/trace/LoopProbeSink;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/String;ILjava/lang/Object;)V
 	public abstract fun emitToolPrepare (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;)V
+	public static synthetic fun emitToolPrepare$default (Lcc/noharry/agent/kernel/core/trace/LoopProbeSink;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;ILjava/lang/Object;)V
 	public abstract fun getCasePackId ()Ljava/lang/String;
 }
 
@@ -3699,12 +3707,14 @@ public abstract interface class cc/noharry/agent/kernel/core/trace/LoopSessionRe
 	public static final field Companion Lcc/noharry/agent/kernel/core/trace/LoopSessionRecorder$Companion;
 	public abstract fun appendMessage (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/model/ModelMessage;)V
 	public abstract fun appendMessages (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Ljava/util/List;)V
-	public abstract fun recordInteraction (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/SessionEventPayload$UserInteraction;)V
-	public abstract fun recordModelRequest (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/model/ModelRequest;)V
-	public abstract fun recordModelStreamEvent (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/model/ModelEvent;)V
-	public abstract fun recordPreparationTimings (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Ljava/util/Map;)V
+	public fun recordInteraction (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/SessionEventPayload$UserInteraction;)V
+	public fun recordModelRequest (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/model/ModelRequest;)V
+	public fun recordModelStreamEvent (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/model/ModelEvent;)V
+	public fun recordPreparationTimings (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Ljava/util/Map;)V
 	public abstract fun recordToolFinished (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/model/ModelEvent$ToolCall;Lcc/noharry/agent/kernel/core/tools/DynamicToolSource;Ljava/lang/String;Lcc/noharry/agent/kernel/api/WorkspaceExecutionTelemetry;)V
-	public abstract fun recordToolFinishedWithImages (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/model/ModelEvent$ToolCall;Lcc/noharry/agent/kernel/core/tools/DynamicToolSource;Ljava/lang/String;Ljava/util/List;Lcc/noharry/agent/kernel/api/WorkspaceExecutionTelemetry;)V
+	public static synthetic fun recordToolFinished$default (Lcc/noharry/agent/kernel/core/trace/LoopSessionRecorder;Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/model/ModelEvent$ToolCall;Lcc/noharry/agent/kernel/core/tools/DynamicToolSource;Ljava/lang/String;Lcc/noharry/agent/kernel/api/WorkspaceExecutionTelemetry;ILjava/lang/Object;)V
+	public fun recordToolFinishedWithImages (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/model/ModelEvent$ToolCall;Lcc/noharry/agent/kernel/core/tools/DynamicToolSource;Ljava/lang/String;Ljava/util/List;Lcc/noharry/agent/kernel/api/WorkspaceExecutionTelemetry;)V
+	public static synthetic fun recordToolFinishedWithImages$default (Lcc/noharry/agent/kernel/core/trace/LoopSessionRecorder;Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/model/ModelEvent$ToolCall;Lcc/noharry/agent/kernel/core/tools/DynamicToolSource;Ljava/lang/String;Ljava/util/List;Lcc/noharry/agent/kernel/api/WorkspaceExecutionTelemetry;ILjava/lang/Object;)V
 	public abstract fun recordToolStarted (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/model/ModelEvent$ToolCall;Lcc/noharry/agent/kernel/core/tools/DynamicToolSource;)V
 	public abstract fun recordUsage (Lcc/noharry/agent/kernel/core/tools/MaterializerContext;Lcc/noharry/agent/kernel/api/model/ModelEvent$UsageDelta;)V
 }

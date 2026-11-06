@@ -19,6 +19,9 @@ The API is cleaned up for use as a public library. **Breaking** for hosts that u
 - **The probe emitter hub is gone** (`RuntimeProbeEmitterHub`, `RuntimeProbeStageEmitter`, `ProbeEmitterRegistration`).
   The runtime never installed an emitter, so `emitterFor` always returned null. Probe evidence
   (`runtimeEvidence(RuntimeEvidenceConfig(…))`) is unchanged.
+- **Java hosts write only what they change.** Interface methods with a body now compile to JVM default methods, so a
+  Java `ModelClient` implements only `complete`, and a Java `RuntimeHook` only the callbacks it uses. The `DefaultImpls`
+  classes stay beside them, so Kotlin binaries compiled against earlier releases keep working.
 - **The Dream scaffold is gone** (`cc.noharry.agent.dream`: `DreamWorker`, `DreamRequest`, `DreamMode`, `DreamResult`,
   `NoOpDreamWorker`, `MemoryIndexRebuilder`). Nothing in the runtime ran it. A host that called `MemoryIndexRebuilder`
   to rebuild `/memory/MEMORY.md` from the memory files writes that index itself.

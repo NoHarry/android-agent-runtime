@@ -92,11 +92,11 @@ public final class cc/noharry/agent/androiduse/AndroidUseOptionsKt {
 
 public abstract interface class cc/noharry/agent/androiduse/AndroidUsePresenter {
 	public static final field Companion Lcc/noharry/agent/androiduse/AndroidUsePresenter$Companion;
-	public abstract fun afterCapture (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun afterGesture (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun beforeCapture (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun beforeGesture (Lcc/noharry/agent/androiduse/AndroidUseGesturePreview;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun onRunStarted (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun afterCapture (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun afterGesture (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun beforeCapture (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun beforeGesture (Lcc/noharry/agent/androiduse/AndroidUseGesturePreview;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun onRunStarted (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class cc/noharry/agent/androiduse/AndroidUsePresenter$Companion {

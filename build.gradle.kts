@@ -32,9 +32,10 @@ apiValidation {
 // which left 100k+ folders in the system Temp. Give every Test task its own java.io.tmpdir under the
 // module's build directory, emptied before each run, so leftovers stay bounded and `clean` removes them.
 subprojects {
-    // Kotlin 2.2+ compiles interface bodies to JVM default methods; keep the Kotlin 1.9 DefaultImpls-only ABI so the
-    // published API stays binary compatible with what hosts compiled against. Language and API level 2.1, with the
-    // 2.1 standard library, let hosts on Kotlin 2.0 and later read the artifacts.
+    // Interface bodies compile to JVM default methods, so a Java class implementing ModelClient, ToolProvider or a hook
+    // writes only what it changes; the DefaultImpls classes stay beside them for Kotlin hosts compiled against 0.5.0 and
+    // earlier, so this must never become NO_COMPATIBILITY. Language and API level 2.1, with the 2.1 standard library,
+    // let hosts on Kotlin 2.0 and later read the artifacts.
     listOf("org.jetbrains.kotlin.jvm", "com.android.library", "com.android.application").forEach { id ->
         pluginManager.withPlugin(id) {
             (extensions.getByName("kotlin") as org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension).coreLibrariesVersion =
@@ -42,7 +43,7 @@ subprojects {
         }
     }
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
-        compilerOptions.jvmDefault.set(org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode.DISABLE)
+        compilerOptions.jvmDefault.set(org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode.ENABLE)
         compilerOptions.languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
         compilerOptions.apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
         // Tests reach the runtime's internal seams (InternalAgentRuntimeApi); agent-a2a and its client don't see kernel-api.

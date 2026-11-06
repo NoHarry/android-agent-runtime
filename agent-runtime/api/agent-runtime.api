@@ -1,15 +1,15 @@
 public abstract interface class cc/noharry/agent/mcp/McpClientMessages {
 	public static final field Default Lcc/noharry/agent/mcp/McpClientMessages$Default;
-	public abstract fun httpProblem (I)Ljava/lang/String;
-	public abstract fun initializeRefused (Ljava/lang/String;)Ljava/lang/String;
-	public abstract fun notJsonRpc ()Ljava/lang/String;
-	public abstract fun timedOut (J)Ljava/lang/String;
-	public abstract fun toolsListCursorRepeated ()Ljava/lang/String;
-	public abstract fun toolsListError (Ljava/lang/String;)Ljava/lang/String;
-	public abstract fun toolsListFailed (I)Ljava/lang/String;
-	public abstract fun toolsListNotJson ()Ljava/lang/String;
-	public abstract fun toolsListTooManyPages (I)Ljava/lang/String;
-	public abstract fun unreachable (Ljava/lang/String;)Ljava/lang/String;
+	public fun httpProblem (I)Ljava/lang/String;
+	public fun initializeRefused (Ljava/lang/String;)Ljava/lang/String;
+	public fun notJsonRpc ()Ljava/lang/String;
+	public fun timedOut (J)Ljava/lang/String;
+	public fun toolsListCursorRepeated ()Ljava/lang/String;
+	public fun toolsListError (Ljava/lang/String;)Ljava/lang/String;
+	public fun toolsListFailed (I)Ljava/lang/String;
+	public fun toolsListNotJson ()Ljava/lang/String;
+	public fun toolsListTooManyPages (I)Ljava/lang/String;
+	public fun unreachable (Ljava/lang/String;)Ljava/lang/String;
 }
 
 public final class cc/noharry/agent/mcp/McpClientMessages$Default : cc/noharry/agent/mcp/McpClientMessages {
@@ -983,8 +983,8 @@ public final class cc/noharry/agent/vfs/VfsRoomResource {
 }
 
 public abstract interface class cc/noharry/agent/vfs/VfsRoomResourceAdapter {
-	public abstract fun queryNames ()Ljava/util/List;
-	public abstract fun readQuery (Ljava/lang/String;)Ljava/lang/String;
+	public fun queryNames ()Ljava/util/List;
+	public fun readQuery (Ljava/lang/String;)Ljava/lang/String;
 	public abstract fun readResource (Ljava/lang/String;)Ljava/lang/String;
 	public abstract fun resources ()Ljava/util/List;
 	public abstract fun schemaJson ()Ljava/lang/String;
@@ -1143,12 +1143,13 @@ public final class cc/noharry/agent/vfs/VfsSnapshotMount {
 }
 
 public abstract interface class cc/noharry/agent/vfs/VfsSource {
-	public abstract fun deleteTree (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun deleteTree (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun list (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun read (Ljava/lang/String;JILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun search (Ljava/lang/String;Ljava/lang/String;IJLkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun stat (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun write (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsWriteMode;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun stat (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun write (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsWriteMode;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun write$default (Lcc/noharry/agent/vfs/VfsSource;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/vfs/VfsWriteMode;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class cc/noharry/agent/vfs/VfsSource$DefaultImpls {

@@ -387,7 +387,7 @@ public final class cc/noharry/agent/kernel/api/AgentEvent$WorkspaceFileChanged :
 
 public abstract interface class cc/noharry/agent/kernel/api/AgentPlugin {
 	public abstract fun getDescriptor ()Lcc/noharry/agent/kernel/api/AgentPluginDescriptor;
-	public abstract fun getId ()Ljava/lang/String;
+	public fun getId ()Ljava/lang/String;
 	public abstract fun install (Lcc/noharry/agent/kernel/api/AgentPluginScope;)V
 }
 
@@ -408,7 +408,7 @@ public final class cc/noharry/agent/kernel/api/AgentPluginDescriptor {
 
 public abstract interface class cc/noharry/agent/kernel/api/AgentPluginScope {
 	public abstract fun own (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
-	public abstract fun provide (Lcc/noharry/agent/kernel/api/CapabilityKey;Lcc/noharry/agent/kernel/api/SessionCapabilityFactory;)V
+	public fun provide (Lcc/noharry/agent/kernel/api/CapabilityKey;Lcc/noharry/agent/kernel/api/SessionCapabilityFactory;)V
 	public abstract fun provide (Lcc/noharry/agent/kernel/api/CapabilityKey;Lcc/noharry/agent/kernel/api/SessionCapabilityFactory;Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;)V
 	public abstract fun provide (Lcc/noharry/agent/kernel/api/CapabilityKey;Ljava/lang/Object;Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;)V
 	public abstract fun resolve (Lcc/noharry/agent/kernel/api/CapabilityKey;)Ljava/lang/Object;
@@ -459,25 +459,26 @@ public final class cc/noharry/agent/kernel/api/AgentRequest {
 public abstract interface class cc/noharry/agent/kernel/api/AgentRuntime {
 	public abstract fun cancelPendingConfirmation (Lcc/noharry/agent/kernel/api/CancelPendingConfirmationRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun cancelRuntimeProtocolRequest (Lcc/noharry/agent/kernel/api/ProtocolRequestCancellation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun close ()V
+	public fun close ()V
 	public abstract fun getOpenConfusion (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getPendingConfirmation (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getPendingProtocolRequests (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun getPendingProtocolRequests$default (Lcc/noharry/agent/kernel/api/AgentRuntime;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public abstract fun getRunState (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getRuntimeEvidence (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getRuntimeHandoff (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getRuntimeResult (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getRuntimeTraceEvents (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun getSessionEventLogHealth (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getSessionEventLogHealth (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun postUserInput (Lcc/noharry/agent/kernel/api/PostUserInputRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun querySessionEvents (Lcc/noharry/agent/kernel/api/SessionEventQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun querySessionEvents (Lcc/noharry/agent/kernel/api/SessionEventQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun rejectRuntimeProtocolRequest (Lcc/noharry/agent/kernel/api/ProtocolRequestRejection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun replaySessionEvents (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun replaySessionEvents (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun resolveRuntimeProtocolRequest (Lcc/noharry/agent/kernel/api/ProtocolRequestResolution;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun resumeConfirmation (Lcc/noharry/agent/kernel/api/ConfirmationDecision;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun resumeUserInput (Lcc/noharry/agent/kernel/api/AgentRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun run (Lcc/noharry/agent/kernel/api/AgentRequest;)Lkotlinx/coroutines/flow/Flow;
-	public abstract fun subscribeSessionEvents (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/AutoCloseable;
+	public fun subscribeSessionEvents (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/AutoCloseable;
 }
 
 public final class cc/noharry/agent/kernel/api/AgentRuntime$DefaultImpls {
@@ -1223,7 +1224,7 @@ public final class cc/noharry/agent/kernel/api/RuntimeContextDatumKind : java/la
 }
 
 public abstract interface class cc/noharry/agent/kernel/api/RuntimeContextProvider : java/lang/AutoCloseable {
-	public abstract fun close ()V
+	public fun close ()V
 	public abstract fun getId ()Ljava/lang/String;
 	public abstract fun provide (Lcc/noharry/agent/kernel/api/RuntimeContextRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
@@ -1325,10 +1326,10 @@ public final class cc/noharry/agent/kernel/api/RuntimeEvidenceConfig {
 }
 
 public abstract interface class cc/noharry/agent/kernel/api/RuntimeHook {
-	public abstract fun onPostToolUse (Lcc/noharry/agent/kernel/api/ToolUse;Lcc/noharry/agent/kernel/api/ToolUseResult;Lcc/noharry/agent/kernel/api/HookContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun onPreToolUse (Lcc/noharry/agent/kernel/api/ToolUse;Lcc/noharry/agent/kernel/api/HookContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun onRunFinished (Lcc/noharry/agent/kernel/api/reliability/RuntimeResult;Lcc/noharry/agent/kernel/api/HookContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun onRunStarted (Lcc/noharry/agent/kernel/api/HookContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun onPostToolUse (Lcc/noharry/agent/kernel/api/ToolUse;Lcc/noharry/agent/kernel/api/ToolUseResult;Lcc/noharry/agent/kernel/api/HookContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun onPreToolUse (Lcc/noharry/agent/kernel/api/ToolUse;Lcc/noharry/agent/kernel/api/HookContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun onRunFinished (Lcc/noharry/agent/kernel/api/reliability/RuntimeResult;Lcc/noharry/agent/kernel/api/HookContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun onRunStarted (Lcc/noharry/agent/kernel/api/HookContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class cc/noharry/agent/kernel/api/RuntimeHook$DefaultImpls {
@@ -1409,11 +1410,11 @@ public final class cc/noharry/agent/kernel/api/RuntimeTurnInput {
 }
 
 public abstract interface class cc/noharry/agent/kernel/api/RuntimeTurnObserver : java/lang/AutoCloseable {
-	public abstract fun close ()V
+	public fun close ()V
 	public abstract fun getId ()Ljava/lang/String;
 	public abstract fun onTurnFinished (Lcc/noharry/agent/kernel/api/RuntimeCompletedTurn;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun onTurnInput (Lcc/noharry/agent/kernel/api/RuntimeTurnInput;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun preflightTurnInput (Lcc/noharry/agent/kernel/api/RuntimeTurnInput;)Lcc/noharry/agent/kernel/api/RuntimeObserverActionPreflight;
+	public fun preflightTurnInput (Lcc/noharry/agent/kernel/api/RuntimeTurnInput;)Lcc/noharry/agent/kernel/api/RuntimeObserverActionPreflight;
 }
 
 public final class cc/noharry/agent/kernel/api/RuntimeTurnObserver$DefaultImpls {
@@ -1510,13 +1511,13 @@ public final class cc/noharry/agent/kernel/api/SessionEventAppend {
 
 public abstract interface class cc/noharry/agent/kernel/api/SessionEventLog {
 	public abstract fun append (Lcc/noharry/agent/kernel/api/SessionEventAppend;)Lcc/noharry/agent/kernel/api/SessionEvent;
-	public abstract fun durability ()Lcc/noharry/agent/kernel/api/SessionEventLogDurability;
-	public abstract fun health (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/kernel/api/SessionEventLogHealth;
-	public abstract fun putAttachment (Ljava/lang/String;Lcc/noharry/agent/kernel/api/SessionAttachmentRef;[B)Z
+	public fun durability ()Lcc/noharry/agent/kernel/api/SessionEventLogDurability;
+	public fun health (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/kernel/api/SessionEventLogHealth;
+	public fun putAttachment (Ljava/lang/String;Lcc/noharry/agent/kernel/api/SessionAttachmentRef;[B)Z
 	public abstract fun query (Lcc/noharry/agent/kernel/api/SessionEventQuery;)Ljava/util/List;
-	public abstract fun readAttachment (Ljava/lang/String;Ljava/lang/String;)[B
+	public fun readAttachment (Ljava/lang/String;Ljava/lang/String;)[B
 	public abstract fun replay (Ljava/lang/String;Ljava/lang/String;)Ljava/util/List;
-	public abstract fun subscribe (Lkotlin/jvm/functions/Function1;)Ljava/lang/AutoCloseable;
+	public fun subscribe (Lkotlin/jvm/functions/Function1;)Ljava/lang/AutoCloseable;
 }
 
 public final class cc/noharry/agent/kernel/api/SessionEventLog$DefaultImpls {
@@ -2087,10 +2088,10 @@ public final class cc/noharry/agent/kernel/api/ToolMatcher$Companion {
 }
 
 public abstract interface class cc/noharry/agent/kernel/api/ToolPrefetchProvider {
-	public abstract fun getPrefetchOnSearch ()Z
-	public abstract fun getPrefetchTimeoutMillis ()J
-	public abstract fun getRemotePrefetchEnabled ()Z
-	public abstract fun localToolNames (Lcc/noharry/agent/kernel/api/ToolPrefetchRequest;)Ljava/util/List;
+	public fun getPrefetchOnSearch ()Z
+	public fun getPrefetchTimeoutMillis ()J
+	public fun getRemotePrefetchEnabled ()Z
+	public fun localToolNames (Lcc/noharry/agent/kernel/api/ToolPrefetchRequest;)Ljava/util/List;
 	public abstract fun prefetchTools (Lcc/noharry/agent/kernel/api/ToolPrefetchRequest;Lcc/noharry/agent/kernel/api/ToolPrefetchTrace;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
@@ -2119,7 +2120,7 @@ public final class cc/noharry/agent/kernel/api/ToolPrefetchRequest {
 }
 
 public abstract interface class cc/noharry/agent/kernel/api/ToolPrefetchTrace {
-	public abstract fun diagnostics (Ljava/lang/String;)V
+	public fun diagnostics (Ljava/lang/String;)V
 	public abstract fun request (Ljava/lang/String;)V
 	public abstract fun response (Ljava/lang/String;)V
 }
@@ -2144,12 +2145,12 @@ public final class cc/noharry/agent/kernel/api/ToolPromptDescriptor {
 
 public abstract interface class cc/noharry/agent/kernel/api/ToolProvider {
 	public abstract fun callTool (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/api/ToolCallContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun getDisplayName ()Ljava/lang/String;
-	public abstract fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
+	public fun getDisplayName ()Ljava/lang/String;
+	public fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
 	public abstract fun getProviderId ()Ljava/lang/String;
-	public abstract fun initialize (Lcc/noharry/agent/kernel/api/ToolInitializeContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun listPrompts (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun listResources (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lcc/noharry/agent/kernel/api/ToolInitializeContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun listPrompts (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun listResources (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun listTools (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
@@ -2356,6 +2357,7 @@ public final class cc/noharry/agent/kernel/api/WorkspaceExecutionTelemetry {
 
 public abstract interface class cc/noharry/agent/kernel/api/WorkspacePort {
 	public abstract fun execute (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/api/WorkspaceCallContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun execute$default (Lcc/noharry/agent/kernel/api/WorkspacePort;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/api/WorkspaceCallContext;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class cc/noharry/agent/kernel/api/WorkspacePort$DefaultImpls {
@@ -2363,7 +2365,7 @@ public final class cc/noharry/agent/kernel/api/WorkspacePort$DefaultImpls {
 }
 
 public abstract interface class cc/noharry/agent/kernel/api/mcp/McpClientProvider : cc/noharry/agent/kernel/api/ToolProvider {
-	public abstract fun getProviderId ()Ljava/lang/String;
+	public fun getProviderId ()Ljava/lang/String;
 	public abstract fun getServerId ()Ljava/lang/String;
 }
 
@@ -2378,7 +2380,7 @@ public final class cc/noharry/agent/kernel/api/mcp/McpClientProvider$DefaultImpl
 
 public abstract interface class cc/noharry/agent/kernel/api/model/ModelClient {
 	public abstract fun complete (Lcc/noharry/agent/kernel/api/model/ModelRequest;)Lkotlinx/coroutines/flow/Flow;
-	public abstract fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
+	public fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
 }
 
 public final class cc/noharry/agent/kernel/api/model/ModelClient$DefaultImpls {

@@ -706,7 +706,7 @@ public final class cc/noharry/agent/a2a/server/A2aRequest {
 
 public abstract interface class cc/noharry/agent/a2a/server/A2aRequestHandler {
 	public abstract fun execute (Lcc/noharry/agent/a2a/server/A2aRequest;)Lkotlinx/coroutines/flow/Flow;
-	public abstract fun postInput (Lcc/noharry/agent/a2a/server/A2aRequest;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun postInput (Lcc/noharry/agent/a2a/server/A2aRequest;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class cc/noharry/agent/a2a/server/A2aRequestHandler$DefaultImpls {
