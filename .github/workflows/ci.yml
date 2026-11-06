@@ -18,7 +18,7 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
-      - name: Source rules, API check, unit tests, sample builds
+      - name: Source rules, API dumps, Android API level checks and lint, unit tests, sample builds
         run: ./gradlew ciCheck --stacktrace
       - name: Keep the test reports of a failed run
         if: failure()
@@ -28,6 +28,8 @@ jobs:
           path: |
             **/build/reports/tests/
             **/build/test-results/
+            **/build/reports/lint-results-*
+            **/build/reports/animalsniffer/
           retention-days: 7
       - name: Python tool tests
         working-directory: tools

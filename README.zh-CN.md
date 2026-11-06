@@ -32,7 +32,7 @@ dependencies {
 }
 ```
 
-需要 Kotlin 2.0 及以上（构件按 2.1 语言级别编译）、JDK 17，Android `minSdk` 23。工作区和事件日志用到了 `java.nio.file`，Android 从 API 26 起才有：minSdk 低于 26 时，请用 `com.android.tools:desugar_jdk_libs_nio` 开启 core library desugaring（`samples/quickstart-android` 就是这样配的）。
+需要 Kotlin 2.0 及以上（构件按 2.1 语言级别编译）、JDK 17，Android `minSdk` 23。工作区和事件日志用到了 `java.nio.file`，Android 从 API 26 起才有：minSdk 低于 26 时，请用 `com.android.tools:desugar_jdk_libs_nio` 2.1.5 及以上开启 core library desugaring（`samples/quickstart-android` 就是这样配的）。
 
 ## 快速开始（Android）
 

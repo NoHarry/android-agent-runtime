@@ -9,9 +9,16 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version "2.4.21" apply false
     id("com.vanniktech.maven.publish") version "0.37.0" apply false
     id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.18.2"
+    id("ru.vyarus.animalsniffer") version "2.0.1" apply false
 }
 
 val sdkVersion = providers.gradleProperty("VERSION_NAME").get()
+
+/** Lint checks that look dependencies up online. */
+val ONLINE_LINT_CHECKS = setOf(
+    "NewerVersionAvailable", "GradleDependency", "OutdatedLibrary", "RiskyLibrary", "PlaySdkIndexNonCompliant",
+    "PlaySdkIndexVulnerability", "PlaySdkIndexGenericIssues", "PlaySdkIndexDeprecated",
+)
 
 /** The Kotlin standard library the artifacts ask for: the oldest whose API they use (apiVersion 2.1). */
 val KOTLIN_LIBRARIES_VERSION = "2.1.21"
@@ -149,18 +156,47 @@ subprojects {
     }
 }
 
-/** What CI runs: the source rules, the API dumps, every unit test and the samples' builds. */
+// The JVM modules run on Android from API 23, where Android lint does not look at them: their main classes are checked
+// against Android 23's API (Gummy Bears signatures, with what D8 backports). The kernel and the runtime may also use
+// what core library desugaring with desugar_jdk_libs_nio 2.1.5 or later adds (java.nio.file), as the README asks hosts
+// below API 26 to enable, but only what Android 26 has itself, since hosts from 26 on need not desugar. Any other JVM
+// module needs no desugaring.
+val desugaringModules = setOf("agent-kernel-api", "agent-kernel-core", "agent-runtime")
+subprojects {
+    plugins.withId("org.jetbrains.kotlin.jvm") {
+        if (project.parent?.name == "samples") return@withId
+        apply(plugin = "ru.vyarus.animalsniffer")
+        val signatures = if (project.name in desugaringModules) {
+            listOf("gummy-bears-api-23:0.16.0:coreLib2Nio", "gummy-bears-api-26:0.16.0")
+        } else {
+            listOf("gummy-bears-api-23:0.16.0")
+        }
+        dependencies { signatures.forEach { add("signature", "com.toasttab.android:$it@signature") } }
+        extensions.configure<ru.vyarus.gradle.plugin.animalsniffer.AnimalSnifferExtension> {
+            sourceSets = listOf(the<SourceSetContainer>()["main"])
+        }
+    }
+}
+
+/** What CI runs: source rules, API dumps, Android API level checks, every unit test and the samples' builds. */
 val ciCheck by tasks.registering {
     group = "verification"
-    description = "Source rules, API dumps, unit tests and sample builds."
-    // The JVM modules' build runs their check, which includes the API dump check; the Android libraries add theirs below.
+    description = "Source rules, API dumps, Android API level checks, unit tests and sample builds."
+    // The JVM modules' build runs their check, with the API dump and Android API checks; the Android libraries add
+    // theirs and lint below.
     dependsOn(checkSourceRules)
 }
 
 subprojects {
     plugins.withId("org.jetbrains.kotlin.jvm") { rootProject.tasks.named("ciCheck") { dependsOn(tasks.named("build")) } }
     plugins.withId("com.android.library") {
-        rootProject.tasks.named("ciCheck") { dependsOn(tasks.named("testDebugUnitTest")) }
+        // Lint's errors (NewApi among them) fail CI. The checks that judge dependencies by what lint fetches online (newer
+        // versions, Google's Maven index, the Play SDK Index) are off, so CI's result depends on the code alone; lint may
+        // still fetch those indexes.
+        extensions.configure<com.android.build.api.dsl.LibraryExtension> {
+            lint { disable += ONLINE_LINT_CHECKS }
+        }
+        rootProject.tasks.named("ciCheck") { dependsOn(tasks.named("testDebugUnitTest"), tasks.named("lintDebug")) }
     }
     plugins.withId("com.android.application") { rootProject.tasks.named("ciCheck") { dependsOn(tasks.named("assembleDebug")) } }
 }

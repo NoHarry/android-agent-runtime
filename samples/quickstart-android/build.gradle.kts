@@ -27,7 +27,7 @@ kotlin {
 }
 
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:2.0.4")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:2.1.5")
     implementation(project(":agent-runtime-android"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
 }

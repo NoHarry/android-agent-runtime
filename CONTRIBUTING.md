@@ -17,6 +17,9 @@ runs what CI runs:
 - **API compatibility** (`apiCheck`): the public API of every published module but the BOM is recorded in its
   `api/*.api` (the Android modules' from their release classes, Kotlin and Java). When you change it on purpose, run
   `./gradlew apiDump`, commit the new dump, and note any breaking change in `CHANGELOG.md`.
+- **Android API level**: the JVM modules run on Android from API 23, so their main classes are checked against
+  Android 23's API (`animalsnifferMain`; the kernel and the runtime may also use what `desugar_jdk_libs_nio` 2.1.5 adds
+  but Android 26 has itself), and the Android libraries run lint, whose errors (such as `NewApi`) fail.
 - **Unit tests** of every module, and the samples' builds.
 
 Device tests (`./gradlew :agent-runtime-android:connectedDebugAndroidTest`, `:agent-exec-js:connectedDebugAndroidTest`)

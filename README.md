@@ -43,7 +43,7 @@ dependencies {
 
 Kotlin 2.0 or later (the artifacts are built at language level 2.1), JDK 17, Android `minSdk` 23. The workspace and
 the event log use `java.nio.file`, which Android has from API 26: below that, enable core library desugaring with
-`com.android.tools:desugar_jdk_libs_nio` (as `samples/quickstart-android` does).
+`com.android.tools:desugar_jdk_libs_nio` 2.1.5 or later (as `samples/quickstart-android` does).
 
 ## Quickstart (Android)
 
