@@ -85,7 +85,8 @@ val runtime = AgentRuntimeBuilder.create()
 ```
 
 The [samples](samples) run as they are: `AGENT_API_KEY=… ./gradlew :samples:quickstart-jvm:run --args="…"`, and
-`samples/quickstart-android` is a one-screen app.
+`samples/quickstart-android` is a one-screen app. `./gradlew :samples:extensions:run` needs no key or network: a model
+of your own (a scripted one standing in for an on-device model), tools from your code, and a hook that refuses a call.
 
 ## Modules
 

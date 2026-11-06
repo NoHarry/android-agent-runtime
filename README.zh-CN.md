@@ -73,7 +73,7 @@ val runtime = AgentRuntimeBuilder.create()
     .build()
 ```
 
-[samples](samples) 里的示例拿来就能跑：`AGENT_API_KEY=… ./gradlew :samples:quickstart-jvm:run --args="…"`；`samples/quickstart-android` 是一个单屏 App。
+[samples](samples) 里的示例拿来就能跑：`AGENT_API_KEY=… ./gradlew :samples:quickstart-jvm:run --args="…"`；`samples/quickstart-android` 是一个单屏 App。`./gradlew :samples:extensions:run` 不需要 key 也不联网：自己的模型（用一个按脚本走的模型代替端侧模型）、来自你代码的工具，以及一个拒绝某次调用的 hook。
 
 ## 模块
 

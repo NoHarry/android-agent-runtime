@@ -22,6 +22,11 @@ runs what CI runs:
   but Android 26 has itself), and the Android libraries run lint, whose errors (such as `NewApi`) fail.
 - **Unit tests** of every module, and the samples' builds.
 
+CI also publishes every artifact to the local Maven repository, then builds, tests and runs `samples/extensions`
+against the published `agent-runtime`, the kernel and the BOM (`./gradlew publishToMavenLocal`, then
+`./gradlew -PsamplesFromMavenLocal :samples:extensions:test :samples:extensions:run`), so published dependency metadata
+that leaves out what the runtime needs fails there.
+
 Device tests (`./gradlew :agent-runtime-android:connectedDebugAndroidTest`, `:agent-exec-js:connectedDebugAndroidTest`)
 need a connected device.
 

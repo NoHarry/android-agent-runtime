@@ -12,7 +12,7 @@ An embeddable agent runtime for Android and the JVM. Gradle project at the repos
 | `agent-a2a` | Optional module (JVM): A2A client, direct transport and server |
 | `agent-exec-js`, `agent-device-capabilities`, `agent-android-use`, `agent-a2a-client-official` | Optional modules (Android) |
 | `agent-bom` | Version alignment |
-| `samples/` | `quickstart-jvm`, `quickstart-android`, `minimal` (not published) |
+| `samples/` | `quickstart-jvm`, `quickstart-android`, `minimal`, `extensions` (offline; its test runs in CI) (not published) |
 | `buildSrc/` | `SourceRulesTask` |
 | `tools/` | Python helpers and fixtures; `agent-runtime` tests read `tools/fixtures` |
 

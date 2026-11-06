@@ -31,7 +31,7 @@ allprojects {
 
 apiValidation {
     // Samples and the BOM have no API of their own.
-    ignoredProjects += listOf("quickstart-jvm", "quickstart-android", "minimal", "agent-bom")
+    ignoredProjects += listOf("quickstart-jvm", "quickstart-android", "minimal", "extensions", "agent-bom")
     // Public only for the runtime's own modules and tests.
     nonPublicMarkers += "cc.noharry.agent.kernel.api.InternalAgentRuntimeApi"
 }

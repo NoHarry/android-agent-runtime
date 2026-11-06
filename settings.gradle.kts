@@ -11,6 +11,14 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // -PsamplesFromMavenLocal: the extensions sample builds against what publishToMavenLocal wrote, as an app would;
+        // cc.noharry comes from there only.
+        if (providers.gradleProperty("samplesFromMavenLocal").orNull.let { it != null && it != "false" }) {
+            exclusiveContent {
+                forRepository { mavenLocal() }
+                filter { includeGroup("cc.noharry") }
+            }
+        }
     }
 }
 
@@ -33,4 +41,5 @@ include(":agent-bom")
 // Samples (not published).
 include(":samples:quickstart-jvm")
 include(":samples:minimal")
+include(":samples:extensions")
 include(":samples:quickstart-android")
