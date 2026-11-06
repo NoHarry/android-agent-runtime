@@ -28,6 +28,8 @@ The API is cleaned up for use as a public library. **Breaking** for hosts that u
 - **A2A on Android 6 (API 23).** The direct and official A2A clients' failures were made with a constructor Android only
   has from API 24, and request headers were copied with `Map.forEach` (API 24 too): on Android 6 a refused endpoint
   crashed the host instead of returning a failure, and requests failed without core library desugaring.
+- **API docs for the JVM artifacts.** The javadoc jars of `agent-kernel-api`, `agent-kernel-core` and `agent-runtime`
+  were empty; they now hold the API docs, like the other artifacts'.
 - **The Dream scaffold is gone** (`cc.noharry.agent.dream`: `DreamWorker`, `DreamRequest`, `DreamMode`, `DreamResult`,
   `NoOpDreamWorker`, `MemoryIndexRebuilder`). Nothing in the runtime ran it. A host that called `MemoryIndexRebuilder`
   to rebuild `/memory/MEMORY.md` from the memory files writes that index itself.

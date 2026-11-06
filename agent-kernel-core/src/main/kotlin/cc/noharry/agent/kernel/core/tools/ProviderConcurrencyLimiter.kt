@@ -72,6 +72,7 @@ class ProviderConcurrencyLimiter {
         semaphores.remove(key)
     }
 
+    /** @suppress */
     @InternalAgentRuntimeApi
     fun cachedEntryCountForTests(): Int = semaphores.size
 

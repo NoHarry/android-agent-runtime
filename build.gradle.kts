@@ -10,6 +10,7 @@ plugins {
     id("com.vanniktech.maven.publish") version "0.37.0" apply false
     id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.18.2"
     id("ru.vyarus.animalsniffer") version "2.0.1" apply false
+    id("org.jetbrains.dokka-javadoc") version "2.2.0" apply false
 }
 
 val sdkVersion = providers.gradleProperty("VERSION_NAME").get()
@@ -166,6 +167,10 @@ subprojects {
     plugins.withId("org.jetbrains.kotlin.jvm") {
         if (project.parent?.name == "samples") return@withId
         apply(plugin = "ru.vyarus.animalsniffer")
+        // The published javadoc jar is Dokka's javadoc, as AGP makes it for the Android libraries; CI builds it, so a
+        // change that breaks the docs fails before a release does.
+        apply(plugin = "org.jetbrains.dokka-javadoc")
+        rootProject.tasks.named("ciCheck") { dependsOn(tasks.named("dokkaGeneratePublicationJavadoc")) }
         val signatures = if (project.name in desugaringModules) {
             listOf("gummy-bears-api-23:0.16.0:coreLib2Nio", "gummy-bears-api-26:0.16.0")
         } else {

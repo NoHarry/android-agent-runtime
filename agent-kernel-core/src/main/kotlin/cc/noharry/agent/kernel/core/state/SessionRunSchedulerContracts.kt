@@ -86,6 +86,7 @@ sealed interface SessionRunTransition {
     data class Rejected(val reason: SessionRunTransitionReason) : SessionRunTransition
 }
 
+/** @suppress */
 @InternalAgentRuntimeApi
 data class SessionRunSchedulerSnapshot(
     val activeExecutionCount: Int,

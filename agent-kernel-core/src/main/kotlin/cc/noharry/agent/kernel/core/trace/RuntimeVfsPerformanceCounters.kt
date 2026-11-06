@@ -1,7 +1,11 @@
 package cc.noharry.agent.kernel.core.trace
 
 import cc.noharry.agent.kernel.api.InternalAgentRuntimeApi
-/** Process-wide counts of the runtime's VFS work, recorded per run as deltas; the names are the constants below. */
+/**
+ * Process-wide counts of the runtime's VFS work, recorded per run as deltas; the names are the constants below.
+ *
+ * @suppress
+ */
 @InternalAgentRuntimeApi
 object RuntimeVfsPerformanceCounters {
     private val values = linkedMapOf<String, Long>()

@@ -35,17 +35,20 @@ class SessionRunScheduler(
     private var nextDrainGeneration = 0L
     private var closed = false
 
-    /** Test seam: runs after a grant is decided and before the lease is claimed. Null in production. */
+    /** Test seam: runs after a grant is decided and before the lease is claimed. Null in production.
+     *  @suppress */
     @InternalAgentRuntimeApi
     @Volatile
     var beforeClaimGrantedForTest: (suspend () -> Unit)? = null
 
-    /** Test seam: runs inside NonCancellable cleanup just before the mutex is taken. Null in production. */
+    /** Test seam: runs inside NonCancellable cleanup just before the mutex is taken. Null in production.
+     *  @suppress */
     @InternalAgentRuntimeApi
     @Volatile
     var beforeNonCancellableMutexForTest: (() -> Unit)? = null
 
-    /** Test seam: runs after [attachJob] applies and releases the mutex, before the caller persists RUNNING. */
+    /** Test seam: runs after [attachJob] applies and releases the mutex, before RUNNING is persisted.
+     *  @suppress */
     @InternalAgentRuntimeApi
     @Volatile
     var afterAttachJobForTest: (suspend () -> Unit)? = null
@@ -137,7 +140,8 @@ class SessionRunScheduler(
      */
     suspend fun close(): SessionRunCloseSnapshot = mutate { signals -> closeLocked(signals) }
 
-    /** Bounded diagnostic snapshot: counts and ids only, no payload or business data. */
+    /** Bounded diagnostic snapshot: counts and ids only, no payload or business data.
+     *  @suppress */
     @InternalAgentRuntimeApi
     suspend fun snapshot(): SessionRunSchedulerSnapshot = mutex.withLock { snapshotLocked() }
 
@@ -174,7 +178,8 @@ class SessionRunScheduler(
             if (owner.phase == SessionLaneOwnerPhase.WAITING_CONTROL) owner.lease else null
         }
 
-    /** Test seam: holds the mutex while [block] runs, so cancellation can race cleanup queued on it. */
+    /** Test seam: holds the mutex while [block] runs, so cancellation can race cleanup queued on it.
+     *  @suppress */
     @InternalAgentRuntimeApi
     suspend fun holdMutexForTest(block: suspend () -> Unit) {
         mutex.withLock { block() }

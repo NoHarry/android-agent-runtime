@@ -323,10 +323,12 @@ class ToolProviderRegistry(
         }
     }
 
+    /** @suppress */
     @InternalAgentRuntimeApi
     suspend fun cachedSnapshotCountForTests(): Int =
         snapshotLock.withLock { snapshotCache.size }
 
+    /** @suppress */
     @InternalAgentRuntimeApi
     fun cachedLimiterEntryCountForTests(): Int =
         concurrencyLimiter.cachedEntryCountForTests()
@@ -339,6 +341,7 @@ class ToolProviderRegistry(
         }
     }
 
+    /** @suppress */
     @InternalAgentRuntimeApi
     companion object {
         private val environmentProviderCatalogLock = Mutex()
