@@ -13,6 +13,7 @@ import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
 import cc.noharry.agent.kernel.api.RuntimeHook
 import cc.noharry.agent.kernel.api.RuntimeHookRegistration
 import cc.noharry.agent.kernel.api.RuntimeTurnObserver
+import cc.noharry.agent.kernel.api.ServiceAnswerCheck
 import cc.noharry.agent.kernel.api.SessionEventLog
 import cc.noharry.agent.kernel.api.ToolMatcher
 import cc.noharry.agent.kernel.api.ToolProvider
@@ -61,8 +62,10 @@ import cc.noharry.agent.kernel.core.tools.DEFAULT_MAX_CONCURRENT_MODEL_CALLS
 import cc.noharry.agent.kernel.core.tools.DEFAULT_MAX_CONCURRENT_TOOL_CALLS
 import cc.noharry.agent.kernel.core.tools.MaterializerContext
 import cc.noharry.agent.kernel.core.tools.ProviderConcurrencyLimiter
+import cc.noharry.agent.kernel.core.tools.RuntimeServiceAnswerCheck
 import cc.noharry.agent.kernel.core.tools.ToolActivationStore
 import cc.noharry.agent.kernel.core.tools.ToolDomainIndexer
+import cc.noharry.agent.kernel.core.tools.ToolDomainNaming
 import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
 import cc.noharry.agent.kernel.core.trace.DefaultTraceRedactor
 import cc.noharry.agent.kernel.core.trace.StandardTraceRedactor
@@ -153,6 +156,8 @@ class AgentRuntimeBuilder {
     private var memoryTopics: List<MemoryTopic> = MemoryTopic.DEFAULTS
     private var memoryPolicy: RuntimeMemoryPolicy = RuntimeMemoryPolicy()
     private var lessons: Boolean = true
+    private var serviceAnswerCheck: ServiceAnswerCheck = RuntimeServiceAnswerCheck
+    private var toolDomains: ToolDomainNaming = ToolDomainIndexer.CONVENTIONS
     private var deferredBackendTools: Boolean = false
     private var nativeDeferredTools: Boolean = false
     private var runContextAsSystem: Boolean = false
@@ -420,6 +425,21 @@ class AgentRuntimeBuilder {
     @ExperimentalAgentRuntimeApi
     fun lessons(enabled: Boolean): AgentRuntimeBuilder = apply {
         lessons = enabled
+    }
+
+    /**
+     * Which failed tool results are a service's answer in its own terms (no route found, out of stock): they reach the
+     * model as written and do not count toward the failures that stop a tool ([ServiceAnswerCheck]). Candidate API.
+     */
+    @ExperimentalAgentRuntimeApi
+    fun serviceAnswerCheck(check: ServiceAnswerCheck): AgentRuntimeBuilder = apply {
+        serviceAnswerCheck = check
+    }
+
+    /** How tools are grouped into the areas the prompt lists for the model ([ToolDomainNaming]). Candidate API. */
+    @ExperimentalAgentRuntimeApi
+    fun toolDomains(naming: ToolDomainNaming): AgentRuntimeBuilder = apply {
+        toolDomains = naming
     }
 
     /**
@@ -764,7 +784,7 @@ class AgentRuntimeBuilder {
             subagents = subagents,
             webSearchProvider = webSearchProvider,
             webFetchFallback = webFetchFallback,
-            judgements = LoopJudgements(narrationCheck, RuntimeMemoryRetriever(memoryPolicy, memoryTopics)),
+            judgements = LoopJudgements(narrationCheck, RuntimeMemoryRetriever(memoryPolicy, memoryTopics), serviceAnswerCheck),
         )
     }
 
@@ -842,7 +862,7 @@ class AgentRuntimeBuilder {
                 sceneRules = sceneRules.keys,
                 toolDomainIndexProvider = {
                     val tools = mcpRegistry.allTools(MaterializerContext())
-                    ToolDomainIndexer.index(tools)
+                    ToolDomainIndexer.index(tools, toolDomains)
                 },
                 tools = protocolTools(),
             )

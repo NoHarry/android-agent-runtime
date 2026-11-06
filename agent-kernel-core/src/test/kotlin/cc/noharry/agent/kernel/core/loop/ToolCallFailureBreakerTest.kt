@@ -10,6 +10,31 @@ import org.junit.Test
 
 class ToolCallFailureBreakerTest {
     @Test
+    fun aHostDecidesWhichFailedResultsAreAServicesAnswer() {
+        val raw = """{"result":{"isError":true,"structuredContent":{"status":{"name":"NO_ROUTE"}}}}"""
+        // The runtime's own check passes the service's answer as written; without it the failure is the runtime's.
+        assertEquals(raw, cc.noharry.agent.kernel.api.ToolCallResult(false, raw).toBackendToolResult())
+        val failed = cc.noharry.agent.kernel.api.ToolCallResult(false, raw).toBackendToolResult(cc.noharry.agent.kernel.api.ServiceAnswerCheck.NONE)
+        assertEquals("BACKEND_CALL_FAILED", backendToolCallResult(failed).code)
+        // A host's own shape: {"ok":false,"answer": …} is the service speaking, and reaches the model as written; one that
+        // does not report the problem is never taken for an answer, so it is not read as a success afterwards.
+        val own = cc.noharry.agent.kernel.api.ServiceAnswerCheck { it.contains("\"answer\"") }
+        val answer = """{"ok":false,"answer":"no route"}"""
+        assertEquals(answer, cc.noharry.agent.kernel.api.ToolCallResult(false, answer).toBackendToolResult(own))
+        val silent = """{"answer":"no route"}"""
+        assertEquals("BACKEND_CALL_FAILED", backendToolCallResult(cc.noharry.agent.kernel.api.ToolCallResult(false, silent).toBackendToolResult(own)).code)
+        // A check that throws is taken as no.
+        val broken = cc.noharry.agent.kernel.api.ServiceAnswerCheck { error("broken") }
+        assertEquals("BACKEND_CALL_FAILED", backendToolCallResult(cc.noharry.agent.kernel.api.ToolCallResult(false, answer).toBackendToolResult(broken)).code)
+        val breaker = ToolCallFailureBreaker(serviceAnswer = own)
+        repeat(6) { breaker.record("run-1", "route", ARGS, backendToolCallResult("""{"ok":false,"answer":"no route"}""")) }
+        assertNull(breaker.trippedFailure("run-1", "route", ARGS))
+        val strict = ToolCallFailureBreaker(serviceAnswer = cc.noharry.agent.kernel.api.ServiceAnswerCheck.NONE)
+        repeat(6) { strict.record("run-1", "route", ARGS, backendToolCallResult(raw)) }
+        assertEquals(true, strict.trippedFailure("run-1", "route", ARGS) != null)
+    }
+
+    @Test
     fun providerFailureCannotBePromotedByAnApparentlySuccessfulBusinessEnvelope() {
         val raw = """{"result":{"isError":false,"structuredContent":{"status":{"name":"OK"}}}}"""
         val result = cc.noharry.agent.kernel.api.ToolCallResult(false, raw).toBackendToolResult()

@@ -1,4 +1,5 @@
 package cc.noharry.agent.kernel.core.tools
+import cc.noharry.agent.kernel.api.ServiceAnswerCheck
 import cc.noharry.agent.kernel.api.ToolUseResult
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -70,6 +71,20 @@ internal fun structuredFailure(resultJson: String, retryable: Boolean): String? 
     if (ok != false || code.isNullOrBlank()) return null
     return if ("retryable" in root) resultJson else JsonObject(root + ("retryable" to JsonPrimitive(retryable))).toString()
 }
+
+/** The runtime's own [ServiceAnswerCheck]: an MCP result with a `structuredContent.status.name`. */
+object RuntimeServiceAnswerCheck : ServiceAnswerCheck {
+    override fun isServiceAnswer(resultJson: String): Boolean = isMcpBusinessResult(resultJson)
+}
+
+/** [ServiceAnswerCheck.isServiceAnswer], a check that throws taken as no. */
+@Suppress("TooGenericExceptionCaught") // A host's check may throw anything; the call is then no service's answer.
+internal fun ServiceAnswerCheck.answers(resultJson: String): Boolean =
+    try {
+        isServiceAnswer(resultJson)
+    } catch (error: Exception) {
+        false
+    }
 
 internal fun isMcpBusinessResult(resultJson: String): Boolean {
     val root = backendResultObject(resultJson) ?: return false

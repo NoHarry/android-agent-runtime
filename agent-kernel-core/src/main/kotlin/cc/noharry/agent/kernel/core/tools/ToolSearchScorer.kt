@@ -41,7 +41,8 @@ fun queryCoverage(tool: McpToolRef, query: String): Double {
 /**
  * Tokenizes a search query or document for BM25 scoring.
  *
- * - Chinese text gives pairs of adjacent characters, which match words (空调). A tool's text also gives every single
+ * - Text in a script whose words run together or carry their particles (Chinese, Japanese, Korean, Thai and the like)
+ *   gives pairs of adjacent characters, which match words (空调, 조명 in 조명을). A tool's text also gives every single
  *   character, so a one-character query (灯) still finds it inside a longer word; a query gives single characters only
  *   for a character standing alone, since 点 in 我有点冷 would otherwise find every 途经点.
  * - English identifiers are split on CamelCase boundaries AND underscores so
@@ -54,15 +55,15 @@ private fun tokenizeSearchQuery(text: String, characters: Boolean): List<String>
     var i = 0
     while (i < chars.size) {
         val ch = chars[i]
-        if (ch.code in 0x4E00..0x9FFF) {
-            val pairs = i + 1 < chars.size && chars[i + 1].code in 0x4E00..0x9FFF
-            val alone = !pairs && (i == 0 || chars[i - 1].code !in 0x4E00..0x9FFF)
+        if (ch.isPairedScript()) {
+            val pairs = i + 1 < chars.size && chars[i + 1].isPairedScript()
+            val alone = !pairs && (i == 0 || !chars[i - 1].isPairedScript())
             if (characters || alone) tokens.add(ch.toString())
             if (pairs) tokens.add(String(chars, i, 2))
             i++
         } else if (ch.isLetterOrDigit() || ch == '_') {
             val start = i
-            while (i < chars.size && chars[i].code !in 0x4E00..0x9FFF &&
+            while (i < chars.size && !chars[i].isPairedScript() &&
                 (chars[i].isLetterOrDigit() || chars[i] == '_')) i++
             val segment = String(chars, start, i - start)
             val words = segment.split('_').flatMap { splitCamelCase(it) }
@@ -76,6 +77,23 @@ private fun tokenizeSearchQuery(text: String, characters: Boolean): List<String>
     }
     return tokens
 }
+
+/**
+ * A character of a script read in pairs, by its Unicode block (Character.UnicodeScript is not on Android before API 24),
+ * marks and the long vowel ー included so they stay inside their word.
+ */
+private fun Char.isPairedScript(): Boolean = when (code) {
+    // Sentence and section marks of these scripts end a word like spaces do.
+    in PAIRED_SCRIPT_PUNCTUATION -> false
+    in 0x4E00..0x9FFF, in 0x3400..0x4DBF, in 0xF900..0xFAFF, 0x3005, 0x3006 -> true // Han, 々 〆
+    in 0x3040..0x309F, in 0x30A1..0x30FA, in 0x30FC..0x30FF, in 0x31F0..0x31FF, in 0xFF66..0xFF9F -> true // kana, not ゠ ・
+    in 0xAC00..0xD7AF, in 0x1100..0x11FF, in 0x3130..0x318F -> true // Hangul
+    in 0x0E00..0x0EFF, in 0x1780..0x17FF, in 0x1000..0x109F -> true // Thai, Lao, Khmer, Myanmar
+    else -> false
+}
+
+private val PAIRED_SCRIPT_PUNCTUATION = setOf(0x0E4F, 0x0E5A, 0x0E5B, 0x104A, 0x104B, 0x104C, 0x104D, 0x104E, 0x104F) +
+    (0x17D4..0x17DA)
 
 private fun splitCamelCase(word: String): List<String> {
     if (word.isEmpty()) return emptyList()

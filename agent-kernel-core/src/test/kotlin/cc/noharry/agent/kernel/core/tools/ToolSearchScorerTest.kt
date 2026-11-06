@@ -12,6 +12,18 @@ import org.junit.Test
 
 class ToolSearchScorerTest {
     @Test
+    fun japaneseAndKoreanAreReadInPairsLikeChinese() {
+        val tools = listOf(tool("weather_now", "いまのてんきをしらべる"), tool("music_play", "おんがくをさいせいする"), tool("lights", "조명을 켜고 끕니다"))
+        assertEquals("weather_now", rankMcpTools(tools, "てんき", 1).single().tool.originalToolName)
+        assertEquals("lights", rankMcpTools(tools, "조명", 1).single().tool.originalToolName)
+        // The long vowel and Thai vowel and tone marks stay inside their words.
+        val more = listOf(tool("coffee", "コーヒーを注文する"), tool("route", "ルートを検索する"), tool("bedroom", "ปิดไฟห้องนอน"))
+        assertEquals("coffee", rankMcpTools(more, "コーヒー", 1).single().tool.originalToolName)
+        assertEquals("route", rankMcpTools(more, "ルート", 1).single().tool.originalToolName)
+        assertEquals("bedroom", rankMcpTools(more, "ปิดไฟ", 1).single().tool.originalToolName)
+    }
+
+    @Test
     fun chineseSearchMatchesAcrossDifferentCharacterOffsets() {
         val tools = listOf(tool("poi_search", "可搜索地点名称"), tool("music_play", "播放音乐"))
         assertEquals("poi_search", rankMcpTools(tools, "搜索", 1).single().tool.originalToolName)

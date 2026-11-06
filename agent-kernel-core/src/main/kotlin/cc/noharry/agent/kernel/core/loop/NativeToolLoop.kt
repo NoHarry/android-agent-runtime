@@ -85,7 +85,9 @@ class NativeToolLoop(
         mcpDebugTraceSink,
         sessionRecorder,
         toolExecutionLimiter = toolExecutionLimiter,
+        failureBreaker = ToolCallFailureBreaker(serviceAnswer = judgements.serviceAnswer),
         obligationLedger = obligationLedger,
+        serviceAnswer = judgements.serviceAnswer,
     )
     private val roundRunner = NativeRoundRunner(
         toolRegistry,

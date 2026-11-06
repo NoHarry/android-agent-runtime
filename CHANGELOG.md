@@ -7,8 +7,8 @@ called out.
 
 Fixes for Claude and OpenAI hosts, and nothing in Chinese or about a car unless the host is. **Breaking** in behaviour
 where noted, and for binaries compiled against the old constructors of `AnthropicModelClient`, `OpenAiModelClient`,
-`A2aServerConfig` and the kernel's loop classes `NativeToolLoop` and `NativeRoundRunner` (Kotlin source that names its
-arguments is unchanged).
+`A2aServerConfig` and the kernel's loop classes `NativeToolLoop`, `NativeRoundRunner`, `NativeToolUseController` and
+`ToolCallFailureBreaker` (Kotlin source that names its arguments is unchanged).
 
 - **Claude's thinking.** Opus 4.7 and later, Sonnet 5 and later, Haiku 5.5 and newer families refuse a `budget_tokens`
   with a 400, and Opus and Sonnet 4.6 deprecate it. The `low`, `medium`, `high` and `max` variants now send
@@ -64,9 +64,18 @@ arguments is unchanged).
   sets what lessons from earlier runs are matched on (`MemoryTopic`, its terms read as the request is: lower case,
   punctuation as spaces; `MemoryTopic.DEFAULTS` are the runtime's six: climate, navigation, media, the web, the display,
   calls); `memoryPolicy(…)` how many reach a run and which runs teach one; `lessons(false)` keeps runs from learning
-  lessons or using saved ones. The builder methods are experimental.
+  lessons or using saved ones; `serviceAnswerCheck(…)` which failed tool results are a service's answer in its own
+  terms (no route found), passed to the model as written and not counted toward the failures that stop a tool
+  (`ServiceAnswerCheck`; the runtime's own, `RuntimeServiceAnswerCheck`, reads an MCP `structuredContent.status.name`);
+  `toolDomains(…)` how tools are grouped into the areas the prompt lists (`ToolDomainNaming`; the runtime's own groups
+  `command_<area>_…` names, then by MCP server). The builder methods are experimental and on `AgentRuntimeBuilder`;
+  `KernelRuntimeBuilder` keeps the defaults.
   The defaults are expected to become neutral in a later release (no built-in topics, a narration check without
   language-specific phrasings), so a host that relies on them should set them explicitly.
+- **Tool search reads Japanese, Korean and Thai.** Text in a script whose words run together or carry their particles
+  (Japanese kana, Korean, Thai, Lao, Khmer, Myanmar, and the rarer Chinese characters) is read in pairs of characters
+  as Chinese was, so `コーヒー` or `조명` finds the tool whose description holds it; English and common Chinese are read as
+  before.
 - **Dependencies users compile against.** `agent-kernel-core` exposes `kotlinx-serialization-json` (its API takes and
   returns `JsonObject`) and `agent-a2a-client-official` exposes `agent-a2a` (its module is an `A2aClientModule`) as API
   dependencies; 0.4.0 published them as runtime-only, so code using those types did not compile.

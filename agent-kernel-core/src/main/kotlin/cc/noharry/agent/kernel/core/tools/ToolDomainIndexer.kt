@@ -1,4 +1,13 @@
 package cc.noharry.agent.kernel.core.tools
+
+/**
+ * Which area a tool belongs to, for the list of areas the prompt shows the model ([ToolDomainIndexer]). The id goes into
+ * the prompt as written; a blank one is `other`. It is called each time the prompt is assembled, possibly from several
+ * runs at once: keep it quick and safe to call concurrently.
+ */
+fun interface ToolDomainNaming {
+    fun domainOf(tool: McpToolRef): String
+}
 /**
  * Derives a lightweight domain index from the current MCP tool snapshot.
  *
@@ -14,6 +23,9 @@ package cc.noharry.agent.kernel.core.tools
  * - anything else               → domain = `other`
  */
 object ToolDomainIndexer {
+    /** The runtime's own naming: `command_<area>_…` tools by that area, others by their MCP server, else `other`. */
+    val CONVENTIONS: ToolDomainNaming = ToolDomainNaming(::extractDomain)
+
 
     private val COMMAND_PREFIX = Regex("""^command_([a-zA-Z]+)_""")
     private val MCP_QUALIFIED_PREFIX = Regex("""^mcp__([a-zA-Z0-9]+)__""")
@@ -23,10 +35,11 @@ object ToolDomainIndexer {
      * Each domain carries a short [ToolDomain.summary] extracted from the
      * descriptions of its member tools.
      */
-    fun index(tools: List<McpToolRef>): ToolDomainIndex {
+    @JvmOverloads
+    fun index(tools: List<McpToolRef>, naming: ToolDomainNaming = CONVENTIONS): ToolDomainIndex {
         val grouped = LinkedHashMap<String, MutableList<McpToolRef>>()
         for (tool in tools) {
-            val domain = extractDomain(tool)
+            val domain = naming.domainOf(tool).ifBlank { "other" }
             grouped.getOrPut(domain) { mutableListOf() }.add(tool)
         }
         val domains = grouped.entries

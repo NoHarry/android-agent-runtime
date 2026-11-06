@@ -344,6 +344,7 @@ public final class cc/noharry/agent/runtime/AgentRuntimeBuilder {
 	public static synthetic fun runContextAsSystem$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;ZILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun runtimeEvidence (Lcc/noharry/agent/kernel/api/RuntimeEvidenceConfig;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun sceneAgentsMd (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun serviceAnswerCheck (Lcc/noharry/agent/kernel/api/ServiceAnswerCheck;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun sessionActivationInheritance (Z)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public static synthetic fun sessionActivationInheritance$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;ZILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun sessionConcurrency (III)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
@@ -358,6 +359,7 @@ public final class cc/noharry/agent/runtime/AgentRuntimeBuilder {
 	public final fun systemPrompt (Ljava/lang/String;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun toolConcurrency (I)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public static synthetic fun toolConcurrency$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;IILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun toolDomains (Lcc/noharry/agent/kernel/core/tools/ToolDomainNaming;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun toolProvider (Lcc/noharry/agent/kernel/api/ToolProvider;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun toolProviders (Ljava/util/List;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun traceRedactor (Lcc/noharry/agent/kernel/core/trace/TraceRedactor;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;

@@ -1435,6 +1435,15 @@ public final class cc/noharry/agent/kernel/api/RuntimeTurnObserver$DefaultImpls 
 	public static fun preflightTurnInput (Lcc/noharry/agent/kernel/api/RuntimeTurnObserver;Lcc/noharry/agent/kernel/api/RuntimeTurnInput;)Lcc/noharry/agent/kernel/api/RuntimeObserverActionPreflight;
 }
 
+public abstract interface class cc/noharry/agent/kernel/api/ServiceAnswerCheck {
+	public static final field Companion Lcc/noharry/agent/kernel/api/ServiceAnswerCheck$Companion;
+	public abstract fun isServiceAnswer (Ljava/lang/String;)Z
+}
+
+public final class cc/noharry/agent/kernel/api/ServiceAnswerCheck$Companion {
+	public final fun getNONE ()Lcc/noharry/agent/kernel/api/ServiceAnswerCheck;
+}
+
 public final class cc/noharry/agent/kernel/api/SessionAttachmentRef {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V

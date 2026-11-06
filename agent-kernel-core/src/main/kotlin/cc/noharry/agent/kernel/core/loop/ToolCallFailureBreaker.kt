@@ -1,6 +1,8 @@
 package cc.noharry.agent.kernel.core.loop
+import cc.noharry.agent.kernel.api.ServiceAnswerCheck
 import cc.noharry.agent.kernel.api.ToolUseResult
-import cc.noharry.agent.kernel.core.tools.isMcpBusinessResult
+import cc.noharry.agent.kernel.core.tools.RuntimeServiceAnswerCheck
+import cc.noharry.agent.kernel.core.tools.answers
 /**
  * Run-scoped circuit breaker for repeated backend tool-call failures.
  *
@@ -18,9 +20,11 @@ import cc.noharry.agent.kernel.core.tools.isMcpBusinessResult
  * result instead. A successful result for a tool resets both tiers for it. State
  * is kept per run and old runs are evicted once [MAX_TRACKED_RUNS] is exceeded.
  */
-class ToolCallFailureBreaker(
+class ToolCallFailureBreaker @JvmOverloads constructor(
     private val maxConsecutiveFailures: Int = DEFAULT_MAX_CONSECUTIVE_TOOL_CALL_FAILURES,
     private val maxConsecutiveToolFailures: Int = DEFAULT_MAX_CONSECUTIVE_TOOL_FAILURES_PER_TOOL,
+    /** Which failed results are a service's answer, which resets the count ([ServiceAnswerCheck]). */
+    private val serviceAnswer: ServiceAnswerCheck = RuntimeServiceAnswerCheck,
 ) {
     init {
         require(maxConsecutiveFailures > 0) { "maxConsecutiveFailures must be positive." }
@@ -53,12 +57,22 @@ class ToolCallFailureBreaker(
             )
         }
 
-    /** Transport/untyped failures increment both tiers; delivered business results reset availability failures. */
-    fun record(runId: String, toolName: String, argumentsJson: String, result: ToolUseResult) {
+    /**
+     * Transport/untyped failures increment both tiers; a service's answer ([serviceAnswered], by default its check on the
+     * result) resets availability failures.
+     */
+    @JvmOverloads
+    fun record(
+        runId: String,
+        toolName: String,
+        argumentsJson: String,
+        result: ToolUseResult,
+        serviceAnswered: Boolean = !result.ok && serviceAnswer.answers(result.resultJson),
+    ) {
         synchronized(lock) {
             val state = stateForRun(runId)
             val key = callKey(toolName, argumentsJson)
-            if (result.ok || isMcpBusinessResult(result.resultJson)) {
+            if (result.ok || serviceAnswered) {
                 state.calls.keys.removeAll { it.startsWith(toolName + CALL_KEY_SEPARATOR) }
                 state.tools.remove(toolName)
                 return

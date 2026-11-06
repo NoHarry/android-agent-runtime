@@ -40,8 +40,8 @@ internal object AgentProtocolCatalog {
             """
             agentsMd build buildAsync contextProvider contextWindow create defaultWorkspace deferredBackendTools disabledNativeTools execEngine hook hookTimeoutMillis imageInput lessons loopBudget
             memoryPolicy memoryTopics modelClient modelConcurrency modelRetry narrationCheck nativeDeferredTools nativeWebFetchEnabled networkConfirmationPolicy nowEpochMillis
-            plugin policyConfig policyConfigJson policyConfigPath policyRule profile runContext runContextAsSystem runtimeEvidence sceneAgentsMd
-            sessionActivationInheritance sessionConcurrency sessionEventLog sessionEventLogRoot sessionHistory sessionStore sessionToolActivations skill subagents systemPrompt toolConcurrency toolProvider toolProviders traceRedactor turnObserver virtualWorkspace webFetchFallback webSearch workspace
+            plugin policyConfig policyConfigJson policyConfigPath policyRule profile runContext runContextAsSystem runtimeEvidence sceneAgentsMd serviceAnswerCheck
+            sessionActivationInheritance sessionConcurrency sessionEventLog sessionEventLogRoot sessionHistory sessionStore sessionToolActivations skill subagents systemPrompt toolConcurrency toolDomains toolProvider toolProviders traceRedactor turnObserver virtualWorkspace webFetchFallback webSearch workspace
             workspaceRoot
             """,
         ),

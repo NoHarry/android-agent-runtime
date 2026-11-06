@@ -9,7 +9,6 @@ package cc.noharry.agent.kernel.api
  * It is called on the run's thread, possibly several times for one answer and for runs at once: keep it quick, without
  * side effects and safe to call concurrently. One that throws fails the run.
  */
-@ExperimentalAgentRuntimeApi
 fun interface NarrationCheck {
     fun isNarration(answer: String): Boolean
 

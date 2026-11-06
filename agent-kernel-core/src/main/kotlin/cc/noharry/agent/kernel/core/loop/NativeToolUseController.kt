@@ -2,10 +2,13 @@
 
 package cc.noharry.agent.kernel.core.loop
 import cc.noharry.agent.kernel.api.*
+import cc.noharry.agent.kernel.api.ServiceAnswerCheck
 import cc.noharry.agent.kernel.api.model.*
 import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.core.state.normalizeTransportResult
 import cc.noharry.agent.kernel.core.tools.*
+import cc.noharry.agent.kernel.core.tools.RuntimeServiceAnswerCheck
+import cc.noharry.agent.kernel.core.tools.answers
 import cc.noharry.agent.kernel.core.trace.*
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
@@ -23,6 +26,7 @@ class NativeToolUseController(
     private val toolExecutionLimiter: ToolExecutionLimiter = ToolExecutionLimiter(),
     private val failureBreaker: ToolCallFailureBreaker = ToolCallFailureBreaker(),
     private val obligationLedger: RuntimeObligationLedger = RuntimeObligationLedger(),
+    private val serviceAnswer: ServiceAnswerCheck = RuntimeServiceAnswerCheck,
 ) {
     private val toolResultImages = ToolResultImageStash()
 
@@ -597,24 +601,24 @@ class NativeToolUseController(
             return backendRepeatedFailureResult(qualifiedName, tripped)
         }
         val execute = suspend { executeRoutedBackendTool(toolUse, context, qualifiedName) }
-        val result = try {
+        val outcome = try {
             if (permitAlreadyHeld) execute() else toolExecutionLimiter.withPermit(execute)
         } catch (error: CancellationException) {
             throw error
         } catch (error: RuntimeException) {
-            backendFailedResult(error.message ?: "MCP provider call failed.", retryable = true)
+            BackendOutcome(backendFailedResult(error.message ?: "MCP provider call failed.", retryable = true))
         }
-        failureBreaker.record(context.runId, qualifiedName, toolUse.argumentsJson, backendToolCallResult(result))
-        return result
+        failureBreaker.record(context.runId, qualifiedName, toolUse.argumentsJson, backendToolCallResult(outcome.json), outcome.serviceAnswered)
+        return outcome.json
     }
 
     private suspend fun executeRoutedBackendTool(
         toolUse: ToolUse,
         context: MaterializerContext,
         qualifiedName: String,
-    ): String {
+    ): BackendOutcome {
         val routed = mcpRegistry.callTool(qualifiedName, toolUse.argumentsJson, context)
-            ?: return unknownBackendToolResult(qualifiedName)
+            ?: return BackendOutcome(unknownBackendToolResult(qualifiedName))
         routed.result.trace?.let { trace ->
             mcpDebugTraceSink.record(
                 McpDebugCallRecord(
@@ -633,7 +637,7 @@ class NativeToolUseController(
             )
         }
         toolResultImages.put(toolUse.toolCallId, routed.result.images)
-        return routed.result.toBackendToolResult()
+        return routed.result.backendOutcome(serviceAnswer)
     }
 
     suspend fun finishDeniedToolUse(
@@ -940,11 +944,6 @@ private fun ToolSource.toDynamicToolSource(): DynamicToolSource? = when (this) {
     ToolSource.TERMINAL -> DynamicToolSource.TERMINAL
     ToolSource.INTERACTION -> DynamicToolSource.INTERACTION
 }
-
-/** A failure the provider already explains (`{"ok":false,"code":…}`) reaches the model as it is, not as an escaped string. */
-internal fun cc.noharry.agent.kernel.api.ToolCallResult.toBackendToolResult(): String =
-    if (success || isMcpBusinessResult(resultJson) && !backendToolCallResult(resultJson).ok) resultJson
-    else structuredFailure(resultJson, retryable) ?: backendFailedResult(resultJson, retryable)
 
 private fun mcpToolsCallJson(id: String, toolName: String, argumentsJson: String): String =
     """{"jsonrpc":"2.0","id":"${id.escapeJson()}","method":"tools/call","params":{"name":"${toolName.escapeJson()}","arguments":${argumentsJson.asJsonObjectLiteral()}}}"""

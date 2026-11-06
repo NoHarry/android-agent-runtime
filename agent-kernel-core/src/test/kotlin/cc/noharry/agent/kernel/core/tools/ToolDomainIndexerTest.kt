@@ -12,6 +12,14 @@ import org.junit.Test
 class ToolDomainIndexerTest {
 
     @Test
+    fun aHostsNamingGroupsTheTools() {
+        val tools = listOf(toolRef("command_navi_KeyWordSearch", "search"), toolRef("lights_on", "lights"), toolRef("lights_off", "lights"))
+        val index = ToolDomainIndexer.index(tools) { tool -> tool.originalToolName.substringBefore('_') }
+        assertEquals(listOf("lights", "command"), index.domains.map { it.id })
+        assertEquals("navi", ToolDomainIndexer.CONVENTIONS.domainOf(tools.first()))
+    }
+
+    @Test
     fun groupsCommandPrefixedToolsIntoDomains() {
         val tools = listOf(
             toolRef("command_navi_KeyWordSearch", "用关键字搜索导航POI信息"),
