@@ -37,7 +37,7 @@ internal fun rpcError(id: JsonElement, error: A2aRpcError): JsonObject = jsonObj
 
 internal fun agentCard(config: A2aServerConfig, port: Int): JsonObject = buildJsonObject {
     put("name", config.name)
-    put("description", "Text requests, brief tool progress and speech text; no local audio playback.")
+    put("description", config.description)
     put("version", "0.1.0")
     put("protocolVersion", "0.3.0")
     put("url", "http://127.0.0.1:$port/a2a")
@@ -58,8 +58,8 @@ internal fun agentCard(config: A2aServerConfig, port: Int): JsonObject = buildJs
     put("defaultOutputModes", strings("text/plain"))
     put("skills", JsonArray(listOf(jsonObject(
         "id" to text("runtime-text"), "name" to text("Runtime text execution"),
-        "description" to text("Execute text with configured host tools and return text-only speech."),
-        "tags" to strings("tools", "text", "tts"),
+        "description" to text(config.skillDescription),
+        "tags" to strings("tools", "text"),
     ))))
 }
 

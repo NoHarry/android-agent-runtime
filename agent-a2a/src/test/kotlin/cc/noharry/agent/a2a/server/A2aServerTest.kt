@@ -201,7 +201,7 @@ class A2aServerTest {
             assertEquals(context, second.string("contextId"))
             val old = rpc(server, "tasks/get", jsonObject("id" to first["id"]!!))["result"]!!.jsonObject["status"]!!.jsonObject
             assertEquals("canceled", old.string("state"))
-            assertEquals(INTERRUPTED_TEXT, old["message"]!!.jsonObject["parts"]!!.jsonArray.single().jsonObject.string("text"))
+            assertEquals(A2aServerMessages().interrupted, old["message"]!!.jsonObject["parts"]!!.jsonArray.single().jsonObject.string("text"))
 
             // With nothing running it is an ordinary message.
             val third = rpc(server, "message/send", interrupting(message("第三个", context)))["result"]!!.jsonObject

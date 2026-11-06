@@ -202,7 +202,7 @@ internal class AndroidUseActionRunner(
             is LaunchOutcome.Launched -> ActionOutcome.Done(true, buildJsonObject { put("package", outcome.packageName) })
             is LaunchOutcome.Ambiguous -> ActionOutcome.Refused(
                 APP_AMBIGUOUS,
-                "Several apps match \"$app\": ${outcome.labels.joinToString("、")}. Call launch_app again with one exact name.",
+                "Several apps match \"$app\": ${outcome.labels.joinToString(", ")}. Call launch_app again with one exact name.",
             )
             LaunchOutcome.NotFound -> ActionOutcome.Refused(APP_NOT_FOUND, "No launchable app matches \"$app\".")
         }

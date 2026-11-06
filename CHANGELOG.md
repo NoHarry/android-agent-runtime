@@ -5,8 +5,9 @@ called out.
 
 ## Unreleased
 
-Fixes for Claude and OpenAI hosts. **Breaking** in behaviour where noted, and for binaries compiled against the old
-`AnthropicModelClient` constructor.
+Fixes for Claude and OpenAI hosts, and nothing in Chinese or about a car unless the host is. **Breaking** in behaviour
+where noted, and for binaries compiled against the old constructors of `AnthropicModelClient` and `A2aServerConfig`
+(Kotlin source that names its arguments is unchanged).
 
 - **Claude's thinking.** Opus 4.7 and later, Sonnet 5 and later, Haiku 5.5 and newer families refuse a `budget_tokens`
   with a 400, and Opus and Sonnet 4.6 deprecate it. The `low`, `medium`, `high` and `max` variants now send
@@ -33,6 +34,22 @@ Fixes for Claude and OpenAI hosts. **Breaking** in behaviour where noted, and fo
   write, or a thinking model that says nothing for a while, is not cut off; HTTP/2 pings every 30 s find a dead
   connection.
 - The default Claude model, used when none is named, is `claude-haiku-5-5` (`claude-3-5-haiku-latest` was retired).
+- **Nothing in Chinese unless the device is.** Text the runtime sent in Chinese whatever the app (behaviour change):
+  - The `finish` tool's description is English.
+  - `web_fetch` asked every site for Chinese pages; it now asks in the app's language (language and region), then
+    English, worked out for each request.
+  - The A2A server's status texts are English, and `A2aServerConfig.messages` words them for the host; the Agent
+    Card's `description` and `skillDescription` are the host's too, and no longer call the answers speech.
+  - Android Use's accessibility service is named in English, and in Chinese on a Chinese device. Its tools are
+    described in English, opening with what makes them a fallback, and the media tools likewise; both add the Chinese
+    words a request uses only where Chinese is in use (one of the system's languages, or the app's), for tool search.
+  - Compaction no longer asks for a car's state (temperatures, destination, media), and the `search_tools` and
+    `spawn_agent` descriptions no longer give car tasks as examples.
+- **Memory outside the built-in topics.** A remembered tool set was used only for requests about climate, navigation,
+  media, the web, the display or the phone. A request on any other topic now finds a lesson that shares at least two
+  words with it beyond the commonest (turn, on, open, status…). Words keep their accented and non-Latin letters, which
+  were dropped; a run of Chinese characters is still one word, so a Chinese request outside the topics matches nothing
+  by words alone. A lesson's scene, the same host label on every request, no longer counts as one of its words.
 
 ## 0.4.0 (2026-11-01)
 

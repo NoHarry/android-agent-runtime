@@ -77,7 +77,7 @@ class DeviceMediaMcpProviderTest {
         assertTrue(liked.success)
         assertEquals(MediaCommand.Custom("like"), gateway.sent.single().second)
         assertFalse(missing.success)
-        assertTrue(missing.resultJson.contains("喜欢、播放模式"))
+        assertTrue(missing.resultJson.contains("喜欢, 播放模式"))
     }
 
     @Test
@@ -143,6 +143,23 @@ class DeviceMediaMcpProviderTest {
         val result = provider(gateway).call("media.volume", """{"action":"set","percent":30}""")
 
         assertTrue(result.resultJson.contains(""""volumePercent":30"""))
+    }
+
+    @Test
+    fun theChineseSearchWordsComeOnlyWhereChineseIsInUse() = runBlocking {
+        val before = java.util.Locale.getDefault()
+        try {
+            java.util.Locale.setDefault(java.util.Locale.SIMPLIFIED_CHINESE)
+            val chinese = provider(FakeMediaGateway(emptyList()))
+            assertTrue(chinese.listTools().single { it.name == "media.control" }.description.contains("下一首"))
+            assertTrue(chinese.catalogCacheIdentity.endsWith(":zh"))
+            java.util.Locale.setDefault(java.util.Locale.US)
+            val english = provider(FakeMediaGateway(emptyList()))
+            assertFalse(english.listTools().any { tool -> tool.description.any { Character.UnicodeScript.of(it.code) == Character.UnicodeScript.HAN } })
+            assertTrue(english.catalogCacheIdentity.endsWith(":other"))
+        } finally {
+            java.util.Locale.setDefault(before)
+        }
     }
 
     private fun provider(gateway: FakeMediaGateway) = DeviceMediaMcpProvider(gateway, settleMillis = 0)

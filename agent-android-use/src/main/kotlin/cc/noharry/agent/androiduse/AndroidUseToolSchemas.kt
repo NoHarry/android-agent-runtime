@@ -1,17 +1,19 @@
 package cc.noharry.agent.androiduse
 
+import android.content.res.Resources
+import android.os.Build
 import cc.noharry.agent.kernel.api.ToolDescriptor
+import java.util.Locale
 
 internal fun observeToolDescriptor(): ToolDescriptor =
     ToolDescriptor(
         name = ANDROID_OBSERVE,
-        title = "查看屏幕",
+        title = "Observe screen",
         // A fallback, said so up front (owner 2026-10-14): models opened apps by tapping while the host had an API.
-        description = "看屏幕 / 截图：返回当前屏幕的截图和可操作元素（id、文字、坐标）。要在界面上找东西、或没有专用接口时才用；" +
-            "打开、退出应用，回到主页，进入某个页面，先用 search_tools 找专用接口。" +
-            "Android Use: observe the screen. Returns observationId, a screenshot and elements " +
-            "(id, text, bounds in screenshot pixels). Use before android_action when no domain tool fits; for opening or " +
-            "closing an app, going home or opening a page, search_tools for a dedicated tool first.",
+        description = "Android Use, a fallback: look at the screen only to find something on it, or when no dedicated " +
+            "tool fits; for opening or closing an app, going home or opening a page, search_tools for a dedicated tool " +
+            "first. Returns observationId, a screenshot and elements (id, text, bounds in screenshot pixels), for " +
+            "android_action." + chineseWords("看屏幕 / 截图：返回当前屏幕的截图和可操作元素（id、文字、坐标）。"),
         inputSchemaJson = OBSERVE_SCHEMA,
         effectKind = EFFECT_READ_ONLY,
     )
@@ -19,12 +21,13 @@ internal fun observeToolDescriptor(): ToolDescriptor =
 internal fun actionToolDescriptor(): ToolDescriptor =
     ToolDescriptor(
         name = ANDROID_ACTION,
-        title = "操作屏幕",
-        description = "操作屏幕：点击、长按、滑动、翻列表、输入文字、调滑块、返回。打开应用（launch_app）、回主页（key）只在" +
-            "search_tools 找不到专用接口或接口失败时用。" +
-            "Android Use: one UI action on the latest observation, then returns the new observation " +
-            "with a screenshot. Prefer elementId; x/y are screenshot pixels. To see more of a list use scroll " +
-            "with direction (down shows what is below); keep swipe for drags that are not scrolling.",
+        title = "Act on screen",
+        description = "Android Use, a fallback: open an app (launch_app) or go home (key) only when search_tools finds " +
+            "no dedicated tool or that tool fails. One UI action (tap, long press, swipe, scroll a list, type, set a " +
+            "slider, back) on the latest observation, then returns the new observation with a screenshot. Prefer " +
+            "elementId; x/y are screenshot pixels. To see more of a list use scroll with direction (down shows what is " +
+            "below); keep swipe for drags that are not scrolling." +
+            chineseWords("操作屏幕：点击、长按、滑动、翻列表、输入文字、调滑块、返回。"),
         inputSchemaJson = ACTION_SCHEMA,
         effectKind = EFFECT_MUTATING,
     )
@@ -59,3 +62,21 @@ internal const val ANDROID_OBSERVE = "android_observe"
 internal const val ANDROID_ACTION = "android_action"
 private const val EFFECT_READ_ONLY = "READ_ONLY"
 private const val EFFECT_MUTATING = "MUTATING"
+
+/** Words a Chinese request uses for a tool, where Chinese is in use ([chineseInUse]); nothing elsewhere. */
+private fun chineseWords(words: String): String = if (chineseInUse()) " $words" else ""
+
+/**
+ * Whether Chinese is in use here: one of the system's languages (the user's own, whatever this app shows) or the app's.
+ * Tool search then finds a tool from the Chinese words a request uses.
+ */
+internal fun chineseInUse(): Boolean =
+    Locale.getDefault().language == "zh" || runCatching {
+        val configuration = Resources.getSystem().configuration
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            (0 until configuration.locales.size()).any { configuration.locales[it].language == "zh" }
+        } else {
+            @Suppress("DEPRECATION")
+            configuration.locale.language == "zh"
+        }
+    }.getOrDefault(false)

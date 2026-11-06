@@ -328,7 +328,7 @@ private val FOLDABLE_READ_ONLY_TOOL_NAMES = setOf(
 
 private val COMPACTION_PROMPT = """
 You are a context compactor. Summarize the following conversation history into a concise retention block. Preserve:
-- The user's original intent and any concrete values (temperatures, destinations, names).
+- The user's original intent and any concrete values (amounts, places, names, settings).
 - Tool calls that succeeded and their key results (not full JSON, just outcomes).
 - Tool calls that failed and the error pattern.
 - Any decisions or constraints established.

@@ -24,6 +24,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import java.util.Locale
 
 internal class NetworkToolBackend(
     private val transport: WebFetchTransport = OkHttpWebFetchTransport(),
@@ -169,7 +170,7 @@ internal class NetworkToolBackend(
             val response = transport.execute(
                 WebFetchRequest(
                     url = currentUrl.toString(),
-                    headers = WEB_FETCH_REQUEST_HEADERS,
+                    headers = webFetchRequestHeaders(),
                     maxTransferBytes = MAX_WEB_FETCH_TRANSFER_BYTES,
                 ),
             )
@@ -656,7 +657,22 @@ private const val UTF8_CONTINUATION_PREFIX = 0x80
 
 private val WEB_FETCH_REDIRECT_STATUS_CODES = setOf(301, 302, 303, 307, 308)
 
-private val WEB_FETCH_REQUEST_HEADERS = mapOf(
+/** Asked per request, so a language changed while the app runs is followed. */
+private fun webFetchRequestHeaders() = mapOf(
     "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language" to "zh-CN,zh;q=0.9,en;q=0.8",
+    "Accept-Language" to acceptLanguage(Locale.getDefault()),
 )
+
+/**
+ * Pages in the device's language where a site has them, else English: `zh-CN,zh;q=0.9,en;q=0.8` on a Chinese device,
+ * from the language and region alone (Android's `zh-Hans-CN-u-fw-mon` is `zh-CN` to a site).
+ */
+internal fun acceptLanguage(locale: Locale): String {
+    val language = Locale(locale.language).toLanguageTag().takeUnless { it == "und" } ?: "en"
+    val tag = if (locale.country.isBlank()) language else "$language-${locale.country}"
+    return when {
+        language == "en" -> if (tag == "en") "en" else "$tag,en;q=0.9"
+        tag == language -> "$language,en;q=0.8"
+        else -> "$tag,$language;q=0.9,en;q=0.8"
+    }
+}

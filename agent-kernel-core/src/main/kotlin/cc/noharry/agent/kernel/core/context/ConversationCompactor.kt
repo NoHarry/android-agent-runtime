@@ -237,7 +237,7 @@ const val CHECKPOINT_PREAMBLE =
         "Treat the captured context as established background and build on it without restating it. Continue directly " +
         "from the messages that follow, without acknowledging this checkpoint."
 
-/** Codex's handoff aim with dsh's fixed sections, worded for an in-car assistant. */
+/** Codex's handoff aim with dsh's fixed sections. */
 internal val CONVERSATION_COMPACTION_INSTRUCTION = """
 You are now compacting this conversation. Condense the conversation ABOVE into a checkpoint that lets you continue it with nothing essential lost.
 
@@ -250,7 +250,7 @@ Output exactly these sections, in order, as terse bullets; write "(none)" for an
 - [each action taken: the tool, the exact values set, and whether it succeeded, failed or is unknown]
 
 ## Current state
-- [latest known settings and states: temperatures, levels, modes, destination, media, and so on]
+- [the latest known settings, states and values the conversation set or read: levels, modes, places, items, records, and so on]
 
 ## Open items
 - [questions or offers still waiting for the user's answer, and requested work not done yet]

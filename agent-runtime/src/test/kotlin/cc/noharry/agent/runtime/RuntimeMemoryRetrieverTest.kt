@@ -23,7 +23,23 @@ class RuntimeMemoryRetrieverTest {
 
         assertTrue(retriever.retrieve("有点热", lessons).lessons.isEmpty())
         assertTrue(retriever.retrieve("现在几点", lessons).lessons.isEmpty())
-        assertTrue(retriever.retrieve("calculate tax", lessons).lessons.isEmpty())
+        // Outside the known topics one shared word is not enough.
+        assertTrue(retriever.retrieve("what tax applies", lessons).lessons.isEmpty())
+    }
+
+    @Test
+    fun aRequestOutsideTheKnownTopicsFindsALessonByItsWords() {
+        val lessons = listOf(lesson("orders", "Observed capability set: order tracking lookup"))
+
+        val found = RuntimeMemoryRetriever().retrieve("Show the order tracking for 4411", lessons)
+        assertEquals(listOf("orders"), found.lessons.map { it.id })
+        assertEquals(listOf("order tracking lookup"), found.capabilityQueries)
+        assertTrue(RuntimeMemoryRetriever().retrieve("Track my parcel", lessons).lessons.isEmpty())
+        // Words every request and tool name has do not tie them.
+        val light = listOf(lesson("light", "Observed capability set: turn on light"))
+        assertTrue(RuntimeMemoryRetriever().retrieve("turn on the fan", light).lessons.isEmpty())
+        // A Chinese request outside the topics is one word: it never matches by words alone.
+        assertTrue(RuntimeMemoryRetriever().retrieve("帮我查一下订单物流", lessons).lessons.isEmpty())
     }
 
     @Test

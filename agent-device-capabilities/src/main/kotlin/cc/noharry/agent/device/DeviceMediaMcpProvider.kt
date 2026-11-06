@@ -3,6 +3,8 @@ package cc.noharry.agent.device
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
+import android.os.Build
 import android.provider.Settings
 import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
@@ -11,6 +13,7 @@ import cc.noharry.agent.kernel.api.ToolCallResult
 import cc.noharry.agent.kernel.api.ToolCatalogCacheIdentity
 import cc.noharry.agent.kernel.api.ToolDescriptor
 import cc.noharry.agent.kernel.api.mcp.McpClientProvider
+import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.JsonObject
@@ -38,7 +41,7 @@ class DeviceMediaMcpProvider internal constructor(
 ) : McpClientProvider, ToolCatalogCacheIdentity {
     override val serverId: String = MEDIA_SERVER_ID
     override val displayName: String = "Device Media"
-    override val catalogCacheIdentity: String = "$MEDIA_SERVER_ID:v6"
+    override val catalogCacheIdentity: String get() = "$MEDIA_SERVER_ID:v7:${if (chineseInUse()) "zh" else "other"}"
     @OptIn(ExperimentalAgentRuntimeApi::class)
     override val providerConcurrency: ProviderConcurrencyDeclaration =
         ProviderConcurrencyDeclaration.serialized()
@@ -165,7 +168,7 @@ class DeviceMediaMcpProvider internal constructor(
         else -> failed(
             DEVICE_CAPABILITY_UNAVAILABLE,
             "${target.app} has no action \"${args.stringField("customAction")}\"; it offers: " +
-                target.customActions.joinToString("、") { it.name }.ifEmpty { "none" } + ".",
+                target.customActions.joinToString(", ") { it.name }.ifEmpty { "none" } + ".",
         )
     }
 
@@ -206,7 +209,7 @@ class DeviceMediaMcpProvider internal constructor(
         val sessions = gateway.sessions() ?: return failed(DEVICE_PERMISSION_DENIED, "$NO_ACCESS Playing by name needs it.")
         val target = if (app != null) pick(sessions, app) else sessions.firstOrNull { it.playing && it.canPlayFromSearch } ?: sessions.firstOrNull { it.canPlayFromSearch }
         if (target == null || !target.canPlayFromSearch) {
-            val able = sessions.filter { it.canPlayFromSearch }.joinToString("、") { it.app }
+            val able = sessions.filter { it.canPlayFromSearch }.joinToString(", ") { it.app }
             val who = target?.app ?: app ?: "No app open now"
             return failed(
                 DEVICE_CAPABILITY_UNAVAILABLE,
@@ -254,7 +257,7 @@ class DeviceMediaMcpProvider internal constructor(
     }
 
     private fun sessionsNote(sessions: List<MediaSessionSnapshot>): String =
-        if (sessions.isEmpty()) "" else " Sessions now: ${sessions.joinToString("、") { it.app }}."
+        if (sessions.isEmpty()) "" else " Sessions now: ${sessions.joinToString(", ") { it.app }}."
 
     companion object {
         /** Whether the user granted notification access to [listener], [DeviceMediaListenerService] unless the host has its own. */
@@ -311,8 +314,8 @@ private fun mediaStatusTool(): ToolDescriptor = ToolDescriptor(
     title = "Media status",
     description = "What plays on the device: the app, title, artist, playing or paused, position, what the app lets you " +
         "do (seek, play by name, its own actions) and the media volume; other apps with a media session too. soundPlaying " +
-        "says whether anything sounds at all, which a video app's session may not admit to. " +
-        "现在在放什么歌、音乐、播客、视频。",
+        "says whether anything sounds at all, which a video app's session may not admit to." +
+        chineseWords("现在在放什么歌、音乐、播客、视频。"),
     inputSchemaJson = """{"type":"object","properties":{}}""",
 )
 
@@ -323,11 +326,11 @@ private fun mediaControlTool(): ToolDescriptor = ToolDescriptor(
         "video), or run one of the app's own actions (custom, e.g. a like or a play mode, as media.status lists them). " +
         "app picks the app (its name or package); without it the one playing, else the latest. soundPlaying after the " +
         "command tells whether anything sounds now: trust it over a video app's session that always reads stopped. It cannot pick a song: " +
-        "use media.play_from_search where the app allows it, else open the app and choose on screen. " +
-        "音乐播放控制：播放、继续、暂停、下一首、上一首、切歌、停止、快进、喜欢、收藏、播放模式。",
+        "use media.play_from_search where the app allows it, else open the app and choose on screen." +
+        chineseWords("音乐播放控制：播放、继续、暂停、下一首、上一首、切歌、停止、快进、喜欢、收藏、播放模式。"),
     inputSchemaJson = """{"type":"object","required":["action"],"properties":{""" +
         """"action":{"type":"string","enum":["play","pause","toggle","next","previous","stop","seek","custom"]},""" +
-        """"app":{"type":"string","description":"The app to control, e.g. 网易云音乐 or its package name"},""" +
+        """"app":{"type":"string","description":"The app to control, by its name or package name"},""" +
         """"positionMs":{"type":"integer","minimum":0,"description":"seek: where to, in milliseconds"},""" +
         """"customAction":{"type":"string","description":"custom: the action's name as media.status lists it"}}}""",
 )
@@ -335,7 +338,7 @@ private fun mediaControlTool(): ToolDescriptor = ToolDescriptor(
 private fun mediaVolumeTool(): ToolDescriptor = ToolDescriptor(
     name = MEDIA_VOLUME,
     title = "Media volume",
-    description = "The device's media volume: get it, turn it up or down a step, or set it to percent. 媒体音量、声音大小。",
+    description = "The device's media volume: get it, turn it up or down a step, or set it to percent." + chineseWords("媒体音量、声音大小。"),
     inputSchemaJson = """{"type":"object","required":["action"],"properties":{""" +
         """"action":{"type":"string","enum":["get","up","down","set"]},""" +
         """"percent":{"type":"integer","minimum":0,"maximum":100,"description":"set: the volume, 0–100"}}}""",
@@ -346,9 +349,9 @@ private fun mediaPlayFromSearchTool(): ToolDescriptor = ToolDescriptor(
     title = "Play by name",
     description = "Ask an app to find and play something by name (a song, an artist, a podcast), through its media " +
         "session. Only apps that allow it (canPlayFromSearch in media.status); others refuse, and then the song is " +
-        "picked in the app on screen. 点歌、放某首歌、放某个歌手。",
+        "picked in the app on screen." + chineseWords("点歌、放某首歌、放某个歌手。"),
     inputSchemaJson = """{"type":"object","required":["query"],"properties":{""" +
-        """"query":{"type":"string","description":"What to play, e.g. 周杰伦 晴天"},""" +
+        """"query":{"type":"string","description":"What to play: a song, an artist, or both"},""" +
         """"app":{"type":"string","description":"The app to ask; without it one that allows it"}}}""",
 )
 
@@ -374,3 +377,22 @@ private const val KEYCODE_MEDIA_NEXT = 87
 private const val KEYCODE_MEDIA_PREVIOUS = 88
 private const val KEYCODE_MEDIA_PLAY = 126
 private const val KEYCODE_MEDIA_PAUSE = 127
+
+/** Words a Chinese request uses for a tool, where Chinese is in use ([chineseInUse]); nothing elsewhere. */
+private fun chineseWords(words: String): String = if (chineseInUse()) " $words" else ""
+
+/**
+ * Whether Chinese is in use here: one of the system's languages (the user's own, whatever this app shows) or the app's.
+ * Tool search then finds a tool from the Chinese words a request uses.
+ */
+internal fun chineseInUse(): Boolean =
+    Locale.getDefault().language == "zh" || runCatching {
+        val configuration = Resources.getSystem().configuration
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            (0 until configuration.locales.size()).any { configuration.locales[it].language == "zh" }
+        } else {
+            @Suppress("DEPRECATION")
+            configuration.locale.language == "zh"
+        }
+    }.getOrDefault(false)
+

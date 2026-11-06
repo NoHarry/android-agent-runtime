@@ -67,7 +67,7 @@ val NATIVE_READ_TOOLS = listOf(
               "additionalProperties": false,
               "required": ["query"],
               "properties": {
-                "query": {"type": "string", "description": "Keywords describing the capability you need, e.g. 'navigate around search parking' or 'play music singer'."},
+                "query": {"type": "string", "description": "Keywords describing the capability you need, e.g. 'order status lookup' or 'play music by artist'."},
                 "max_results": {"type": "integer", "minimum": 1, "default": 10, "description": "Maximum number of matching tools to return."}
               }
             }
@@ -131,11 +131,11 @@ val TERMINAL_TOOLS = listOf(
         schemaJson = """
             {
               "type": "object",
-              "description": "Finish the runtime loop exactly once with the final response to the user; response 必须是直接展示给用户的完整最终答复，不是过程旁白；finish 调用后不再有后续输出机会。",
+              "description": "Finish the runtime loop exactly once with the final response to the user. response is the complete final answer shown to the user, not narration of the process; nothing more can be said after finish.",
               "additionalProperties": false,
               "required": ["response"],
               "properties": {
-                "response": {"type": "string", "description": "response 必须是直接展示给用户的完整最终答复，不是过程旁白；finish 调用后不再有后续输出机会。"},
+                "response": {"type": "string", "description": "The complete final answer shown to the user, not narration of the process; nothing more can be said after finish."},
                 "outcome": {"type": "string", "enum": ["success", "partial", "blocked"], "description": "Optional completion request. Omitted outcome is a legacy success request."}
               }
             }

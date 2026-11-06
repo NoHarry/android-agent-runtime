@@ -36,10 +36,10 @@ class NativeToolDefinitionsTest {
         assertNotNull("finish properties must be defined.", properties)
         assertEquals("string", response?.string("type"))
         assertTrue(schema.string("description").orEmpty().contains("exactly once"))
-        assertTrue(schema.string("description").orEmpty().contains("直接展示给用户的完整最终答复"))
-        assertTrue(response?.string("description").orEmpty().contains("直接展示给用户的完整最终答复"))
-        assertTrue(response?.string("description").orEmpty().contains("不是过程旁白"))
-        assertTrue(response?.string("description").orEmpty().contains("不再有后续输出机会"))
+        assertTrue(schema.string("description").orEmpty().contains("complete final answer shown to the user"))
+        assertTrue(response?.string("description").orEmpty().contains("complete final answer shown to the user"))
+        assertTrue(response?.string("description").orEmpty().contains("not narration of the process"))
+        assertTrue(response?.string("description").orEmpty().contains("nothing more can be said after finish"))
         assertTrue(!schema.string("description").orEmpty().contains("finish later"))
     }
 

@@ -1,0 +1,4 @@
+<resources>
+    <string name="android_use_service_label">助手操作屏幕</string>
+    <string name="android_use_service_description">让助手查看屏幕并点击、滑动、输入，以完成你交给它的任务。</string>
+</resources>

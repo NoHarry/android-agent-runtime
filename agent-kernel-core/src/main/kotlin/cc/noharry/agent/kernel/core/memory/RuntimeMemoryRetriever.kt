@@ -190,10 +190,8 @@ private fun retrievalProfile(value: String): RetrievalProfile {
     return RetrievalProfile(tokens = tokens, domains = domains)
 }
 
-private fun lessonSearchText(lesson: RuntimeLesson): String = buildString {
-    append(memoryCapabilityQueries(listOf(lesson)).joinToString(" "))
-    lesson.scene?.takeIf { it.isNotBlank() }?.let { append(' ').append(it) }
-}
+/** What a lesson did, in its capability words: its scene is the host's label for every request, not what this one asked. */
+private fun lessonSearchText(lesson: RuntimeLesson): String = memoryCapabilityQueries(listOf(lesson)).joinToString(" ")
 
 private fun relevanceScore(
     request: RetrievalProfile,
@@ -201,7 +199,11 @@ private fun relevanceScore(
     matchedDomains: Set<MemoryDomain>,
 ): Float {
     val lexical = lexicalOverlap(request.tokens, lesson.tokens)
-    if (request.domains.isEmpty()) return 0f
+    // A request outside the known topics: the words alone decide, and must mostly agree.
+    if (request.domains.isEmpty()) {
+        val shared = (request.tokens intersect lesson.tokens) - GENERIC_WORDS
+        return if (lesson.domains.isEmpty() && shared.size >= MIN_SHARED_WORDS_WITHOUT_TOPIC) lexical else 0f
+    }
     if (matchedDomains.isEmpty() || lesson.domains.isEmpty()) return 0f
     val coverage = matchedDomains.size.toFloat() / request.domains.size
     val precision = matchedDomains.size.toFloat() / lesson.domains.size
@@ -228,7 +230,7 @@ private fun String.containsDomainTerm(
 private fun normalizeRetrievalText(value: String): String =
     CAMEL_CASE_RETRIEVAL_BOUNDARY.replace(value, "$1 $2")
         .lowercase()
-        .replace(Regex("""[^a-z0-9\u4E00-\u9FFF]+"""), " ")
+        .replace(Regex("""[^\p{L}\p{N}]+"""), " ")
         .replace(Regex("""\s+"""), " ")
         .trim()
 
@@ -238,7 +240,14 @@ private fun memoryMatchOrder(): Comparator<RuntimeMemoryMatch> =
         .thenByDescending { it.lesson.hitCount }
         .thenByDescending { it.lesson.lastValidatedAtEpochMillis }
 
-private val RETRIEVAL_TOKEN_PATTERN = Regex("""[a-z0-9]+|[\u4E00-\u9FFF]+""")
+/** A run of Han characters, or a word in any other script (the text holds letters, digits and spaces only by now). */
+private val RETRIEVAL_TOKEN_PATTERN = Regex("""\p{IsHan}+|[^\p{IsHan}\s]+""")
+
+/** Words too common in tool names and requests to tie a request to a lesson without a topic. */
+private val GENERIC_WORDS = setOf(
+    "turn", "on", "off", "get", "open", "close", "list", "show", "my", "me", "is", "it", "in", "at", "what", "how",
+    "please", "can", "you", "i", "new", "all", "info", "data", "status", "check", "car", "app", "do", "make",
+)
 private val CAMEL_CASE_RETRIEVAL_BOUNDARY = Regex("""([a-z0-9])([A-Z])""")
 private val RETRIEVAL_STOP_WORDS = setOf(
     "a", "an", "and", "capability", "efficient", "for", "hints", "observed", "of", "plan", "search", "set", "the", "to",
@@ -248,3 +257,4 @@ private const val DOMAIN_PRECISION_WEIGHT = 0.3f
 private const val LEXICAL_WEIGHT = 0.2f
 private const val ASCII_LIMIT = 128
 private const val MIN_WEAK_DOMAIN_TERM_MATCHES = 2
+private const val MIN_SHARED_WORDS_WITHOUT_TOPIC = 2

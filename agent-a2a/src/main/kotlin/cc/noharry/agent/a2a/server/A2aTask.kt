@@ -9,9 +9,10 @@ import kotlinx.serialization.json.*
 internal class A2aTask(
     val request: A2aRequest,
     streaming: Boolean,
+    private val messages: A2aServerMessages = A2aServerMessages(),
 ) {
     private val lock = Any()
-    private var currentStatus = status("submitted", "已接收文字请求", request.taskId, request.contextId)
+    private var currentStatus = status("submitted", messages.accepted, request.taskId, request.contextId)
     private val artifacts = mutableListOf<JsonObject>()
     private var artifactBytes = 0
     private var ended = false
@@ -62,7 +63,7 @@ internal class A2aTask(
     }
 
     fun failDelivery() {
-        if (!terminal) updateStatus("failed", "输出连接不可用或输出超限", true)
+        if (!terminal) updateStatus("failed", messages.deliveryFailed, true)
         events?.close()
         done.complete(Unit)
     }

@@ -28,7 +28,7 @@ internal class A2aTaskStore(
             tasks.remove(oldest.key)
         }
         val request = A2aRequest(UUID.randomUUID().toString(), contextId ?: UUID.randomUUID().toString(), input, metadata)
-        val task = A2aTask(request, streaming)
+        val task = A2aTask(request, streaming, config.messages)
         tasks[request.taskId] = task
         task.job = scope.launch(start = CoroutineStart.LAZY) { execute(task) }
         task.job.invokeOnCompletion { if (!task.done.isCompleted) task.failDelivery() }
@@ -38,7 +38,7 @@ internal class A2aTaskStore(
 
     /**
      * Starts [input] in place of [contextId]'s running task: that task is canceled first and ends `canceled` with
-     * [INTERRUPTED_TEXT] after its host cleanup, so the two never overlap. With nothing running it is a plain [start].
+     * [A2aServerMessages.interrupted] after its host cleanup, so the two never overlap. With nothing running it is a plain [start].
      */
     suspend fun interrupt(input: String, contextId: String?, streaming: Boolean, metadata: Map<String, String>): A2aTask {
         val running = synchronized(this) {
@@ -94,11 +94,11 @@ internal class A2aTaskStore(
         val result = try {
             withTimeout(config.taskTimeoutMillis) { collectResult(task) }
         } catch (_: TimeoutCancellationException) {
-            A2aOutput.Result("任务超时或输出接收过慢", A2aOutput.State.FAILED)
+            A2aOutput.Result(config.messages.timedOut, A2aOutput.State.FAILED)
         } catch (_: CancellationException) {
-            A2aOutput.Result(if (task.interrupted) INTERRUPTED_TEXT else "任务已取消", A2aOutput.State.CANCELED)
+            A2aOutput.Result(if (task.interrupted) config.messages.interrupted else config.messages.canceled, A2aOutput.State.CANCELED)
         } catch (_: Exception) {
-            A2aOutput.Result("执行失败，请检查 sample 配置和本地日志", A2aOutput.State.FAILED)
+            A2aOutput.Result(config.messages.failed, A2aOutput.State.FAILED)
         }
         withContext(NonCancellable) {
             try { task.finish(result) } catch (_: Exception) { task.failDelivery() }
@@ -106,17 +106,14 @@ internal class A2aTaskStore(
     }
 
     private suspend fun collectResult(task: A2aTask): A2aOutput.Result {
-        task.publish(A2aOutput.Status("开始执行", "started"))
+        task.publish(A2aOutput.Status(config.messages.started, "started"))
         var result: A2aOutput.Result? = null
         handler.execute(task.request).collect { output ->
             check(result == null) { "Output after terminal result" }
             if (output is A2aOutput.Result) result = output else task.publish(output)
         }
-        return result ?: A2aOutput.Result("运行结束但没有终态结果", A2aOutput.State.FAILED)
+        return result ?: A2aOutput.Result(config.messages.noResult, A2aOutput.State.FAILED)
     }
 
     private companion object { const val CANCEL_TIMEOUT_MS = 10_000L }
 }
-
-/** The terminal status text of a task canceled by an interrupting message. */
-internal const val INTERRUPTED_TEXT = "已被新任务打断"
