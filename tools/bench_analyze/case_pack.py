@@ -1,4 +1,4 @@
-"""Case Pack v1 loader with path safety (SPEC-RPB-005 / B4 / B6.3)."""
+"""Case Pack v1 loader with path safety."""
 
 from __future__ import annotations
 

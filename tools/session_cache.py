@@ -22,8 +22,9 @@ PACKAGE = ""
 LOG_ROOT = "no_backup/agent-runtime/event-log"
 SEARCH_TOOL = "search_tools"
 CALL_TOOL = "call_tool"
-# The app server's card and option tools, which show things rather than do them; older logs name them car_ui.
-CARD_TOOL_PREFIXES = ("mcp__app_ui__", "mcp__car_ui__")
+# MCP tools that show things rather than do them (an app's card or option tools), set with --display-tool-prefix: a
+# call to one is not counted as the run's first real tool call.
+DISPLAY_TOOL_PREFIXES: tuple[str, ...] = ()
 COMPACTION_INSTRUCTION_START = "You are now compacting this conversation."
 NON_BUSINESS_TOOLS = {SEARCH_TOOL, "read_file", "list_dir", "grep", "update_todo", "finish", "ask", "ask_async"}
 
@@ -140,7 +141,7 @@ def summarize(events):
                 name = (arguments or {}).get("name", "") if isinstance(arguments, dict) else ""
             if name == SEARCH_TOOL:
                 search_calls += 1
-            elif name.startswith("mcp__") and not name.startswith(CARD_TOOL_PREFIXES):
+            elif name.startswith("mcp__") and not name.startswith(DISPLAY_TOOL_PREFIXES):
                 business_calls += 1
                 if first_business_call is None:
                     first_business_call = len(calls)
@@ -246,7 +247,7 @@ def children_report(serial, session, root):
 
 
 def main():
-    global PACKAGE, LOG_ROOT
+    global PACKAGE, LOG_ROOT, DISPLAY_TOOL_PREFIXES
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("root", help="Directory holding <run>/segments (filled by --pull when given)")
     parser.add_argument("--pull", metavar="SESSION", help="Pull this session id from the device first, or 'latest'")
@@ -255,8 +256,11 @@ def main():
     parser.add_argument("--log-root", default=LOG_ROOT, help="With --pull: the event log root inside the app's data dir")
     parser.add_argument("--sizes", action="store_true", help="Also list every request's input tokens, marking compaction")
     parser.add_argument("--children", action="store_true", help="With --pull: also report the session's background subagents")
+    parser.add_argument("--display-tool-prefix", action="append", default=[], metavar="PREFIX",
+                        help="Qualified MCP tool prefix (e.g. mcp__app_ui__) of tools that only show things; repeatable")
     args = parser.parse_args()
     PACKAGE, LOG_ROOT = args.package or "", args.log_root
+    DISPLAY_TOOL_PREFIXES = tuple(args.display_tool_prefix)
     if args.pull and not PACKAGE:
         parser.error("--pull needs --package")
     session = None

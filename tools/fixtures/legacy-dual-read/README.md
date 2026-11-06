@@ -1,9 +1,8 @@
-# Legacy dual-read fixtures (SPEC-RPB-008)
+# Legacy dual-read fixtures
 
 ## Provenance
 
-- **Shape** derived from phase3 `vfs-ops.jsonl` consumption in
-  `tools/analyze_phase3_bench.py` (`summarize_vfs`) and runtime
+- **Shape** derived from the older bench runs' `vfs-ops.jsonl` and the runtime's
   `StoredVfsOperation` / `VfsOperationTimings` fields used by session store tests
   (`AndroidSqliteSessionStoreTest.sampleStoredVfsOperation`).
 - **Not** copied from live device runs or sample-host Case Packs.
@@ -19,5 +18,5 @@
 
 ## Version window
 
-- `vfs-ops` soft schemaVersion `1` or omitted (legacy phase3 files omit version).
+- `vfs-ops` soft schemaVersion `1` or omitted (older bench files omit it).
 - Unknown `schemaVersion` → analyzer INCOMPLETE / parse error (fail-closed).

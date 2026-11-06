@@ -1,4 +1,4 @@
-"""Multi-run / multi-arm report + dual-read (SPEC-RPB-007/008)."""
+"""Multi-run / multi-arm report + dual-read."""
 
 from __future__ import annotations
 
@@ -345,7 +345,7 @@ def _validate_pack_prompt_hex(pack: CasePack, run_hex: str | None) -> list[str]:
 def validate_case_binding(meta: dict[str, Any], pack: CasePack | None) -> list[str]:
     """Require run-meta caseBinding to match the attached Case Pack (no silent rebinding).
 
-    detail-design §prompt hash: when binding, run.caseBinding.promptSha256 must equal
+    When binding, run.caseBinding.promptSha256 must equal
     pack prompt sha256 (case-insensitive after lowercasing). Presence alone is not enough.
     """
     if pack is None:
@@ -554,7 +554,7 @@ def analyze_paths(
         except CasePackError as exc:
             pack_errors.append(f"{p}: {exc}")
 
-    # P0: use first pack if multiple
+    # One Case Pack per analysis: the first given is used.
     pack = packs[0] if packs else None
     runs = [analyze_run(d, pack=pack, final_text=final_text) for d in discover_run_dirs(paths)]
 

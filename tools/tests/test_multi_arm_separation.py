@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""§2 formal multi-arm: single-dimension separation (R2/R3/R4/R7/R8)."""
+"""Multi-arm comparison: arms that differ in one dimension only (R2/R3/R4/R7/R8)."""
 
 from __future__ import annotations
 

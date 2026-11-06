@@ -1,4 +1,4 @@
-"""Matcher + 8 gate operators (SPEC-RPB-006 / B4 / B5)."""
+"""Matcher + 8 gate operators."""
 
 from __future__ import annotations
 
@@ -125,8 +125,8 @@ def evaluate_pack(
         gate_results.append(gr)
         overall = worst(overall, gr.status)
 
-    # Hard ban: incomplete / flush-failed / truncated evidence must never yield business PASS
-    # (goal-contract §5). Elevate any PASS → INCOMPLETE when evidence is not complete.
+    # Hard ban: incomplete / flush-failed / truncated evidence must never yield business PASS.
+    # Elevate any PASS → INCOMPLETE when evidence is not complete.
     if not evidence_complete:
         reasons.append("evidence incomplete: cannot business PASS")
         elevated: list[GateResult] = []

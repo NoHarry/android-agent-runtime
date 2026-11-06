@@ -48,7 +48,7 @@ class KotlinRealArtifactE2E(unittest.TestCase):
         cb = meta.get("caseBinding") or {}
         self.assertEqual("kotlin_e2e.v1", cb.get("casePackId"), meta)
         self.assertTrue(cb.get("promptSha256"), "promptSha256 required when case bound")
-        self.assertTrue(meta.get("toolset"), "A6: toolset must not be empty")
+        self.assertTrue(meta.get("toolset"), "toolset must not be empty")
         names = {t.get("qualifiedName") for t in meta["toolset"]}
         self.assertIn("read_file", names)
         self.assertIn("mcp__default__search_docs", names)
@@ -131,7 +131,7 @@ class KotlinRealArtifactE2E(unittest.TestCase):
             )
 
     def test_wrong_prompt_hash_rejects_case_bound_pack(self):
-        """Regression: non-empty but wrong promptSha256 must not PASS (detail-design §828)."""
+        """A non-empty but wrong promptSha256 must not PASS."""
         import tempfile
         from shutil import copytree
 

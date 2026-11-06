@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Legacy VFS dual-read + legacy/new parity (SPEC-RPB-008, Compatibility 1→2)."""
+"""Legacy VFS dual-read + parity between legacy-only and dual-write runs."""
 
 from __future__ import annotations
 

@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""CLI for runtime probe bench analysis (SPEC-RPB-007).
-
-Extends / coexists with analyze_phase3_bench.py. Prefer this for probes + Case Pack.
-"""
+"""CLI for analyzing runtime probe evidence (runtimeEvidence) across bench runs, with a Case Pack's gates."""
 
 from __future__ import annotations
 
@@ -32,7 +29,8 @@ def _build_parser() -> argparse.ArgumentParser:
         action="append",
         type=Path,
         default=[],
-        help="Local Case Pack path (repeatable). Path must be under allowed roots unless --allow-any-case-root.",
+        help="Local Case Pack path; when given more than once, the first is used. Path must be under allowed roots "
+        "unless --allow-any-case-root.",
     )
     parser.add_argument("--require-gates", action="store_true")
     parser.add_argument("--require-comparable", action="store_true")

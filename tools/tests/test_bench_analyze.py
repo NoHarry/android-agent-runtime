@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unit tests for bench_analyze: graph, gates, B4 any/all, B6 canonical, e2e reports."""
+"""Unit tests for bench_analyze: graph, gates, any/all matching, canonical decimals, e2e reports."""
 
 from __future__ import annotations
 
@@ -113,7 +113,7 @@ class CanonicalTests(unittest.TestCase):
         self.assertEqual(64, len(d1))
 
 
-class B4TruthTableTests(unittest.TestCase):
+class AnyAllTruthTableTests(unittest.TestCase):
     def test_any_all_table(self):
         self.assertEqual("PASS", merge_any_all(["YES", "NO"], "any", evidence_complete=True))
         self.assertEqual("INCOMPLETE", merge_any_all(["NO", "UNKNOWN"], "any", evidence_complete=True))
@@ -249,7 +249,7 @@ class GateOperatorFixtures(unittest.TestCase):
             graph=build_tool_graph(events),
         )
         self.assertEqual("FAIL", neg.gates[0].status)
-        # Zero hits cannot prove absence without complete evidence (goal-contract §5).
+        # Zero hits cannot prove absence without complete evidence.
         miss = self._eval(
             [{"id": "f", "type": "forbid", "matcher": "bad_network"}],
             complete=False,
@@ -603,7 +603,7 @@ class E2EReportTests(unittest.TestCase):
             self.assertTrue(any("case_binding" in r for r in reasons), reasons)
 
     def test_case_binding_prompt_hash_must_equal_pack(self):
-        """Wrong run-meta promptSha256 must ERROR even when casePackId matches (detail-design §828)."""
+        """Wrong run-meta promptSha256 must ERROR even when casePackId matches."""
         from bench_analyze.report import validate_case_binding  # noqa: E402
         from bench_analyze.case_pack import load_case_pack  # noqa: E402
 

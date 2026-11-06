@@ -1,6 +1,6 @@
-"""Legacy VFS evidence dual-read (SPEC-RPB-008).
+"""Legacy VFS evidence dual-read.
 
-Maps historical `vfs-ops.jsonl` (phase3 / session VFS recorder shape) into a
+Maps historical `vfs-ops.jsonl` (the session VFS recorder's shape) into a
 normalized fact block for the analyzer. Missing probes/completeness still force
 INCOMPLETE on the run; this module never fabricates full PASS.
 

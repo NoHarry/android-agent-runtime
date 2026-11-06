@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Security / anti-overfit / sample-independence gates (SPEC-RPB-009, A1–A8 helpers)."""
+"""Security / anti-overfit / sample-independence gates."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ RUNTIME_MAIN = ANDROID / "agent-runtime" / "src" / "main" / "kotlin"
 
 
 class VerticalHardcodeScan(unittest.TestCase):
-    """A8: runtime main sources must not hardcode sample navigation tool gates."""
+    """Runtime main sources must not hardcode sample navigation tool gates."""
 
     BANNED = [
         r"\bnavi_ordered_flow\b",

@@ -1,4 +1,4 @@
-"""Legacy vs new evidence parity (SPEC-RPB-008 migration window).
+"""Legacy vs new evidence parity, while both formats exist.
 
 Compares only fields both sides actually possess. Missing probe side-car on
 legacy-only runs is not "parity PASS"; analyze_run already marks INCOMPLETE.

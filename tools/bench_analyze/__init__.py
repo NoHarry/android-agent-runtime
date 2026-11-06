@@ -1,4 +1,4 @@
-"""Runtime probe bench analyzer (SPEC-RPB-004..008)."""
+"""Runtime probe bench analyzer."""
 
 from .canonical import config_canonical, schema_canonical, sha256_hex
 from .case_pack import load_case_pack

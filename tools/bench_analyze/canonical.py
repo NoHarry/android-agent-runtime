@@ -1,4 +1,4 @@
-"""ConfigCanonical + SchemaCanonical (B6) — exact decimal only, no float."""
+"""ConfigCanonical + SchemaCanonical — exact decimal only, no float."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def parse_exact_decimal_token(token: str) -> Decimal:
 
 
 def emit_exact_decimal(d: Decimal) -> str:
-    """B6.2b step 3: plain decimal, no exponent, no trailing frac zeros."""
+    """Plain decimal, no exponent, no trailing frac zeros."""
     # Normalize via quantize-free path: use Decimal normalization
     n = d.normalize()
     # Expand exponent into plain form

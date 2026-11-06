@@ -1,4 +1,4 @@
-"""Tool Graph projection from probe events (SPEC-RPB-004 / B5)."""
+"""Tool Graph projection from probe events."""
 
 from __future__ import annotations
 
