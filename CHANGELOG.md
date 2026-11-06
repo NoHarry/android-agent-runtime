@@ -3,6 +3,37 @@
 All notable changes are listed here. The project is 0.x: a minor release may break the API, and every break is
 called out.
 
+## Unreleased
+
+Fixes for Claude and OpenAI hosts. **Breaking** in behaviour where noted, and for binaries compiled against the old
+`AnthropicModelClient` constructor.
+
+- **Claude's thinking.** Opus 4.7 and later, Sonnet 5 and later, Haiku 5.5 and newer families refuse a `budget_tokens`
+  with a 400, and Opus and Sonnet 4.6 deprecate it. The `low`, `medium`, `high` and `max` variants now send
+  `thinking: {type: adaptive}` with `output_config.effort` to every Claude from 4.6 (also written `4.6`, as gateways
+  do), asking for summarized thinking from 4.7, which otherwise comes back empty; they offer no `none`, since some refuse
+  turning thinking off. Claude 4 below 4.6 (Haiku 4.5 now too) and 3.7 Sonnet keep the thinking budget; earlier Claude
+  is offered no thinking variant.
+- **Anthropic-format output limit.** Requests to models other than DeepSeek's sent `max_tokens` 1024 (an older
+  Claude's thinking budget plus 1024 with a variant), cutting longer answers and tool arguments off. The default is now
+  16000, with an older Claude's thinking budget on top (an adaptive Claude's thinking shares it), and
+  `AnthropicModelClient(maxOutputTokens = …)` sets it; a compatible service with a lower output cap needs it set. Kotlin
+  source that does not name the new parameter is unchanged; Java callers and old binaries of that constructor need the
+  new signature.
+- **Anthropic server-side search is on only for Anthropic's own API** unless `serverSideSearch` is set (behaviour
+  change): compatible services do not know the `web_search_20250305` tool. A host that reaches Anthropic through a
+  gateway passes `serverSideSearch = true`. A request whose tools already have a `web_search` (a host's own, through
+  `AgentRuntimeBuilder.webSearch`) leaves the server tool out, as two tools of one name are refused.
+- **OpenAI server-side search is off unless asked** (behaviour change). `OpenAiModelClient` sent `web_search_options`
+  (Chat Completions) or the `web_search` tool (Responses) by default; OpenAI refuses `web_search_options` on models other
+  than its search models. Hosts that relied on it pass `serverSideSearch = true`.
+- **HTTP calls end with their caller.** `OkHttpHttpTransport` ran blocking calls that a cancelled coroutine did not
+  stop, so a timeout (an MCP server's 10 s) or a stopped run waited for OkHttp's own 10 s between bytes. A cancelled
+  caller now cancels the call at once, and the read timeout is 300 s, so a non-streamed answer that takes longer to
+  write, or a thinking model that says nothing for a while, is not cut off; HTTP/2 pings every 30 s find a dead
+  connection.
+- The default Claude model, used when none is named, is `claude-haiku-5-5` (`claude-3-5-haiku-latest` was retired).
+
 ## 0.4.0 (2026-11-01)
 
 Module and package layout, plus fixes to what a session's next request shows. **Breaking** for code and build files that

@@ -78,15 +78,15 @@ class ModelClientContractTest {
     }
 
     @Test
-    fun openAiChatEnablesServerSideSearchByDefault() = runBlocking {
+    fun openAiChatLeavesServerSideSearchOffByDefault() = runBlocking {
         val transport = FakeHttpTransport(executeResponse = providerResponse("""{"choices":[{"message":{}}]}"""))
 
         OpenAiModelClient(::contractApiKey, CONTRACT_MODEL, CONTRACT_BASE_URL, transport = transport)
             .complete(contractModelRequest())
             .toList()
 
-        val body = transport.executeRequests.single().contractBodyJson()
-        assertTrue(body.containsKey("web_search_options"))
+        // OpenAI refuses web_search_options on models other than its search models.
+        assertFalse(transport.executeRequests.single().contractBodyJson().containsKey("web_search_options"))
     }
 
     @Test
@@ -261,19 +261,25 @@ class ModelClientContractTest {
     }
 
     @Test
-    fun openAiResponsesEnablesServerSideSearchByDefault() = runBlocking {
+    fun openAiResponsesLeavesServerSideSearchOffUnlessAsked() = runBlocking {
         val transport = FakeHttpTransport(executeResponse = providerResponse(OPENAI_RESPONSES_RESPONSE_BODY))
+        fun send(search: Boolean?) = (
+            if (search == null) {
+                OpenAiModelClient(::contractApiKey, CONTRACT_MODEL, CONTRACT_BASE_URL, endpoint = "responses", transport = transport)
+            } else {
+                OpenAiModelClient(
+                    ::contractApiKey, CONTRACT_MODEL, CONTRACT_BASE_URL, endpoint = "responses", serverSideSearch = search,
+                    transport = transport,
+                )
+            }
+            ).complete(contractModelRequest())
 
-        OpenAiModelClient(
-            ::contractApiKey,
-            CONTRACT_MODEL,
-            CONTRACT_BASE_URL,
-            endpoint = "responses",
-            transport = transport,
-        ).complete(contractModelRequest()).toList()
+        send(null).toList()
+        send(true).toList()
 
-        val tools = transport.executeRequests.single().contractBodyJson()["tools"]?.jsonArray.orEmpty()
-        assertEquals("web_search", tools.first().jsonObject["type"]?.jsonPrimitive?.contentOrNull)
+        val (byDefault, asked) = transport.executeRequests.map { it.contractBodyJson()["tools"]?.jsonArray.orEmpty() }
+        assertTrue(byDefault.none { it.jsonObject["type"]?.jsonPrimitive?.contentOrNull == "web_search" })
+        assertEquals("web_search", asked.first().jsonObject["type"]?.jsonPrimitive?.contentOrNull)
     }
 
     @Test

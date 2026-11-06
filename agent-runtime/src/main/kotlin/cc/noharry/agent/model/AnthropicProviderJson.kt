@@ -32,6 +32,7 @@ internal fun anthropicRequest(
     serverSideSearch: Boolean = false,
     searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.ANTHROPIC_SERVER_TOOL,
     promptCaching: Boolean = false,
+    maxOutputTokens: Int? = null,
 ): HttpRequest = providerRequest(
     url = endpoint(baseUrl, "/messages"),
     headers = mapOf(
@@ -41,7 +42,7 @@ internal fun anthropicRequest(
     body = buildJsonObject {
         val options = request.modelRef.providerOptions(ANTHROPIC_PROVIDER_NAME, model)
         put("model", model)
-        put("max_tokens", modelOutputTokenLimit(model) ?: maxTokensFor(options))
+        put("max_tokens", outputTokens(model, options, maxOutputTokens))
         put("stream", stream)
         // Automatic caching: the API marks the last cacheable block and moves the mark as the conversation grows.
         if (promptCaching) put("cache_control", buildJsonObject { put("type", "ephemeral") })
@@ -53,15 +54,19 @@ internal fun anthropicRequest(
 )
 
 /**
- * Claude: `thinking: { type: enabled, budget_tokens }`.
+ * Older Claude: `thinking: { type: enabled, budget_tokens }`.
+ * Adaptive Claude: `thinking: { type: adaptive }` + `output_config: { effort }`.
  * DeepSeek Anthropic-compatible: `thinking: { type: enabled|disabled }` +
  * `output_config: { effort }` when enabled (not budget_tokens).
  */
 private fun JsonObjectBuilder.putAnthropicThinking(options: ProviderRequestOptions) {
     val thinkingType = options.thinkingType
     if (thinkingType != null) {
-        put("thinking", buildJsonObject { put("type", thinkingType) })
-        if (thinkingType == THINKING_TYPE_ENABLED) {
+        put("thinking", buildJsonObject {
+            put("type", thinkingType)
+            if (options.summarizedThinking) put("display", "summarized")
+        })
+        if (thinkingType != THINKING_TYPE_DISABLED) {
             options.reasoningEffort?.let { effort ->
                 put("output_config", buildJsonObject { put("effort", effort) })
             }
@@ -158,9 +163,12 @@ private fun JsonObjectBuilder.putAnthropicTools(
     serverSideSearch: Boolean,
     searchCapability: ServerSideSearchCapability,
 ) {
-    if (tools.isEmpty() && !serverSideSearch) return
+    // A host's own web_search tool takes the name; two tools of one name are refused.
+    val serverSearch = serverSideSearch && searchCapability == ServerSideSearchCapability.ANTHROPIC_SERVER_TOOL &&
+        tools.none { it.name == ANTHROPIC_WEB_SEARCH_TOOL_NAME }
+    if (tools.isEmpty() && !serverSearch) return
     putJsonArray("tools") {
-        if (serverSideSearch && searchCapability == ServerSideSearchCapability.ANTHROPIC_SERVER_TOOL) {
+        if (serverSearch) {
             add(buildJsonObject {
                 put("type", ANTHROPIC_WEB_SEARCH_TOOL_TYPE)
                 put("name", ANTHROPIC_WEB_SEARCH_TOOL_NAME)
@@ -449,7 +457,8 @@ private fun dsmlParameterValue(value: String, forceString: Boolean): JsonElement
 }
 
 private const val ANTHROPIC_VERSION = "2023-06-01"
-private const val DEFAULT_MAX_TOKENS = 1024
+private const val DEFAULT_MAX_TOKENS = 16_000
+private const val MIN_ANSWER_TOKENS = 1_024
 private const val ANTHROPIC_PROVIDER_NAME = "Anthropic"
 private const val DSML_TOKEN = "DSML"
 private const val DSML_TOOL_CALLS = "tool_calls"
@@ -463,9 +472,17 @@ private val DSML_PARAMETER_REGEX = Regex(
 )
 private val DSML_JSON = Json { ignoreUnknownKeys = true }
 
-private fun maxTokensFor(options: ProviderRequestOptions): Int {
-    val thinkingBudget = options.thinkingBudgetTokens ?: return DEFAULT_MAX_TOKENS
-    return maxOf(DEFAULT_MAX_TOKENS, thinkingBudget + DEFAULT_MAX_TOKENS)
+/**
+ * `max_tokens`, which the Messages API requires. The host's [maxOutputTokens] is sent as it is, raised only to leave a
+ * thinking budget room for an answer. Without it: the model's own limit where the runtime knows one, else
+ * [DEFAULT_MAX_TOKENS], with a thinking budget on top. An adaptive Claude's thinking counts against it as well.
+ */
+private fun outputTokens(model: String, options: ProviderRequestOptions, maxOutputTokens: Int?): Int {
+    val thinkingBudget = options.thinkingBudgetTokens ?: 0
+    if (maxOutputTokens != null) {
+        return if (thinkingBudget == 0) maxOutputTokens else maxOf(maxOutputTokens, thinkingBudget + MIN_ANSWER_TOKENS)
+    }
+    return (modelOutputTokenLimit(model) ?: DEFAULT_MAX_TOKENS) + thinkingBudget
 }
 
 /**

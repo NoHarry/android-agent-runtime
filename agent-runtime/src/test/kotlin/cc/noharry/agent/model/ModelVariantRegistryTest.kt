@@ -5,6 +5,8 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -153,6 +155,59 @@ class ModelVariantRegistryTest {
         assertNotNull(thinking)
         assertEquals("enabled", thinking?.get("type")?.jsonPrimitive?.contentOrNull)
         assertEquals("4096", thinking?.get("budget_tokens")?.jsonPrimitive?.contentOrNull)
+    }
+
+    @Test
+    fun anAdaptiveClaudeThinksWithAnEffortAndNeverABudget() {
+        assertEquals(listOf("low", "medium", "high", "max"), ModelVariantRegistry.variants("anthropic", "claude-sonnet-5-5").map { it.id })
+        val body = anthropicRequest(
+            apiKey = "key",
+            baseUrl = "https://provider.test/v1",
+            model = "claude-opus-5-5",
+            request = request(ModelRef("anthropic", "claude-opus-5-5", "high")),
+        ).bodyObject()
+        val thinking = body["thinking"]?.jsonObject
+
+        assertEquals("adaptive", thinking?.get("type")?.jsonPrimitive?.contentOrNull)
+        assertNull(thinking?.get("budget_tokens"))
+        // From 4.7 the thinking comes back only when a summary is asked for.
+        assertEquals("summarized", thinking?.get("display")?.jsonPrimitive?.contentOrNull)
+        assertEquals("high", body["output_config"]?.jsonObject?.get("effort")?.jsonPrimitive?.contentOrNull)
+        // Some refuse turning thinking off: "none" is not offered, and an unknown variant sends nothing.
+        val plain = anthropicRequest("key", "https://provider.test/v1", "claude-opus-5-5", request(ModelRef("anthropic", "claude-opus-5-5", "none"))).bodyObject()
+        assertNull(plain["thinking"])
+        assertNull(plain["output_config"])
+        // 4.6 summarizes on its own and does not take the field.
+        val opus46 = anthropicRequest("key", "https://provider.test/v1", "claude-opus-4-6", request(ModelRef("anthropic", "claude-opus-4-6", "max"))).bodyObject()
+        assertEquals("adaptive", opus46["thinking"]?.jsonObject?.get("type")?.jsonPrimitive?.contentOrNull)
+        assertNull(opus46["thinking"]?.jsonObject?.get("display"))
+    }
+
+    @Test
+    fun anOlderClaudeThinksOnABudgetAndAnEarlierOneDoesNotThink() {
+        for (model in listOf("claude-haiku-4-5", "claude-sonnet-4-5-20250929", "anthropic.claude-opus-4-1-20250805-v1:0", "claude-3-7-sonnet-latest")) {
+            assertEquals(model, listOf("high", "max"), ModelVariantRegistry.variants("anthropic", model).map { it.id })
+        }
+        for (model in listOf("claude-3-opus-20240229", "claude-3-5-sonnet-latest", "anthropic.claude-v2:1")) {
+            assertEquals(model, emptyList<String>(), ModelVariantRegistry.variants("anthropic", model).map { it.id })
+        }
+    }
+
+    @Test
+    fun claudeVersionsSplitAtFourSix() {
+        val adaptive = listOf(
+            "claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-5", "claude-haiku-5-5", "claude-opus-5-5-20261101",
+            "claude-fable-5-1", "anthropic/claude-sonnet-5-5", "anthropic/claude-opus-4.7", "claude-sonnet-4.6",
+            "claude-opus-4-7@20260101", "global.anthropic.claude-opus-4-8-20260301-v1:0",
+        )
+        for (model in adaptive) assertTrue(model, isAdaptiveClaude(model))
+        for (model in listOf(
+            "claude-3-7-sonnet", "claude-3-5-haiku-latest", "claude-sonnet-4-20250514", "claude-opus-4-1-20250805",
+            "claude-sonnet-4-5-20250929", "claude-haiku-4-5", "anthropic/claude-opus-4.5", "claude-sonnet-4@20250514",
+            "anthropic.claude-v2:1", "deepseek-flash", "gpt-5",
+        )) {
+            assertFalse(model, isAdaptiveClaude(model))
+        }
     }
 
     @Test

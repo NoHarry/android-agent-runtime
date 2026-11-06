@@ -35,6 +35,8 @@ internal data class ProviderRequestOptions(
      * Null means the provider wire does not send a thinking switch (Claude budget path, etc.).
      */
     val thinkingType: String? = null,
+    /** Adaptive Claude: ask for summarized thinking, which newer models leave out unless asked. */
+    val summarizedThinking: Boolean = false,
 )
 
 internal fun ModelRef?.providerOptions(providerId: String, modelId: String): ProviderRequestOptions =
@@ -98,11 +100,11 @@ private fun List<String>.defaultOpenAiVariant(model: String): String? =
     }
 
 private fun anthropicProfile(model: String): ProviderProfile {
-    // Claude: Anthropic budget_tokens. DeepSeek Anthropic proxy: thinking.type + output_config.effort.
+    // DeepSeek Anthropic proxy and adaptive Claude: thinking.type + output_config.effort. Older Claude: budget_tokens.
     val ids = when {
         isDeepSeekModel(model) -> listOf("none") + WIDELY_SUPPORTED_EFFORTS + "max"
-        model.contains("claude") && (model.contains("opus") || model.contains("sonnet")) ->
-            listOf("high", "max")
+        isAdaptiveClaude(model) -> WIDELY_SUPPORTED_EFFORTS + "max"
+        thinksOnBudget(model) -> listOf("high", "max")
         else -> emptyList()
     }
     return ProviderProfile(
@@ -128,7 +130,7 @@ private fun variantOptions(providerId: String, modelId: String, variant: String)
         return deepSeekOptions(normalized)
     }
     return when {
-        provider.contains("anthropic") -> anthropicOptions(normalized)
+        provider.contains("anthropic") -> anthropicOptions(model, normalized)
         provider.contains("google") || provider.contains("gemini") -> googleOptions(normalized)
         provider.contains("openai") || provider.contains("deepseek") -> openAiOptions(modelId, normalized)
         else -> ProviderRequestOptions()
@@ -173,14 +175,64 @@ private fun openAiOptions(modelId: String, variant: String): ProviderRequestOpti
         else -> ProviderRequestOptions()
     }
 
-private fun anthropicOptions(variant: String): ProviderRequestOptions =
-    when (variant) {
-        "low" -> ProviderRequestOptions(thinkingBudgetTokens = 1_024, includeReasoning = true)
-        "medium" -> ProviderRequestOptions(thinkingBudgetTokens = 4_096, includeReasoning = true)
-        "high" -> ProviderRequestOptions(thinkingBudgetTokens = 4_096, includeReasoning = true)
-        "max" -> ProviderRequestOptions(thinkingBudgetTokens = 8_192, includeReasoning = true)
-        else -> ProviderRequestOptions()
+/**
+ * Claude. An adaptive-thinking model takes `thinking: {type: adaptive}` with `output_config.effort` and refuses a
+ * `budget_tokens`; some refuse turning thinking off as well, so `none` leaves it at the model's default. An older model
+ * takes a thinking budget.
+ */
+private fun anthropicOptions(model: String, variant: String): ProviderRequestOptions =
+    if (isAdaptiveClaude(model)) {
+        when (variant) {
+            "low", "medium", "high", "max" -> ProviderRequestOptions(
+                thinkingType = THINKING_TYPE_ADAPTIVE,
+                reasoningEffort = variant,
+                includeReasoning = true,
+                summarizedThinking = summarizesThinkingOnRequest(model),
+            )
+            else -> ProviderRequestOptions()
+        }
+    } else {
+        when (variant) {
+            "low" -> ProviderRequestOptions(thinkingBudgetTokens = 1_024, includeReasoning = true)
+            "medium" -> ProviderRequestOptions(thinkingBudgetTokens = 4_096, includeReasoning = true)
+            "high" -> ProviderRequestOptions(thinkingBudgetTokens = 4_096, includeReasoning = true)
+            "max" -> ProviderRequestOptions(thinkingBudgetTokens = 8_192, includeReasoning = true)
+            else -> ProviderRequestOptions()
+        }
     }
+
+/**
+ * A Claude model that thinks adaptively: Opus and Sonnet from 4.6, Haiku from 5, and any Claude the runtime does not
+ * know by version (a newer family). Older ones, with the `claude-3-…` or `claude-v2` naming or below 4.6, take a
+ * thinking budget.
+ */
+internal fun isAdaptiveClaude(modelId: String): Boolean {
+    val model = modelId.lowercase()
+    if (!model.contains("claude") || OLD_CLAUDE_NAMING.containsMatchIn(model)) return false
+    return claudeVersion(model)?.let { it >= ADAPTIVE_FROM } ?: true
+}
+
+/** Claude 4 below 4.6 and 3.7 Sonnet: thinking on a budget. Earlier Claude does not think. */
+private fun thinksOnBudget(model: String): Boolean =
+    model.contains("claude") && !isAdaptiveClaude(model) &&
+        (model.contains("claude-3-7") || claudeVersion(model)?.let { it.first == ADAPTIVE_FROM.first } == true)
+
+/** From Opus 4.7 thinking comes back empty unless a summary is asked for; 4.6 summarizes on its own. */
+private fun summarizesThinkingOnRequest(model: String): Boolean = claudeVersion(model)?.let { it >= SUMMARY_ON_REQUEST_FROM } ?: true
+
+/**
+ * The version in `claude-sonnet-4-5-20250929` (4.5), `claude-sonnet-4-20250514` (4.0) or `anthropic/claude-opus-4.7`
+ * (4.7): a minor is one digit, a date eight.
+ */
+private fun claudeVersion(model: String): Pair<Int, Int>? =
+    CLAUDE_VERSION.find(model)?.let { it.groupValues[2].toInt() to (it.groupValues[3].toIntOrNull() ?: 0) }
+
+private operator fun Pair<Int, Int>.compareTo(other: Pair<Int, Int>): Int = compareValuesBy(this, other, { it.first }, { it.second })
+
+private val OLD_CLAUDE_NAMING = Regex("""claude-(\d|instant|v\d)""")
+private val CLAUDE_VERSION = Regex("""claude-(opus|sonnet|haiku)-(\d+)(?:[-.](\d)(?!\d))?""")
+private val ADAPTIVE_FROM = 4 to 6
+private val SUMMARY_ON_REQUEST_FROM = 4 to 7
 
 internal fun isDeepSeekModel(modelId: String): Boolean {
     val model = modelId.lowercase()
@@ -195,6 +247,7 @@ private const val DEEPSEEK_MAX_OUTPUT_TOKENS = 393_216
 
 internal const val THINKING_TYPE_ENABLED = "enabled"
 internal const val THINKING_TYPE_DISABLED = "disabled"
+internal const val THINKING_TYPE_ADAPTIVE = "adaptive"
 
 private fun googleOptions(variant: String): ProviderRequestOptions =
     when (variant) {

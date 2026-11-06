@@ -12,6 +12,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 
+/**
+ * An OpenAI-format model service: Chat Completions, or the Responses API with `endpoint`. [serverSideSearch] is off unless
+ * set: OpenAI accepts its search options only on some models (Chat Completions' `web_search_options` on the search
+ * models) and refuses the request on the others.
+ */
 class OpenAiModelClient(
     private val apiKeyProvider: () -> String,
     private val transport: HttpTransport = OkHttpHttpTransport(),
@@ -23,7 +28,7 @@ class OpenAiModelClient(
     private var baseUrl: String = DEFAULT_OPENAI_BASE_URL
     private var stream: Boolean = false
     private var endpointMode: OpenAiEndpointMode = OpenAiEndpointMode.CHAT_COMPLETIONS
-    private var serverSideSearch: Boolean = true
+    private var serverSideSearch: Boolean = false
     private var searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.OPENAI_CHAT_OPTIONS
 
     constructor(
@@ -31,7 +36,7 @@ class OpenAiModelClient(
         model: String,
         baseUrl: String = DEFAULT_OPENAI_BASE_URL,
         stream: Boolean = false,
-        serverSideSearch: Boolean = true,
+        serverSideSearch: Boolean = false,
         searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.OPENAI_CHAT_OPTIONS,
         transport: HttpTransport = OkHttpHttpTransport(),
     ) : this(apiKeyProvider, transport) {
@@ -44,7 +49,7 @@ class OpenAiModelClient(
         baseUrl: String = DEFAULT_OPENAI_BASE_URL,
         stream: Boolean = false,
         endpoint: String,
-        serverSideSearch: Boolean = true,
+        serverSideSearch: Boolean = false,
         searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.OPENAI_RESPONSES_TOOL,
         transport: HttpTransport = OkHttpHttpTransport(),
     ) : this(apiKeyProvider, transport) {
@@ -156,23 +161,31 @@ class AnthropicModelClient(
     private var serverSideSearch: Boolean = true
     private var searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.ANTHROPIC_SERVER_TOOL
     private var promptCaching: Boolean = true
+    private var maxOutputTokens: Int? = null
 
     /**
      * @param promptCaching asks the API to cache the request's prefix (a top-level `cache_control`). Claude caches only
      * what a request marks; DeepSeek and other compatible services cache on their own and may not take the field, so it
      * is on only for Anthropic's own API unless set.
+     * @param serverSideSearch adds Anthropic's web search server tool; on only for Anthropic's own API unless set, since
+     * compatible services do not know it. A request whose tools already have a `web_search` leaves it out.
+     * @param maxOutputTokens the `max_tokens` requests send, which the Messages API requires; null takes the model's own
+     * limit where the runtime knows one (DeepSeek's), else 16000, with an older Claude's thinking budget on top. Set,
+     * it is raised only as far as a thinking budget needs room for an answer. Long answers want `stream = true`.
      */
     constructor(
         apiKeyProvider: () -> String,
         model: String,
         baseUrl: String = DEFAULT_ANTHROPIC_BASE_URL,
         stream: Boolean = false,
-        serverSideSearch: Boolean = true,
+        serverSideSearch: Boolean = isAnthropicApi(baseUrl),
         searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.ANTHROPIC_SERVER_TOOL,
         transport: HttpTransport = OkHttpHttpTransport(),
         promptCaching: Boolean = isAnthropicApi(baseUrl),
+        maxOutputTokens: Int? = null,
     ) : this(apiKeyProvider, transport) {
         require(model.isNotBlank()) { "Anthropic model must not be blank." }
+        require(maxOutputTokens == null || maxOutputTokens > 0) { "Anthropic max output tokens must be positive." }
         require(baseUrl.isNotBlank()) { "Anthropic base URL must not be blank." }
         this.model = model
         this.baseUrl = baseUrl
@@ -180,6 +193,7 @@ class AnthropicModelClient(
         this.serverSideSearch = serverSideSearch
         this.searchCapability = searchCapability
         this.promptCaching = promptCaching
+        this.maxOutputTokens = maxOutputTokens
     }
 
     override fun complete(request: ModelRequest): Flow<ModelEvent> = flow {
@@ -199,6 +213,7 @@ class AnthropicModelClient(
                         serverSideSearch = serverSideSearch,
                         searchCapability = searchCapability,
                         promptCaching = promptCaching,
+                        maxOutputTokens = maxOutputTokens,
                     ),
                 ),
             ).collect { emit(it) }
@@ -215,6 +230,7 @@ class AnthropicModelClient(
                         serverSideSearch = serverSideSearch,
                         searchCapability = searchCapability,
                         promptCaching = promptCaching,
+                        maxOutputTokens = maxOutputTokens,
                     ),
                 ),
             )
@@ -228,7 +244,7 @@ class AnthropicModelClient(
 
 private const val DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 private const val DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
-private const val DEFAULT_ANTHROPIC_MODEL = "claude-3-5-haiku-latest"
+private const val DEFAULT_ANTHROPIC_MODEL = "claude-haiku-5-5"
 private const val DEFAULT_ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1"
 
 private fun isAnthropicApi(baseUrl: String): Boolean =

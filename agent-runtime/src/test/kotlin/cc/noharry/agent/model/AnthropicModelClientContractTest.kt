@@ -8,6 +8,9 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
+import cc.noharry.agent.kernel.api.model.ModelTool
 import org.junit.Test
 import cc.noharry.agent.kernel.api.model.ServerSideSearchCapability
 import cc.noharry.agent.kernel.api.model.ModelEvent
@@ -77,20 +80,45 @@ class AnthropicModelClientContractTest {
     }
 
     @Test
-    fun anthropicEnablesServerSideSearchByDefault() = runBlocking {
+    fun anthropicSearchIsOnByDefaultOnlyOnAnthropicsOwnApi() = runBlocking {
         val transport = FakeHttpTransport(executeResponse = providerResponse("""{"content":[]}"""))
 
-        AnthropicModelClient(
-            ::contractApiKey,
-            CONTRACT_MODEL,
-            CONTRACT_BASE_URL,
-            transport = transport,
-        )
-            .complete(contractModelRequest())
-            .toList()
+        AnthropicModelClient(::contractApiKey, CONTRACT_MODEL, "https://api.anthropic.com", transport = transport)
+            .complete(contractModelRequest()).toList()
+        // A compatible service does not know Anthropic's server tool.
+        AnthropicModelClient(::contractApiKey, CONTRACT_MODEL, CONTRACT_BASE_URL, transport = transport)
+            .complete(contractModelRequest()).toList()
+
+        val (anthropic, compatible) = transport.executeRequests.map { it.contractBodyJson()["tools"]?.jsonArray.orEmpty() }
+        assertEquals("web_search_20250305", anthropic.first().jsonObject["type"]?.jsonPrimitive?.contentOrNull)
+        assertFalse(compatible.toString().contains("web_search"))
+    }
+
+    @Test
+    fun aHostsOwnWebSearchToolKeepsTheNameToItself() = runBlocking {
+        val transport = FakeHttpTransport(executeResponse = providerResponse("""{"content":[]}"""))
+        val request = contractModelRequest().copy(tools = listOf(ModelTool("web_search", """{"type":"object"}""")))
+
+        AnthropicModelClient(::contractApiKey, CONTRACT_MODEL, CONTRACT_BASE_URL, serverSideSearch = true, transport = transport)
+            .complete(request).toList()
 
         val tools = transport.executeRequests.single().contractBodyJson()["tools"]?.jsonArray.orEmpty()
-        assertEquals("web_search_20250305", tools.first().jsonObject["type"]?.jsonPrimitive?.contentOrNull)
+        assertEquals(1, tools.size)
+        assertNull(tools.single().jsonObject["type"])
+    }
+
+    @Test
+    fun theHostsOutputLimitReachesStreamedAndWholeRequests() = runBlocking {
+        val transport = FakeHttpTransport(executeResponse = providerResponse("""{"content":[]}"""))
+        for (stream in listOf(false, true)) {
+            AnthropicModelClient(::contractApiKey, CONTRACT_MODEL, CONTRACT_BASE_URL, stream = stream, transport = transport, maxOutputTokens = 32_000)
+                .complete(contractModelRequest()).toList()
+        }
+
+        val sent = (transport.executeRequests + transport.streamRequests).map { it.contractBodyJson()["max_tokens"]?.jsonPrimitive?.contentOrNull }
+        assertEquals(listOf("32000", "32000"), sent)
+        assertThrows(IllegalArgumentException::class.java) { AnthropicModelClient(::contractApiKey, CONTRACT_MODEL, maxOutputTokens = 0) }
+        Unit
     }
 
     @Test
