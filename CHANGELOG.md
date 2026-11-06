@@ -6,8 +6,8 @@ called out.
 ## Unreleased
 
 Fixes for Claude and OpenAI hosts, and nothing in Chinese or about a car unless the host is. **Breaking** in behaviour
-where noted, and for binaries compiled against the old constructors of `AnthropicModelClient` and `A2aServerConfig`
-(Kotlin source that names its arguments is unchanged).
+where noted, and for binaries compiled against the old constructors of `AnthropicModelClient`, `OpenAiModelClient` and
+`A2aServerConfig` (Kotlin source that names its arguments is unchanged).
 
 - **Claude's thinking.** Opus 4.7 and later, Sonnet 5 and later, Haiku 5.5 and newer families refuse a `budget_tokens`
   with a 400, and Opus and Sonnet 4.6 deprecate it. The `low`, `medium`, `high` and `max` variants now send
@@ -21,6 +21,10 @@ where noted, and for binaries compiled against the old constructors of `Anthropi
   `AnthropicModelClient(maxOutputTokens = …)` sets it; a compatible service with a lower output cap needs it set. Kotlin
   source that does not name the new parameter is unchanged; Java callers and old binaries of that constructor need the
   new signature.
+- **OpenAI-format output limit.** `OpenAiModelClient(maxOutputTokens = …)` sets the output limit: `max_completion_tokens`
+  on OpenAI's own API (its reasoning models refuse `max_tokens`), `max_tokens` on compatible services,
+  `max_output_tokens` on Responses. Without it a DeepSeek model, known by its name, still asks for DeepSeek's own limit
+  and other models send none; a gateway that serves a DeepSeek model with a lower cap needs it set.
 - **Anthropic server-side search is on only for Anthropic's own API** unless `serverSideSearch` is set (behaviour
   change): compatible services do not know the `web_search_20250305` tool. A host that reaches Anthropic through a
   gateway passes `serverSideSearch = true`. A request whose tools already have a `web_search` (a host's own, through

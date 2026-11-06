@@ -30,13 +30,19 @@ internal fun openAiRequest(
     stream: Boolean = false,
     serverSideSearch: Boolean = false,
     searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.OPENAI_CHAT_OPTIONS,
+    maxOutputTokens: Int? = null,
 ): HttpRequest = providerRequest(
     url = endpoint(baseUrl, "/chat/completions"),
     headers = mapOf("Authorization" to "Bearer $apiKey"),
     body = buildJsonObject {
         val options = request.modelRef.providerOptions(OPENAI_PROVIDER_NAME, model)
         put("model", model)
-        modelOutputTokenLimit(model)?.let { put("max_tokens", it) }
+        // OpenAI's own API wants max_completion_tokens (its reasoning models refuse max_tokens); compatible services
+        // and DeepSeek's own limit keep max_tokens.
+        when {
+            maxOutputTokens != null && isOpenAiApi(baseUrl) -> put("max_completion_tokens", maxOutputTokens)
+            else -> (maxOutputTokens ?: modelOutputTokenLimit(model))?.let { put("max_tokens", it) }
+        }
         put("stream", stream)
         if (stream) {
             put("stream_options", buildJsonObject { put("include_usage", true) })
@@ -288,3 +294,6 @@ private const val REASONING_REPLAY_PLACEHOLDER = "."
 
 private fun JsonObject.openAiUsageDelta(): ModelEvent.UsageDelta? =
     obj("usage")?.modelUsageDelta() ?: modelUsageDelta()
+
+/** OpenAI's own API, as opposed to a service that speaks its format. */
+internal fun isOpenAiApi(baseUrl: String): Boolean = runCatching { java.net.URI(baseUrl.trim()).host }.getOrNull() == "api.openai.com"

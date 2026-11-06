@@ -30,7 +30,13 @@ class OpenAiModelClient(
     private var endpointMode: OpenAiEndpointMode = OpenAiEndpointMode.CHAT_COMPLETIONS
     private var serverSideSearch: Boolean = false
     private var searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.OPENAI_CHAT_OPTIONS
+    private var maxOutputTokens: Int? = null
 
+    /**
+     * @param maxOutputTokens the output limit requests send (`max_completion_tokens` on OpenAI's own API, `max_tokens`
+     * elsewhere, `max_output_tokens` on Responses); null sends the model's own limit where the runtime knows one
+     * (DeepSeek's, by name), else none. A gateway that caps output lower than a model's own limit needs it set.
+     */
     constructor(
         apiKeyProvider: () -> String,
         model: String,
@@ -39,10 +45,12 @@ class OpenAiModelClient(
         serverSideSearch: Boolean = false,
         searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.OPENAI_CHAT_OPTIONS,
         transport: HttpTransport = OkHttpHttpTransport(),
+        maxOutputTokens: Int? = null,
     ) : this(apiKeyProvider, transport) {
-        configure(model, baseUrl, stream, OpenAiEndpointMode.CHAT_COMPLETIONS, serverSideSearch, searchCapability)
+        configure(model, baseUrl, stream, OpenAiEndpointMode.CHAT_COMPLETIONS, serverSideSearch, searchCapability, maxOutputTokens)
     }
 
+    /** As above, on the endpoint named by [endpoint] (`chat_completions` or `responses`). */
     constructor(
         apiKeyProvider: () -> String,
         model: String,
@@ -52,8 +60,9 @@ class OpenAiModelClient(
         serverSideSearch: Boolean = false,
         searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.OPENAI_RESPONSES_TOOL,
         transport: HttpTransport = OkHttpHttpTransport(),
+        maxOutputTokens: Int? = null,
     ) : this(apiKeyProvider, transport) {
-        configure(model, baseUrl, stream, OpenAiEndpointMode.from(endpoint), serverSideSearch, searchCapability)
+        configure(model, baseUrl, stream, OpenAiEndpointMode.from(endpoint), serverSideSearch, searchCapability, maxOutputTokens)
     }
 
     private fun configure(
@@ -63,8 +72,10 @@ class OpenAiModelClient(
         endpointMode: OpenAiEndpointMode,
         serverSideSearch: Boolean,
         searchCapability: ServerSideSearchCapability,
+        maxOutputTokens: Int?,
     ) {
         require(model.isNotBlank()) { "OpenAI model must not be blank." }
+        require(maxOutputTokens == null || maxOutputTokens > 0) { "OpenAI max output tokens must be positive." }
         require(baseUrl.isNotBlank()) { "OpenAI base URL must not be blank." }
         this.model = model
         this.baseUrl = baseUrl
@@ -72,6 +83,7 @@ class OpenAiModelClient(
         this.endpointMode = endpointMode
         this.serverSideSearch = serverSideSearch
         this.searchCapability = searchCapability
+        this.maxOutputTokens = maxOutputTokens
     }
 
     override fun complete(request: ModelRequest): Flow<ModelEvent> = flow {
@@ -90,6 +102,7 @@ class OpenAiModelClient(
                         stream = true,
                         serverSideSearch = serverSideSearch,
                         searchCapability = searchCapability,
+                        maxOutputTokens = maxOutputTokens,
                     ),
                 ),
             ).collect { emit(it) }
@@ -105,6 +118,7 @@ class OpenAiModelClient(
                         request,
                         serverSideSearch = serverSideSearch,
                         searchCapability = searchCapability,
+                        maxOutputTokens = maxOutputTokens,
                     ),
                 ),
             )
@@ -122,6 +136,7 @@ class OpenAiModelClient(
                         stream = true,
                         serverSideSearch = serverSideSearch,
                         searchCapability = searchCapability,
+                        maxOutputTokens = maxOutputTokens,
                     ),
                 ),
             ).collect { emit(it) }
@@ -137,6 +152,7 @@ class OpenAiModelClient(
                         request,
                         serverSideSearch = serverSideSearch,
                         searchCapability = searchCapability,
+                        maxOutputTokens = maxOutputTokens,
                     ),
                 ),
             )

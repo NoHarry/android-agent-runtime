@@ -6,6 +6,7 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class DeepSeekOutputBudgetTest {
@@ -23,6 +24,27 @@ class DeepSeekOutputBudgetTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun aHostsLimitReplacesTheModelsOwnOnEveryOpenAiEndpoint() {
+        val request = contractModelRequest()
+        val chat = openAiRequest(CONTRACT_API_KEY, CONTRACT_BASE_URL, "deepseek-flash", request, maxOutputTokens = 8_000).contractBodyJson()
+        val responses = openAiResponsesRequest(CONTRACT_API_KEY, CONTRACT_BASE_URL, "deepseek-flash", request, maxOutputTokens = 8_000).contractBodyJson()
+        assertEquals(8_000, chat.getValue("max_tokens").jsonPrimitive.int)
+        assertEquals(8_000, responses.getValue("max_output_tokens").jsonPrimitive.int)
+        assertEquals(4_096, openAiRequest(CONTRACT_API_KEY, CONTRACT_BASE_URL, "gpt-5", request, maxOutputTokens = 4_096).contractBodyJson().getValue("max_tokens").jsonPrimitive.int)
+        // OpenAI's own API takes max_completion_tokens, which its reasoning models need.
+        val openAi = openAiRequest(CONTRACT_API_KEY, "https://api.openai.com/v1", "o3", request, maxOutputTokens = 4_096).contractBodyJson()
+        assertEquals(4_096, openAi.getValue("max_completion_tokens").jsonPrimitive.int)
+        assertFalse(openAi.containsKey("max_tokens"))
+        assertFalse(openAiRequest(CONTRACT_API_KEY, "https://api.openai.com/v1", "o3", request).contractBodyJson().containsKey("max_completion_tokens"))
+    }
+
+    @Test
+    fun theClientsPassTheirLimitOnAndRefuseANonPositiveOne() {
+        assertThrows(IllegalArgumentException::class.java) { OpenAiModelClient({ "k" }, "gpt-5", maxOutputTokens = 0) }
+        assertThrows(IllegalArgumentException::class.java) { OpenAiModelClient({ "k" }, "gpt-5", endpoint = "responses", maxOutputTokens = -1) }
     }
 
     @Test

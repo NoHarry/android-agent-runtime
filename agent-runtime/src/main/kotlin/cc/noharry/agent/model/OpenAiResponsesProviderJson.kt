@@ -31,6 +31,7 @@ internal fun openAiResponsesRequest(
     stream: Boolean = false,
     serverSideSearch: Boolean = false,
     searchCapability: ServerSideSearchCapability = ServerSideSearchCapability.OPENAI_RESPONSES_TOOL,
+    maxOutputTokens: Int? = null,
 ): HttpRequest = providerRequest(
     url = endpoint(baseUrl, "/responses"),
     headers = mapOf(
@@ -40,7 +41,7 @@ internal fun openAiResponsesRequest(
     body = buildJsonObject {
         val options = request.modelRef.providerOptions(OPENAI_PROVIDER_NAME, model)
         put("model", model)
-        modelOutputTokenLimit(model)?.let { put("max_output_tokens", it) }
+        (maxOutputTokens ?: modelOutputTokenLimit(model))?.let { put("max_output_tokens", it) }
         put("stream", stream)
         put("tool_choice", request.openAiResponsesToolChoice())
         put("parallel_tool_calls", true)
