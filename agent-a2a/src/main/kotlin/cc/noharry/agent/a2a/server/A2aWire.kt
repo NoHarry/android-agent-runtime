@@ -38,9 +38,14 @@ internal fun rpcError(id: JsonElement, error: A2aRpcError): JsonObject = jsonObj
 internal fun agentCard(config: A2aServerConfig, port: Int): JsonObject = buildJsonObject {
     put("name", config.name)
     put("description", config.description)
-    put("version", "0.1.0")
+    put("version", config.cardVersion)
     put("protocolVersion", "0.3.0")
-    put("url", "http://127.0.0.1:$port/a2a")
+    val host = config.bindAddress.let { if (':' in it) "[$it]" else it }
+    put("url", config.publicUrl ?: "http://$host:$port/a2a")
+    if (config.authorizer is BearerAuthorizer) {
+        put("securitySchemes", jsonObject("bearer" to jsonObject("type" to text("http"), "scheme" to text("bearer"))))
+        put("security", JsonArray(listOf(jsonObject("bearer" to JsonArray(emptyList())))))
+    }
     put("preferredTransport", "JSONRPC")
     put("capabilities", jsonObject(
         "streaming" to JsonPrimitive(true), "pushNotifications" to JsonPrimitive(false),

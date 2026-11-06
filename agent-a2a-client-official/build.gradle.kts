@@ -30,7 +30,8 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":agent-a2a"))
+    // OfficialA2aClientModule is an A2aClientModule: users compile against agent-a2a's types.
+    api(project(":agent-a2a"))
     implementation("org.a2aproject.sdk:a2a-java-sdk-client:1.1.0.Final")
     implementation("org.a2aproject.sdk:a2a-java-sdk-http-client-android:1.1.0.Final")
     implementation("org.a2aproject.sdk:a2a-java-sdk-spec-grpc:1.1.0.Final")

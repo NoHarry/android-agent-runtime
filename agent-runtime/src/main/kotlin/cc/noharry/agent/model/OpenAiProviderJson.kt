@@ -98,9 +98,9 @@ internal fun openAiStreamEvents(events: Flow<HttpEvent>): Flow<ModelEvent> = flo
             ?.firstObject()
             ?.obj("delta")
             ?: return@collect
-        delta.string("reasoning_content")?.toThinkingEvent()?.let { emit(it) }
-        delta.string("thinking")?.toThinkingEvent()?.let { emit(it) }
-        delta.string("content")?.toTextEvent()?.let { emit(it) }
+        delta.string("reasoning_content")?.toThinkingDelta()?.let { emit(it) }
+        delta.string("thinking")?.toThinkingDelta()?.let { emit(it) }
+        delta.string("content")?.toTextDelta()?.let { emit(it) }
         collectOpenAiToolCallDeltas(delta.array("tool_calls"), toolCalls)
     }
     for (toolCall in toolCalls.values.mapNotNull { it.toEvent() }) {

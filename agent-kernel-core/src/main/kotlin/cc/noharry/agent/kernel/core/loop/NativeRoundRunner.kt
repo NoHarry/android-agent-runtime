@@ -239,7 +239,8 @@ class NativeRoundRunner(
         return when {
             toolResults.isNotEmpty() -> RoundOutcome.ToolResults(toolResults)
             // A text answer with no tool call ends the run, as in dsh and Codex; finish(response) stays the explicit form.
-            text.isNotBlank() -> implicitFinishOutcome(text.toString(), allowFinishResponseRetry, toolContext.runId)
+            // The reply as the user reads it: a stream may open with the line breaks after the model's thinking.
+            text.isNotBlank() -> implicitFinishOutcome(text.toString().trim(), allowFinishResponseRetry, toolContext.runId)
             // CC/Codex end-turn-no-tools is natural stop; this protocol needs finish/tools.
             // Prefer one budgeted continue nudge over hard-failing empty mid-task completions.
             // Probe always records kind/continued so hosts can root-cause without UI coupling.

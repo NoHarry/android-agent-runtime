@@ -58,6 +58,48 @@ class ModelClientStreamingContractTest {
     }
 
     @Test
+    fun aLineBreakThatComesAloneIsKeptInChatAndResponsesStreams() = runBlocking {
+        fun transport(vararg lines: String) = object : HttpTransport {
+            override fun stream(request: HttpRequest): Flow<HttpEvent> = flow {
+                emit(HttpEvent.Response(200))
+                lines.forEach { emit(HttpEvent.Data("data: $it".frame())) }
+                emit(HttpEvent.Done)
+            }
+
+            override suspend fun execute(request: HttpRequest): HttpResponse = error("streaming only")
+        }
+        val chat = OpenAiModelClient(
+            apiKeyProvider = { "unit-test-key" },
+            model = "provider-test-model",
+            baseUrl = "https://provider.test/v1",
+            stream = true,
+            transport = transport(
+                """{"choices":[{"delta":{"reasoning_content":"one"}}]}""",
+                """{"choices":[{"delta":{"reasoning_content":"\n\n"}}]}""",
+                """{"choices":[{"delta":{"content":"First."}}]}""",
+                """{"choices":[{"delta":{"content":"\n\n"}}]}""",
+                """{"choices":[{"delta":{"content":"Second."}}]}""",
+            ),
+        ).complete(ModelRequest(messages = listOf(ModelMessage("user", "hi")))).toList()
+        assertEquals("First.\n\nSecond.", chat.filterIsInstance<ModelEvent.TextDelta>().joinToString("") { it.text })
+        assertEquals("one\n\n", chat.filterIsInstance<ModelEvent.ThinkingDelta>().joinToString("") { it.text })
+
+        val responses = OpenAiModelClient(
+            apiKeyProvider = { "unit-test-key" },
+            model = "provider-test-model",
+            baseUrl = "https://provider.test/v1",
+            stream = true,
+            endpoint = "responses",
+            transport = transport(
+                """{"type":"response.output_text.delta","delta":"First."}""",
+                """{"type":"response.output_text.delta","delta":"\n\n"}""",
+                """{"type":"response.output_text.delta","delta":"Second."}""",
+            ),
+        ).complete(ModelRequest(messages = listOf(ModelMessage("user", "hi")))).toList()
+        assertEquals("First.\n\nSecond.", responses.filterIsInstance<ModelEvent.TextDelta>().joinToString("") { it.text })
+    }
+
+    @Test
     fun openAiStreamingPreservesUtf8SplitAcrossHttpChunks() = runBlocking {
         val frame = """data: {"choices":[{"delta":{"content":"座椅"}}]}""" + "\n\n"
         val bytes = frame.toByteArray(Charsets.UTF_8)

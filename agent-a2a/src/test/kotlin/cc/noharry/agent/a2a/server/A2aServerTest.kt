@@ -275,6 +275,57 @@ class A2aServerTest {
         }
     }
 
+    @Test fun aBearerTokenGuardsTasksWhileTheCardSaysHowToSendIt() = withServer(
+        { request -> flowOf(A2aOutput.Result(request.text)) },
+        A2aServerConfig(port = 0, authorizer = A2aAuthorizer.bearer(TOKEN), publicUrl = "https://agent.example.test/a2a", cardVersion = "2.1.0"),
+    ) { server ->
+        val card = get(server, "/.well-known/agent-card.json")
+        assertEquals("https://agent.example.test/a2a", card.string("url"))
+        assertEquals("2.1.0", card.string("version"))
+        assertEquals("bearer", card["securitySchemes"]!!.jsonObject["bearer"]!!.jsonObject.string("scheme"))
+        post(server, "message/send", message("hi")).use { response ->
+            assertEquals(401, response.code)
+            assertEquals("Bearer", response.header("WWW-Authenticate"))
+        }
+        post(server, "message/send", message("hi"), token = "wrong-token-of-enough-length").use { assertEquals(401, it.code) }
+        post(server, "message/stream", message("hi")).use { assertEquals(401, it.code) }
+        post(server, "tasks/get", jsonObject("id" to text("task-1"))).use { assertEquals(401, it.code) }
+        // The scheme's name is case-insensitive.
+        val lower = Request.Builder().url(url(server, "/a2a")).header("Authorization", "bearer $TOKEN")
+            .post(jsonObject("jsonrpc" to text("2.0"), "id" to text("r"), "method" to text("message/send"), "params" to message("hi"))
+                .toString().toRequestBody("application/json".toMediaType())).build()
+        client.newCall(lower).execute().use { assertEquals(200, it.code) }
+        post(server, "message/send", message("hi"), token = TOKEN).use { response ->
+            assertEquals(200, response.code)
+            val task = Json.parseToJsonElement(response.body!!.string()).jsonObject["result"]!!.jsonObject
+            assertEquals("completed", task["status"]!!.jsonObject.string("state"))
+        }
+    }
+
+    @Test fun listeningBeyondTheDeviceNeedsAnAuthorizerAndTls() {
+        assertThrows(IllegalArgumentException::class.java) { A2aServerConfig(bindAddress = "0.0.0.0") }
+        assertThrows(IllegalArgumentException::class.java) {
+            A2aServerConfig(bindAddress = "0.0.0.0", authorizer = A2aAuthorizer.bearer(TOKEN), publicUrl = "http://10.0.0.2:8766/a2a")
+        }
+        assertThrows(IllegalArgumentException::class.java) { A2aServerConfig(bindAddress = "localhost") }
+        assertThrows(IllegalArgumentException::class.java) { A2aServerConfig(bindAddress = "999.1.1.1") }
+        assertThrows(IllegalArgumentException::class.java) { A2aServerConfig(bindAddress = "1:2") }
+        assertThrows(IllegalArgumentException::class.java) { A2aAuthorizer.bearer("short") }
+        assertThrows(IllegalArgumentException::class.java) { A2aAuthorizer.bearer("a token with spaces in") }
+        val open = A2aServerConfig(bindAddress = "0.0.0.0", authorizer = A2aAuthorizer.bearer(TOKEN), publicUrl = "https://agent.example.test/a2a")
+        assertEquals("0.0.0.0", open.bindAddress)
+        // An IPv6 loopback goes on the card in brackets.
+        assertEquals("http://[::1]:8766/a2a", agentCard(A2aServerConfig(bindAddress = "::1"), 8766).string("url"))
+        // An authorizer that throws refuses.
+        withServer({ flowOf(A2aOutput.Result("ok")) }, A2aServerConfig(port = 0, authorizer = A2aAuthorizer { error("broken") })) { server ->
+            post(server, "message/send", message("hi")).use { assertEquals(401, it.code) }
+            assertEquals("0.3.0", get(server, "/.well-known/agent-card.json").string("protocolVersion"))
+        }
+        // A custom check sees the headers by lower-case name.
+        val custom = A2aAuthorizer { headers -> headers["x-device"] == "car" }
+        assertTrue(custom.allows(mapOf("x-device" to "car")))
+    }
+
     @Test fun closingServerCancelsHostAndReleasesListeningPort() {
         val entered = CountDownLatch(1)
         val cleaned = CountDownLatch(1)
@@ -348,10 +399,11 @@ class A2aServerTest {
     private fun interrupting(params: JsonObject): JsonObject = JsonObject(params + ("message" to
         JsonObject(params["message"]!!.jsonObject + ("metadata" to jsonObject("interrupt" to JsonPrimitive(true))))))
 
-    private fun post(server: A2aServer, method: String, params: JsonObject): Response {
+    private fun post(server: A2aServer, method: String, params: JsonObject, token: String? = null): Response {
         val body = jsonObject("jsonrpc" to text("2.0"), "id" to text("request-1"), "method" to text(method), "params" to params)
-        return client.newCall(Request.Builder().url(url(server, "/a2a"))
-            .post(body.toString().toRequestBody("application/json".toMediaType())).build()).execute()
+        val request = Request.Builder().url(url(server, "/a2a")).post(body.toString().toRequestBody("application/json".toMediaType()))
+        token?.let { request.header("Authorization", "Bearer $it") }
+        return client.newCall(request.build()).execute()
     }
 
     private fun rpc(server: A2aServer, method: String, params: JsonObject): JsonObject =
@@ -364,3 +416,5 @@ class A2aServerTest {
 
     private fun url(server: A2aServer, path: String) = "http://127.0.0.1:${server.localPort}$path"
 }
+
+private const val TOKEN = "a-token-of-twenty-chars"

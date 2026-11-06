@@ -212,12 +212,16 @@ class AnthropicModelClient(
         this.maxOutputTokens = maxOutputTokens
     }
 
+    /** DeepSeek, known by its model's name or by its own endpoint (a model behind another name), may write DSML. */
+    private fun writesDsml(model: String): Boolean = isDeepSeekModel(model) || baseUrl.contains("deepseek.com", ignoreCase = true)
+
     override fun complete(request: ModelRequest): Flow<ModelEvent> = flow {
         val apiKey = requireProviderApiKey(ANTHROPIC_PROVIDER_NAME, apiKeyProvider)
         val effectiveModel = request.modelRef?.modelId?.takeIf { it.isNotBlank() } ?: model
         if (stream) {
             anthropicStreamEvents(
-                streamProviderRequest(
+                textToolCalls = writesDsml(effectiveModel),
+                events = streamProviderRequest(
                     ANTHROPIC_PROVIDER_NAME,
                     transport,
                     anthropicRequest(
@@ -235,7 +239,8 @@ class AnthropicModelClient(
             ).collect { emit(it) }
         } else {
             val events = anthropicEvents(
-                executeProviderRequest(
+                textToolCalls = writesDsml(effectiveModel),
+                response = executeProviderRequest(
                     ANTHROPIC_PROVIDER_NAME,
                     transport,
                     anthropicRequest(

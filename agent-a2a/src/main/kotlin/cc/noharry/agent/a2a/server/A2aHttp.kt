@@ -9,10 +9,15 @@ import kotlinx.serialization.json.JsonObject
 internal data class A2aHttpRequest(val method: String, val path: String, val body: String)
 internal class A2aHttpError(val status: Int) : RuntimeException()
 
-internal fun readHttp(socket: Socket): A2aHttpRequest {
+/**
+ * Reads one request, all of it within [HTTP_TIMEOUT_MS] however slowly it comes. [admits] sees the method, the path and
+ * the headers before the body is read: a caller it refuses gets 401 without holding the connection for its body.
+ */
+internal fun readHttp(socket: Socket, admits: (String, String, Map<String, String>) -> Boolean = { _, _, _ -> true }): A2aHttpRequest {
     socket.soTimeout = HTTP_TIMEOUT_MS
+    val deadline = System.nanoTime() + HTTP_TIMEOUT_MS * NANOS_PER_MILLI
     val input = socket.getInputStream().buffered()
-    val lines = readHeader(input).split("\r\n")
+    val lines = readHeader(socket, input, deadline).split("\r\n")
     val request = lines.first().split(' ')
     if (request.size != 3 || request[2] != "HTTP/1.1") throw A2aHttpError(400)
     val headers = linkedMapOf<String, String>()
@@ -27,24 +32,29 @@ internal fun readHttp(socket: Socket): A2aHttpRequest {
     val length = headers["content-length"]?.toIntOrNull() ?: if (request[0] == "GET") 0 else -1
     if (length < 0) throw A2aHttpError(411)
     if (length > MAX_BODY_BYTES) throw A2aHttpError(413)
-    if (request[0] == "POST" && headers["content-type"]?.substringBefore(';')?.trim() != "application/json") {
+    val admitted = admits(request[0], request[1], headers)
+    if (admitted && request[0] == "POST" && headers["content-type"]?.substringBefore(';')?.trim() != "application/json") {
         throw A2aHttpError(415)
     }
     val body = ByteArray(length)
     var offset = 0
     while (offset < length) {
+        socket.soTimeout = remainingMillis(deadline)
         val count = input.read(body, offset, length - offset)
         if (count < 0) throw A2aHttpError(400)
         offset += count
     }
+    // A refused body is read too (it is small and on the clock), so the caller gets its 401 rather than a reset.
+    if (!admitted) throw A2aHttpError(401)
     return A2aHttpRequest(request[0], request[1], body.toString(Charsets.UTF_8))
 }
 
-private fun readHeader(input: InputStream): String {
+private fun readHeader(socket: Socket, input: InputStream, deadline: Long): String {
     val bytes = ByteArrayOutputStream()
     var matched = 0
     val ending = byteArrayOf(13, 10, 13, 10)
     while (bytes.size() < MAX_HEADER_BYTES) {
+        socket.soTimeout = remainingMillis(deadline)
         val next = input.read()
         if (next < 0) throw A2aHttpError(400)
         bytes.write(next)
@@ -54,9 +64,9 @@ private fun readHeader(input: InputStream): String {
     throw A2aHttpError(431)
 }
 
-internal fun writeJson(output: OutputStream, value: JsonObject, status: Int = 200) {
+internal fun writeJson(output: OutputStream, value: JsonObject, status: Int = 200, extraHeaders: String = "") {
     val body = value.toString().toByteArray(Charsets.UTF_8)
-    val header = "HTTP/1.1 $status ${if (status == 200) "OK" else "Error"}\r\n" +
+    val header = "HTTP/1.1 $status ${if (status == 200) "OK" else "Error"}\r\n" + extraHeaders +
         "Content-Type: application/json; charset=utf-8\r\nContent-Length: ${body.size}\r\n" +
         "Connection: close\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n\r\n"
     output.write(header.toByteArray(Charsets.US_ASCII))
@@ -76,6 +86,14 @@ internal fun writeSse(output: OutputStream, value: JsonObject?) {
     output.flush()
 }
 
+/** What is left of [deadline] for the next read, so no read waits past it; 408 once it has passed. */
+private fun remainingMillis(deadline: Long): Int {
+    val left = (deadline - System.nanoTime()) / NANOS_PER_MILLI
+    if (left <= 0) throw A2aHttpError(408)
+    return left.toInt()
+}
+
 internal const val HTTP_TIMEOUT_MS = 10_000
+private const val NANOS_PER_MILLI = 1_000_000L
 private const val MAX_BODY_BYTES = 65_536
 private const val MAX_HEADER_BYTES = 8_192

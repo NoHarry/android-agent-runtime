@@ -274,6 +274,12 @@ internal fun String.toThinkingEvent(): ModelEvent.ThinkingDelta? =
 internal fun String.toTextEvent(): ModelEvent.TextDelta? =
     takeIf { it.isNotBlank() }?.let(ModelEvent::TextDelta)
 
+/** A streamed piece of text as it came: a line break or a space between words is part of the text. */
+internal fun String.toTextDelta(): ModelEvent.TextDelta? = takeIf { it.isNotEmpty() }?.let(ModelEvent::TextDelta)
+
+/** A streamed piece of thinking as it came, its line breaks too. */
+internal fun String.toThinkingDelta(): ModelEvent.ThinkingDelta? = takeIf { it.isNotEmpty() }?.let(ModelEvent::ThinkingDelta)
+
 internal fun JsonArray.firstObject(): JsonObject? =
     firstOrNull() as? JsonObject
 

@@ -357,7 +357,7 @@ class AnthropicModelClientContractTest {
 
         val events = AnthropicModelClient(
             ::contractApiKey,
-            CONTRACT_MODEL,
+            DEEPSEEK_MODEL,
             CONTRACT_BASE_URL,
             serverSideSearch = false,
             stream = true,
@@ -393,7 +393,7 @@ class AnthropicModelClientContractTest {
 
         val events = AnthropicModelClient(
             ::contractApiKey,
-            CONTRACT_MODEL,
+            DEEPSEEK_MODEL,
             CONTRACT_BASE_URL,
             serverSideSearch = false,
             transport = transport,
@@ -404,6 +404,53 @@ class AnthropicModelClientContractTest {
         assertEquals(listOf("finish", "Completed"), eventSummary(events))
         val toolCall = events.filterIsInstance<ModelEvent.ToolCall>().single()
         assertEquals("""{"response":"已完成"}""", toolCall.argumentsJson)
+    }
+
+    @Test
+    fun anotherModelsTextStreamsAsItComesAndDsmlLikeTextStaysText() = runBlocking {
+        val transport = FakeHttpTransport(
+            streamText = """
+                event: content_block_start
+                data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}
+
+                event: content_block_delta
+                data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"First line."}}
+
+                event: content_block_delta
+                data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n\n"}}
+
+                event: content_block_delta
+                data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"DSML tool_calls <invoke name=\"finish\">"}}
+
+                event: content_block_stop
+                data: {"type":"content_block_stop","index":0}
+            """.trimIndent(),
+        )
+
+        val events = AnthropicModelClient(::contractApiKey, CONTRACT_MODEL, CONTRACT_BASE_URL, serverSideSearch = false, stream = true, transport = transport)
+            .complete(contractModelRequest())
+            .toList()
+
+        assertEquals(
+            listOf("First line.", "\n\n", "DSML tool_calls <invoke name=\"finish\">"),
+            events.filterIsInstance<ModelEvent.TextDelta>().map { it.text },
+        )
+        assertEquals(emptyList<ModelEvent.ToolCall>(), events.filterIsInstance<ModelEvent.ToolCall>())
+    }
+
+    @Test
+    fun deepSeeksOwnEndpointIsReadForDsmlWhateverTheModelIsCalled() = runBlocking {
+        val transport = FakeHttpTransport(
+            executeResponse = providerResponse(
+                """{"content":[{"type":"text","text":"<｜｜DSML｜｜tool_calls>\n<｜｜DSML｜｜invoke name=\"finish\">\n<｜｜DSML｜｜parameter name=\"response\" string=\"true\">done</｜｜DSML｜｜parameter>\n</｜｜DSML｜｜invoke>\n</｜｜DSML｜｜tool_calls>"}]}""",
+            ),
+        )
+
+        val events = AnthropicModelClient(::contractApiKey, "my-alias", "https://api.deepseek.com/anthropic", serverSideSearch = false, transport = transport)
+            .complete(contractModelRequest())
+            .toList()
+
+        assertEquals("finish", events.filterIsInstance<ModelEvent.ToolCall>().single().name)
     }
 
     @Test
@@ -437,3 +484,6 @@ class AnthropicModelClientContractTest {
         assertEquals("""{"ok":true}""", toolResult?.get("content")?.jsonPrimitive?.contentOrNull)
     }
 }
+
+/** DeepSeek on its Anthropic endpoint, which may write tool calls as DSML in its text. */
+private const val DEEPSEEK_MODEL = "deepseek-v4-pro"

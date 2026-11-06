@@ -39,13 +39,17 @@ internal data class ProviderRequestOptions(
     val summarizedThinking: Boolean = false,
 )
 
+/**
+ * The options a request to [modelId] over [providerId]'s wire sends: the request's own variant when it names this model,
+ * whatever the request calls the provider ("deepseek", a relay's name), else the model's default. The variant goes as
+ * the host chose it: the registry does not know every model that reasons.
+ */
 internal fun ModelRef?.providerOptions(providerId: String, modelId: String): ProviderRequestOptions =
-    (this?.normalized()?.takeIf {
-        it.providerId.equals(providerId, ignoreCase = true) &&
-            it.modelId.equals(modelId, ignoreCase = true)
-    }?.variant ?: ModelVariantRegistry.defaultVariant(providerId, modelId))
+    (this?.normalized()?.takeIf { it.modelId.equals(modelId, ignoreCase = true) }?.variant
+        ?: ModelVariantRegistry.defaultVariant(providerId, modelId))
         ?.let { variantOptions(providerId, modelId, it) }
         ?: ProviderRequestOptions()
+
 
 private data class ProviderProfile(
     val variants: List<ModelVariant>,

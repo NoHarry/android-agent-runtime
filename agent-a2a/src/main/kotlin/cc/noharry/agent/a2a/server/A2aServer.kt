@@ -33,7 +33,7 @@ class A2aServer(
     /** Actual port after [start], including when port zero requests an ephemeral test port. */
     val localPort: Int get() = listener?.localPort ?: config.port
 
-    /** Bind IPv4 loopback and return the listening port. Bind errors are propagated to the host. */
+    /** Bind [A2aServerConfig.bindAddress] (loopback by default) and return the listening port. Bind errors are propagated to the host. */
     @Synchronized
     fun start(): Int {
         check(!closed) { "Server is closed" }
@@ -41,7 +41,7 @@ class A2aServer(
         val socket = ServerSocket()
         try {
             socket.reuseAddress = true
-            socket.bind(InetSocketAddress(InetAddress.getByName("127.0.0.1"), config.port))
+            socket.bind(InetSocketAddress(InetAddress.getByName(config.bindAddress), config.port))
         } catch (error: Exception) {
             socket.close()
             throw error
@@ -80,8 +80,13 @@ class A2aServer(
         val watchdog = scope.launch { delay(config.taskTimeoutMillis + HTTP_TIMEOUT_MS); client.close() }
         try {
             client.use { socket ->
-                try { runBlocking { route(socket, readHttp(socket)) } } catch (error: A2aHttpError) {
-                    writeJson(socket.getOutputStream(), jsonObject("error" to text("Invalid HTTP request")), error.status)
+                try { runBlocking { route(socket, readHttp(socket, ::admits)) } } catch (error: A2aHttpError) {
+                    if (error.status == 401) {
+                        val challenge = if (config.authorizer is BearerAuthorizer) "WWW-Authenticate: Bearer\r\n" else ""
+                        writeJson(socket.getOutputStream(), jsonObject("error" to text("Unauthorized")), 401, challenge)
+                    } else {
+                        writeJson(socket.getOutputStream(), jsonObject("error" to text("Invalid HTTP request")), error.status)
+                    }
                 }
             }
         } catch (_: Exception) {
@@ -169,6 +174,13 @@ class A2aServer(
             if (!task.done.isCompleted) task.job.cancel()
             task.events?.cancel()
         }
+    }
+
+    /** The Agent Card is anyone's to read; everything else is the [A2aServerConfig.authorizer]'s to allow. An authorizer that throws refuses. */
+    private fun admits(method: String, path: String, headers: Map<String, String>): Boolean {
+        val authorizer = config.authorizer ?: return true
+        if (method == "GET" && path in CARD_PATHS) return true
+        return runCatching { authorizer.allows(headers) }.getOrDefault(false)
     }
 
     private fun taskId(rpc: A2aRpc): String = rpc.params.string("id") ?: invalidParams("Task id is required")

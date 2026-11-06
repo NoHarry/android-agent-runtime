@@ -81,7 +81,11 @@ private fun JsonObjectBuilder.putAnthropicThinking(options: ProviderRequestOptio
     }
 }
 
-internal fun anthropicEvents(response: HttpResponse): List<ModelEvent> {
+/**
+ * [textToolCalls]: the model may write tool calls as DeepSeek's DSML markup in its text (DeepSeek on its Anthropic
+ * endpoint does), which then become tool calls; any other model's text is its text.
+ */
+internal fun anthropicEvents(response: HttpResponse, textToolCalls: Boolean = false): List<ModelEvent> {
     requireProviderSuccess(ANTHROPIC_PROVIDER_NAME, response)
     val root = parseProviderObject(ANTHROPIC_PROVIDER_NAME, response.body.toString(Charsets.UTF_8))
     return buildList {
@@ -94,7 +98,7 @@ internal fun anthropicEvents(response: HttpResponse): List<ModelEvent> {
                     val sig = item.string("signature")?.takeIf { it.isNotBlank() }
                     addThinking(item.string("thinking"), sig)
                 }
-                "text" -> addAll(anthropicTextEvents(item.string("text")))
+                "text" -> if (textToolCalls) addAll(anthropicTextEvents(item.string("text"))) else item.string("text")?.toTextEvent()?.let(::add)
                 "tool_use" -> add(anthropicToolCall(item))
                 "server_tool_use" -> add(anthropicServerToolUse(item))
                 "web_search_tool_result" -> add(anthropicWebSearchResult(item))
@@ -103,7 +107,8 @@ internal fun anthropicEvents(response: HttpResponse): List<ModelEvent> {
     }
 }
 
-internal fun anthropicStreamEvents(events: Flow<HttpEvent>): Flow<ModelEvent> = flow {
+/** As [anthropicEvents]; text streams as it comes unless [textToolCalls], when each text block is read whole first. */
+internal fun anthropicStreamEvents(events: Flow<HttpEvent>, textToolCalls: Boolean = false): Flow<ModelEvent> = flow {
     val blocks = mutableMapOf<Int, AnthropicBlockAccumulator>()
     val textBlocks = mutableMapOf<Int, StringBuilder>()
     val usage = AnthropicStreamUsage()
@@ -126,7 +131,7 @@ internal fun anthropicStreamEvents(events: Flow<HttpEvent>): Flow<ModelEvent> = 
         when (item.string("type")) {
             "content_block_start" -> {
                 captureThinkingSignature(item)?.let { thinkingSignature = it }
-                startAnthropicTextBlock(item, textBlocks)
+                if (textToolCalls) startAnthropicTextBlock(item, textBlocks)
                 startAnthropicBlock(item, blocks)?.let { emit(it) }
             }
             "content_block_delta" -> {
@@ -343,7 +348,7 @@ private fun appendAnthropicDelta(
         "thinking_delta" -> delta.string("thinking")?.let { text ->
             ModelEvent.ThinkingDelta(text = text, signature = thinkingSignature)
         }
-        "text_delta" -> if (index in textBlocks) null else delta.string("text")?.toTextEvent()
+        "text_delta" -> if (index in textBlocks) null else delta.string("text")?.toTextDelta()
         "input_json_delta" -> {
             blocks[index]?.input?.append(delta.string("partial_json") ?: "")
             null

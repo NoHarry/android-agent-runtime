@@ -38,6 +38,27 @@ where noted, and for binaries compiled against the old constructors of `Anthropi
   write, or a thinking model that says nothing for a while, is not cut off; HTTP/2 pings every 30 s find a dead
   connection.
 - The default Claude model, used when none is named, is `claude-haiku-5-5` (`claude-3-5-haiku-latest` was retired).
+- **Who may use the A2A server.** It listens on the loopback address, where every app on the device reaches it.
+  `A2aServerConfig(authorizer = A2aAuthorizer.bearer(token))` lets only callers with that bearer token send messages or
+  read tasks (the Agent Card stays readable and declares the scheme); `A2aAuthorizer { headers -> … }` checks anything
+  else, and one that throws refuses. A refused caller is answered as soon as its headers are read, and a request must
+  arrive whole within 10 s. `bindAddress` (an IP address) listens elsewhere, which needs an authorizer and an `https`
+  `publicUrl`, since the server speaks plain HTTP and belongs behind a TLS tunnel or proxy; `publicUrl` is the address
+  the card gives and `cardVersion` the agent's version on it. Without them nothing changes.
+- **Only DeepSeek's text is read for written tool calls.** Text in DeepSeek's DSML markup became tool calls whatever
+  the model, so every Anthropic-format stream held each text block back until it ended. Now only DeepSeek's text is
+  read that way (a model named `deepseek…`, or any model on a `deepseek.com` endpoint); a Claude's text streams as it
+  comes.
+- **Streamed line breaks are kept.** In OpenAI Chat Completions and Responses streams a text or thinking piece that was
+  only a line break or spaces was dropped, running lines and paragraphs together. A reply the model writes without
+  `finish` is trimmed, so the line breaks a stream may open with are not part of it.
+- **A request's variant counts whatever the request calls the provider.** It was used only when `ModelRef.providerId`
+  was `OpenAI` or `Anthropic` (in any case), so `ModelRef("deepseek", "deepseek-v4-pro", "high")` ran with the model's
+  default (DeepSeek's thinking off). It now applies whenever it names the model being called, sent as the host chose it.
+  `ModelVariantRegistry.resolve` still keeps only variants it knows for the `providerId` given.
+- **Dependencies users compile against.** `agent-kernel-core` exposes `kotlinx-serialization-json` (its API takes and
+  returns `JsonObject`) and `agent-a2a-client-official` exposes `agent-a2a` (its module is an `A2aClientModule`) as API
+  dependencies; 0.4.0 published them as runtime-only, so code using those types did not compile.
 - **Nothing in Chinese unless the device is.** Text the runtime sent in Chinese whatever the app (behaviour change):
   - The `finish` tool's description is English.
   - `web_fetch` asked every site for Chinese pages; it now asks in the app's language (language and region), then

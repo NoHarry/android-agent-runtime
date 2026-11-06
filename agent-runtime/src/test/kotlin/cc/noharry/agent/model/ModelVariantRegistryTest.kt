@@ -111,6 +111,34 @@ class ModelVariantRegistryTest {
     }
 
     @Test
+    fun aVariantAppliesToItsModelWhateverTheHostCallsTheProvider() {
+        val body = openAiRequest(
+            apiKey = "key",
+            baseUrl = "https://provider.test/v1",
+            model = "deepseek-v4-flash",
+            request = request(ModelRef("deepseek", "deepseek-v4-flash", "high")),
+        ).bodyObject()
+        assertEquals("high", body["reasoning_effort"]?.jsonPrimitive?.contentOrNull)
+        assertEquals("enabled", body["thinking"]?.jsonObject?.get("type")?.jsonPrimitive?.contentOrNull)
+        // A variant chosen for another model does not carry over.
+        val other = openAiRequest(
+            apiKey = "key",
+            baseUrl = "https://provider.test/v1",
+            model = "deepseek-v4-flash",
+            request = request(ModelRef("my-relay", "deepseek-v4-pro", "high")),
+        ).bodyObject()
+        assertEquals("disabled", other["thinking"]?.jsonObject?.get("type")?.jsonPrimitive?.contentOrNull)
+        // A reasoning model the registry does not list still gets the effort the host chose.
+        val unlisted = openAiRequest(
+            apiKey = "key",
+            baseUrl = "https://provider.test/v1",
+            model = "gpt-oss-120b",
+            request = request(ModelRef("my-relay", "gpt-oss-120b", "high")),
+        ).bodyObject()
+        assertEquals("high", unlisted["reasoning_effort"]?.jsonPrimitive?.contentOrNull)
+    }
+
+    @Test
     fun deepSeekReasonerAlsoExposesThinkingSwitchVariants() {
         val variants = ModelVariantRegistry.variants("openai", "deepseek-reasoner").map { it.id }
 

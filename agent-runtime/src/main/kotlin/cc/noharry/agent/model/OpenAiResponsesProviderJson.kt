@@ -85,8 +85,8 @@ internal fun openAiResponsesStreamEvents(events: Flow<HttpEvent>): Flow<ModelEve
                 lastMetadata = it
             }
         responseStreamUsage(root)?.let { emit(it) }
-        responseStreamThinking(root)?.toThinkingEvent()?.let { emit(it) }
-        responseStreamText(root)?.toTextEvent()?.let { emit(it) }
+        responseStreamThinking(root)?.toThinkingDelta()?.let { emit(it) }
+        responseStreamText(root)?.toTextDelta()?.let { emit(it) }
         responseStreamSearchActivity(root, emittedSearchItems)?.let { emit(it) }
         collectOpenAiResponseToolDelta(root, toolCalls)
     }
