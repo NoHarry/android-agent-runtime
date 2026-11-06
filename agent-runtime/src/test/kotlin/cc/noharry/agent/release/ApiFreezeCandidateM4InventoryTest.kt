@@ -111,6 +111,7 @@ private val CANDIDATE_BUILDER_METHODS = listOf(
     "toolConcurrency",
     "toolProvider",
     "toolProviders",
+    "traceRedactor",
     "turnObserver",
     "virtualWorkspace",
     "webFetchFallback",

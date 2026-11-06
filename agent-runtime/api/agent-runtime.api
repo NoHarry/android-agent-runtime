@@ -356,6 +356,7 @@ public final class cc/noharry/agent/runtime/AgentRuntimeBuilder {
 	public static synthetic fun toolConcurrency$default (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;IILjava/lang/Object;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun toolProvider (Lcc/noharry/agent/kernel/api/ToolProvider;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun toolProviders (Ljava/util/List;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun traceRedactor (Lcc/noharry/agent/kernel/core/trace/TraceRedactor;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun turnObserver (Lcc/noharry/agent/kernel/api/RuntimeTurnObserver;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun virtualWorkspace (Lcc/noharry/agent/vfs/VfsFileSystem;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun webFetchFallback (Lcc/noharry/agent/runtime/WebFetchFallback;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;

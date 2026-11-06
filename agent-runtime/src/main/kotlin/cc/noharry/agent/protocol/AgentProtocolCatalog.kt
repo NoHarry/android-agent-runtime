@@ -41,7 +41,7 @@ internal object AgentProtocolCatalog {
             agentsMd build buildAsync contextProvider contextWindow create defaultWorkspace deferredBackendTools disabledNativeTools execEngine hook hookTimeoutMillis imageInput loopBudget
             modelClient modelConcurrency modelRetry nativeDeferredTools nativeWebFetchEnabled networkConfirmationPolicy nowEpochMillis
             plugin policyConfig policyConfigJson policyConfigPath policyRule profile runContext runContextAsSystem runtimeEvidence sceneAgentsMd
-            sessionActivationInheritance sessionConcurrency sessionEventLog sessionEventLogRoot sessionHistory sessionStore sessionToolActivations skill subagents systemPrompt toolConcurrency toolProvider toolProviders turnObserver virtualWorkspace webFetchFallback webSearch workspace
+            sessionActivationInheritance sessionConcurrency sessionEventLog sessionEventLogRoot sessionHistory sessionStore sessionToolActivations skill subagents systemPrompt toolConcurrency toolProvider toolProviders traceRedactor turnObserver virtualWorkspace webFetchFallback webSearch workspace
             workspaceRoot
             """,
         ),

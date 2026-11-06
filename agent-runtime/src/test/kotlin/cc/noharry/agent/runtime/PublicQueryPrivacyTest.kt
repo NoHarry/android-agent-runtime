@@ -7,6 +7,7 @@ import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.api.model.ModelClient
 import cc.noharry.agent.kernel.api.model.ModelEvent
 import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.kernel.core.trace.StandardTraceRedactor
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -16,6 +17,40 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PublicQueryPrivacyTest {
+    @Test
+    fun aHostMayKeepPhoneNumbersAndCoordinatesButNeverSecrets() = runBlocking {
+        val runtime = AgentRuntimeBuilder.create()
+            .modelClient(
+                PrivacyModel(
+                    ModelEvent.ToolCall(
+                        id = "tool-1",
+                        name = "finish",
+                        argumentsJson = """{"response":"order 13800138000 token=sk-querysecret123 lat=31.2304"}""",
+                    ),
+                    ModelEvent.Completed,
+                ),
+            )
+            .traceRedactor(StandardTraceRedactor(phones = false, locations = false))
+            .build() as DefaultAgentRuntime
+
+        val result = runtime.run(agentRequest()).toList().filterIsInstance<AgentEvent.ResultAvailable>().single().result
+        assertTrue(result.response, result.response.contains("13800138000") && result.response.contains("lat=31.2304"))
+        assertTrue(result.response.contains("[REDACTED_SECRET]") && !result.response.contains("sk-querysecret123"))
+
+        // A host's own redactor that hides nothing still leaves no secret.
+        val open = AgentRuntimeBuilder.create()
+            .modelClient(
+                PrivacyModel(
+                    ModelEvent.ToolCall(id = "tool-1", name = "finish", argumentsJson = """{"response":"done token=sk-querysecret123"}"""),
+                    ModelEvent.Completed,
+                ),
+            )
+            .traceRedactor { it }
+            .build() as DefaultAgentRuntime
+        val opened = open.run(agentRequest()).toList().filterIsInstance<AgentEvent.ResultAvailable>().single().result
+        assertFalse(opened.response, opened.response.contains("sk-querysecret123"))
+    }
+
     @Test
     fun publicResultQueryAndEventsRedactSecretPhoneAndLocation() = runBlocking {
         val runtime = AgentRuntimeBuilder.create()

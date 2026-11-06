@@ -59,6 +59,7 @@ import cc.noharry.agent.kernel.core.tools.ToolActivationStore
 import cc.noharry.agent.kernel.core.tools.ToolDomainIndexer
 import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
 import cc.noharry.agent.kernel.core.trace.DefaultTraceRedactor
+import cc.noharry.agent.kernel.core.trace.StandardTraceRedactor
 import cc.noharry.agent.kernel.core.trace.TraceRedactor
 import cc.noharry.agent.kernel.core.trace.TraceVisibilityConfig
 import cc.noharry.agent.policy.PolicyEngine
@@ -556,8 +557,14 @@ class AgentRuntimeBuilder {
         traceVisibilityConfig = config
     }
 
-    internal fun traceRedactor(redactor: TraceRedactor): AgentRuntimeBuilder = apply {
-        traceRedactor = redactor
+    /**
+     * How the run's public results, events and summaries hide personal data: [DefaultTraceRedactor] unless set. A
+     * [StandardTraceRedactor][cc.noharry.agent.kernel.core.trace.StandardTraceRedactor] keeps phone numbers or coordinates
+     * where an app needs them shown. Secrets are hidden after [redactor] whatever it does.
+     */
+    @ExperimentalAgentRuntimeApi
+    fun traceRedactor(redactor: TraceRedactor): AgentRuntimeBuilder = apply {
+        traceRedactor = TraceRedactor { value -> SECRETS_ONLY.redact(redactor.redact(value)) }
     }
 
     /**
@@ -878,3 +885,6 @@ private const val DEFAULT_WORKSPACE_ID = "default"
 
 /** Recent conversation kept verbatim when the session is compacted, as a fraction of the window (dsh: 0.16). */
 private const val CONVERSATION_RETAIN_RATIO = 0.16
+
+/** What a host's redactor is always followed by: secrets hidden, nothing else changed. */
+private val SECRETS_ONLY = StandardTraceRedactor(phones = false, locations = false)

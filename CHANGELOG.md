@@ -50,6 +50,11 @@ where noted, and for binaries compiled against the old constructors of `Anthropi
   words with it beyond the commonest (turn, on, open, status…). Words keep their accented and non-Latin letters, which
   were dropped; a run of Chinese characters is still one word, so a Chinese request outside the topics matches nothing
   by words alone. A lesson's scene, the same host label on every request, no longer counts as one of its words.
+- **Hosts choose what is hidden.** Every long run of digits (ten characters or more of digits, spaces and dashes) in a
+  run's public results, events and summaries became `[REDACTED_PHONE]`, an order or tracking number included, with no
+  way out: the builder's setter was internal. `AgentRuntimeBuilder.traceRedactor` (experimental) is now open, and
+  `StandardTraceRedactor(phones = false, locations = false)` keeps phone numbers or coordinates. Secrets are hidden
+  after any host's redactor. `TraceRedactor` is a `fun interface`, and `DefaultTraceRedactor` is unchanged.
 
 ## 0.4.0 (2026-11-01)
 

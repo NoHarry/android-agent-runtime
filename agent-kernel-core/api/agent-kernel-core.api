@@ -3776,6 +3776,13 @@ public final class cc/noharry/agent/kernel/core/trace/RuntimeVfsPerformanceCount
 	public static final field RUNTIME_COUNTER_SCHEMA_CACHE_CLEANUP_SCANS Ljava/lang/String;
 }
 
+public final class cc/noharry/agent/kernel/core/trace/StandardTraceRedactor : cc/noharry/agent/kernel/core/trace/TraceRedactor {
+	public fun <init> ()V
+	public fun <init> (ZZ)V
+	public synthetic fun <init> (ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun redact (Ljava/lang/String;)Ljava/lang/String;
+}
+
 public abstract interface class cc/noharry/agent/kernel/core/trace/TraceRedactor {
 	public abstract fun redact (Ljava/lang/String;)Ljava/lang/String;
 }

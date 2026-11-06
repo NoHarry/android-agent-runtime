@@ -79,6 +79,7 @@
       "toolConcurrency",
       "toolProvider",
       "toolProviders",
+      "traceRedactor",
       "turnObserver",
       "virtualWorkspace",
       "webFetchFallback",

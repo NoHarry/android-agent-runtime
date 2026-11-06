@@ -45,19 +45,35 @@ sealed interface DebugRawTraceAccessDecision {
     data class Denied(val reason: String) : DebugRawTraceAccessDecision
 }
 
-interface TraceRedactor {
+/** What a run shows outside its own trace (results, events, summaries) passes through this first. */
+fun interface TraceRedactor {
     fun redact(value: String): String
 }
 
-object DefaultTraceRedactor : TraceRedactor {
-    override fun redact(value: String): String =
-        LOCATION_PATTERN.replace(
-            PHONE_PATTERN.replace(SECRET_PATTERN.replace(value, REDACTED_SECRET)) {
-                if (it.value.isDateLike()) it.value else REDACTED_PHONE
-            },
-            REDACTED_LOCATION,
-        )
+/**
+ * Hides secrets (API keys, `token=…`, `secret=…`), phone numbers and coordinates (`lat=…`, `longitude=…`) in what a run
+ * shows outside its own trace. Secrets are always hidden; [phones] off keeps long runs of digits (ten characters or
+ * more of digits, spaces and dashes) as they are, for an app whose answers carry order or tracking numbers, and
+ * [locations] off keeps coordinates, for one that answers with them on purpose. A date such as 2026-10-18 is never taken
+ * for a phone number.
+ */
+class StandardTraceRedactor(
+    private val phones: Boolean = true,
+    private val locations: Boolean = true,
+) : TraceRedactor {
+    override fun redact(value: String): String {
+        val withoutSecrets = SECRET_PATTERN.replace(value, REDACTED_SECRET)
+        val withoutPhones = if (!phones) {
+            withoutSecrets
+        } else {
+            PHONE_PATTERN.replace(withoutSecrets) { if (it.value.isDateLike()) it.value else REDACTED_PHONE }
+        }
+        return if (locations) LOCATION_PATTERN.replace(withoutPhones, REDACTED_LOCATION) else withoutPhones
+    }
 }
+
+/** Secrets, phone numbers and coordinates all hidden ([StandardTraceRedactor] as it comes). */
+object DefaultTraceRedactor : TraceRedactor by StandardTraceRedactor()
 
 data class RedactedTraceSummary(
     val runId: String,
