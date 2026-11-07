@@ -76,7 +76,7 @@ internal class ThreadRecordCodec(
 
     private fun turn(turn: TurnResult): JsonObject = buildJsonObject {
         put("turnId", turn.turnId); put("status", turn.status.name)
-        put("finalResponse", redactor.redact(turn.finalResponse))
+        put("finalResponse", turn.finalResponse)
         put("items", JsonArray(turn.items.map(items::encode)))
         turn.pending?.let { put("pending", items.encode(it)) }
         turn.usage?.let { usage -> put("usage", buildJsonObject {

@@ -5,6 +5,13 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **Conversation storage preserves display text and valid tool JSON.** User input and final answers are stored
+  verbatim. Tool payloads retain JSON numeric/boolean/null types while sensitive fields and Bearer credentials are
+  removed; phone and location filtering follows the configured redactor. Provider model history intentionally
+  preserves original messages, reasoning and images, including secrets, for accurate replay.
+- **Configured event-log locations survive `storage(...)`.** Android continues using its existing `event-log`
+  directory. A storage directory must be used by only one process; multiple runtimes in that process coordinate.
+
 - **Named conversation error codes.** `TurnErrorCodes` documents the codes used by thread admission, interruption,
   storage, questions, attachments and approvals. Provider/tool codes remain available through `RuntimeErrorCode`.
 

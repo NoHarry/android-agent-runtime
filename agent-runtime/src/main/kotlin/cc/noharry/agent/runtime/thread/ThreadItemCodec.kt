@@ -6,6 +6,7 @@ import cc.noharry.agent.*
 import cc.noharry.agent.spi.SessionAttachmentRef
 import cc.noharry.agent.spi.ToolSource
 import cc.noharry.agent.runtime.TraceRedactor
+import cc.noharry.agent.runtime.redactToolPayload
 import java.util.Base64
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -26,7 +27,8 @@ internal class ThreadItemCodec(
                 put("kind", "user"); put("input", JsonArray(item.input.map(::input))); put("steer", item.steer)
             }
             is ThreadItem.AgentMessage -> {
-                put("kind", "agent"); put("text", redact(item.text)); put("phase", item.phase.name)
+                put("kind", "agent"); put("text", if (item.phase == MessagePhase.FINAL) item.text else redact(item.text))
+                put("phase", item.phase.name)
             }
             is ThreadItem.Reasoning -> { put("kind", "reasoning"); put("text", redact(item.text)) }
             is ThreadItem.ToolCall -> tool(item)
@@ -72,8 +74,8 @@ internal class ThreadItemCodec(
     private fun JsonObjectBuilder.tool(item: ThreadItem.ToolCall) {
         put("kind", "tool"); put("tool", item.tool); put("source", item.source.name)
         item.server?.let { put("server", it) }
-        put("arguments", redact(item.arguments))
-        item.output?.let { put("output", redact(it)) }
+        put("arguments", redactToolPayload(item.arguments, redactor))
+        item.output?.let { put("output", redactToolPayload(it, redactor)) }
         item.approvedBy?.let { put("approvedBy", it.name) }
         item.network?.let { activity -> put("network", buildJsonObject {
             put("domain", activity.domain); put("decision", activity.decision)
@@ -96,14 +98,14 @@ internal class ThreadItemCodec(
     }
 
     private fun JsonObjectBuilder.approval(item: Approval) {
-        put("kind", "approval"); put("tool", item.tool); put("arguments", redact(item.arguments))
+        put("kind", "approval"); put("tool", item.tool); put("arguments", redactToolPayload(item.arguments, redactor))
         put("domain", item.domain); put("reason", redact(item.reason)); put("state", item.state.name)
         item.expiresAt?.let { put("expiresAt", it) }
     }
 
     private fun input(part: InputPart): JsonObject = buildJsonObject {
         when (part) {
-            is InputPart.Text -> { put("kind", "text"); put("text", redact(part.text)) }
+            is InputPart.Text -> { put("kind", "text"); put("text", part.text) }
             is InputPart.Image -> {
                 put("kind", "image"); put("bytes", Base64.getEncoder().encodeToString(part.bytes)); put("mimeType", part.mimeType)
             }

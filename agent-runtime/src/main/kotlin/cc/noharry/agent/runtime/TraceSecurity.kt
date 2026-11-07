@@ -68,7 +68,7 @@ class StandardTraceRedactor(
     private val locations: Boolean = true,
 ) : TraceRedactor {
     override fun redact(value: String): String {
-        val withoutSecrets = SECRET_PATTERN.replace(value, REDACTED_SECRET)
+        val withoutSecrets = redactSecrets(value)
         val withoutPhones = if (!phones) {
             withoutSecrets
         } else {
@@ -140,8 +140,10 @@ private const val REDACTED_SECRET = "[REDACTED_SECRET]"
 private const val REDACTED_PHONE = "[REDACTED_PHONE]"
 private const val REDACTED_LOCATION = "[REDACTED_LOCATION]"
 
+internal fun redactSecrets(value: String): String = SECRET_PATTERN.replace(value, REDACTED_SECRET)
+
 private val SECRET_PATTERN = Regex(
-    pattern = """(?i)\b(?:sk-[A-Za-z0-9_-]{8,}|token\s*[:=]\s*[\w.-]+|secret\s*[:=]\s*[\w.-]+)""",
+    pattern = """(?i)\b(?:sk-[A-Za-z0-9_-]{8,}|bearer\s+[^\s\"'<>]+|(?:[\w-]*token|[\w-]*secret|password|api[_-]?key)\s*[\"']?\s*[:=]\s*(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s\"',}\]]+))""",
 )
 private val PHONE_PATTERN = Regex("""(?<!\d)(?:\+?\d[\d -]{8,}\d)(?!\d)""")
 
