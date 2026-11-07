@@ -29,7 +29,7 @@ class ThreadImageInputTest {
         threadBuilder(model).build().use { runtime ->
             val events = runtime.startThread().runStreamed(TurnInput.of(InputPart.Image(byteArrayOf(1), "image/png"))).toList()
             assertTurnEvents(events)
-            assertEquals("IMAGE_INPUT_UNSUPPORTED", (events.last() as ThreadEvent.TurnFailed).error.code)
+            assertEquals(cc.noharry.agent.TurnErrorCodes.IMAGE_INPUT_UNSUPPORTED, (events.last() as ThreadEvent.TurnFailed).error.code)
             assertTrue(model.requests.isEmpty())
         }
     }
@@ -38,7 +38,7 @@ class ThreadImageInputTest {
         val model = ThreadScriptModel(emptyList())
         threadBuilder(model).imageInput(false).build().use { runtime ->
             val result = runtime.startThread().run(TurnInput.of(InputPart.Image(byteArrayOf(1), "image/png")))
-            assertEquals("IMAGE_INPUT_UNSUPPORTED", result.error?.code)
+            assertEquals(cc.noharry.agent.TurnErrorCodes.IMAGE_INPUT_UNSUPPORTED, result.error?.code)
             assertTrue(model.requests.isEmpty())
         }
     }

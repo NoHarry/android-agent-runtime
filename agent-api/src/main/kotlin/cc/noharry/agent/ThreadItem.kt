@@ -79,6 +79,7 @@ sealed interface ThreadItem {
     data class Error(
         override val id: String,
         override val turnId: String,
+        /** A [TurnErrorCodes] or provider/tool failure code. */
         val code: String,
         val message: String,
         val recoverable: Boolean,

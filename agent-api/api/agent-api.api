@@ -593,6 +593,27 @@ public final class cc/noharry/agent/TurnError {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class cc/noharry/agent/TurnErrorCodes {
+	public static final field ATTACHMENT_INVALID_TEXT Ljava/lang/String;
+	public static final field ATTACHMENT_MEDIA_UNSUPPORTED Ljava/lang/String;
+	public static final field ATTACHMENT_NOT_FOUND Ljava/lang/String;
+	public static final field CONFIRMATION_CANCELLED Ljava/lang/String;
+	public static final field CONFIRMATION_DENIED Ljava/lang/String;
+	public static final field CONFIRMATION_EXPIRED Ljava/lang/String;
+	public static final field IMAGE_INPUT_UNSUPPORTED Ljava/lang/String;
+	public static final field INSTANCE Lcc/noharry/agent/TurnErrorCodes;
+	public static final field INTERRUPTED Ljava/lang/String;
+	public static final field MISSING_TURN_RESULT Ljava/lang/String;
+	public static final field QUESTION_NOT_FOUND Ljava/lang/String;
+	public static final field RUNTIME_BUSY Ljava/lang/String;
+	public static final field RUNTIME_CLOSED Ljava/lang/String;
+	public static final field SESSION_QUEUE_FULL Ljava/lang/String;
+	public static final field STORAGE_FAILED Ljava/lang/String;
+	public static final field THREAD_BUSY Ljava/lang/String;
+	public static final field THREAD_DELETED Ljava/lang/String;
+	public static final field TURN_FAILED Ljava/lang/String;
+}
+
 public final class cc/noharry/agent/TurnInput {
 	public static final field Companion Lcc/noharry/agent/TurnInput$Companion;
 	public fun <init> (Ljava/util/List;Ljava/lang/String;)V

@@ -5,6 +5,9 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **Named conversation error codes.** `TurnErrorCodes` documents the codes used by thread admission, interruption,
+  storage, questions, attachments and approvals. Provider/tool codes remain available through `RuntimeErrorCode`.
+
 - **Internal assembly and VFS helpers are not host API.** Workspace ports, hook registrations, VFS snapshot/mount
   resolution helpers, and an accidentally generated completion-gate overload are excluded from the public surface.
   Hosts continue to supply `VfsFileSystem` workspaces and register hooks through the builder.

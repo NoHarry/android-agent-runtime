@@ -44,7 +44,7 @@ class ThreadAttachmentInputTest {
         threadBuilder(model).build().use { runtime ->
             val ref = attachmentRef("missing".toByteArray(), "text/plain")
             val result = runtime.startThread().run(TurnInput.of(InputPart.Attachment(ref)))
-            assertEquals("ATTACHMENT_NOT_FOUND", result.error?.code)
+            assertEquals(cc.noharry.agent.TurnErrorCodes.ATTACHMENT_NOT_FOUND, result.error?.code)
             assertTrue(model.requests.isEmpty())
         }
     }
@@ -57,7 +57,7 @@ class ThreadAttachmentInputTest {
         val model = ThreadScriptModel(emptyList())
         threadBuilder(model, root).sessionEventLog(log).build().use { runtime ->
             val result = runtime.startThread(ThreadOptions(threadId = "attached")).run(TurnInput.of(InputPart.Attachment(ref)))
-            assertEquals("ATTACHMENT_MEDIA_UNSUPPORTED", result.error?.code)
+            assertEquals(cc.noharry.agent.TurnErrorCodes.ATTACHMENT_MEDIA_UNSUPPORTED, result.error?.code)
             assertTrue(model.requests.isEmpty())
         }
     }
