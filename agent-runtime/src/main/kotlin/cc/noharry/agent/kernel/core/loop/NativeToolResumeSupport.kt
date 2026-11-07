@@ -15,7 +15,8 @@ internal suspend fun declinedToolResult(
     events: NativePublicEventBuffer,
     recorder: LoopSessionRecorder,
 ): ConfirmedToolUseResult {
-    val result = """{"ok":false,"code":"$code","message":"The user declined this action; the tool was not run."}"""
+    val why = if (code == CONFIRMATION_EXPIRED_CODE) "The user did not confirm this action in time" else "The user declined this action"
+    val result = """{"ok":false,"code":"$code","message":"$why; the tool was not run."}"""
     events.recordStarted(pending.toolCallId, pending.toolUse.toolName, pending.toolUse.argumentsJson)
     events.recordFinished(pending.toolCallId, pending.toolUse.toolName, result)
     recorder.recordToolFinished(pending.context, pending.toToolCallEvent(), pending.toolUse.source.toDynamicToolSource(), result)

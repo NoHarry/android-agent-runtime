@@ -33,7 +33,7 @@ object TurnErrorCodes {
     const val RUNTIME_BUSY = "RUNTIME_BUSY"
     /** The runtime was closed before the queued turn could execute. */
     const val RUNTIME_CLOSED = "RUNTIME_CLOSED"
-    /** A required approval was not received before its deadline. */
+    /** A required approval was not received before its deadline; a tool result carries this code while the turn continues. */
     const val CONFIRMATION_EXPIRED = "CONFIRMATION_EXPIRED"
     /** A tool's approval was denied; a tool result can carry this code while the turn continues. */
     const val CONFIRMATION_DENIED = "CONFIRMATION_DENIED"

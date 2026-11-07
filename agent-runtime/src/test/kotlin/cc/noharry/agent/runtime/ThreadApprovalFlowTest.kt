@@ -76,14 +76,18 @@ class ThreadApprovalFlowTest {
         }
     }
 
-    @Test fun expiryRejectsLateResponses() = runBlocking {
+    @Test fun expiryRejectsLateResponsesAndTheTurnGoesOnWithoutTheCall() = runBlocking {
         val built = approvalBuilder().build() as DefaultThreadRuntime
         DefaultThreadRuntime(built.engine, built.store, confirmationTimeoutMillis = 20).use { runtime ->
             val events = runtime.startThread().runStreamed("set temperature").toList()
             assertTurnEvents(events)
             val pending = events.filterIsInstance<ThreadEvent.ItemStarted>().map { it.item }.filterIsInstance<Approval>().single()
             assertEquals(RespondResult.EXPIRED, pending.approve())
-            assertEquals("CONFIRMATION_EXPIRED", (events.last() as ThreadEvent.TurnFailed).error.code)
+            assertTrue(events.last() is ThreadEvent.TurnCompleted)
+            val call = events.filterIsInstance<ThreadEvent.ItemCompleted>().map { it.item }
+                .filterIsInstance<ThreadItem.ToolCall>().single { it.tool == "mcp__default__set_temperature" }
+            assertEquals(ItemStatus.DECLINED, call.status)
+            assertTrue(call.output.orEmpty().contains("CONFIRMATION_EXPIRED"))
         }
     }
 
@@ -117,7 +121,8 @@ class ThreadApprovalFlowTest {
     }
 
     private suspend fun acceptedInputSurvivesApprovalEnd(action: String) {
-        val built = approvalBuilder().build() as DefaultThreadRuntime
+        val requests = mutableListOf<cc.noharry.agent.spi.model.ModelRequest>()
+        val built = approvalBuilder(requests = requests).build() as DefaultThreadRuntime
         DefaultThreadRuntime(built.engine, built.store, confirmationTimeoutMillis = 100).use { runtime ->
             val thread = runtime.startThread()
             val events = mutableListOf<ThreadEvent>()
@@ -137,6 +142,10 @@ class ThreadApprovalFlowTest {
             assertEquals("approval-end", inputs.single().requestId)
             assertEquals("Remember this input", (inputs.single().input.single() as InputPart.Text).text)
             assertEquals(inputs, thread.items().filterIsInstance<ThreadItem.UserMessage>().filter { it.steer })
+            if (action != "interrupt") {
+                assertTrue("the model reads what was said while the approval waited",
+                    requests.last().messages.any { it.role == "user" && it.content.contains("Remember this input") })
+            }
         }
     }
 }
