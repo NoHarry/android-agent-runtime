@@ -1,5 +1,6 @@
 package cc.noharry.agent.runtime.thread
 
+import cc.noharry.agent.TurnError
 import cc.noharry.agent.ThreadItem
 import cc.noharry.agent.ThreadOptions
 import java.util.Collections
@@ -30,9 +31,17 @@ internal class ActiveThreadTurn(val id: String, val options: ThreadOptions, val 
     var projection: ThreadEventProjection? = null
     @Volatile var approval: ThreadApproval? = null
     @Volatile var items: List<ThreadItem> = emptyList()
-    @Volatile var suppressDelivery = false
+    @Volatile var finalizing = false
+    @Volatile var cancellation: TurnError? = null
+        private set
 
-    fun cancel() { approval?.cancel(); job?.cancel() }
+    fun cancel(error: TurnError = TurnError("INTERRUPTED", "The turn was interrupted.")) {
+        synchronized(this) {
+            if (cancellation == null || error.code == "THREAD_DELETED") cancellation = error
+        }
+        approval?.cancel()
+        job?.cancel()
+    }
 }
 
 /** Preserved across hook dispatch and timeout scopes to reject deletion that would await its own admission ticket. */

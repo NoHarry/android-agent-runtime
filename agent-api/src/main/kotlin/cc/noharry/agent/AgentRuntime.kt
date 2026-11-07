@@ -17,7 +17,7 @@ interface AgentRuntime : AutoCloseable {
     suspend fun listThreads(): List<ThreadInfo>
     /**
      * Deletes saved history and invalidates all existing handles to this conversation, even if its id is reused.
-     * @throws IllegalStateException if called from that thread's active turn, including its completion hook.
+     * @throws IllegalStateException if called from that thread's active execution. Completion hooks run after execution is released.
      */
     suspend fun deleteThread(threadId: String)
     val diagnostics: RuntimeDiagnostics

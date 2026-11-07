@@ -77,7 +77,7 @@ internal class DefaultThreadRuntime(
             slot.generation += 1
             admission.invalidate(threadId)
         }
-        slot.active?.let { turn -> turn.suppressDelivery = true; turn.cancel() }
+        slot.active?.cancel(TurnError("THREAD_DELETED", "The thread was deleted."))
         try {
             drain.await()
             withContext(Dispatchers.IO) {
@@ -88,7 +88,8 @@ internal class DefaultThreadRuntime(
         } finally { synchronized(store.coordination.lock) { slot.deleting = false } }
     }
 
-    internal fun checkOpen() { check(!closed.get()) { "Runtime is closed" } }
+    internal fun isOpen(): Boolean = !closed.get()
+    internal fun checkOpen() { check(isOpen()) { "Runtime is closed" } }
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return

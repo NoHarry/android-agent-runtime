@@ -17,15 +17,15 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ThreadDeletionTest {
-    @Test(timeout = 10_000) fun completionHookCannotWaitForItsOwnThreadDeletion() = runBlocking {
+    @Test(timeout = 10_000) fun completionHookCanDeleteTheReleasedThread() = runBlocking {
         for (throughAnotherRuntime in listOf(false, true)) {
             val root = threadRoot()
-            val rejected = CompletableDeferred<Throwable>()
+            val deleted = CompletableDeferred<Unit>()
             lateinit var deletionTarget: AgentRuntime
             val hook = object : RuntimeHook {
                 override suspend fun onTurnFinished(result: TurnResult, context: HookContext) {
-                    try { deletionTarget.deleteThread(context.sessionId) }
-                    catch (error: IllegalStateException) { rejected.complete(error) }
+                    deletionTarget.deleteThread(context.sessionId)
+                    deleted.complete(Unit)
                 }
             }
             threadBuilder(ThreadScriptModel(emptyList()), root).hook(hook).build().use { runtime ->
@@ -33,10 +33,9 @@ class ThreadDeletionTest {
                     deletionTarget = if (throughAnotherRuntime) other else runtime
                     val thread = runtime.startThread()
                     assertEquals(TurnStatus.COMPLETED, withTimeout(2000) { thread.run("finish") }.status)
-                    assertTrue(withTimeout(1000) { rejected.await() }.message.orEmpty().contains("own active turn"))
-                    assertEquals(1, runtime.listThreads().size)
-                    withTimeout(1000) { deletionTarget.deleteThread(thread.id) }
+                    withTimeout(1000) { deleted.await() }
                     assertTrue(runtime.listThreads().isEmpty())
+                    assertDeleted { thread.run("deleted") }
                 }
             }
         }
@@ -81,7 +80,9 @@ class ThreadDeletionTest {
                 a.awaitQueued(1)
                 withTimeout(5000) { b.deleteThread("delete-active") }
                 assertEquals("THREAD_DELETED", queued.await().error?.code)
-                active.await()
+                val events = active.await()
+                assertTurnEvents(events)
+                assertEquals("THREAD_DELETED", (events.last() as ThreadEvent.TurnFailed).error.code)
                 assertTrue(a.listThreads().isEmpty())
                 assertEquals(1, model.requests.size)
                 assertDeleted { oldA.pendingRequests() }

@@ -62,8 +62,11 @@ internal class ThreadStore(
         threads.filterNot { executionSlot(it.record.id).deleting }.map { it.record.info() }.sortedByDescending { it.updatedAt }
     }
 
+    @Volatile internal var beforeSaveTurnForTest: ((TurnResult) -> Unit)? = null
+
     fun saveTurn(threadId: String, result: TurnResult, generation: Long? = null) = synchronized(lock) {
         if (generation != null && !isCurrent(threadId, generation)) return@synchronized
+        beforeSaveTurnForTest?.invoke(result)
         val current = requireNotNull(read(threadId)) { "Thread does not exist: $threadId" }
         val turns = current.turns.filterNot { it.turnId == result.turnId } + result
         val pending = when {

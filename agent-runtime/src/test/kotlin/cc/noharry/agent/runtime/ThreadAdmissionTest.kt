@@ -61,15 +61,11 @@ class ThreadAdmissionTest {
         val model = GatedThreadModel()
         val cleanupEntered = CompletableDeferred<Unit>()
         val releaseCleanup = CompletableDeferred<Unit>()
-        val hook = object : RuntimeHook {
-            override suspend fun onTurnFinished(result: TurnResult, context: HookContext) {
-                if (result.status == TurnStatus.INTERRUPTED) {
-                    cleanupEntered.complete(Unit)
-                    releaseCleanup.await()
-                }
+        limitedThreadBuilder(model).build().use { runtime ->
+            (runtime as DefaultThreadRuntime).engine.beforeCleanupForTest = {
+                cleanupEntered.complete(Unit)
+                runBlocking { releaseCleanup.await() }
             }
-        }
-        limitedThreadBuilder(model).hook(hook, timeoutMillis = 5000).build().use { runtime ->
             val first = launch { runtime.startThread().run("cancel me") }
             model.entered.receive()
             first.cancel()
