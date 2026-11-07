@@ -41,7 +41,7 @@ apiValidation {
 // module's build directory, emptied before each run, so leftovers stay bounded and `clean` removes them.
 subprojects {
     // Interface bodies compile to JVM default methods, so a Java class implementing ModelClient, ToolProvider or a hook
-    // writes only what it changes; the DefaultImpls classes stay beside them for Kotlin hosts compiled against 0.5.0 and
+    // writes only what it changes; the DefaultImpls classes stay beside them for Kotlin hosts compiled against 0.4.0 and
     // earlier, so this must never become NO_COMPATIBILITY. Language and API level 2.1, with the 2.1 standard library,
     // let hosts on Kotlin 2.0 and later read the artifacts.
     listOf("org.jetbrains.kotlin.jvm", "com.android.library", "com.android.application").forEach { id ->

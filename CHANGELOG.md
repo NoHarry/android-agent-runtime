@@ -3,9 +3,15 @@
 All notable changes are listed here. The project is 0.x: a minor release may break the API, and every break is
 called out; a patch release does not break it.
 
-## Unreleased (0.6.0)
+## Unreleased (0.5.0)
 
-The API is cleaned up for use as a public library. **Breaking** for hosts that use what is removed or hidden below.
+Fixes for Claude and OpenAI hosts, nothing in Chinese or about a car unless the host is, and an API cleaned up for use
+as a public library. **Breaking** in behaviour where noted, for hosts that use what is removed or hidden below, and for
+binaries compiled against the old constructors of `AnthropicModelClient`, `OpenAiModelClient`, `A2aServerConfig`,
+`AndroidUseOptions`, `SessionHistory`, the kernel's loop classes `NativeToolLoop`, `NativeRoundRunner`,
+`NativeToolUseController` and `ToolCallFailureBreaker`, and its prompt pieces `BootstrapPromptProvider.build`,
+`ContextBootstrapPromptResolver`, `SessionHistoryStore` and `RuntimeContextHooks.collectContextSystemSuffix`, and
+`McpHttpClient` (Kotlin source that names its arguments is unchanged; new parameters come with defaults).
 
 - **Test seams and internal diagnostics are not API.** These are marked `@InternalAgentRuntimeApi`: Kotlin callers
   need an opt-in (Java and existing binaries are unaffected), the API dumps leave them out, and they may change in any
@@ -52,15 +58,6 @@ The API is cleaned up for use as a public library. **Breaking** for hosts that u
 - **The Dream scaffold is gone** (`cc.noharry.agent.dream`: `DreamWorker`, `DreamRequest`, `DreamMode`, `DreamResult`,
   `NoOpDreamWorker`, `MemoryIndexRebuilder`). Nothing in the runtime ran it. A host that called `MemoryIndexRebuilder`
   to rebuild `/memory/MEMORY.md` from the memory files writes that index itself.
-
-## 0.5.0 (unreleased)
-
-Fixes for Claude and OpenAI hosts, and nothing in Chinese or about a car unless the host is. **Breaking** in behaviour
-where noted, and for binaries compiled against the old constructors of `AnthropicModelClient`, `OpenAiModelClient`,
-`A2aServerConfig`, `AndroidUseOptions`, `SessionHistory`, the kernel's loop classes `NativeToolLoop`, `NativeRoundRunner`,
-`NativeToolUseController` and `ToolCallFailureBreaker`, and its prompt pieces `BootstrapPromptProvider.build`,
-`ContextBootstrapPromptResolver`, `SessionHistoryStore` and `RuntimeContextHooks.collectContextSystemSuffix`, and
-`McpHttpClient` (Kotlin source that names its arguments is unchanged; new parameters come with defaults).
 
 - **Claude's thinking.** Opus 4.7 and later, Sonnet 5 and later, Haiku 5.5 and newer families refuse a `budget_tokens`
   with a 400, and Opus and Sonnet 4.6 deprecate it. The `low`, `medium`, `high` and `max` variants now send
