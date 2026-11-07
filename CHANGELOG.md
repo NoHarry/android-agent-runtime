@@ -17,6 +17,11 @@ called out; a patch release does not break it.
   only an explicit `answering` question id does. Inputs can queue while a tool awaits approval.
   Custom `AgentThread` implementations implement the options overload; the two convenience overloads delegate to it.
 
+- **Turn ids are local to a thread.** Every execution gets an independent id, durably mapped to its public turn id
+  and attempt number. An unsaved attempt after process loss is interrupted before retrying with a fresh execution.
+  Diagnostic result/state/trace queries now require `(threadId, turnId)` and select its latest attempt; raw diagnostic
+  `runId` identifies an execution, while `sessionId` and `requestId` retain the public thread and turn ids.
+
 - **Named conversation error codes.** `TurnErrorCodes` documents the codes used by thread admission, interruption,
   storage, questions, attachments and approvals. Provider/tool codes remain available through `RuntimeErrorCode`.
 

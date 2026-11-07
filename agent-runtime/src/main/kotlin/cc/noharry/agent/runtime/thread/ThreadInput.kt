@@ -10,7 +10,7 @@ internal fun TurnInput.snapshot(): TurnInput = copy(parts = parts.map {
     if (it is InputPart.Image) it.copy(bytes = it.bytes.copyOf()) else it
 })
 
-internal fun threadRequest(record: ThreadRecord, input: TurnInput, options: TurnOptions, turnId: String): AgentRequest {
+internal fun threadRequest(record: ThreadRecord, input: TurnInput, options: TurnOptions, turnId: String, executionId: String): AgentRequest {
     val text = input.parts.mapNotNull {
         when (it) {
             is InputPart.Text -> it.text
@@ -19,7 +19,7 @@ internal fun threadRequest(record: ThreadRecord, input: TurnInput, options: Turn
         }
     }.joinToString("\n")
     return AgentRequest(
-        requestId = turnId, sessionId = record.id, input = frameAnswer(text, input.answering, record.pendingQuestion),
+        requestId = turnId, executionId = executionId, sessionId = record.id, input = frameAnswer(text, input.answering, record.pendingQuestion),
         scene = record.options.scene, modelRef = options.model ?: record.options.model,
         workspaceId = record.options.workspace, currentStateKeys = options.currentStateKeys,
         sessionRunConflictPolicy = options.onConflict, instructions = record.options.instructions,

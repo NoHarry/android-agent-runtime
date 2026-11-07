@@ -105,7 +105,8 @@ class ThreadQuestionBindingTest {
             val events = withTimeout(5000) { collected.await() }
             assertTurnEvents(events)
             val reply = model.requests.last().messages.single { it.role == "user" && it.content.contains("Suzhou") }
-            assertTrue(reply.content.contains("Answer to question $turnId/questions/0 (Destination?)"))
+            val questionId = first.id.removePrefix("$turnId:question:")
+            assertTrue(reply.content.contains("Answer to question $questionId (Destination?)"))
             val completed = events.filterIsInstance<ThreadEvent.ItemCompleted>().map { it.item }.filterIsInstance<Question>()
             assertEquals(ItemStatus.COMPLETED, completed.single { it.id == first.id }.status)
         }
