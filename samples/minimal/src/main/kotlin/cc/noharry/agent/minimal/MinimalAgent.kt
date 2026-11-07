@@ -1,6 +1,7 @@
 package cc.noharry.agent.minimal
 
 import cc.noharry.agent.AgentRuntime
+import cc.noharry.agent.builder
 import cc.noharry.agent.spi.model.ModelClient
 import cc.noharry.agent.runtime.AgentRuntimeBuilder
 

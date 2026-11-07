@@ -33,7 +33,7 @@ class ExperimentalAgentRuntimeApiInventoryTest {
 
     @Test
     fun diagnosticsRemainExperimental() {
-        val diagnostics = File("src/main/kotlin/cc/noharry/agent/RuntimeDiagnostics.kt").readText()
+        val diagnostics = File("../agent-api/src/main/kotlin/cc/noharry/agent/RuntimeDiagnostics.kt").readText()
         assertTrue(diagnostics.contains("@ExperimentalAgentRuntimeApi"))
         assertTrue(apiSource("RuntimeContextSpi.kt").readText().contains("@ExperimentalAgentRuntimeApi"))
     }

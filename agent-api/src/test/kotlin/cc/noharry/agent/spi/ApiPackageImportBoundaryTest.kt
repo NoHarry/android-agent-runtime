@@ -9,7 +9,7 @@ import java.io.File
 class ApiPackageImportBoundaryTest {
     @Test
     fun apiProductionSourcesHaveZeroForbiddenImports() {
-        val root = File("src/main/kotlin/cc/noharry/agent/spi")
+        val root = File("src/main/kotlin/cc/noharry/agent")
         assertTrue("api production root must exist: ${root.absolutePath}", root.isDirectory)
 
         val forbidden = listOf(
@@ -33,7 +33,7 @@ class ApiPackageImportBoundaryTest {
     }
 
     @Test
-    fun kernelApiModuleHasZeroProjectDependencies() {
+    fun contractsModuleHasZeroProjectDependencies() {
         val buildFile = File("build.gradle.kts")
         assertTrue(buildFile.isFile)
         val text = buildFile.readText()
