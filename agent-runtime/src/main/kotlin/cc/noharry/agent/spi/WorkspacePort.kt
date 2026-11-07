@@ -22,6 +22,7 @@ internal data class WorkspaceCallContext(
     val scene: String? = null,
     val modelRef: ModelRef? = null,
     val approvalPolicy: cc.noharry.agent.ApprovalPolicy = cc.noharry.agent.ApprovalPolicy.ASK,
+    val approvalState: ApprovalPolicyState? = null,
 )
 
 /** Workspace tool execution result. [resultJson] is the model-visible payload. */

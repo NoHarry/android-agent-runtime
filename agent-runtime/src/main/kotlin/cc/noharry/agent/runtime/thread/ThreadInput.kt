@@ -10,7 +10,7 @@ internal fun TurnInput.snapshot(): TurnInput = copy(parts = parts.map {
     if (it is InputPart.Image) it.copy(bytes = it.bytes.copyOf()) else it
 })
 
-internal fun threadRequest(record: ThreadRecord, input: TurnInput, options: TurnOptions, turnId: String, executionId: String): AgentRequest {
+internal fun threadRequest(record: ThreadRecord, input: TurnInput, options: TurnOptions, turnId: String, executionId: String, approvalState: cc.noharry.agent.spi.ApprovalPolicyState): AgentRequest {
     val text = input.parts.mapNotNull {
         when (it) {
             is InputPart.Text -> it.text
@@ -23,7 +23,7 @@ internal fun threadRequest(record: ThreadRecord, input: TurnInput, options: Turn
         scene = record.options.scene, modelRef = options.model ?: record.options.model,
         workspaceId = record.options.workspace, currentStateKeys = options.currentStateKeys,
         sessionRunConflictPolicy = options.onConflict, instructions = record.options.instructions,
-        approvalPolicy = options.approvalPolicy ?: record.options.approvalPolicy ?: ApprovalPolicy.ASK,
+        approvalPolicy = approvalState.policy, approvalState = approvalState,
         inputImages = input.parts.filterIsInstance<InputPart.Image>().mapIndexed { index, image ->
             ModelImage(image.bytes, image.mimeType, "thread:${record.id}/$turnId/image/$index")
         },

@@ -76,7 +76,7 @@ internal class VirtualWorkspace(
             "grep" -> grep(argumentsJson, context)
             "search_tools" -> toolSearch.search(argumentsJson, context)
             in SUBAGENT_TOOL_NAMES -> subagentTools?.let {
-                WorkspaceExecutionResult(it(toolName, argumentsJson, SubagentCall(context.sessionId, context.runId, context.modelRef, context.approvalPolicy)))
+                WorkspaceExecutionResult(it(toolName, argumentsJson, SubagentCall(context.sessionId, context.runId, context.modelRef, context.approvalState?.policy ?: context.approvalPolicy)))
             } ?: WorkspaceExecutionResult(errorResult(RuntimeErrorCode.UNSUPPORTED_NATIVE_TOOL.wireCode, "Subagents are not configured."))
             "write_file",
             "edit_file",

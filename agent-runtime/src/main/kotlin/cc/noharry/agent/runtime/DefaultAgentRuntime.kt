@@ -332,7 +332,11 @@ internal class DefaultAgentRuntime(
         approve: suspend (PendingConfirmation) -> cc.noharry.agent.ApprovalState,
     ): Flow<AgentEvent> = flow {
         check(turnApprovals.putIfAbsent(request.executionId, approve) == null) { "Turn is already running" }
-        try { run(request).collect { emit(it) } } finally { turnApprovals.remove(request.executionId, approve) }
+        networkToolBackend.useThreadApprovals(request.executionId)
+        try { run(request).collect { emit(it) } } finally {
+            turnApprovals.remove(request.executionId, approve)
+            networkToolBackend.clearRun(request.executionId)
+        }
     }
 
     override suspend fun resumeConfirmation(

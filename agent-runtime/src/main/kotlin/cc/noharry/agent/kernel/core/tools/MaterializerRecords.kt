@@ -9,6 +9,7 @@ internal data class MaterializerContext(
     val modelRef: ModelRef? = null,
     val timeoutMillis: Long = DEFAULT_MATERIALIZER_TIMEOUT_MILLIS,
     val approvalPolicy: cc.noharry.agent.ApprovalPolicy = cc.noharry.agent.ApprovalPolicy.ASK,
+    val approvalState: cc.noharry.agent.spi.ApprovalPolicyState? = null,
 )
 
 internal sealed interface MaterializerReadResult {

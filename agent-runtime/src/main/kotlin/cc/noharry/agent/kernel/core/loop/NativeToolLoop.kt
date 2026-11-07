@@ -147,6 +147,7 @@ internal class NativeToolLoop(
             scene = request.scene,
             modelRef = request.modelRef,
             approvalPolicy = request.approvalPolicy,
+            approvalState = request.approvalState,
         )
         sessionRecorder.appendMessage(toolContext, messages.first())
         runContextMessage(runContext, runContextAsSystem)?.let { messages += it; sessionRecorder.appendMessage(toolContext, it) }

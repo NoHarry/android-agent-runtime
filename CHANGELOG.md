@@ -84,6 +84,8 @@ called out; a patch release does not break it.
 
 - **Thread option patches preserve saved approval policy.** Null values on resume retain saved defaults;
   `ThreadOptions.reset` clears selected model, workspace, scene or instruction overrides. New threads still use ASK.
+  A policy given to `resumeThread` while a turn runs applies to that turn at once: an approval it is waiting for is
+  decided by the new policy (`APPROVE_ALL` approves, `DENY_ALL` denies, `REMEMBER` approves a remembered area).
 - **Independent budgets survive settings changes.** `LoopSettings.limits` defaults to null, so a settings call does
   not reset limits configured through `limits(...)`. An explicit settings budget still replaces them.
 

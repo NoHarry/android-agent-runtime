@@ -33,6 +33,7 @@ internal class ActiveThreadTurn(val id: String, val options: ThreadOptions, val 
     private val steeringMutex = Mutex()
     private val receivedInputs = linkedMapOf<String, PostUserInputRequest>()
     val executionId: String = java.util.UUID.randomUUID().toString()
+    val approvalState = cc.noharry.agent.spi.ApprovalPolicyState(options.approvalPolicy ?: cc.noharry.agent.ApprovalPolicy.ASK)
     var job: Job? = null
     var projection: ThreadEventProjection? = null
     @Volatile var approval: ThreadApproval? = null
