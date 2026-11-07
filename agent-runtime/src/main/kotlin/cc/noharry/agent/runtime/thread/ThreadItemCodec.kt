@@ -17,6 +17,7 @@ import kotlinx.serialization.json.put
 
 internal class ThreadItemCodec(
     private val redactor: TraceRedactor,
+    private val blobs: ThreadBlobStore? = null,
 ) {
     fun encode(item: ThreadItem): JsonObject = buildJsonObject {
         put("id", item.id)
@@ -109,7 +110,9 @@ internal class ThreadItemCodec(
         when (part) {
             is InputPart.Text -> { put("kind", "text"); put("text", part.text) }
             is InputPart.Image -> {
-                put("kind", "image"); put("bytes", Base64.getEncoder().encodeToString(part.bytes)); put("mimeType", part.mimeType)
+                put("kind", "image"); put("mimeType", part.mimeType)
+                if (blobs == null) put("bytes", Base64.getEncoder().encodeToString(part.bytes))
+                else { put("blobSha256", blobs.put(part.bytes)); put("byteSize", part.bytes.size) }
             }
             is InputPart.Attachment -> {
                 put("kind", "attachment"); put("sha256", part.ref.sha256); put("mediaType", part.ref.mediaType)
@@ -120,7 +123,7 @@ internal class ThreadItemCodec(
 
     private fun input(value: JsonObject): InputPart = when (value.text("kind")) {
         "text" -> InputPart.Text(value.text("text"))
-        "image" -> InputPart.Image(Base64.getDecoder().decode(value.text("bytes")), value.text("mimeType"))
+        "image" -> InputPart.Image(imageBytes(value, blobs), value.text("mimeType"))
         "attachment" -> InputPart.Attachment(SessionAttachmentRef(value.text("sha256"), value.text("mediaType"), value.long("byteSize"), value.text("logicalName")))
         else -> error("Unknown thread input kind")
     }

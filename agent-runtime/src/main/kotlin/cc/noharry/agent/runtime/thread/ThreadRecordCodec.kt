@@ -23,35 +23,38 @@ internal data class ThreadRecord(
 
 internal data class StoredThread(
     val record: ThreadRecord,
-    val turns: List<TurnResult> = emptyList(),
+    val turnIds: List<String> = emptyList(),
     val rememberedDomains: Set<String> = emptySet(),
 )
 
 internal class ThreadRecordCodec(
     private val redactor: TraceRedactor,
+    blobs: ThreadBlobStore? = null,
 ) {
-    private val items = ThreadItemCodec(redactor)
+    private val items = ThreadItemCodec(redactor, blobs)
 
     fun encode(thread: StoredThread): JsonObject = buildJsonObject {
-        put("version", 1)
+        put("version", 2)
         put("id", thread.record.id)
         put("createdAt", thread.record.createdAt)
         put("updatedAt", thread.record.updatedAt)
         put("status", thread.record.status.name)
         put("options", options(thread.record.options))
         thread.record.pendingQuestion?.let { put("pendingQuestion", items.encode(it)) }
-        put("turns", JsonArray(thread.turns.map(::turn)))
+        put("turnIds", JsonArray(thread.turnIds.map(::JsonPrimitive)))
         put("rememberedDomains", JsonArray(thread.rememberedDomains.map(::JsonPrimitive)))
     }
 
     fun decode(value: JsonObject): StoredThread {
-        require(value.number("version") == 1) { "Unsupported thread storage version" }
+        require(value.number("version") in 1..2) { "Unsupported thread storage version" }
         val record = ThreadRecord(
             value.text("id"), value.obj("options")?.let(::options) ?: ThreadOptions(),
             value.long("createdAt"), value.long("updatedAt"), value.enum("status", ThreadStatus.IDLE),
             value.obj("pendingQuestion")?.let { items.decode(it) as Question },
         )
-        return StoredThread(record, value.array("turns").map { turn(it as JsonObject) },
+        val turns = if (value.number("version") == 1) value.array("turns").map { (it as JsonObject).text("turnId") }
+            else value.array("turnIds").map { (it as JsonPrimitive).content }
+        return StoredThread(record, turns,
             value.array("rememberedDomains").mapTo(linkedSetOf()) { (it as JsonPrimitive).content })
     }
 
@@ -74,7 +77,7 @@ internal class ThreadRecordCodec(
         instructions = value.optionalText("instructions"), approvalPolicy = value.enum("approvalPolicy", ApprovalPolicy.ASK),
     )
 
-    private fun turn(turn: TurnResult): JsonObject = buildJsonObject {
+    fun turn(turn: TurnResult): JsonObject = buildJsonObject {
         put("turnId", turn.turnId); put("status", turn.status.name)
         put("finalResponse", turn.finalResponse)
         put("items", JsonArray(turn.items.map(items::encode)))
@@ -89,7 +92,7 @@ internal class ThreadRecordCodec(
         }) }
     }
 
-    private fun turn(value: JsonObject): TurnResult = TurnResult(
+    fun turn(value: JsonObject): TurnResult = TurnResult(
         value.text("turnId"), value.enum("status", TurnStatus.FAILED), value.text("finalResponse"),
         value.array("items").map { items.decode(it as JsonObject) },
         value.obj("usage")?.let { Usage(it.number("inputTokens"), it.number("outputTokens"), it.number("reasoningTokens"), it.number("cacheReadTokens"), it.number("cacheWriteTokens")) },

@@ -5,6 +5,10 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **Conversation snapshots are stored once per turn.** A small metadata file serves thread listing; each result has
+  its own file, and visible snapshots and provider history share content-addressed image blobs. Disk-backed threads
+  release complete result objects after saving. Earlier development snapshots migrate from the inline layout on load.
+
 - **Thread deletion drains background children.** Their jobs are cancelled and joined before storage is removed;
   queued reports are discarded so a late child cannot report into a recreated conversation with the same id.
 
