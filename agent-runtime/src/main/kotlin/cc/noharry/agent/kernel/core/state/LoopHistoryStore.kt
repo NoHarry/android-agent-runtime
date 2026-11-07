@@ -37,6 +37,8 @@ internal interface LoopHistoryStore {
     fun read(runId: String): LoopHistory?
 
     fun clearCached(runId: String)
+
+    fun delete(runId: String)
 }
 
 /**
@@ -62,6 +64,8 @@ internal class InMemoryLoopHistoryStore(private val budgetBytes: Int = MAX_LOOP_
     override fun clearCached(runId: String) {
         histories.remove(runId)
     }
+
+    override fun delete(runId: String) = clearCached(runId)
 }
 
 internal class FileBackedLoopHistoryStore(private val root: File, budgetBytes: Int = MAX_LOOP_HISTORY_BYTES) : LoopHistoryStore {
@@ -83,6 +87,11 @@ internal class FileBackedLoopHistoryStore(private val root: File, budgetBytes: I
 
     override fun clearCached(runId: String) {
         memory.clearCached(runId)
+    }
+
+    override fun delete(runId: String) {
+        historyFile(runId).let { check(!it.exists() || it.delete()) { "Cannot delete loop history" } }
+        memory.delete(runId)
     }
 
     private fun historyFile(runId: String): File =

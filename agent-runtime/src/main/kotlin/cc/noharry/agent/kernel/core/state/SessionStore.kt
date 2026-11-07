@@ -4,6 +4,9 @@ import cc.noharry.agent.spi.InternalAgentRuntimeApi
 /** @suppress */
 @InternalAgentRuntimeApi
 interface SessionStore {
+    /** Deletes session-owned rows only. False means this store does not support complete deletion. */
+    fun deleteThread(threadId: String): Boolean = false
+
     fun upsertSession(session: StoredSession)
 
     fun upsertRun(run: StoredRun)

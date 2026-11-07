@@ -68,6 +68,30 @@ internal class FileBackedReliabilityStorage(
         }
     }
 
+    override fun deleteSession(sessionId: String, knownRunIds: Set<String>): Set<String> = storageLock.withLock {
+        require(sessionId.isNotBlank()) { "sessionId must not be blank" }
+        val records = sessionRunsForDeletion(sessionId, knownRunIds)
+        val failures = mutableListOf<ReliabilityDeleteFailure>()
+        records.forEach { record -> check(deleteRunRecord(record, failures)) { "Cannot delete session run artifacts: $failures" } }
+        // Known ids may have lost their run directory while shared evidence still exists.
+        val removed = records.mapTo(linkedSetOf()) { it.runId } + knownRunIds
+        removed.forEach { check(deleteSharedRecordsForRun(it).isEmpty()) { "Cannot delete shared session evidence" } }
+        removed
+    }
+
+    private fun sessionRunsForDeletion(sessionId: String, knownRunIds: Set<String>): List<StoredRunRecord> {
+        val directory = runsDir()
+        if (!directory.exists()) return emptyList()
+        val children = checkNotNull(directoryLister.listFiles(directory)) { "Cannot list session run artifacts" }
+        val known = knownRunIds.associateBy(::encodeFileName)
+        return children.filter(File::isDirectory).mapNotNull { child ->
+            known[child.name]?.let { return@mapNotNull storedRunRecord(child).copy(runId = it) }
+            val snapshot = File(child, RUN_FILE).decodeOrNull(ReliabilityJsonCodecs::decodeSnapshot)
+            checkNotNull(snapshot) { "Cannot determine ownership of run artifacts: ${child.name}" }
+            if (snapshot.sessionId == sessionId) storedRunRecord(child) else null
+        }
+    }
+
     override fun readSnapshot(runId: String): RuntimeRunSnapshot? = storageLock.withReadLock {
         runFile(runId, RUN_FILE).decodeOrNull(ReliabilityJsonCodecs::decodeSnapshot)
     }

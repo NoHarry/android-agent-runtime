@@ -10,6 +10,9 @@ import cc.noharry.agent.spi.reliability.RuntimeTraceEvent
 import cc.noharry.agent.spi.reliability.RuntimeWorkpad
 
 internal interface ReliabilityStorage {
+    /** Deletes all persisted artifacts for the session, including supplied ids whose run metadata may be damaged. */
+    fun deleteSession(sessionId: String, knownRunIds: Set<String> = emptySet()): Set<String>
+
     fun saveRun(snapshot: RuntimeRunSnapshot, envelope: RuntimeRunEnvelope)
 
     fun readSnapshot(runId: String): RuntimeRunSnapshot?
