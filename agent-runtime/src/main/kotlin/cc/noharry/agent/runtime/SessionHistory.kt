@@ -11,13 +11,14 @@ import cc.noharry.agent.kernel.core.context.SessionHistoryStore
  * with the session's earlier runs (their inputs, tool calls, results and answers) and the run is appended when it ends,
  * so the conversation grows like one long chat and the provider's prompt cache covers everything before the new input.
  * A host that does this no longer needs to restate the conversation in [AgentRuntimeBuilder.runContext].
- * Memory only.
+ * The conversation facade binds this to its model-history storage when `storage(...)` is configured.
  *
- * Length is kept down by conversation compaction (with [AgentRuntimeBuilder.contextWindowTokens]), which summarizes the
+ * Length is kept down by conversation compaction (with [LoopLimits.contextWindowTokens]), which summarizes the
  * oldest runs instead of dropping them.
  *
  * @param maxBytesPerSession a memory guard, not the working limit: past it the oldest runs are dropped, down to half of
- * it, and the model no longer sees them. Keep it well above what the context window holds before compaction.
+ * it, and the model no longer sees them. Images, reasoning, thinking signatures and other replayable fields count
+ * toward this guard. Keep it well above what the context window holds before compaction.
  */
 class SessionHistory @JvmOverloads constructor(
     maxBytesPerSession: Int = DEFAULT_MAX_BYTES_PER_SESSION,
@@ -36,7 +37,7 @@ class SessionHistory @JvmOverloads constructor(
 
     internal val store = SessionHistoryStore(maxBytesPerSession, maxSessions, maxRunsInFlight)
 
-    /** The messages [sessionId]'s next run will start with; empty for a new session or after a restart. */
+    /** The messages [sessionId]'s next run will start with; empty when no history is available in memory or storage. */
     fun messages(sessionId: String): List<ModelMessage> = store.messages(sessionId)
 
     /** Forgets [sessionId]'s runs, e.g. when the host deletes or resets that conversation. */

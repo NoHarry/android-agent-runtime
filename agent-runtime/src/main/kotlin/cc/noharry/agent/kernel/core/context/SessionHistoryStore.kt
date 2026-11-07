@@ -1,3 +1,5 @@
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
+
 package cc.noharry.agent.kernel.core.context
 import cc.noharry.agent.spi.model.ModelMessage
 
@@ -151,10 +153,11 @@ internal class SessionHistoryStore @JvmOverloads constructor(
     }
 
     private fun trimmed(runs: List<List<ModelMessage>>): List<List<ModelMessage>> {
-        if (runs.sumOf { it.historyBytes() } <= maxBytes) return runs
-        var kept = runs
-        while (kept.isNotEmpty() && kept.sumOf { it.historyBytes() } > maxBytes / 2) kept = kept.drop(1)
-        return kept
+        var bytes = runs.sumOf { it.historyBytes() }
+        if (bytes <= maxBytes) return runs
+        var removed = 0
+        while (removed < runs.size && bytes > maxBytes / 2) { bytes -= runs[removed].historyBytes(); removed += 1 }
+        return runs.drop(removed)
     }
 
     private class SessionRuns {
@@ -172,10 +175,15 @@ internal class SessionHistoryStore @JvmOverloads constructor(
 internal fun SessionHistoryStore?.prefixed(runId: String, own: List<ModelMessage>): List<ModelMessage> =
     this?.prefixed(runId, own) ?: own
 
-private fun List<ModelMessage>.historyBytes(): Int =
-    sumOf { it.content.utf8Size() + it.toolArgumentsJson.orEmpty().utf8Size() }
+private fun List<ModelMessage>.historyBytes(): Long = sumOf { message ->
+    listOfNotNull(message.role, message.content, message.toolCallId, message.toolName, message.toolArgumentsJson,
+        message.thinkingSignature, message.reasoningContent, message.assistantText).sumOf { it.utf8Size() } +
+        message.toolAdditions.sumOf { it.utf8Size() } + message.images.sumOf { image ->
+            image.bytes.size.toLong() + image.mediaType.utf8Size() + image.sourcePath.utf8Size() + image.detail.utf8Size()
+        }
+}
 
-private fun String.utf8Size(): Int = toByteArray(Charsets.UTF_8).size
+private fun String.utf8Size(): Long = toByteArray(Charsets.UTF_8).size.toLong()
 
 /** Each unanswered call gets its result right after it: providers such as DeepSeek reject a result that comes later. */
 private fun List<ModelMessage>.withClosedToolCalls(): List<ModelMessage> {

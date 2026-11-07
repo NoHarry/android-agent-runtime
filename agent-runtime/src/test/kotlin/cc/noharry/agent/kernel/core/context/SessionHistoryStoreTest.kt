@@ -1,5 +1,8 @@
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
+
 package cc.noharry.agent.kernel.core.context
 import cc.noharry.agent.spi.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelImage
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -60,13 +63,30 @@ class SessionHistoryStoreTest {
 
     @Test
     fun pastTheCapWholeOldestRunsGoDownToHalf() {
-        val store = SessionHistoryStore(maxBytes = 40)
+        val store = SessionHistoryStore(maxBytes = 56)
         listOf("a", "b", "c", "d", "e").forEach { name ->
             store.start(name, "session")
             store.record(name, listOf(user(name.repeat(10))))
         }
-        // 5 runs of 10 bytes exceed 40; the oldest go until at most 20 bytes are left, newest runs whole.
+        // Each run holds 10 content bytes and a 4-byte role. Five exceed 56, so two whole runs remain below 28.
         assertEquals(listOf("d".repeat(10), "e".repeat(10)), store.messages("session").map { it.content })
+    }
+
+    @Test
+    fun imagesReasoningSignaturesAndReplayMetadataCountTowardTheByteGuard() {
+        val messages = listOf(
+            ModelMessage("user", "image", images = listOf(ModelImage(ByteArray(100), "image/png", "image"))),
+            ModelMessage("assistant", "", reasoningContent = "r".repeat(100)),
+            ModelMessage("assistant", "", thinkingSignature = "s".repeat(100)),
+            ModelMessage("assistant", "", assistantText = "a".repeat(100)),
+            ModelMessage("system", "", toolAdditions = listOf("tool".repeat(30))),
+        )
+        messages.forEach { message ->
+            val store = SessionHistoryStore(maxBytes = 80)
+            store.start("run", "session")
+            store.record("run", listOf(message))
+            assertTrue(store.messages("session").isEmpty())
+        }
     }
 
     @Test
