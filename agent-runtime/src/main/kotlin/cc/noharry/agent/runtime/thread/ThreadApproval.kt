@@ -4,12 +4,9 @@ package cc.noharry.agent.runtime.thread
 
 import cc.noharry.agent.*
 import cc.noharry.agent.spi.PendingConfirmation
-import java.net.URI
+import cc.noharry.agent.runtime.webFetchApprovalHost
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 
 /** Decision ownership is atomic; expiry and cancellation compete with responses on the same lock. */
 internal class ThreadApproval(
@@ -21,7 +18,7 @@ internal class ThreadApproval(
     override val turnId = pending.runId
     override val tool = pending.toolName.orEmpty()
     override val arguments = pending.argumentsJson ?: "{}"
-    override val domain = approvalDomain(tool, arguments)
+    override val domain = approvalDomain(tool, arguments) ?: "web_fetch:invalid"
     override val reason = pending.prompt
     private val decision = CompletableDeferred<ApprovalState>()
     @Volatile override var state: ApprovalState = ApprovalState.PENDING
@@ -68,12 +65,12 @@ internal class ThreadApproval(
     }
 }
 
-internal fun approvalDomain(tool: String, arguments: String): String {
-    if (tool.startsWith("mcp__")) return tool.removePrefix("mcp__").substringBefore("__")
-    if (tool == "web_fetch") {
-        val json = runCatching { Json.parseToJsonElement(arguments) as? JsonObject }.getOrNull()
-        val url = (json?.get("url") as? JsonPrimitive)?.content
-        runCatching { url?.let { URI(it).host } }.getOrNull()?.let { return "web_fetch:$it" }
+/** Invalid network targets cannot create a remembered approval for a broader area. */
+internal fun approvalDomain(tool: String, arguments: String): String? {
+    if (tool.startsWith("mcp__")) {
+        val qualified = tool.removePrefix("mcp__")
+        return "mcp:${qualified.substringBefore("__")}:${qualified.substringAfter("__", "")}"
     }
-    return tool
+    if (tool == "web_fetch") return webFetchApprovalHost(arguments)?.let { "web_fetch:$it" }
+    return "tool:$tool"
 }

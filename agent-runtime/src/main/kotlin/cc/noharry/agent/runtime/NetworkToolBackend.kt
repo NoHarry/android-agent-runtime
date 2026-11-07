@@ -224,34 +224,39 @@ internal class NetworkToolBackend(
         }.toString()
     }
 
-    private fun parseFetchTarget(argumentsJson: String): FetchTarget {
-        val arguments = parseObject(argumentsJson)
-            ?: return FetchTarget(errorResult = errorResult(RuntimeErrorCode.NETWORK_URL_INVALID.wireCode, "web_fetch arguments must be a JSON object."))
-        val url = arguments.stringField("url")?.trim().orEmpty()
-        val maxBytes = arguments.intField("max_bytes") ?: DEFAULT_WEB_FETCH_MAX_BYTES
-        if (maxBytes <= 0 || maxBytes > MAX_WEB_FETCH_BYTES) {
-            return FetchTarget(errorResult = errorResult(RuntimeErrorCode.READ_BUDGET_EXCEEDED.wireCode, "max_bytes out of range."))
-        }
-        val normalizedUrl = normalizedUrl(url)
-            ?: return FetchTarget(errorResult = errorResult(RuntimeErrorCode.NETWORK_URL_INVALID.wireCode, "URL must be absolute http or https."))
-        val host = normalizedUrl.host
-        if (host.isDeniedLiteralHost()) {
-            return FetchTarget(host = host, errorResult = privateAddressDeniedResult())
-        }
-        return FetchTarget(url = normalizedUrl, host = host, maxBytes = maxBytes)
-    }
-
-    private fun normalizedUrl(url: String): HttpUrl? {
-        val parsed = url.toHttpUrlOrNull() ?: return null
-        if (parsed.username.isNotEmpty() || parsed.password.isNotEmpty()) return null
-        val canonicalHost = parsed.host.trimEnd('.')
-        if (canonicalHost.isBlank()) return null
-        return parsed.newBuilder().host(canonicalHost).fragment(null).build()
-    }
-
     private fun normalizedRedirect(base: HttpUrl, location: String): HttpUrl? =
         base.resolve(location)?.let { normalizedUrl(it.toString()) }
 }
+
+/** The same normalized, validated host used by web_fetch authorization and execution. */
+internal fun webFetchApprovalHost(argumentsJson: String): String? =
+    runCatching { parseFetchTarget(argumentsJson).takeIf { it.errorResult == null }?.host }.getOrNull()
+
+private fun parseFetchTarget(argumentsJson: String): FetchTarget {
+    val arguments = parseObject(argumentsJson)
+        ?: return FetchTarget(errorResult = errorResult(RuntimeErrorCode.NETWORK_URL_INVALID.wireCode, "web_fetch arguments must be a JSON object."))
+    val url = arguments.stringField("url")?.trim().orEmpty()
+    val maxBytes = arguments.intField("max_bytes") ?: DEFAULT_WEB_FETCH_MAX_BYTES
+    if (maxBytes <= 0 || maxBytes > MAX_WEB_FETCH_BYTES) {
+        return FetchTarget(errorResult = errorResult(RuntimeErrorCode.READ_BUDGET_EXCEEDED.wireCode, "max_bytes out of range."))
+    }
+    val normalizedUrl = normalizedUrl(url)
+        ?: return FetchTarget(errorResult = errorResult(RuntimeErrorCode.NETWORK_URL_INVALID.wireCode, "URL must be absolute http or https."))
+    val host = normalizedUrl.host
+    if (host.isDeniedLiteralHost()) {
+        return FetchTarget(host = host, errorResult = privateAddressDeniedResult())
+    }
+    return FetchTarget(url = normalizedUrl, host = host, maxBytes = maxBytes)
+}
+
+private fun normalizedUrl(url: String): HttpUrl? {
+    val parsed = url.toHttpUrlOrNull() ?: return null
+    if (parsed.username.isNotEmpty() || parsed.password.isNotEmpty()) return null
+    val canonicalHost = parsed.host.trimEnd('.')
+    if (canonicalHost.isBlank()) return null
+    return parsed.newBuilder().host(canonicalHost).fragment(null).build()
+}
+
 
 /** Controls whether [NetworkToolBackend] gates web_fetch per host. */
 @ExperimentalAgentRuntimeApi

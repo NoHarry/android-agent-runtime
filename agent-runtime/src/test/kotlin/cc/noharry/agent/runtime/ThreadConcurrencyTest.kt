@@ -62,7 +62,8 @@ class ThreadConcurrencyTest {
                 assertTurnEvents(events)
                 assertFalse(events.any { it is ThreadEvent.ItemStarted && it.item is Approval })
                 val tools = events.filterIsInstance<ThreadEvent.ItemCompleted>().map { it.item }.filterIsInstance<ThreadItem.ToolCall>()
-                assertTrue(tools.any { it.approvedBy == policy })
+                if (policy == ApprovalPolicy.APPROVE_ALL) assertTrue(tools.any { it.approvedBy == ApprovalSource.AUTOMATIC })
+                else assertTrue(tools.all { it.approvedBy == null })
                 assertTrue(events.last() is ThreadEvent.TurnCompleted)
             }
         }

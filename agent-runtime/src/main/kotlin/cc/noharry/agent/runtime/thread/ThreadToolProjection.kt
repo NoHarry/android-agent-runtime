@@ -18,13 +18,13 @@ internal class ThreadToolProjection(
     private val emit: suspend (ThreadEvent) -> Unit,
 ) {
     private val calls = linkedMapOf<String, ThreadItem.ToolCall>()
-    private val decisions = mutableMapOf<String, ApprovalPolicy>()
+    private val decisions = mutableMapOf<String, ApprovalSource>()
 
-    suspend fun decision(callId: String, policy: ApprovalPolicy) {
+    suspend fun decision(callId: String, source: ApprovalSource) {
         val current = calls[callId]
-        if (current == null) decisions[callId] = policy
+        if (current == null) decisions[callId] = source
         else {
-            val decided = current.copy(approvedBy = policy)
+            val decided = current.copy(approvedBy = source)
             calls[callId] = decided
             update(decided)
         }

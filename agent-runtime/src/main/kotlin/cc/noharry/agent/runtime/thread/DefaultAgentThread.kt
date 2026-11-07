@@ -211,11 +211,12 @@ internal class DefaultAgentThread(
         val automatic = when (policy) {
             ApprovalPolicy.APPROVE_ALL -> ApprovalState.APPROVED
             ApprovalPolicy.DENY_ALL -> ApprovalState.DENIED
-            ApprovalPolicy.REMEMBER -> if (domain in runtime.store.rememberedDomains(id)) ApprovalState.APPROVED else null
+            ApprovalPolicy.REMEMBER -> if (domain != null && domain in runtime.store.rememberedDomains(id)) ApprovalState.APPROVED else null
             ApprovalPolicy.ASK -> null
         }
         if (automatic != null) {
-            projection.toolDecision(pending.idempotencyKey, policy)
+            if (automatic == ApprovalState.APPROVED) projection.toolDecision(pending.idempotencyKey,
+                if (policy == ApprovalPolicy.REMEMBER) ApprovalSource.REMEMBERED else ApprovalSource.AUTOMATIC)
             return automatic
         }
         val approval = ThreadApproval(pending.copy(runId = turn.id), runtime.nowEpochMillis() + runtime.confirmationTimeoutMillis, runtime.nowEpochMillis)
@@ -223,10 +224,10 @@ internal class DefaultAgentThread(
         try {
             projection.beginApproval(approval)
             val decision = approval.await()
-            if (decision == ApprovalState.APPROVED && (policy == ApprovalPolicy.REMEMBER || approval.scope == ApprovalScope.THREAD)) {
+            if (domain != null && decision == ApprovalState.APPROVED && (policy == ApprovalPolicy.REMEMBER || approval.scope == ApprovalScope.THREAD)) {
                 withContext(Dispatchers.IO) { runtime.store.rememberDomain(id, domain, generation) }
             }
-            projection.toolDecision(pending.idempotencyKey, policy)
+            if (decision == ApprovalState.APPROVED) projection.toolDecision(pending.idempotencyKey, ApprovalSource.USER)
             projection.resolveApproval(approval.snapshot())
             return decision
         } finally { approval.cancel(); turn.approval = null }
