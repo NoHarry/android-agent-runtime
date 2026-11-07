@@ -1,5 +1,7 @@
 package cc.noharry.agent.runtime
 
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+
 import cc.noharry.agent.kernel.core.memory.*
 
 import cc.noharry.agent.kernel.core.loop.RuntimeMemoryMatchSummary
@@ -26,6 +28,7 @@ internal data class RuntimeMemorySelection(
  * Selects only explicitly prewarm-eligible lessons that are relevant to the
  * current request. Legacy and query-only lessons deliberately return no match.
  */
+@ExperimentalAgentRuntimeApi
 class RuntimeMemoryRetriever @JvmOverloads constructor(
     /** How many lessons reach a run and which count, also for learning them ([RuntimeMemoryPolicy]). */
     val policy: RuntimeMemoryPolicy = RuntimeMemoryPolicy(),
@@ -146,6 +149,7 @@ private data class RetrievalProfile(
  * the text is (lower case, punctuation as spaces: "Wi-Fi" is "wi fi"); a term of ASCII letters and digits matches a whole
  * word, any other term anywhere in the text. [name] is how matches name the topic, in lower case.
  */
+@ExperimentalAgentRuntimeApi
 class MemoryTopic(
     name: String,
     strongTerms: Set<String>,

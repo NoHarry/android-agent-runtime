@@ -1,7 +1,10 @@
 package cc.noharry.agent.runtime
 
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+
 import cc.noharry.agent.kernel.core.memory.*
 /** Runtime-owned guardrails for memory retrieval and candidate promotion. */
+@ExperimentalAgentRuntimeApi
 data class RuntimeMemoryPolicy(
     val maxRetrievedLessons: Int = 2,
     val maxPreactivatedTools: Int = 2,

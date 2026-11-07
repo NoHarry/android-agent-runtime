@@ -11,6 +11,7 @@ package cc.noharry.agent.spi
  * It is called for every failed tool result, on several threads at once when tools run in parallel: keep it quick,
  * without side effects and safe to call concurrently. One that throws is taken as no.
  */
+@ExperimentalAgentRuntimeApi
 fun interface ServiceAnswerCheck {
     fun isServiceAnswer(resultJson: String): Boolean
 

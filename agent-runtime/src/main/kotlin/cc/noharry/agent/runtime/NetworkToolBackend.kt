@@ -1,4 +1,6 @@
 package cc.noharry.agent.runtime
+
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.core.loop.failed
 import cc.noharry.agent.kernel.core.tools.NetworkToolActivityResult
@@ -252,6 +254,7 @@ internal class NetworkToolBackend(
 }
 
 /** Controls whether [NetworkToolBackend] gates web_fetch per host. */
+@ExperimentalAgentRuntimeApi
 enum class NetworkToolConfirmationPolicy {
     /** Default: each new host in a run requires explicit confirmation before transport. */
     REQUIRE_PER_HOST,
