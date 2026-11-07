@@ -16,6 +16,7 @@ internal class AsyncSessionEventLog(
     private val now: () -> Long = System::currentTimeMillis,
     private val persistBatch: (List<SessionEvent>) -> Unit = durable::appendAllocatedBatch,
 ) : SessionEventLog, AutoCloseable {
+    private val rootGate = ROOT_GATES.computeIfAbsent(durable.storageIdentity) { ReentrantLock() }
     private val lock = ReentrantLock()
     private val changed = lock.newCondition()
     private val streams = linkedMapOf<EventStreamKey, AsyncStreamState>()
@@ -29,13 +30,15 @@ internal class AsyncSessionEventLog(
     private var pendingBytes = 0L
     private var closing = false
     private var failure: String? = null
-    private val openedStreams = mutableSetOf<EventStreamKey>()
+    private val openedStreams = java.util.Collections.synchronizedSet(mutableSetOf<EventStreamKey>())
+
+    init { rootGate.withLock { synchronized(INSTANCES) { INSTANCES[this] = true } } }
 
     override fun append(event: SessionEventAppend): SessionEvent {
         validateAppendIdentity(event)
         validatePayload(event.payload)
         val bytes = encodePayload(event.payload).toString().length.toLong() * CHAR_BYTES + ENVELOPE_BYTES
-        val stored = lock.withLock {
+        val stored = rootGate.withLock { lock.withLock {
             awaitCapacity(bytes)
             val key = EventStreamKey(event.sessionId, event.runId)
             val state = streams.getOrPut(key) {
@@ -55,7 +58,7 @@ internal class AsyncSessionEventLog(
             if (writer == null) writer = worker.submit(::writeLoop)
             changed.signalAll()
             accepted
-        }
+        } }
         signalDeliveries()
         return stored
     }
@@ -82,7 +85,7 @@ internal class AsyncSessionEventLog(
                 queue.isNotEmpty()
             }
             if (!ready) {
-                openedStreams.forEach(durable::endAsyncStream)
+                synchronized(openedStreams) { openedStreams.toList() }.forEach(durable::endAsyncStream)
                 return
             }
             Thread.sleep(BATCH_DELAY_MS)
@@ -150,6 +153,14 @@ internal class AsyncSessionEventLog(
 
     override fun durability() = SessionEventLogDurability.DURABLE
 
+    override fun deleteThread(threadId: String): Boolean = durable.deleteThread(threadId)
+
+    private fun forgetThread(threadId: String) = lock.withLock {
+        streams.keys.removeAll { it.sessionId == threadId }
+        synchronized(openedStreams) { openedStreams.removeAll { it.sessionId == threadId } }
+        deliveries.forEach { it.forgetThread(threadId) }
+    }
+
     override fun health(sessionId: String, runId: String): SessionEventLogHealth {
         val live = lock.withLock {
             streams[EventStreamKey(sessionId, runId)]?.let { state ->
@@ -187,7 +198,7 @@ internal class AsyncSessionEventLog(
     }
 
     override fun putAttachment(sessionId: String, ref: SessionAttachmentRef, bytes: ByteArray): Boolean =
-        durable.putAttachment(sessionId, ref, bytes)
+        rootGate.withLock { durable.putAttachment(sessionId, ref, bytes) }
 
     override fun readAttachment(sessionId: String, sha256: String): ByteArray? = durable.readAttachment(sessionId, sha256)
 
@@ -220,6 +231,22 @@ internal class AsyncSessionEventLog(
         // The host's bounded cancel/join barrier refuses deletion if this writer is stuck.
         writer?.get()
         worker.shutdown()
+    }
+
+    companion object {
+        private val ROOT_GATES = java.util.concurrent.ConcurrentHashMap<String, ReentrantLock>()
+        private val INSTANCES = java.util.WeakHashMap<AsyncSessionEventLog, Boolean>()
+
+        /** A raw file-log handle must also drain async wrappers already writing to the same root. */
+        internal fun deleteFromRoot(identity: String, threadId: String, delete: () -> Boolean): Boolean {
+            require(threadId.isNotBlank()) { "threadId must not be blank" }
+            val gate = ROOT_GATES.computeIfAbsent(identity) { ReentrantLock() }
+            return gate.withLock {
+                val writers = synchronized(INSTANCES) { INSTANCES.keys.filter { it.rootGate === gate } }
+                writers.forEach { check(it.flush()) { "Cannot delete data while event-log writes have failed" } }
+                delete().also { deleted -> if (deleted) writers.forEach { it.forgetThread(threadId) } }
+            }
+        }
     }
 }
 

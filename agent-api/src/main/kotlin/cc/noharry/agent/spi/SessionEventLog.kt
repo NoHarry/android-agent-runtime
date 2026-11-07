@@ -4,7 +4,7 @@ package cc.noharry.agent.spi
  * Append-only authority for runtime session events.
  *
  * Implementations allocate event identity and stream-local sequence atomically. The contract has
- * no update or delete operation; query and replay return stable snapshots in append order.
+ * no update operation; query and replay return stable snapshots in append order.
  */
 interface SessionEventLog {
     fun append(event: SessionEventAppend): SessionEvent
@@ -12,6 +12,13 @@ interface SessionEventLog {
     fun query(query: SessionEventQuery): List<SessionEvent>
 
     fun replay(sessionId: String, runId: String): List<SessionEvent>
+
+    /**
+     * Deletes every event, attachment and health record owned by [threadId] (the event's `sessionId`). Drain accepted
+     * asynchronous writes before deleting, and prevent them from recreating the data. Return true after complete,
+     * idempotent deletion; false means deletion is unsupported. Failures must throw. The runtime first stops its turns.
+     */
+    fun deleteThread(threadId: String): Boolean = false
 
     /** Persistence class. Custom and legacy backends default to [SessionEventLogDurability.UNKNOWN]. */
     fun durability(): SessionEventLogDurability = SessionEventLogDurability.UNKNOWN

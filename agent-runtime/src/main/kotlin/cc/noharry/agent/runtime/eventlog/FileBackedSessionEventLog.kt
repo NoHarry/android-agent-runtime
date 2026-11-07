@@ -46,6 +46,9 @@ internal class FileBackedSessionEventLog(
     private val asyncCursors = linkedMapOf<EventStreamKey, SessionEventAppendCursor?>()
     private var streamReadCount = 0
     private val attachments = SessionAttachmentStore(canonicalRoot)
+    internal val storageIdentity: String get() = canonicalRoot.path
+
+    init { synchronized(INSTANCES) { INSTANCES[this] = true } }
 
     override fun append(event: SessionEventAppend): SessionEvent {
         val stored = withLogLock {
@@ -73,10 +76,37 @@ internal class FileBackedSessionEventLog(
         acceptedListeners.subscribe(listener)
 
     override fun putAttachment(sessionId: String, ref: SessionAttachmentRef, bytes: ByteArray): Boolean =
-        runCatching { attachments.put(sessionId, ref, bytes) }.getOrDefault(false)
+        runCatching { withLogLock { attachments.put(sessionId, ref, bytes) } }.getOrDefault(false)
 
     override fun readAttachment(sessionId: String, sha256: String): ByteArray? =
-        runCatching { attachments.read(sessionId, sha256) }.getOrNull()
+        runCatching { withLogLock { attachments.read(sessionId, sha256) } }.getOrNull()
+
+    override fun deleteThread(threadId: String): Boolean =
+        AsyncSessionEventLog.deleteFromRoot(storageIdentity, threadId) { deletePersistedThread(threadId) }
+
+    private fun deletePersistedThread(threadId: String): Boolean = withLogLock {
+        validateEventIdentity(threadId, "threadId")
+        listOf(STREAMS_DIR, HEALTH_DIR, ATTACHMENTS_DIR).forEach { directory ->
+            deleteEventLogTree(containedDirectory(canonicalRoot, SESSION_EVENTS_DIR, SESSION_EVENTS_VERSION_DIR,
+                directory, encodeFileName(threadId)))
+        }
+        val index = containedFile(canonicalRoot, EVENT_ID_LIST_FILE)
+        check(!index.exists() || index.delete()) { "Cannot invalidate event id index" }
+        val generation = readEventIdGeneration()
+        check(generation < Long.MAX_VALUE) { "EventLog eventId generation overflow" }
+        writeForcedText(eventIdGenerationFile(), (generation + 1L).toString())
+        val readers = synchronized(INSTANCES) { INSTANCES.keys.filter { it.canonicalRoot == canonicalRoot } }
+        readers.forEach { it.forgetThread(threadId) }
+        true
+    }
+
+    private fun forgetThread(threadId: String) {
+        eventIdIndex.ids.clear()
+        eventIdIndex.seeded = false
+        decodedEvents.deleteThread(threadId)
+        liveHealth.keys.removeAll { it.sessionId == threadId }
+        asyncCursors.keys.removeAll { it.sessionId == threadId }
+    }
 
     /** Commits already accepted identities in order, once per stream per batch. */
     internal fun appendAllocatedBatch(events: List<SessionEvent>) = withLogLock {
@@ -822,6 +852,7 @@ internal class FileBackedSessionEventLog(
 
     private companion object {
         private val PROCESS_LOCKS = ConcurrentHashMap<String, Any>()
+        private val INSTANCES = java.util.WeakHashMap<FileBackedSessionEventLog, Boolean>()
 
         fun processLockFor(root: File): Any =
             PROCESS_LOCKS.computeIfAbsent(root.canonicalPath) { Any() }

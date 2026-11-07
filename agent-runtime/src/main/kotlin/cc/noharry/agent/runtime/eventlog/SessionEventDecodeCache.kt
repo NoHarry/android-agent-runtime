@@ -20,6 +20,14 @@ internal class SessionEventDecodeCache(
 
     fun cached(line: String): SessionEvent? = entries[line]
 
+    fun deleteThread(threadId: String) {
+        val iterator = entries.entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            if (entry.value.sessionId == threadId) { cachedChars -= entry.key.length; iterator.remove() }
+        }
+    }
+
     fun read(line: String): SessionEvent {
         entries[line]?.let { return it }
         val decoded = decode(line)
