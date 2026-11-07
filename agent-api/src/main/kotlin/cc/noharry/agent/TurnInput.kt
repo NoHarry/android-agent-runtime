@@ -28,15 +28,22 @@ sealed interface InputPart {
     data class Attachment(val ref: SessionAttachmentRef) : InputPart
 }
 
-/** Defaults for a thread. A null model uses the runtime's configured model. */
+/**
+ * Defaults for a new thread, or a patch when resuming one. Null fields retain saved values on resume; for a new
+ * thread they use runtime defaults (ASK for approvals). Use [reset] to clear individual saved overrides explicitly.
+ */
 data class ThreadOptions(
     val threadId: String? = null,
     val model: ModelRef? = null,
     val workspace: String? = null,
     val scene: String? = null,
     val instructions: String? = null,
-    val approvalPolicy: ApprovalPolicy = ApprovalPolicy.ASK,
+    val approvalPolicy: ApprovalPolicy? = null,
+    val reset: Set<ThreadOption> = emptySet(),
 )
+
+/** Saved overrides that can be cleared independently while resuming a thread. Explicit values take precedence. */
+enum class ThreadOption { MODEL, WORKSPACE, SCENE, INSTRUCTIONS }
 
 /** Overrides for one turn. A caller-supplied turn id is the idempotency key. */
 data class TurnOptions(

@@ -40,7 +40,7 @@ internal class DefaultThreadRuntime(
     override fun startThread(options: ThreadOptions): AgentThread {
         checkOpen()
         val id = options.threadId ?: UUID.randomUUID().toString()
-        val record = store.create(id, options)
+        val record = store.create(id, mergeThreadOptions(ThreadOptions(), options))
         return handle(record)
     }
 
@@ -48,12 +48,8 @@ internal class DefaultThreadRuntime(
         checkOpen()
         require(threadId.isNotBlank()) { "Thread id must not be blank" }
         require(options.threadId == null || options.threadId == threadId) { "Thread id does not match options" }
-        val saved = store.load(threadId) ?: store.create(threadId, options)
-        val merged = saved.options.copy(
-            model = options.model ?: saved.options.model, workspace = options.workspace ?: saved.options.workspace,
-            scene = options.scene ?: saved.options.scene, instructions = options.instructions ?: saved.options.instructions,
-            approvalPolicy = if (options == ThreadOptions()) saved.options.approvalPolicy else options.approvalPolicy,
-        )
+        val saved = store.load(threadId) ?: store.create(threadId, mergeThreadOptions(ThreadOptions(), options))
+        val merged = mergeThreadOptions(saved.options, options)
         return handle(saved.copy(options = merged)).also { it.configure(merged) }
     }
 

@@ -139,7 +139,7 @@ internal class DefaultAgentThread(
 
     private suspend fun approve(turn: ActiveThreadTurn, pending: PendingConfirmation, options: TurnOptions): ApprovalState {
         val projection = checkNotNull(turn.projection)
-        val policy = options.approvalPolicy ?: turn.options.approvalPolicy
+        val policy = options.approvalPolicy ?: turn.options.approvalPolicy ?: ApprovalPolicy.ASK
         val domain = approvalDomain(pending.toolName.orEmpty(), pending.argumentsJson.orEmpty())
         val automatic = when (policy) {
             ApprovalPolicy.APPROVE_ALL -> ApprovalState.APPROVED

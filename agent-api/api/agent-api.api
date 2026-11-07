@@ -500,22 +500,34 @@ public final class cc/noharry/agent/ThreadItem$WebSearch : cc/noharry/agent/Thre
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class cc/noharry/agent/ThreadOption : java/lang/Enum {
+	public static final field INSTRUCTIONS Lcc/noharry/agent/ThreadOption;
+	public static final field MODEL Lcc/noharry/agent/ThreadOption;
+	public static final field SCENE Lcc/noharry/agent/ThreadOption;
+	public static final field WORKSPACE Lcc/noharry/agent/ThreadOption;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/ThreadOption;
+	public static fun values ()[Lcc/noharry/agent/ThreadOption;
+}
+
 public final class cc/noharry/agent/ThreadOptions {
 	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/spi/model/ModelRef;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/ApprovalPolicy;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcc/noharry/agent/spi/model/ModelRef;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/ApprovalPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/spi/model/ModelRef;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/ApprovalPolicy;Ljava/util/Set;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcc/noharry/agent/spi/model/ModelRef;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/ApprovalPolicy;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Lcc/noharry/agent/spi/model/ModelRef;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/String;
 	public final fun component5 ()Ljava/lang/String;
 	public final fun component6 ()Lcc/noharry/agent/ApprovalPolicy;
-	public final fun copy (Ljava/lang/String;Lcc/noharry/agent/spi/model/ModelRef;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/ApprovalPolicy;)Lcc/noharry/agent/ThreadOptions;
-	public static synthetic fun copy$default (Lcc/noharry/agent/ThreadOptions;Ljava/lang/String;Lcc/noharry/agent/spi/model/ModelRef;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/ApprovalPolicy;ILjava/lang/Object;)Lcc/noharry/agent/ThreadOptions;
+	public final fun component7 ()Ljava/util/Set;
+	public final fun copy (Ljava/lang/String;Lcc/noharry/agent/spi/model/ModelRef;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/ApprovalPolicy;Ljava/util/Set;)Lcc/noharry/agent/ThreadOptions;
+	public static synthetic fun copy$default (Lcc/noharry/agent/ThreadOptions;Ljava/lang/String;Lcc/noharry/agent/spi/model/ModelRef;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/ApprovalPolicy;Ljava/util/Set;ILjava/lang/Object;)Lcc/noharry/agent/ThreadOptions;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getApprovalPolicy ()Lcc/noharry/agent/ApprovalPolicy;
 	public final fun getInstructions ()Ljava/lang/String;
 	public final fun getModel ()Lcc/noharry/agent/spi/model/ModelRef;
+	public final fun getReset ()Ljava/util/Set;
 	public final fun getScene ()Ljava/lang/String;
 	public final fun getThreadId ()Ljava/lang/String;
 	public final fun getWorkspace ()Ljava/lang/String;

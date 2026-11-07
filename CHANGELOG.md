@@ -5,6 +5,11 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **Thread option patches preserve saved approval policy.** Null values on resume retain saved defaults;
+  `ThreadOptions.reset` clears selected model, workspace, scene or instruction overrides. New threads still use ASK.
+- **Independent budgets survive settings changes.** `LoopSettings.limits` defaults to null, so a settings call does
+  not reset limits configured through `limits(...)`. An explicit settings budget still replaces them.
+
 - **Stable budgets, experimental advanced tuning.** `LoopLimits` is stable. Narration and service-answer checks,
   memory/concurrency/tool-exposure tuning, and structured event-log payloads remain experimental.
 - **Java event-log factory.** Open a durable log with `SessionEventLogs.openFileBackedSessionEventLog(File)`.
