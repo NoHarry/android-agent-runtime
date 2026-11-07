@@ -64,8 +64,11 @@ interface ToolCatalogCacheIdentity {
 
 /** Runtime context passed to provider initialization. */
 data class ToolInitializeContext(
+    /** Public conversation id, or empty for initialization outside a turn. */
     val sessionId: String = "",
+    /** Unique execution-attempt id, or empty for initialization outside a turn. */
     val runId: String = "",
+    /** Public turn id scoped to [sessionId], or empty outside a turn. */
     val requestId: String = "",
 )
 
@@ -107,8 +110,11 @@ data class ToolDescriptor(
 
 /** Runtime context passed to tool calls. */
 data class ToolCallContext(
+    /** Public conversation id ([cc.noharry.agent.AgentThread.id]). */
     val sessionId: String,
+    /** Unique execution-attempt id; it can change when a public turn is retried after process loss. */
     val runId: String,
+    /** Public turn id ([cc.noharry.agent.TurnResult.turnId]), scoped to [sessionId]. */
     val requestId: String,
 )
 

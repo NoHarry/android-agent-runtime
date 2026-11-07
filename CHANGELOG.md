@@ -108,75 +108,106 @@ called out; a patch release does not break it.
   Hosts set their own policies explicitly. MCP server ids containing underscores are grouped correctly.
 - **Breaking: model and hook SPI.** `ModelMessage.reasoningContent` carries replayable reasoning;
   `ServerSideSearchCapability` moves to `cc.noharry.agent.model`. Hooks use `onTurnStarted` / `onTurnFinished`,
-  and subagent launchers return `Flow<ThreadEvent>`. Diagnostic access and prompt/catalog inspection are under
-  experimental `RuntimeDiagnostics`. Advanced tuning types move to `cc.noharry.agent.runtime`.
+  and subagent launchers return `Flow<ThreadEvent>`. Diagnostic access uses experimental `RuntimeDiagnostics`;
+  prompt/catalog inspection uses `RuntimeInspection`. Advanced tuning types move to `cc.noharry.agent.runtime`.
 
 ### 0.5.0 migration
 
-| 0.4.x entry | 0.5.0 entry |
+Rebuild host code against 0.5.0. The module/package changes and constructor changes are binary breaks.
+Kotlin hosts import `cc.noharry.agent.builder`; Java hosts construct with `AgentRuntimeBuilder.create()`.
+
+| 0.4.x runtime entry | 0.5.0 entry |
 |---|---|
 | `run(AgentRequest)` | `startThread` / `resumeThread`, then `run` / `runStreamed` |
-| `TextDelta`, thinking and tool events | `ItemStarted`, `ItemDelta`, `ItemUpdated`, `ItemCompleted` |
-| `ResultAvailable` / `Finished` / `Failed` | `TurnCompleted` / `TurnFailed` |
-| `resumeConfirmation` / `getPendingConfirmation` | `pendingRequests`, `Approval.approve` / `deny` |
-| `resumeUserInput` / `getOpenConfusion` | next turn's input / `pendingRequests` |
-| `postUserInput` | `thread.steer` |
-| run state and history | `thread.status`, `thread.items`, `TurnResult` |
-| evidence, traces and raw event log | `runtime.diagnostics` |
-| protocol request methods | removed; expose a host tool instead |
+| `close` | `close` |
+| `resumeConfirmation` | `Approval.approve` / `deny`; keep collecting the original turn |
+| `getPendingConfirmation`, `getOpenConfusion` | `thread.pendingRequests()`, `TurnResult.pending` |
+| `cancelPendingConfirmation` | `thread.interrupt()`, or let the approval expire |
+| `resumeUserInput` | Next turn's `run`; `TurnInput.answering` can name a blocking question |
+| `postUserInput` | `thread.steer`; name an async question in `SteerOptions.answering` to answer it |
+| `getRunState` | `thread.status()` |
+| `getRuntimeResult` | `TurnResult` from `run` or `TurnCompleted`; saved visible history through `items()` |
+| `getRuntimeHandoff`, `getRuntimeEvidence`, `getRuntimeTraceEvents` | `runtime.diagnostics`; turn queries take `(threadId, turnId)` |
+| Event-log query/replay/subscribe/health methods | `runtime.diagnostics`; screens normally consume `thread.items()` |
+| Protocol-request methods | Removed; expose a host tool instead |
+| `KernelRuntimeBuilder`, `CoreAgentRuntime` | `AgentRuntime.builder()` / `AgentRuntimeBuilder.create()` |
+
+| 0.4.x `AgentEvent` | 0.5.0 event or item |
+|---|---|
+| `Started` | `TurnStarted` |
+| `UserInteraction` | `Question` item lifecycle; accepted input is a `UserMessage` |
+| `ThinkingDelta` | `ItemDelta` on a `Reasoning` item |
+| `TextDelta` | `ItemDelta` on an `AgentMessage` item |
+| `TokenUsageDelta` | Cumulative `UsageUpdated`; final totals in `TurnResult.usage` |
+| `ConfirmationRequired` | `ItemStarted(Approval)` |
+| `RuntimeBlocked` | `Question` plus `TurnCompleted(WAITING_FOR_ANSWER)`, or `TurnFailed` |
+| `RuntimeProtocolRequestCreated` | Removed from the host API |
+| `RetryAttempted` | `Notice(RETRY)` with structured details |
+| `BudgetWarning` | `Notice(BUDGET_LOW)` with structured details |
+| `CompactionApplied` | `Notice(COMPACTION)` with structured details |
+| `EmptyCompletionObserved` | `diagnostics.getRuntimeTraceEvents(threadId, turnId)` |
+| `SteeringAccepted` | `ItemCompleted(UserMessage(steer = true))`, including its request id |
+| `NativeToolCallStarted` | `ItemStarted(ToolCall)` |
+| `NativeToolCallFinished` | `ItemCompleted(ToolCall)` |
+| `NetworkToolActivity` | `ItemUpdated(ToolCall)` with `network` metadata |
+| `SearchActivity` | `WebSearch` item |
+| `ExecOutputDelta` | `ItemDelta` on a `ToolCall` item |
+| `WorkspaceFileChanged` | `FileChange` item |
+| `WorkspaceChanged` | `Notice(WORKSPACE_CHANGED)` with a workspace id |
+| `ResultAvailable`, `Finished` | `TurnCompleted` |
+| `Failed` | `TurnFailed` |
+
+| 0.4.x configuration | 0.5.0 configuration |
+|---|---|
+| `agent-kernel-api`, `agent-kernel-core` dependencies | `agent-api`, `agent-runtime` |
+| `cc.noharry.agent.kernel.api` imports | `cc.noharry.agent` for conversation contracts; `.spi`, `.spi.model`, `.spi.mcp` for extensions |
 | `modelClient`, `toolProvider(s)`, `systemPrompt`, `skill` | `model`, `tools`, `instructions`, `skills` |
 | `loopSettings` | `settings(LoopSettings(...))` |
 | `loopBudget`, `contextWindow`, `modelRetry` | `limits(LoopLimits(...))` |
-| `imageInput`, deferred tool flags, `runContextAsSystem`, `lessons`, native tool flags | corresponding `LoopSettings` fields |
-| hook/model/tool/session concurrency setters | `LoopSettings.hookTimeoutMillis` / `RuntimeConcurrency` |
-| separate durable conversation setup | `storage(directory)`; Android configures it automatically |
-| `profile`, `plugin`, `nowEpochMillis` | removed from host API; internal composition/test facilities |
-| workspace, hook, context provider, observer, history, subagents, search, policy and evidence configuration | retained under their existing names; advanced options stay experimental |
+| `imageInput`, deferred tool flags, `runContextAsSystem`, `lessons`, native tool flags | Corresponding `LoopSettings` fields |
+| Hook/model/tool/session concurrency setters | `LoopSettings.hookTimeoutMillis` / `RuntimeConcurrency` |
+| `sessionStore`, separate durable history setup | `storage(directory)`; Android configures SQLite and app-private storage automatically |
+| `profile`, `plugin`, `nowEpochMillis` | Removed from the host API; composition/test facilities are internal |
+| Workspace, hooks, context providers, observers, `sessionHistory`, subagents, search, policy and evidence setters | Retained; advanced configuration remains experimental |
 | Android `DurableSessionEventLogPlugin.appPrivate` | `appPrivateSessionEventLog(context)` |
+| Java file-backed event-log factory | `SessionEventLogs.openFileBackedSessionEventLog(File)` |
+
+0.4.0 history is not imported into the new conversation store: old sessions do not appear in `listThreads()` and
+have no old items in `items()`. Existing SQLite v5 data is preserved; starting a conversation with an old session id
+continues writing to that SQLite session. Old event-log records can be read with the low-level
+`diagnostics.querySessionEvents(SessionEventQuery(sessionId, runId = originalRunId))`; they have no execution mapping
+for the new turn-based diagnostic methods. Provider history in 0.4.0 was memory-only. Applications that keep their own
+transcript can continue displaying it.
 
 
-Fixes for Claude and OpenAI hosts, nothing in Chinese or about a car unless the host is, and an API cleaned up for use
-as a public library. **Breaking** in behaviour where noted, for hosts that use what is removed or hidden below, and for
-binaries compiled against the old constructors of `AnthropicModelClient`, `OpenAiModelClient`, `A2aServerConfig`,
-`AndroidUseOptions`, `SessionHistory`, the kernel's loop classes `NativeToolLoop`, `NativeRoundRunner`,
-`NativeToolUseController` and `ToolCallFailureBreaker`, and its prompt pieces `BootstrapPromptProvider.build`,
-`ContextBootstrapPromptResolver`, `SessionHistoryStore` and `RuntimeContextHooks.collectContextSystemSuffix`, and
-`McpHttpClient` (Kotlin source that names its arguments is unchanged; new parameters come with defaults).
+### Other 0.5.0 changes
 
-- **Test seams and internal diagnostics are not API.** These are marked `@InternalAgentRuntimeApi`: Kotlin callers
-  need an opt-in (Java and existing binaries are unaffected), the API dumps leave them out, and they may change in any
-  release.
-  - `SessionRunScheduler`'s `beforeClaimGrantedForTest`, `beforeNonCancellableMutexForTest`, `afterAttachJobForTest`,
-    `holdMutexForTest` and `snapshot()`, with `SessionRunSchedulerSnapshot`.
-  - The cache counters of `ToolProviderRegistry` and `ProviderConcurrencyLimiter`, and `ToolProviderRegistry`'s
-    companion with `clearEnvironmentProviderCatalogCacheForTests()`.
-  - `RuntimeVfsPerformanceCounters`. Its counter names, the `RUNTIME_COUNTER_*` constants, stay public, since the
-    per-run deltas are recorded under them.
+Public constructors for model clients, A2A, Android Use, HTTP/MCP transports and `SessionHistory` gained options;
+recompile their callers. Kernel loop, scheduler, tool-registry and prompt internals are no longer host API.
+
 - **The probe emitter hub is gone** (`RuntimeProbeEmitterHub`, `RuntimeProbeStageEmitter`, `ProbeEmitterRegistration`).
   The runtime never installed an emitter, so `emitterFor` always returned null. Probe evidence
   (`runtimeEvidence(RuntimeEvidenceConfig(…))`) is unchanged.
 - **Java hosts write only what they change.** Interface methods with a body now compile to JVM default methods, so a
   Java `ModelClient` implements only `complete`, and a Java `RuntimeHook` only the callbacks it uses. The `DefaultImpls`
-  classes stay beside them, so Kotlin binaries compiled against earlier releases keep working.
+  classes remain available for Kotlin compatibility within the new package layout; the 0.4.x package migration
+  still requires rebuilding hosts.
 - **`agent-a2a` is a plain JVM library** (a jar, not an Android library), so a server or desktop host can use the A2A
-  client and server too. Its API is unchanged. An Android app that uses it without `agent-a2a-client-official` now
+  client and server too. An Android app that uses it without `agent-a2a-client-official` now
   declares the `INTERNET` permission itself, which the library's manifest used to add.
 - **A2A on Android 6 (API 23).** The direct and official A2A clients' failures were made with a constructor Android only
   has from API 24, and request headers were copied with `Map.forEach` (API 24 too): on Android 6 a refused endpoint
   crashed the host instead of returning a failure, and requests failed without core library desugaring.
 - **API docs for the JVM artifacts.** The javadoc jars of `agent-api` and `agent-runtime`
   were empty; they now hold the API docs, like the other artifacts'.
-- **The answer goes out as written** (behaviour change). The agent's words to the user went through the trace
-  redactor, which turned long numbers (2^40 is 1099511627776, an order number) into `[REDACTED_PHONE]` and hid
-  coordinates and key-shaped text. Its text (`AgentEvent.TextDelta`), a completed run's `RuntimeResult.response`, its
-  questions (the waiting run's blocker message, `getOpenConfusion`, `AgentEvent.UserInteraction` cards) now go out
-  exactly as the model wrote them. Thinking, tool events, summaries and the reports of runs that did not complete are
-  filtered as before; a host that wants the answer filtered applies a redactor itself, on the whole text or the result
-  (`DefaultTraceRedactor.redact(…)`).
+- **Live conversation content is original.** `AgentMessage`, `Reasoning`, `ToolCall` and `Question` snapshots carry
+  live content without storage redaction. User input and final answers remain original in saved visible history;
+  tool payloads and diagnostic records follow the configured redactor. Hosts that want different display rules
+  apply them to the live text. Provider model history is stored verbatim, including signed reasoning and images.
 - **A question that looks like a key no longer ends the run.** The durable event log refuses text that starts like a
   credential (`sk-`, `Bearer `), and a question card (`ask_async`) whose title or option did so failed the run: it was
   the one record not left out of the log when refused. It now is, and the card still reaches the host. Likewise a
-  user's reply that starts like a key (`postUserInput`) is now accepted and reaches the model, left out of the log,
+  user's reply that starts like a key (`thread.steer`) is now accepted and reaches the model, left out of the log,
   where it was refused with an exception.
 - **A runtime without a workspace reaches its tools.** Tools from providers (`functionTools`, MCP) are found with
   `search_tools`, which only a workspace ran: without one, the model was offered `search_tools` and the file tools, all
@@ -289,11 +320,9 @@ binaries compiled against the old constructors of `AnthropicModelClient`, `OpenA
   words with it beyond the commonest (turn, on, open, status…). Words keep their accented and non-Latin letters, which
   were dropped; a run of Chinese characters is still one word, so a Chinese request outside the topics matches nothing
   by words alone. A lesson's scene, the same host label on every request, no longer counts as one of its words.
-- **Hosts choose what is hidden.** Every long run of digits (ten characters or more of digits, spaces and dashes) in a
-  run's public results, events and summaries became `[REDACTED_PHONE]`, an order or tracking number included, with no
-  way out: the builder's setter was internal. `AgentRuntimeBuilder.traceRedactor` (experimental) is now open, and
-  `StandardTraceRedactor(phones = false, locations = false)` keeps phone numbers or coordinates. Secrets are hidden
-  after any host's redactor. `TraceRedactor` is a `fun interface`, and `DefaultTraceRedactor` is unchanged.
+- **Hosts choose storage redaction.** The stable `AgentRuntimeBuilder.traceRedactor` accepts a `TraceRedactor`.
+  `StandardTraceRedactor(phones = false, locations = false)` preserves phone numbers and coordinates in tool
+  snapshots and diagnostics. Credential filtering still applies to tool payloads after custom redaction.
 
 ## 0.4.0 (2026-11-01)
 

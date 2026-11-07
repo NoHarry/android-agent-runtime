@@ -46,8 +46,11 @@ data class RuntimeObserverActionPreflight(
 )
 
 data class RuntimeContextRequest(
+    /** Unique execution-attempt id; it can change when a public turn is retried after process loss. */
     val runId: String,
+    /** Public conversation id ([cc.noharry.agent.AgentThread.id]). */
     val sessionId: String,
+    /** Public turn id ([cc.noharry.agent.TurnResult.turnId]), scoped to [sessionId]. */
     val requestId: String,
     val scene: String?,
     val input: String,
@@ -65,8 +68,11 @@ data class RuntimeContextRequest(
 
 @ExperimentalAgentRuntimeApi
 data class RuntimeTurnInput(
+    /** Unique execution-attempt id; it can change when a public turn is retried after process loss. */
     val runId: String,
+    /** Public conversation id ([cc.noharry.agent.AgentThread.id]). */
     val sessionId: String,
+    /** Public turn id ([cc.noharry.agent.TurnResult.turnId]), scoped to [sessionId]. */
     val requestId: String,
     val scene: String?,
     val input: String,
@@ -79,8 +85,11 @@ data class RuntimeTurnInput(
 
 @ExperimentalAgentRuntimeApi
 data class RuntimeCompletedTurn(
+    /** Unique execution-attempt id; it can change when a public turn is retried after process loss. */
     val runId: String,
+    /** Public conversation id ([cc.noharry.agent.AgentThread.id]). */
     val sessionId: String,
+    /** Public turn id ([cc.noharry.agent.TurnResult.turnId]), scoped to [sessionId]. */
     val requestId: String,
     val scene: String?,
     val inputDigest: String,
