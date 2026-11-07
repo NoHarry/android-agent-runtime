@@ -784,9 +784,13 @@ internal class NativeToolLoop(
         return NativeLoopOutcome.Terminal(result, summary, publicEvents.snapshot())
     }
 
-    suspend fun resumeConfirmedToolUse(
+    suspend fun resumeConfirmedToolUse(pending: PendingNativeToolUse, emitPublicEvent: suspend (AgentEvent) -> Unit = {}): NativeLoopOutcome =
+        resumeAfterApproval(pending, null, emitPublicEvent)
+
+    suspend fun resumeAfterApproval(
         pending: PendingNativeToolUse,
-        emitPublicEvent: suspend (AgentEvent) -> Unit = {},
+        deniedCode: String?,
+        emitPublicEvent: suspend (AgentEvent) -> Unit,
     ): NativeLoopOutcome {
         val client = modelClient
         if (client == null) {
@@ -810,7 +814,8 @@ internal class NativeToolLoop(
                 confirmedEvent,
             )
         }
-        val executed = toolUseController.executeConfirmedToolUse(pending, publicEvents)
+        val executed = if (deniedCode == null) toolUseController.executeConfirmedToolUse(pending, publicEvents)
+            else declinedToolResult(pending, deniedCode, publicEvents, sessionRecorder)
         if (pending.toolUse.source == ToolSource.BACKEND) {
             toolUseController.recordBackendObligation(
                 pending.context.runId,
@@ -820,7 +825,7 @@ internal class NativeToolLoop(
             )
         }
         // Observe-only: the confirmed tool executes outside the round runner; record it here.
-        emitProbeConfirmedToolExecution(
+        if (deniedCode == null) emitProbeConfirmedToolExecution(
             toolName = pending.toolUse.toolName,
             callId = pending.toolCallId,
             argumentsJson = pending.toolUse.argumentsJson,
@@ -830,7 +835,7 @@ internal class NativeToolLoop(
         val messages = restoredHistory(pending).toMutableList()
         messages += pending.toCallMessage()
         messages += pending.toToolCallEvent().toToolResultMessage(executed.resultJson, executed.images)
-        if (!executed.parsed.ok) {
+        if (deniedCode == null && !executed.parsed.ok) {
             // The user approved this call, not further attempts: the run stops, and the session sees the call and its result.
             persistHistory(pending.context.runId, restoredHistory(pending), pending.budgetSnapshot)
             sessionHistory?.record(pending.context.runId, messages + failedRunNotice(executed.parsed.code ?: "TOOL_FAILED"))
@@ -845,7 +850,7 @@ internal class NativeToolLoop(
                 client = client,
                 runId = pending.context.runId,
                 toolContext = pending.context,
-                hookContext = pending.context.toHookContext(approvedConfirmation = true),
+                hookContext = pending.context.toHookContext(approvedConfirmation = deniedCode == null),
                 messages = messages,
                 summaryBuilder = NativeLoopSummaryBuilder(),
                 publicEvents = publicEvents,
@@ -958,23 +963,7 @@ internal class NativeToolLoop(
     private suspend fun resumeContextMessage(runId: String): List<ModelMessage> =
         handoffProvider(runId)?.toResumeContextMessage()?.let { listOf(it) }.orEmpty()
 
-    private fun RuntimeHandoff.toResumeContextMessage(): ModelMessage = ModelMessage(
-        role = "system",
-        content = buildList {
-            task?.let { add("Task: $it") }
-            if (done.isNotEmpty()) add("Done: ${done.joinToString("; ")}")
-            if (nextActions.isNotEmpty()) add("Next: ${nextActions.joinToString("; ")}")
-            if (decisions.isNotEmpty()) add("Decisions: ${decisions.joinToString("; ")}")
-            if (doNotRepeat.isNotEmpty()) add("Do not repeat: ${doNotRepeat.joinToString("; ")}")
-        }.joinToString("\n"),
-    )
 
-    private fun PendingNativeToolUse.toToolCallEvent(): ModelEvent.ToolCall =
-        ModelEvent.ToolCall(
-            id = toolCallId,
-            name = toolUse.toolName,
-            argumentsJson = toolUse.argumentsJson,
-        )
 }
 
 /** A remembered capability preactivates a tool only when the tool has every term of it (search scores vary with the catalog). */

@@ -69,10 +69,10 @@ class ThreadApprovalFlowTest {
                 if (event is ThreadEvent.ItemStarted && event.item is Approval) (event.item as Approval).deny("No")
             }
             assertTurnEvents(events)
-            assertEquals("CONFIRMATION_DENIED", (events.last() as ThreadEvent.TurnFailed).error.code)
+            assertEquals(TurnStatus.COMPLETED, (events.last() as ThreadEvent.TurnCompleted).result.status)
             val completed = events.filterIsInstance<ThreadEvent.ItemCompleted>().map { it.item }
             assertEquals(ApprovalState.DENIED, completed.filterIsInstance<Approval>().single().state)
-            assertEquals(ItemStatus.DECLINED, completed.filterIsInstance<ThreadItem.ToolCall>().last().status)
+            assertEquals(ItemStatus.DECLINED, completed.filterIsInstance<ThreadItem.ToolCall>().single { it.tool == qualifiedMcpTool("set_temperature") }.status)
         }
     }
 

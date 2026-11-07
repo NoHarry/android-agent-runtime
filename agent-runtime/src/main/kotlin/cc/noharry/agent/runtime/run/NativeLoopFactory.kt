@@ -163,6 +163,13 @@ internal class NativeLoopFactory(
         ).resumeConfirmedToolUse(pending, emitPublicEvent)
     }
 
+    suspend fun resumeDeniedToolUse(pending: PendingNativeToolUse, emitPublicEvent: suspend (AgentEvent) -> Unit): NativeLoopOutcome {
+        val runId = pending.context.runId
+        return loop(runId, workspaceFileSystem = workspaces[runId],
+            probeAttachment = probeAttachments[runId] ?: ProbeRunAttachment.disabled(runId))
+            .resumeAfterApproval(pending, "CONFIRMATION_DENIED", emitPublicEvent)
+    }
+
     suspend fun resumeUserInput(
         runId: String,
         sessionId: String,

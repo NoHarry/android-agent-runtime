@@ -71,7 +71,7 @@ class ThreadReviewRegressionTest {
                 }
             }
             assertEquals(2, approvals)
-            assertEquals("CONFIRMATION_DENIED", (events.last() as ThreadEvent.TurnFailed).error.code)
+            assertEquals(TurnStatus.COMPLETED, (events.last() as ThreadEvent.TurnCompleted).result.status)
             assertTurnEvents(events)
         }
     }

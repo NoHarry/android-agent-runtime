@@ -5,6 +5,10 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **Denied approvals continue the same turn.** Both explicit denial and `DENY_ALL` return a
+  `CONFIRMATION_DENIED` tool result to the model without executing the tool, so it can explain the outcome.
+  Cancelling or interrupting a pending approval records `CONFIRMATION_CANCELLED` in provider history.
+
 - **Damaged history does not block unrelated conversations.** Thread listing skips unreadable or unsupported
   metadata. Invalid provider history is renamed to a `.corrupt` file and the conversation resumes with empty model
   history. Deleting a conversation does not parse that history first.

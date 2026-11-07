@@ -650,32 +650,8 @@ internal class DefaultAgentRuntime(
         request: AgentRequest,
         outcome: NativeLoopOutcome.RequiresConfirmation,
         approve: suspend (PendingConfirmation) -> cc.noharry.agent.ApprovalState,
-    ): NativeLoopOutcome {
-        val paused = outcome.pendingToolUse
-        val pending = PendingConfirmation(
-            pendingId = java.util.UUID.randomUUID().toString(), sessionId = request.sessionId,
-            runId = request.executionId, expiresAtEpochMillis = nowEpochMillis() + DEFAULT_CONFIRMATION_TIMEOUT_MILLIS,
-            idempotencyKey = paused?.toolCallId.orEmpty(), prompt = outcome.prompt,
-            toolName = paused?.toolUse?.toolName, argumentsJson = paused?.toolUse?.argumentsJson,
-        )
-        // This turn stays in its original stream, so inputs can queue while the host decides.
-        steeringQueue.resume(request.executionId)
-        val decision = approve(pending)
-        if (decision == cc.noharry.agent.ApprovalState.APPROVED && paused != null) {
-            steeringQueue.resume(request.executionId)
-            return nativeLoopFactory.resumeConfirmedToolUse(paused) { emitHost(it) }
-        }
-        val code = if (decision == cc.noharry.agent.ApprovalState.EXPIRED) "CONFIRMATION_EXPIRED" else "CONFIRMATION_DENIED"
-        paused?.let { nativeLoopFactory.recordUnconfirmed(it, code) }
-        if (paused != null) {
-            emitHost(AgentEvent.NativeToolCallStarted(request.executionId, paused.toolUse.toolName, paused.toolUse.argumentsJson, paused.toolCallId))
-            emitHost(AgentEvent.NativeToolCallFinished(request.executionId, paused.toolUse.toolName, "{\"ok\":false,\"code\":\"$code\"}", paused.toolCallId))
-        }
-        return NativeLoopOutcome.Terminal(
-            RuntimeResult(request.executionId, RuntimeRunStatus.FAILED, "Tool approval was ${decision.name.lowercase()}.", errorCode = code),
-            outcome.summary,
-        )
-    }
+    ): NativeLoopOutcome = continueThreadApproval(request, outcome, approve, nativeLoopFactory, steeringQueue,
+        nowEpochMillis()) { emitHost(it) }
 
     private suspend fun FlowCollector<AgentEvent>.finishQuestionTurn(
         started: RuntimeRunSnapshot,
