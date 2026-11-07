@@ -165,6 +165,31 @@ public final class cc/noharry/agent/NetworkActivity {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class cc/noharry/agent/NoticeDetails {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Integer;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Ljava/lang/Integer;
+	public final fun component4 ()Ljava/lang/Integer;
+	public final fun component5 ()Ljava/lang/Integer;
+	public final fun component6 ()Ljava/lang/Integer;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/String;)Lcc/noharry/agent/NoticeDetails;
+	public static synthetic fun copy$default (Lcc/noharry/agent/NoticeDetails;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/NoticeDetails;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAfterMessageCount ()Ljava/lang/Integer;
+	public final fun getAttempt ()Ljava/lang/Integer;
+	public final fun getBeforeMessageCount ()Ljava/lang/Integer;
+	public final fun getDelayMillis ()Ljava/lang/Long;
+	public final fun getRoundsRemaining ()Ljava/lang/Integer;
+	public final fun getToolCallsRemaining ()Ljava/lang/Integer;
+	public final fun getWorkspaceId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class cc/noharry/agent/NoticeKind : java/lang/Enum {
 	public static final field BUDGET_LOW Lcc/noharry/agent/NoticeKind;
 	public static final field COMPACTION Lcc/noharry/agent/NoticeKind;
@@ -441,16 +466,18 @@ public final class cc/noharry/agent/ThreadItem$FileChange : cc/noharry/agent/Thr
 }
 
 public final class cc/noharry/agent/ThreadItem$Notice : cc/noharry/agent/ThreadItem {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/NoticeKind;Ljava/lang/String;Lcc/noharry/agent/ItemStatus;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/NoticeKind;Ljava/lang/String;Lcc/noharry/agent/ItemStatus;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/NoticeKind;Ljava/lang/String;Lcc/noharry/agent/ItemStatus;Lcc/noharry/agent/NoticeDetails;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/NoticeKind;Ljava/lang/String;Lcc/noharry/agent/ItemStatus;Lcc/noharry/agent/NoticeDetails;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Lcc/noharry/agent/NoticeKind;
 	public final fun component4 ()Ljava/lang/String;
 	public final fun component5 ()Lcc/noharry/agent/ItemStatus;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/NoticeKind;Ljava/lang/String;Lcc/noharry/agent/ItemStatus;)Lcc/noharry/agent/ThreadItem$Notice;
-	public static synthetic fun copy$default (Lcc/noharry/agent/ThreadItem$Notice;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/NoticeKind;Ljava/lang/String;Lcc/noharry/agent/ItemStatus;ILjava/lang/Object;)Lcc/noharry/agent/ThreadItem$Notice;
+	public final fun component6 ()Lcc/noharry/agent/NoticeDetails;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/NoticeKind;Ljava/lang/String;Lcc/noharry/agent/ItemStatus;Lcc/noharry/agent/NoticeDetails;)Lcc/noharry/agent/ThreadItem$Notice;
+	public static synthetic fun copy$default (Lcc/noharry/agent/ThreadItem$Notice;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/NoticeKind;Ljava/lang/String;Lcc/noharry/agent/ItemStatus;Lcc/noharry/agent/NoticeDetails;ILjava/lang/Object;)Lcc/noharry/agent/ThreadItem$Notice;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDetails ()Lcc/noharry/agent/NoticeDetails;
 	public fun getId ()Ljava/lang/String;
 	public final fun getKind ()Lcc/noharry/agent/NoticeKind;
 	public final fun getMessage ()Ljava/lang/String;

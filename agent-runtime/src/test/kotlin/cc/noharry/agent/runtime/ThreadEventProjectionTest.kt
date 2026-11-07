@@ -17,6 +17,28 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ThreadEventProjectionTest {
+    @Test fun noticesCarryLocalizableValuesThroughStorage() = runBlocking {
+        val events = project(
+            AgentEvent.RetryAttempted("execution", 2, 750),
+            AgentEvent.BudgetWarning("execution", 3, 5),
+            AgentEvent.CompactionApplied("execution", 48, 12, 36, 200),
+            AgentEvent.WorkspaceChanged("execution", "workspace-main"),
+            AgentEvent.ResultAvailable(RuntimeResult("execution", RuntimeRunStatus.COMPLETED, "Done")),
+        )
+        lifecycle(events)
+        val notices = (events.last() as ThreadEvent.TurnCompleted).result.items.filterIsInstance<ThreadItem.Notice>()
+        assertEquals(listOf(
+            NoticeDetails(attempt = 2, delayMillis = 750),
+            NoticeDetails(roundsRemaining = 3, toolCallsRemaining = 5),
+            NoticeDetails(beforeMessageCount = 48, afterMessageCount = 12),
+            NoticeDetails(workspaceId = "workspace-main"),
+        ), notices.map { it.details })
+        val codec = cc.noharry.agent.runtime.thread.ThreadItemCodec(DefaultTraceRedactor)
+        notices.forEach { assertEquals(it, codec.decode(codec.encode(it))) }
+        val old = kotlinx.serialization.json.JsonObject(codec.encode(notices.first()) - "details")
+        assertEquals(NoticeDetails(), (codec.decode(old) as ThreadItem.Notice).details)
+    }
+
     @Test fun completeSnapshotsAndUsageSurviveIgnoredDeltas() = runBlocking {
         val events = project(
             AgentEvent.Started("run"), AgentEvent.ThinkingDelta("run", "Think"),
