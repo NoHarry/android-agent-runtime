@@ -13,7 +13,7 @@ import cc.noharry.agent.kernel.core.state.StoredToolResult
 import cc.noharry.agent.kernel.core.state.StoredUsageDelta
 import cc.noharry.agent.kernel.core.state.StoredVfsOperation
 import cc.noharry.agent.kernel.core.state.VfsOperationTimings
-import cc.noharry.agent.kernel.core.tools.DynamicToolSource
+import cc.noharry.agent.spi.ToolSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -162,7 +162,7 @@ private fun readTool(
         runId = "run-1",
         sessionId = "session-1",
         toolName = "read_file",
-        source = DynamicToolSource.NATIVE_READ.name,
+        source = ToolSource.NATIVE_READ.name,
         argumentsJson = argumentsJson,
         inputHash = "input-hash",
         status = status,

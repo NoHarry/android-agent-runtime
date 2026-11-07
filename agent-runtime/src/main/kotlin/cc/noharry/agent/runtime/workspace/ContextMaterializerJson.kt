@@ -1,8 +1,8 @@
 package cc.noharry.agent.runtime.workspace
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunSnapshot
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.reliability.RuntimeCompletionSummary
+import cc.noharry.agent.spi.reliability.RuntimeResult
+import cc.noharry.agent.spi.reliability.RuntimeRunSnapshot
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.SkillsCatalog
 import cc.noharry.agent.kernel.core.context.TodoState
 import cc.noharry.agent.kernel.core.loop.completed

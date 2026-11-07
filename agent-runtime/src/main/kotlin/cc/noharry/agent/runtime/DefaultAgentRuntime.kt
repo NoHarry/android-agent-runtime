@@ -1,37 +1,31 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.AgentRuntime
-import cc.noharry.agent.kernel.api.CancelPendingConfirmationRequest
-import cc.noharry.agent.kernel.api.CancelPendingResult
-import cc.noharry.agent.kernel.api.ConfirmationChoice
-import cc.noharry.agent.kernel.api.ConfirmationDecision
-import cc.noharry.agent.kernel.api.ConfirmationResumeResult
-import cc.noharry.agent.kernel.api.ExecEngine
-import cc.noharry.agent.kernel.api.InternalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.PendingConfirmation
-import cc.noharry.agent.kernel.api.PostUserInputRequest
-import cc.noharry.agent.kernel.api.PostUserInputResult
-import cc.noharry.agent.kernel.api.ProtocolRequestCancellation
-import cc.noharry.agent.kernel.api.ProtocolRequestCloseLoopResult
-import cc.noharry.agent.kernel.api.ProtocolRequestRejection
-import cc.noharry.agent.kernel.api.ProtocolRequestResolution
-import cc.noharry.agent.kernel.api.RuntimeContextProvider
-import cc.noharry.agent.kernel.api.RuntimeTurnObserver
-import cc.noharry.agent.kernel.api.SessionCapabilityContext
-import cc.noharry.agent.kernel.api.SessionEventLog
-import cc.noharry.agent.kernel.api.SessionEventQuery
-import cc.noharry.agent.kernel.api.SessionRunConflictPolicy
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequestStatus
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunSnapshot
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.AgentRuntime
+import cc.noharry.agent.spi.CancelPendingConfirmationRequest
+import cc.noharry.agent.spi.CancelPendingResult
+import cc.noharry.agent.spi.ConfirmationChoice
+import cc.noharry.agent.spi.ConfirmationDecision
+import cc.noharry.agent.spi.ConfirmationResumeResult
+import cc.noharry.agent.spi.ExecEngine
+import cc.noharry.agent.spi.InternalAgentRuntimeApi
+import cc.noharry.agent.spi.PendingConfirmation
+import cc.noharry.agent.spi.PostUserInputRequest
+import cc.noharry.agent.spi.PostUserInputResult
+import cc.noharry.agent.spi.RuntimeContextProvider
+import cc.noharry.agent.spi.RuntimeTurnObserver
+import cc.noharry.agent.spi.SessionCapabilityContext
+import cc.noharry.agent.spi.SessionEventLog
+import cc.noharry.agent.spi.SessionEventQuery
+import cc.noharry.agent.spi.SessionRunConflictPolicy
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.reliability.RuntimeCompletionSummary
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeResult
+import cc.noharry.agent.spi.reliability.RuntimeRunSnapshot
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.BootstrapPrompt
 import cc.noharry.agent.kernel.core.context.BootstrapPromptProvider
 import cc.noharry.agent.kernel.core.context.BootstrapPromptResolver
@@ -41,7 +35,7 @@ import cc.noharry.agent.kernel.core.context.SessionHistoryStore
 import cc.noharry.agent.kernel.core.context.SimpleBootstrapPromptResolver
 import cc.noharry.agent.kernel.core.loop.CONFIRMATION_CANCELLED_CODE
 import cc.noharry.agent.kernel.core.loop.LoopBudgetConfig
-import cc.noharry.agent.kernel.core.loop.LoopSettings
+import cc.noharry.agent.runtime.LoopSettings
 import cc.noharry.agent.kernel.core.loop.ModelRetryConfig
 import cc.noharry.agent.kernel.core.loop.NativeLoopOutcome
 import cc.noharry.agent.kernel.core.loop.NativeLoopSummary
@@ -55,8 +49,6 @@ import cc.noharry.agent.kernel.core.state.InMemoryConfirmationStore
 import cc.noharry.agent.kernel.core.state.InMemoryLoopHistoryStore
 import cc.noharry.agent.kernel.core.state.LoopHistoryStore
 import cc.noharry.agent.kernel.core.state.PendingToolUseController
-import cc.noharry.agent.kernel.core.state.ProtocolRequestController
-import cc.noharry.agent.kernel.core.state.ProtocolRequestTemplate
 import cc.noharry.agent.kernel.core.state.ReliabilityStorage
 import cc.noharry.agent.kernel.core.state.ResumeFirstController
 import cc.noharry.agent.kernel.core.state.RunStateController
@@ -75,11 +67,11 @@ import cc.noharry.agent.kernel.core.tools.RuntimeMcpDebugTraceSink
 import cc.noharry.agent.kernel.core.tools.ToolActivationStore
 import cc.noharry.agent.kernel.core.tools.ToolExecutionLimiter
 import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
-import cc.noharry.agent.kernel.core.trace.DebugRawTraceAccessDecision
-import cc.noharry.agent.kernel.core.trace.RedactedTraceSummary
-import cc.noharry.agent.kernel.core.trace.TraceRedactor
-import cc.noharry.agent.kernel.core.trace.TraceSummaryBuilder
-import cc.noharry.agent.kernel.core.trace.TraceVisibilityConfig
+import cc.noharry.agent.runtime.DebugRawTraceAccessDecision
+import cc.noharry.agent.runtime.RedactedTraceSummary
+import cc.noharry.agent.runtime.TraceRedactor
+import cc.noharry.agent.runtime.TraceSummaryBuilder
+import cc.noharry.agent.runtime.TraceVisibilityConfig
 import cc.noharry.agent.kernel.core.trace.redactedForPublic
 import cc.noharry.agent.runtime.probe.ProbePack
 import cc.noharry.agent.runtime.reliability.InternalRuntimeEvidenceConfig
@@ -113,7 +105,6 @@ internal class DefaultAgentRuntime(
     private val mcpRegistry: ToolProviderRegistry,
     private val workspaceRegistry: RuntimeWorkspaceRegistry = RuntimeWorkspaceRegistry(emptyList(), null),
     private val confirmationTemplate: ConfirmationTemplate?,
-    private val protocolRequestTemplate: ProtocolRequestTemplate?,
     private val nowEpochMillis: () -> Long,
     private val hookChain: RuntimeHookChain,
     private val traceVisibilityConfig: TraceVisibilityConfig,
@@ -143,7 +134,7 @@ internal class DefaultAgentRuntime(
     private val reliabilityStorageRoot: File? = null,
     /** Enabled probe packs; empty disables probes (observe-only off). */
     private val probePacks: List<ProbePack> = emptyList(),
-    /** Host evidence binding from experimental [cc.noharry.agent.kernel.api.RuntimeEvidenceConfig]; null disables. */
+    /** Host evidence binding from experimental [cc.noharry.agent.spi.RuntimeEvidenceConfig]; null disables. */
     private val evidenceConfig: InternalRuntimeEvidenceConfig? = null,
     private val contextProviders: List<RuntimeContextProvider> = emptyList(),
     private val turnObservers: List<RuntimeTurnObserver> = emptyList(),
@@ -165,6 +156,7 @@ internal class DefaultAgentRuntime(
     private val webFetchFallback: WebFetchFallback? = null,
     private val loopSettings: LoopSettings = LoopSettings(),
 ) : AgentRuntime {
+    private val turnApprovals = java.util.concurrent.ConcurrentHashMap<String, suspend (PendingConfirmation) -> cc.noharry.agent.ApprovalState>()
     private val closed = AtomicBoolean(false)
     private val stateLocks = RunStateLockRegistry()
     private val runStateController = RunStateController(
@@ -178,13 +170,6 @@ internal class DefaultAgentRuntime(
     private val pendingToolUseController = PendingToolUseController()
     private val steeringQueue = RuntimeSteeringQueue(nowEpochMillis)
     private val sessionRecorder = RuntimeSessionRecorder(sessionStore, sessionEventLog, nowEpochMillis)
-    private val protocolController = ProtocolRequestController(
-        nowEpochMillis,
-        runStateController,
-        reliabilityStorage,
-        stateLocks,
-        runtimeStateRetentionPolicy,
-    )
     private val mcpDebugTraceSink = RuntimeMcpDebugTraceSink { record ->
         runtimeIo { runStateController.recordMcpDebugCall(record) }
     }
@@ -277,7 +262,6 @@ internal class DefaultAgentRuntime(
         terminal = terminalCoordinator,
         runStateController = runStateController,
         sessionRecorder = sessionRecorder,
-        protocolController = protocolController,
         traceRedactor = traceRedactor,
         closed = closed,
         runtimeIoDispatcher = runtimeIoDispatcher,
@@ -301,6 +285,26 @@ internal class DefaultAgentRuntime(
 
     override fun run(request: AgentRequest): Flow<AgentEvent> = flow {
         coroutineScope { collectOrdinaryRun(request) }
+    }
+
+    internal suspend fun readThreadAttachment(threadId: String, sha256: String): ByteArray? =
+        runtimeIo { sessionEventLog?.readAttachment(threadId, sha256) }
+
+    internal fun clearThreadHistory(threadId: String) {
+        sessionHistory?.clearSession(threadId)
+        activationStore.clearSession(threadId)
+    }
+
+    internal suspend fun notifyTurnFinished(result: cc.noharry.agent.TurnResult, sessionId: String) {
+        hookChain.onTurnFinished(result, cc.noharry.agent.spi.HookContext(sessionId, result.turnId, result.turnId))
+    }
+
+    internal fun runThread(
+        request: AgentRequest,
+        approve: suspend (PendingConfirmation) -> cc.noharry.agent.ApprovalState,
+    ): Flow<AgentEvent> = flow {
+        check(turnApprovals.putIfAbsent(request.requestId, approve) == null) { "Turn is already running" }
+        try { run(request).collect { emit(it) } } finally { turnApprovals.remove(request.requestId, approve) }
     }
 
     override suspend fun resumeConfirmation(
@@ -365,20 +369,8 @@ internal class DefaultAgentRuntime(
         }
     }
 
-    override suspend fun resolveRuntimeProtocolRequest(decision: ProtocolRequestResolution): ProtocolRequestCloseLoopResult =
-        controlResume.transitionProtocolRequest(decision.protocolRequestId, decision.requestId, RuntimeProtocolRequestStatus.RESOLVED)
-    override suspend fun rejectRuntimeProtocolRequest(decision: ProtocolRequestRejection): ProtocolRequestCloseLoopResult =
-        controlResume.transitionProtocolRequest(decision.protocolRequestId, decision.requestId, RuntimeProtocolRequestStatus.REJECTED)
-    override suspend fun cancelRuntimeProtocolRequest(decision: ProtocolRequestCancellation): ProtocolRequestCloseLoopResult =
-        controlResume.transitionProtocolRequest(decision.protocolRequestId, decision.requestId, RuntimeProtocolRequestStatus.CANCELLED)
-    override suspend fun getPendingProtocolRequests(
-        sessionId: String?,
-        runId: String?,
-    ): List<RuntimeProtocolRequest> = runtimeIo {
-        protocolController.getPending(sessionId, runId).map { it.redactedForPublic(traceRedactor) }
-    }
     override suspend fun getRuntimeEvidence(evidenceId: String) = runtimeIo {
-        (runStateController.evidence(evidenceId) ?: protocolController.evidence(evidenceId))
+        runStateController.evidence(evidenceId)
             ?.redactedForPublic(traceRedactor)
     }
 
@@ -390,10 +382,10 @@ internal class DefaultAgentRuntime(
         sessionEventLog?.replay(sessionId, runId).orEmpty()
     }
 
-    @OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+    @OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
     override fun subscribeSessionEvents(
         sessionId: String,
-        listener: (cc.noharry.agent.kernel.api.SessionEvent) -> Unit,
+        listener: (cc.noharry.agent.spi.SessionEvent) -> Unit,
     ): AutoCloseable {
         val log = sessionEventLog ?: return AutoCloseable { }
         return log.subscribe { event ->
@@ -401,16 +393,16 @@ internal class DefaultAgentRuntime(
         }
     }
 
-    @OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+    @OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
     override suspend fun getSessionEventLogHealth(
         sessionId: String,
         runId: String,
     ) = runtimeIo {
         sessionEventLog?.health(sessionId, runId)
-            ?: cc.noharry.agent.kernel.api.SessionEventLogHealth.unknown()
+            ?: cc.noharry.agent.spi.SessionEventLogHealth.unknown()
     }
 
-    @OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+    @OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         try {
@@ -437,7 +429,7 @@ internal class DefaultAgentRuntime(
         mcpRegistry.cachedLimiterEntryCountForTests()
 
     override suspend fun getRuntimeTraceEvents(runId: String) = runtimeIo {
-        (runStateController.traceEvents(runId) + protocolController.traceEvents(runId))
+        runStateController.traceEvents(runId)
             .distinctBy { "${it.eventName}:${it.createdAtEpochMillis}:${it.evidenceId}" }
     }
     internal suspend fun getRunEnvelope(runId: String) = runtimeIo { runStateController.envelope(runId) }
@@ -453,7 +445,7 @@ internal class DefaultAgentRuntime(
                 handoff = runStateController.handoff(runId),
                 openConfusion = runStateController.openConfusion(runId),
                 result = runStateController.result(runId),
-                traceEvents = (runStateController.traceEvents(runId) + protocolController.traceEvents(runId))
+                traceEvents = runStateController.traceEvents(runId)
                     .distinctBy { "${it.eventName}:${it.createdAtEpochMillis}:${it.evidenceId}" },
             )
         }
@@ -594,9 +586,6 @@ internal class DefaultAgentRuntime(
         if (emitConfiguredConfirmation(admitted.started, request)) {
             return
         }
-        if (emitConfiguredProtocolRequest(admitted.started, request)) {
-            return
-        }
         emitNativeLoopOutcome(request, runId, admitted.started, selected)
     }
 
@@ -628,7 +617,12 @@ internal class DefaultAgentRuntime(
         started: RuntimeRunSnapshot,
         selected: SelectedWorkspace,
     ) {
-        when (val loopOutcome = nativeLoopFactory.run(request, runId, selected.fileSystem) { event -> emitHost(event) }) {
+        var outcome = nativeLoopFactory.run(request, runId, selected.fileSystem) { emitHost(it) }
+        val approve = turnApprovals[runId]
+        while (outcome is NativeLoopOutcome.RequiresConfirmation && approve != null) {
+            outcome = continueApprovedTurn(request, outcome, approve)
+        }
+        when (val loopOutcome = outcome) {
             is NativeLoopOutcome.Terminal -> emitTerminalLoopResult(request, runId, selected.workspaceId, loopOutcome)
             is NativeLoopOutcome.RequiresConfirmation -> {
                 runtimeIo { runStateController.recordNativeLoopSummary(runId, loopOutcome.summary) }
@@ -636,9 +630,51 @@ internal class DefaultAgentRuntime(
             }
             is NativeLoopOutcome.NeedsUserInput -> {
                 runtimeIo { runStateController.recordNativeLoopSummary(runId, loopOutcome.summary) }
-                emitWaitingUserInput(started, loopOutcome.question, loopOutcome.summary)
+                if (approve == null) emitWaitingUserInput(started, loopOutcome.question, loopOutcome.summary)
+                else finishQuestionTurn(started, loopOutcome, selected.workspaceId)
             }
         }
+    }
+
+    private suspend fun FlowCollector<AgentEvent>.continueApprovedTurn(
+        request: AgentRequest,
+        outcome: NativeLoopOutcome.RequiresConfirmation,
+        approve: suspend (PendingConfirmation) -> cc.noharry.agent.ApprovalState,
+    ): NativeLoopOutcome {
+        val paused = outcome.pendingToolUse
+        val pending = PendingConfirmation(
+            pendingId = java.util.UUID.randomUUID().toString(), sessionId = request.sessionId,
+            runId = request.requestId, expiresAtEpochMillis = nowEpochMillis() + DEFAULT_CONFIRMATION_TIMEOUT_MILLIS,
+            idempotencyKey = paused?.toolCallId.orEmpty(), prompt = outcome.prompt,
+            toolName = paused?.toolUse?.toolName, argumentsJson = paused?.toolUse?.argumentsJson,
+        )
+        val decision = approve(pending)
+        if (decision == cc.noharry.agent.ApprovalState.APPROVED && paused != null) {
+            steeringQueue.resume(request.requestId)
+            return nativeLoopFactory.resumeConfirmedToolUse(paused) { emitHost(it) }
+        }
+        val code = if (decision == cc.noharry.agent.ApprovalState.EXPIRED) "CONFIRMATION_EXPIRED" else "CONFIRMATION_DENIED"
+        paused?.let { nativeLoopFactory.recordUnconfirmed(it, code) }
+        if (paused != null) {
+            emitHost(AgentEvent.NativeToolCallStarted(request.requestId, paused.toolUse.toolName, paused.toolUse.argumentsJson, paused.toolCallId))
+            emitHost(AgentEvent.NativeToolCallFinished(request.requestId, paused.toolUse.toolName, "{\"ok\":false,\"code\":\"$code\"}", paused.toolCallId))
+        }
+        return NativeLoopOutcome.Terminal(
+            RuntimeResult(request.requestId, RuntimeRunStatus.FAILED, "Tool approval was ${decision.name.lowercase()}.", errorCode = code),
+            outcome.summary,
+        )
+    }
+
+    private suspend fun FlowCollector<AgentEvent>.finishQuestionTurn(
+        started: RuntimeRunSnapshot,
+        outcome: NativeLoopOutcome.NeedsUserInput,
+        workspaceId: String?,
+    ) {
+        val waiting = runtimeIo { runStateController.markWaitingUserInput(started, outcome.question, outcome.summary) }
+        sessionAdmission.markFinalizingIfExecuting(started.runId)
+        persistTerminalResult(RuntimeResult(started.runId, RuntimeRunStatus.COMPLETED, outcome.question))
+        coordinateTerminalFinalization(started.runId, RuntimeRunStatus.COMPLETED.name, workspaceId)
+        emit(AgentEvent.RuntimeBlocked(waiting.blocker.copy(message = outcome.question)))
     }
 
     private suspend fun FlowCollector<AgentEvent>.emitTerminalLoopResult(
@@ -702,23 +738,6 @@ internal class DefaultAgentRuntime(
         }
         sessionAdmission.markWaitingAfterPersist(started.runId)
         emit(AgentEvent.ConfirmationRequired(pending))
-        return true
-    }
-
-    private suspend fun FlowCollector<AgentEvent>.emitConfiguredProtocolRequest(
-        started: RuntimeRunSnapshot,
-        request: AgentRequest,
-    ): Boolean {
-        val template = protocolRequestTemplate ?: return false
-        val protocolRequest = runtimeIo {
-            protocolController.create(template, started, request).also {
-                sessionRecorder.updateRunStatus(started.runId, RuntimeRunStatus.WAITING_PROTOCOL_REQUEST)
-                // A host handoff is a recovery boundary, not a high-frequency capture event.
-                (sessionEventLog as? cc.noharry.agent.runtime.eventlog.AsyncSessionEventLog)?.flush()
-            }
-        }
-        sessionAdmission.markWaitingAfterPersist(started.runId)
-        emit(AgentEvent.RuntimeProtocolRequestCreated(protocolRequest.redactedForPublic(traceRedactor)))
         return true
     }
 
@@ -861,7 +880,7 @@ internal class DefaultAgentRuntime(
         if (history != null) {
             loopHistoryStore.save(runId, history.messages, history.budgetSnapshot, ledger.encode())
         }
-        return ledger.summarize(cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome.FAILED)
+        return ledger.summarize(cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome.FAILED)
     }
 
     private suspend fun cleanupTerminalRun(runId: String, workspaceId: String? = null) {
@@ -869,7 +888,6 @@ internal class DefaultAgentRuntime(
         runtimeIo {
             confirmationStore.clearRun(runId)
             pendingToolUseController.clearRun(runId)
-            protocolController.retainTerminalRun(runId)
             networkToolBackend.clearRun(runId)
             activationStore.clear(runId)
             sessionHistory?.forget(runId)
@@ -911,6 +929,9 @@ internal class DefaultAgentRuntime(
 
     private suspend fun FlowCollector<AgentEvent>.emitHost(event: AgentEvent) {
         if (closed.get()) return
+        if (event is AgentEvent.EmptyCompletionObserved) {
+            runtimeIo { runStateController.recordObservation(event.runId, "EMPTY_COMPLETION_OBSERVED", event.traceDetails()) }
+        }
         emit(event)
     }
 

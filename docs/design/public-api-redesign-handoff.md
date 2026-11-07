@@ -9,21 +9,19 @@
 
 0.5.0 把运行时（`android-agent-runtime`）的对外 API 换成 Codex 那样的 Thread / Turn / Item，同时把 Bothy 一次迁完，之后两边都不再做结构性迁移。
 
-## 2. 现在到哪了
+## 2. 当前实现与验证状态
 
-- **设计稿写完了**：`docs/design/public-api-redesign.md`。代码一行还没动。
-- **owner 已定**（设计稿 9.1）：
-  - 0.5.0 直接用新 API 替换旧 API，不留过渡版本；0.5.0 等这些做完再发。
-  - kernel-core 并进 agent-runtime，改成 `internal`，不再单独发布。
-- **还没定**（设计稿 9.2、9.3）：每项都附了推荐，9.3 是「运行时加 Bothy 一步到位」的整体推荐。owner 最后看到的就是 9.3，还没回复。
-- **你的第一件事**：问 owner「9.2 和 9.3 是否都按推荐」。没得到确认之前不要写实现代码。
-- **未提交的改动**（都在 SDK 仓的 main 工作区）：
-  - `docs/design/public-api-redesign.md`
-  - `docs/design/public-api-redesign-handoff.md`（本文件）
-  - `AGENTS.md` 里新加的 `docs/design/` 那一行
-
-  不要 stash，不要切分支把它们弄丢。开工时的处理办法见第 7 节。
-- **在线文档已作废**：之前在 Claude Docs 上开过一份在线稿（https://claude.ai/artifact/G5PfvMfxaR4nVS9Dx2KLcJ），只写了前两节。owner 说设计文档放仓库、不用在线文档。不要再更新它；要不要删，问 owner。
+- owner 已确认全部按 9.3 实施；无需再次确认设计范围。Maven Central 发布仍未授权。
+- SDK 实现在 `/Users/hanyulou/project/android-agent-runtime-api`，分支 `codex/api-redesign`；原 main 工作区保持原状直到最终合并。
+- Bothy 本地迁移在 `/Users/hanyulou/project/bothy-api`；新 API 发布前不推送 Bothy。
+- 已实现 Thread / Turn / Item、同轮批准、四种批准策略、图片及附件、历史持久化、builder 分组、SPI 改包、模块合并、诊断迁移及中性默认值。
+- SDK 最终完整 `ciCheck`、`publishToMavenLocal` 及使用 Maven 构件的 extensions sample 已通过；runtime 1,362 项、agent-api 8 项、Android unit 18 项测试无失败；Python helpers 84 项（1 跳过）通过。
+- 平板 SDK 测试通过：agent-exec-js 8 项、agent-runtime-android 8 项，包含真实 Thread API 并发/取消/关闭、批准/拒绝、问答/指定问题插话、图片和持久历史恢复。
+- Bothy 本地实现已提交（代码提交 `724125f0`），完整 validate 通过：8 个模块、1,406 项测试、0 失败；从零构建实际执行 645 项任务，Bothy Debug/Release 和最小示例 Release 均成功。
+- SDK 独立评审及复审已通过：幂等重放、跨 runtime 删除/重建、队列上限、hook 重入删除和显式异步回答边界已修复并补回归。
+- Bothy 独立复审和设备检查已通过：真实模型 app-server 请求成功；进程冷启动后同会话恢复历史并答对上一轮内容；A2A 无凭据 401、有凭据 completed。临时验证会话已清理，原会话、无障碍服务和录音权限已恢复。
+- SDK 可以合并并推送；GitHub CI 结果查看 main 最近的 workflow。Maven 发布和发布后的 Bothy 依赖更新/推送仍待授权。
+- Maven 发布和其后的 Bothy 推送是另一个授权边界。不要因为本文旧记录或「继续」而擅自发布。
 
 ## 3. 仓库和位置
 
@@ -138,7 +136,7 @@ Bothy（以下路径都在 `~/project/bothy-server/workspace/apps/android/` 下�
 - 直接 import kernel-core 的 8 个文件，名单见设计稿 2.3。
 - 用到 `ServerSideSearchCapability` 的 4 个文件：`RuntimeBuilder.kt`、`HostedSearchValidation.kt`、`ProviderConfig.kt`、`OnDeviceHost.kt`。
 
-## 7. 开工怎么起步（owner 确认之后）
+## 7. 原开工顺序（已完成，不重复执行）
 
 1. **把设计稿放到新分支上，main 工作区保持干净。** Bothy 本地编的是 `~/project/android-agent-runtime` 里的源码，这个工作区要一直停在 main。
 

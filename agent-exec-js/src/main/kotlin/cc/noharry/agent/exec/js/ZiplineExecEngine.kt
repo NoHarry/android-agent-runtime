@@ -1,4 +1,4 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.exec.js
 
@@ -6,12 +6,12 @@ import app.cash.zipline.EngineApi
 import app.cash.zipline.InterruptHandler
 import app.cash.zipline.QuickJs
 import app.cash.zipline.QuickJsException
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.ExecEngine
-import cc.noharry.agent.kernel.api.ExecRequest
-import cc.noharry.agent.kernel.api.ExecResult
-import cc.noharry.agent.kernel.api.ExecToolBridge
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.ExecEngine
+import cc.noharry.agent.spi.ExecRequest
+import cc.noharry.agent.spi.ExecResult
+import cc.noharry.agent.spi.ExecToolBridge
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runInterruptible
 import kotlinx.serialization.json.Json

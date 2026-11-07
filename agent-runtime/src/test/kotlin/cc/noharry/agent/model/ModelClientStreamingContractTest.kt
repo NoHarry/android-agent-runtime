@@ -13,9 +13,9 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.model.ModelMessage
-import cc.noharry.agent.kernel.api.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelEvent
 
 class ModelClientStreamingContractTest {
     @Test

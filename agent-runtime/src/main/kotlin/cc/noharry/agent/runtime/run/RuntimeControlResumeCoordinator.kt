@@ -1,24 +1,19 @@
 package cc.noharry.agent.runtime.run
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ConfirmationDecision
-import cc.noharry.agent.kernel.api.ConfirmationResumeResult
-import cc.noharry.agent.kernel.api.ProtocolRequestCloseLoopResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
-import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequestStatus
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ConfirmationDecision
+import cc.noharry.agent.spi.ConfirmationResumeResult
+import cc.noharry.agent.spi.reliability.RuntimeCompletionSummary
+import cc.noharry.agent.spi.reliability.RuntimeResult
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.loop.CONFIRMATION_EXPIRED_CODE
 import cc.noharry.agent.kernel.core.loop.NativeLoopOutcome
 import cc.noharry.agent.kernel.core.loop.USER_DECLINED_CODE
 import cc.noharry.agent.kernel.core.state.ConfirmationResume
 import cc.noharry.agent.kernel.core.state.InMemoryConfirmationStore
 import cc.noharry.agent.kernel.core.state.PendingToolUseController
-import cc.noharry.agent.kernel.core.state.ProtocolRequestController
 import cc.noharry.agent.kernel.core.state.RunStateController
 import cc.noharry.agent.kernel.core.state.SessionRunLease
-import cc.noharry.agent.kernel.core.state.protocolRequestOrNull
-import cc.noharry.agent.kernel.core.trace.TraceRedactor
+import cc.noharry.agent.runtime.TraceRedactor
 import cc.noharry.agent.kernel.core.trace.redactedForPublic
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
@@ -38,7 +33,6 @@ internal class RuntimeControlResumeCoordinator(
     private val terminal: RuntimeTerminalCoordinator,
     private val runStateController: RunStateController,
     private val sessionRecorder: RuntimeSessionRecorder,
-    private val protocolController: ProtocolRequestController,
     private val traceRedactor: TraceRedactor,
     private val closed: AtomicBoolean,
     private val runtimeIoDispatcher: CoroutineDispatcher,
@@ -109,22 +103,6 @@ internal class RuntimeControlResumeCoordinator(
         }
     }
 
-    suspend fun transitionProtocolRequest(
-        protocolRequestId: String,
-        requestId: String,
-        targetStatus: RuntimeProtocolRequestStatus,
-    ): ProtocolRequestCloseLoopResult {
-        val result = runtimeIo {
-            protocolController.transition(
-                protocolRequestId = protocolRequestId,
-                requestId = requestId,
-                targetStatus = targetStatus,
-            )
-        }
-        applyProtocolRequestOutcome(result.protocolRequestOrNull())
-        return result.redactedForPublic(traceRedactor)
-    }
-
     suspend fun applyConfirmationTerminalState(
         runId: String?,
         status: RuntimeRunStatus?,
@@ -168,22 +146,6 @@ internal class RuntimeControlResumeCoordinator(
             sessionAdmission.markWaitingAfterPersist(runId)
         }
         return null
-    }
-
-    private suspend fun applyProtocolRequestOutcome(protocolRequest: RuntimeProtocolRequest?) {
-        // REJECTED/CANCELLED/EXPIRED end the run. RESOLVED must not leave orphan RUNNING:
-        // fairly resume, then finish COMPLETED + UNKNOWN (never first-party PASS).
-        when (protocolRequest?.status) {
-            RuntimeProtocolRequestStatus.REJECTED,
-            RuntimeProtocolRequestStatus.CANCELLED,
-            RuntimeProtocolRequestStatus.EXPIRED,
-            -> persistProtocolTerminal(protocolRequest.runId, protocolRequest.status)
-            RuntimeProtocolRequestStatus.RESOLVED -> finishResolvedProtocolRequest(protocolRequest.runId)
-            RuntimeProtocolRequestStatus.CREATED,
-            RuntimeProtocolRequestStatus.WAITING,
-            null,
-            -> Unit
-        }
     }
 
     private suspend fun persistConfirmationTerminal(
@@ -288,58 +250,6 @@ internal class RuntimeControlResumeCoordinator(
             "Resume admission was rejected.",
         )
         return ConfirmationResumeResult.Rejected("Resume admission was rejected.")
-    }
-
-    private suspend fun finishResolvedProtocolRequest(runId: String) {
-        when (val outcome = sessionAdmission.admitResume(runId)) {
-            is ResumeAdmission.Granted -> finishGrantedProtocolRequest(runId, outcome.lease)
-            is ResumeAdmission.ProcessRestartUnsupported,
-            is ResumeAdmission.Closed,
-            is ResumeAdmission.Rejected,
-            -> Unit
-        }
-    }
-
-    private suspend fun finishGrantedProtocolRequest(runId: String, lease: SessionRunLease) {
-        if (!sessionAdmission.persistRunningAfterResumeGrant(runId, lease)) {
-            return
-        }
-        sessionAdmission.markFinalizingIfExecuting(runId, lease)
-        sessionAdmission.applyRuntimeResult(
-            RuntimeResult(
-                runId = runId,
-                status = RuntimeRunStatus.COMPLETED,
-                response = "Protocol request resolved.",
-                completion = RuntimeCompletionSummary.unknown(),
-            ),
-            lease = lease,
-        )
-    }
-
-    private suspend fun persistProtocolTerminal(
-        runId: String,
-        protocolStatus: RuntimeProtocolRequestStatus,
-    ) {
-        val result = RuntimeResult(
-            runId = runId,
-            status = RuntimeRunStatus.CANCELLED,
-            response = protocolTerminalResponse(protocolStatus),
-            recoverable = false,
-            completion = RuntimeCompletionSummary.unknown(),
-        )
-        sessionAdmission.markFinalizingIfExecuting(runId)
-        runtimeIo {
-            runStateController.applyRuntimeResult(result).also(sessionRecorder::finishRun)
-        }
-        finalizeControlRun(runId, result.status.name)
-    }
-
-    private fun protocolTerminalResponse(protocolStatus: RuntimeProtocolRequestStatus): String {
-        return when (protocolStatus) {
-            RuntimeProtocolRequestStatus.REJECTED -> "Protocol request rejected."
-            RuntimeProtocolRequestStatus.EXPIRED -> "Protocol request expired."
-            else -> "Protocol request cancelled."
-        }
     }
 
     private suspend fun finalizeControlRun(

@@ -1,15 +1,15 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.run
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.SessionEventPayload
-import cc.noharry.agent.kernel.api.SessionEventType
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelMessage
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.model.ModelTool
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.SessionEventPayload
+import cc.noharry.agent.spi.SessionEventType
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.model.ModelTool
+import cc.noharry.agent.spi.reliability.RuntimeResult
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.loop.completed
 import cc.noharry.agent.kernel.core.loop.failed
 import cc.noharry.agent.kernel.core.state.SessionQuery
@@ -197,7 +197,7 @@ class RuntimeSessionEventLogIntegrationTest {
         recorder.startRun(AgentRequest("request-1", "session-1", "input"), "request-1")
         recorder.appendMessage(
             MaterializerContext("session-1", "request-1", "request-1"),
-            cc.noharry.agent.kernel.api.model.ModelMessage(role = "user", content = "hi"),
+            cc.noharry.agent.spi.model.ModelMessage(role = "user", content = "hi"),
         )
         recorder.finishRun(RuntimeResult("request-1", RuntimeRunStatus.COMPLETED, "done"))
 
@@ -216,7 +216,7 @@ class RuntimeSessionEventLogIntegrationTest {
         recorder.startRun(AgentRequest("request-1", "session-1", "input"), "request-1")
         recorder.appendMessage(
             MaterializerContext("session-1", "request-1", "request-1"),
-            cc.noharry.agent.kernel.api.model.ModelMessage(role = "user", content = "hi"),
+            cc.noharry.agent.spi.model.ModelMessage(role = "user", content = "hi"),
         )
         recorder.finishRun(RuntimeResult("request-1", RuntimeRunStatus.COMPLETED, "done"))
 
@@ -250,7 +250,7 @@ class RuntimeSessionEventLogIntegrationTest {
         recorder.startRun(AgentRequest("request-1", "session-1", "input"), "request-1")
         recorder.appendMessage(
             MaterializerContext("session-1", "request-1", "request-1"),
-            cc.noharry.agent.kernel.api.model.ModelMessage(role = "user", content = "hi"),
+            cc.noharry.agent.spi.model.ModelMessage(role = "user", content = "hi"),
         )
         recorder.finishRun(RuntimeResult("request-1", RuntimeRunStatus.COMPLETED, "done"))
 
@@ -322,7 +322,7 @@ private fun recordCapturedModelRound(recorder: RuntimeSessionRecorder, request: 
     recorder.finishRun(RuntimeResult(request.requestId, RuntimeRunStatus.COMPLETED, "hello"))
 }
 
-private fun assertCapturedModelRound(replay: List<cc.noharry.agent.kernel.api.SessionEvent>) {
+private fun assertCapturedModelRound(replay: List<cc.noharry.agent.spi.SessionEvent>) {
     val capturedRequest = replay.first { it.type == SessionEventType.MODEL_REQUEST }.payload
         as SessionEventPayload.ModelRequest
     assertEquals("be helpful", capturedRequest.systemPrompt)
@@ -417,15 +417,15 @@ private class ControllableSessionStore(
 
 private class FailingEventLog(
     private val failWith: Throwable = IllegalStateException("event log failed"),
-) : cc.noharry.agent.kernel.api.SessionEventLog {
+) : cc.noharry.agent.spi.SessionEventLog {
     var attempts: Int = 0
 
-    override fun append(event: cc.noharry.agent.kernel.api.SessionEventAppend): cc.noharry.agent.kernel.api.SessionEvent {
+    override fun append(event: cc.noharry.agent.spi.SessionEventAppend): cc.noharry.agent.spi.SessionEvent {
         attempts += 1
         throw failWith
     }
 
-    override fun query(query: cc.noharry.agent.kernel.api.SessionEventQuery) = emptyList<cc.noharry.agent.kernel.api.SessionEvent>()
+    override fun query(query: cc.noharry.agent.spi.SessionEventQuery) = emptyList<cc.noharry.agent.spi.SessionEvent>()
 
-    override fun replay(sessionId: String, runId: String) = emptyList<cc.noharry.agent.kernel.api.SessionEvent>()
+    override fun replay(sessionId: String, runId: String) = emptyList<cc.noharry.agent.spi.SessionEvent>()
 }

@@ -1,10 +1,10 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.eventlog
 
-import cc.noharry.agent.kernel.api.SessionAttachmentRef
-import cc.noharry.agent.kernel.api.SessionEventPayload
-import cc.noharry.agent.kernel.api.SessionJson
+import cc.noharry.agent.spi.SessionAttachmentRef
+import cc.noharry.agent.spi.SessionEventPayload
+import cc.noharry.agent.spi.SessionJson
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull

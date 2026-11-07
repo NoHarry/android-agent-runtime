@@ -1,14 +1,14 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.ExecEngine
-import cc.noharry.agent.kernel.api.ExecRequest
-import cc.noharry.agent.kernel.api.ExecResult
-import cc.noharry.agent.kernel.api.ExecToolBridge
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.ExecEngine
+import cc.noharry.agent.spi.ExecRequest
+import cc.noharry.agent.spi.ExecResult
+import cc.noharry.agent.spi.ExecToolBridge
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.kernel.core.tools.NATIVE_TOOLS
 import java.nio.file.Files
 import kotlinx.coroutines.flow.toList
@@ -40,7 +40,7 @@ class NativeToolAvailabilityTest {
             .execEngine(engine)
             .modelClient(FakeModelClient(listOf(calls + ModelEvent.Completed, finishRound()), requests))
         disabled.clear()
-        val events = builder.build().run(agentRequest()).toList()
+        val events = builder.buildEngine().run(agentRequest()).toList()
         assertTrue(events.any { it is AgentEvent.ResultAvailable })
         assertEquals(0, engine.calls)
         assertTrue(requests.all { it.tools.map { tool -> tool.name } == listOf("finish") })
@@ -61,7 +61,7 @@ class NativeToolAvailabilityTest {
                 listOf(ModelEvent.ToolCall("exec", "exec_js", """{"code":"test"}"""), ModelEvent.Completed),
                 finishRound(),
             ), requests))
-            .build().run(agentRequest()).toList()
+            .buildEngine().run(agentRequest()).toList()
         assertEquals(1, engine.calls)
         assertEquals(3, engine.results.size)
         assertTrue(engine.results.all { it.contains("UNSUPPORTED_NATIVE_TOOL") && it.contains("\"ok\":false") })

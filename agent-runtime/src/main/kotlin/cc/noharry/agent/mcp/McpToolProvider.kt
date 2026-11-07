@@ -1,13 +1,13 @@
 package cc.noharry.agent.mcp
 
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.ToolInitializeContext
-import cc.noharry.agent.kernel.api.ToolInitializeResult
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.ToolInitializeContext
+import cc.noharry.agent.spi.ToolInitializeResult
+import cc.noharry.agent.spi.mcp.McpClientProvider
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray

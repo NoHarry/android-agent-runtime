@@ -1,9 +1,9 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
-import cc.noharry.agent.kernel.api.model.ModelEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.RuntimeEvidenceConfig
+import cc.noharry.agent.spi.model.ModelEvent
 import cc.noharry.agent.kernel.core.state.RUNS_DIR
 import cc.noharry.agent.runtime.probe.PROBES_JSONL
 import cc.noharry.agent.runtime.probe.PROBE_COMPLETENESS_JSON
@@ -30,7 +30,7 @@ class RuntimeEvidenceE2eTest {
             val runtime = AgentRuntimeBuilder.create()
                 .modelClient(finishOnlyClient())
                 .reliabilityStorageRoot(root)
-                .build()
+                .buildEngine()
             val events = runtime.run(simpleRequest("r-off")).toList()
             assertTrue(events.isNotEmpty())
             val runDirs = File(root, RUNS_DIR).listFiles().orEmpty()
@@ -56,7 +56,7 @@ class RuntimeEvidenceE2eTest {
                         casePackId = "none",
                     ),
                 )
-                .build()
+                .buildEngine()
             runtime.run(simpleRequest("r-on")).toList()
             val runDir = findProbeRunDir(root)
             assertTrue(File(runDir, PROBES_JSONL).isFile)
@@ -94,7 +94,7 @@ class RuntimeEvidenceE2eTest {
                         promptSha256 = hash,
                     ),
                 )
-                .build()
+                .buildEngine()
             runtime.run(
                 AgentRequest(
                     requestId = "r-case",
@@ -128,7 +128,7 @@ class RuntimeEvidenceE2eTest {
                             casePackId = "none",
                         ),
                     )
-                    .build()
+                    .buildEngine()
             }
             builder().run(simpleRequest("r1")).toList()
             assertTrue(findProbeRunDir(root).let { File(it, PROBES_JSONL).isFile })
@@ -163,7 +163,7 @@ class RuntimeEvidenceE2eTest {
                         promptSha256 = wrongHash,
                     ),
                 )
-                .build()
+                .buildEngine()
             runtime.run(
                 AgentRequest(requestId = "r-wrong", sessionId = "sess-ev", input = prompt),
             ).toList()
@@ -189,7 +189,7 @@ class RuntimeEvidenceE2eTest {
                         casePackId = "none",
                     ),
                 )
-                .build()
+                .buildEngine()
             runtime.run(simpleRequest("r-empty")).toList()
             val runDirs = File(root, RUNS_DIR).listFiles().orEmpty()
             for (dir in runDirs) {

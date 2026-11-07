@@ -1,22 +1,22 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentPlugin
-import cc.noharry.agent.kernel.api.AgentPluginScope
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ExecEngine
-import cc.noharry.agent.kernel.api.ExecRequest
-import cc.noharry.agent.kernel.api.ExecResult
-import cc.noharry.agent.kernel.api.ExecToolBridge
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentPlugin
+import cc.noharry.agent.spi.AgentPluginScope
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ExecEngine
+import cc.noharry.agent.spi.ExecRequest
+import cc.noharry.agent.spi.ExecResult
+import cc.noharry.agent.spi.ExecToolBridge
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.mcp.McpClientProvider
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -54,7 +54,7 @@ class ProviderConcurrencyCompositionTest {
         val runtime = AgentRuntimeBuilder.create()
             .modelClient(delegate)
             .modelConcurrency(1)
-            .build()
+            .buildEngine()
         val release = CompletableDeferred<Unit>()
         delegate.hold = release
 
@@ -82,7 +82,7 @@ class ProviderConcurrencyCompositionTest {
         val runtime = AgentRuntimeBuilder.create()
             .modelClient(delegate)
             .modelConcurrency(4)
-            .build()
+            .buildEngine()
         val release = CompletableDeferred<Unit>()
         delegate.hold = release
 
@@ -103,7 +103,7 @@ class ProviderConcurrencyCompositionTest {
         val runtime = AgentRuntimeBuilder.create()
             .modelClient(delegate)
             .modelConcurrency(1)
-            .build()
+            .buildEngine()
         val release = CompletableDeferred<Unit>()
         delegate.hold = release
 
@@ -115,7 +115,7 @@ class ProviderConcurrencyCompositionTest {
         val events = withTimeout(TEST_TIMEOUT_MS) {
             runtime.run(request("next")).toList()
         }
-        val result = events.filterIsInstance<cc.noharry.agent.kernel.api.AgentEvent.ResultAvailable>().single().result
+        val result = events.filterIsInstance<cc.noharry.agent.spi.AgentEvent.ResultAvailable>().single().result
         assertEquals(RuntimeRunStatus.COMPLETED, result.status)
         runtime.close()
     }
@@ -128,7 +128,7 @@ class ProviderConcurrencyCompositionTest {
             .execEngine(engine)
             .toolConcurrency(4)
             .modelConcurrency(4)
-            .build()
+            .buildEngine()
         val release = CompletableDeferred<Unit>()
         engine.hold = release
 
@@ -150,7 +150,7 @@ class ProviderConcurrencyCompositionTest {
         val modelError = assertThrows(IllegalStateException::class.java) {
             AgentRuntimeBuilder.create()
                 .modelClient(BarrierModelClient(ProviderConcurrencyDeclaration.sessionFactory(1)))
-                .build()
+                .buildEngine()
         }
         assertTrue(modelError.message.orEmpty().contains("SESSION_FACTORY"))
 
@@ -158,7 +158,7 @@ class ProviderConcurrencyCompositionTest {
             AgentRuntimeBuilder.create()
                 .modelClient(FinishModelClient())
                 .execEngine(BarrierExecEngine(ProviderConcurrencyDeclaration.sessionFactory(1)))
-                .build()
+                .buildEngine()
         }
         assertTrue(execError.message.orEmpty().contains("SESSION_FACTORY"))
     }
@@ -183,7 +183,7 @@ class ProviderConcurrencyCompositionTest {
                     }
                 },
             )
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         built.run(request("catalog")).toList()
         assertTrue(built.providerLimiterEntryCountForTests() >= 1)

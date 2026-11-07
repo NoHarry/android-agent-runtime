@@ -1,11 +1,11 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.HookContext
-import cc.noharry.agent.kernel.api.HookDecision
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.ToolUse
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.HookContext
+import cc.noharry.agent.spi.HookDecision
+import cc.noharry.agent.spi.RuntimeHook
+import cc.noharry.agent.spi.ToolUse
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -27,7 +27,7 @@ class DeferredBackendToolsTest {
         )
         val backend = GoldenMcpProvider(schemas)
         val hookedTools = mutableListOf<String>()
-        val runtime = runtime(model, backend).hook(recorder(hookedTools)).build()
+        val runtime = runtime(model, backend).hook(recorder(hookedTools)).buildEngine()
 
         runtime.run(goldenRequest()).toList()
 
@@ -63,7 +63,7 @@ class DeferredBackendToolsTest {
         )
         val backend = GoldenMcpProvider(schemas)
 
-        runtime(model, backend).build().run(goldenRequest()).toList()
+        runtime(model, backend).buildEngine().run(goldenRequest()).toList()
 
         assertEquals(listOf("set_temperature"), backend.calledTools)
     }
@@ -78,7 +78,7 @@ class DeferredBackendToolsTest {
         )
         val backend = GoldenMcpProvider(schemas)
 
-        runtime(model, backend).build().run(goldenRequest()).toList()
+        runtime(model, backend).buildEngine().run(goldenRequest()).toList()
 
         assertTrue(backend.calledTools.isEmpty())
         val error = model.seenRequests[1].messages.last { it.role == "tool" }.content
@@ -102,7 +102,7 @@ class DeferredBackendToolsTest {
             .nativeDeferredTools()
             .runContextAsSystem()
             .runContext("Current debug session context.")
-            .build()
+            .buildEngine()
             .run(goldenRequest())
             .toList()
 
@@ -135,7 +135,7 @@ class DeferredBackendToolsTest {
             .modelClient(model)
             .nativeDeferredTools()
             .sessionHistory(SessionHistory())
-            .build()
+            .buildEngine()
         runtime.run(goldenRequest("request-1")).toList()
         runtime.run(goldenRequest("request-2")).toList()
 

@@ -1,12 +1,12 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
 
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import java.nio.file.Files
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
@@ -27,7 +27,7 @@ class NoWorkspaceToolsTest {
         val runtime = AgentRuntimeBuilder.create()
             .modelClient(searchThenCall(seen))
             .toolProvider(functionTools("notes") { tool("save", "Saves a note.") { saved += "milk"; "saved" } })
-            .build()
+            .buildEngine()
 
         runtime.run(AgentRequest("r1", "s1", "Save a note.")).toList()
         runtime.close()
@@ -47,7 +47,7 @@ class NoWorkspaceToolsTest {
             .modelClient(searchThenCall(seen))
             .agentsMd("Be brief.")
             .skill(HostSkill(name = "pack", description = "Packs a bag.", skillMd = "Put things in the bag."))
-            .build()
+            .buildEngine()
 
         runtime.run(AgentRequest("r1", "s1", "Hello.")).toList()
         runtime.close()
@@ -61,7 +61,7 @@ class NoWorkspaceToolsTest {
     fun aWorkspaceKeepsTheFileTools() = runBlocking<Unit> {
         val root = Files.createTempDirectory("with-workspace").toFile()
         val seen = mutableListOf<ModelRequest>()
-        val runtime = AgentRuntimeBuilder.create().modelClient(searchThenCall(seen)).workspaceRoot(root).build()
+        val runtime = AgentRuntimeBuilder.create().modelClient(searchThenCall(seen)).workspaceRoot(root).buildEngine()
 
         runtime.run(AgentRequest("r1", "s1", "Hello.")).toList()
         runtime.close()

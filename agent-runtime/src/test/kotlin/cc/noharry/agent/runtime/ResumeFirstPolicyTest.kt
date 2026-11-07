@@ -1,15 +1,15 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
 
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.SessionRunConflictPolicy
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.SuggestedNextAction
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.SessionRunConflictPolicy
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.SuggestedNextAction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -25,7 +25,7 @@ class ResumeFirstPolicyTest {
         val runtime = AgentRuntimeBuilder.create()
             .confirmationOnRun()
             .modelClient(model)
-            .build()
+            .buildEngine()
 
         val first = runtime.run(agentRequest("request-1")).toList()
         val second = runtime.run(agentRequest("request-2", SessionRunConflictPolicy.RESUME_CURRENT)).toList()

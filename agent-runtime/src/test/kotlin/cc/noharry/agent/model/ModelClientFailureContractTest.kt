@@ -1,8 +1,8 @@
 package cc.noharry.agent.model
 
-import cc.noharry.agent.kernel.api.model.ModelClientException
+import cc.noharry.agent.spi.model.ModelClientException
 
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import cc.noharry.agent.transport.HttpEvent
 import cc.noharry.agent.transport.HttpRequest
 import cc.noharry.agent.transport.HttpResponse
@@ -17,9 +17,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.model.ModelMessage
 
 class ModelClientFailureContractTest {
     @Test

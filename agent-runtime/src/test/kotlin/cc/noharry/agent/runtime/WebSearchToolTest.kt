@@ -1,4 +1,4 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
 import cc.noharry.agent.kernel.core.tools.NetworkToolPolicyDecision
@@ -45,7 +45,7 @@ class WebSearchToolTest {
             .workspaceRoot(Files.createTempDirectory("web-search-").toFile())
             .modelClient(model)
             .webSearch(provider)
-            .build()
+            .buildEngine()
             .run(goldenRequest())
             .toList()
 
@@ -68,7 +68,7 @@ class WebSearchToolTest {
             .modelClient(model)
             .networkConfirmationPolicy(NetworkToolConfirmationPolicy.ALLOW_ALL_HOSTS)
             .webFetchFallback(fallback)
-            .build()
+            .buildEngine()
             .run(goldenRequest())
             .toList()
 
@@ -82,7 +82,7 @@ class WebSearchToolTest {
     @Test
     fun withoutAProviderThereIsNoWebSearch() = runBlocking {
         val model = GoldenScriptedModel(listOf(round(finish("好"))))
-        AgentRuntimeBuilder.create().workspaceRoot(Files.createTempDirectory("web-search-").toFile()).modelClient(model).build().run(goldenRequest()).toList()
+        AgentRuntimeBuilder.create().workspaceRoot(Files.createTempDirectory("web-search-").toFile()).modelClient(model).buildEngine().run(goldenRequest()).toList()
 
         assertFalse(model.seenRequests.first().tools.any { it.name == "web_search" })
     }

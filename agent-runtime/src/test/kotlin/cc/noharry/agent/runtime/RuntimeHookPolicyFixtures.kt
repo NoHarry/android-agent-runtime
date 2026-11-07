@@ -1,15 +1,15 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.ConfirmationChoice
-import cc.noharry.agent.kernel.api.ConfirmationDecision
-import cc.noharry.agent.kernel.api.HookContext
-import cc.noharry.agent.kernel.api.HookDecision
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.ToolUse
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
+import cc.noharry.agent.spi.ConfirmationChoice
+import cc.noharry.agent.spi.ConfirmationDecision
+import cc.noharry.agent.spi.HookContext
+import cc.noharry.agent.spi.HookDecision
+import cc.noharry.agent.spi.RuntimeHook
+import cc.noharry.agent.spi.ToolUse
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeResult
 import cc.noharry.agent.kernel.core.loop.failed
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
@@ -133,11 +133,11 @@ internal fun cancellingHook(): RuntimeHook = object : RuntimeHook {
 }
 
 internal fun lifecycleRecorder(events: MutableList<String>): RuntimeHook = object : RuntimeHook {
-    override suspend fun onRunStarted(context: HookContext) {
+    override suspend fun onTurnStarted(context: HookContext) {
         events += "started:${context.runId}"
     }
 
-    override suspend fun onRunFinished(result: RuntimeResult, context: HookContext) {
+    override suspend fun onTurnFinished(result: cc.noharry.agent.TurnResult, context: HookContext) {
         events += "finished:${context.runId}:${result.status}"
     }
 }

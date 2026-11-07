@@ -1,11 +1,11 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.run
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.WorkspaceExecutionTelemetry
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRef
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.WorkspaceExecutionTelemetry
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRef
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.state.SESSION_MODEL_CALL_STATUS_COMPLETED
 import cc.noharry.agent.kernel.core.state.SESSION_TOOL_STATUS_COMPLETED
 import cc.noharry.agent.kernel.core.state.SESSION_TOOL_STATUS_FAILED
@@ -30,11 +30,11 @@ import cc.noharry.agent.kernel.core.tools.DynamicToolSource
 import cc.noharry.agent.kernel.core.tools.MCP_TOOL_IS_ERROR_CODE
 import cc.noharry.agent.kernel.core.tools.MaterializerContext
 import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
-import cc.noharry.agent.kernel.core.trace.DefaultTraceRedactor
+import cc.noharry.agent.runtime.DefaultTraceRedactor
 import cc.noharry.agent.kernel.core.trace.RUNTIME_COUNTER_MATERIALIZER_READ_CACHE_MISSES
 import cc.noharry.agent.kernel.core.trace.RUNTIME_COUNTER_OVERLAY_ATTACHES
 import cc.noharry.agent.kernel.core.trace.RuntimeVfsPerformanceCounters
-import cc.noharry.agent.kernel.core.trace.TraceVisibilityConfig
+import cc.noharry.agent.runtime.TraceVisibilityConfig
 import cc.noharry.agent.runtime.DefaultAgentRuntime
 import cc.noharry.agent.runtime.FakeModelClient
 import cc.noharry.agent.runtime.RuntimeWorkspaceRef
@@ -304,7 +304,6 @@ private fun sessionStoreRuntime(
             "default",
         ),
         confirmationTemplate = null,
-        protocolRequestTemplate = null,
         nowEpochMillis = { 100 },
         hookChain = RuntimeHookChain.empty(),
         traceVisibilityConfig = TraceVisibilityConfig(),

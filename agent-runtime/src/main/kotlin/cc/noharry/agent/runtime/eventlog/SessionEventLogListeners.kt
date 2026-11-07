@@ -1,9 +1,9 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.eventlog
 
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.SessionEvent
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.SessionEvent
 import java.util.concurrent.CopyOnWriteArrayList
 
 @OptIn(ExperimentalAgentRuntimeApi::class)

@@ -10,9 +10,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.model.ModelRef
-import cc.noharry.agent.kernel.api.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.model.ModelRef
+import cc.noharry.agent.spi.model.ModelMessage
 
 class ModelVariantRegistryTest {
     @Test

@@ -1,11 +1,11 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
+import cc.noharry.agent.spi.reliability.RuntimeCompletionSummary
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
@@ -41,7 +41,7 @@ class NativeToolLoopNoModelTest {
 
     @Test
     fun ordinaryRuntimeRunFailsClosedWhenModelMissing() = runBlocking {
-        val runtime = AgentRuntimeBuilder.create().build()
+        val runtime = AgentRuntimeBuilder.create().buildEngine()
         try {
             runtime.run(agentRequest()).toList()
             val result = requireNotNull(runtime.getRuntimeResult("request-1"))
@@ -68,7 +68,7 @@ class NativeToolLoopNoModelTest {
                     ),
                 ),
             )
-            .build()
+            .buildEngine()
         try {
             runtime.run(agentRequest()).toList()
             val result = requireNotNull(runtime.getRuntimeResult("request-1"))

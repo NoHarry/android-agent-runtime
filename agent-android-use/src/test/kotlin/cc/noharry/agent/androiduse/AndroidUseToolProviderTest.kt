@@ -1,9 +1,9 @@
 package cc.noharry.agent.androiduse
 
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolPrefetchRequest
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolPrefetchRequest
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

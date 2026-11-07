@@ -1,8 +1,8 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.model.ModelEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.model.ModelEvent
 import cc.noharry.agent.kernel.core.context.CHECKPOINT_PREAMBLE
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -26,7 +26,7 @@ class ConversationCompactionRuntimeTest {
             .modelClient(model)
             .sessionHistory(history)
             .contextWindow(2000)
-            .build()
+            .buildEngine()
             .run(AgentRequest(id, "session-1", "空调".repeat(2000) + id))
             .toList()
 

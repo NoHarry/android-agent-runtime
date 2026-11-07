@@ -9,8 +9,7 @@ class ExecutePlanCompatibilityDeletedInventoryTest {
     @Test
     fun productionCatalogHasNoExecutePlanCompatibilityPath() {
         val roots = listOf(
-            File("../agent-kernel-api/src/main"),
-            File("../agent-kernel-core/src/main"),
+            File("../agent-api/src/main"),
             File("src/main"),
             File("../samples/minimal/src/main"),
         )

@@ -1,0 +1,16 @@
+package cc.noharry.agent.spi
+
+/**
+ * Filter for querying a session event history.
+ *
+ * [afterSequenceExclusive] is stream-local and therefore requires [runId]. A null [limit]
+ * returns the complete matching snapshot.
+ */
+data class SessionEventQuery(
+    val sessionId: String,
+    val runId: String? = null,
+    val requestId: String? = null,
+    val types: Set<SessionEventType> = emptySet(),
+    val afterSequenceExclusive: Long? = null,
+    val limit: Int? = null,
+)

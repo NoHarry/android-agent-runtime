@@ -1,7 +1,7 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.reliability
-import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
+import cc.noharry.agent.spi.RuntimeEvidenceConfig
 import cc.noharry.agent.runtime.probe.ProbePack
 import cc.noharry.agent.runtime.probe.benchCorePack
 import java.io.File

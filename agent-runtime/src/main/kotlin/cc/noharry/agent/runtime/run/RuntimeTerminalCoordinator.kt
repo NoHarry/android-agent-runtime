@@ -1,9 +1,9 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.run
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.RuntimeCompletedTurn
-import cc.noharry.agent.kernel.api.RuntimeTurnObserver
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.RuntimeCompletedTurn
+import cc.noharry.agent.spi.RuntimeTurnObserver
 import cc.noharry.agent.kernel.core.loop.completed
 import cc.noharry.agent.kernel.core.state.SessionRunLease
 import cc.noharry.agent.kernel.core.tools.ToolActivationStore

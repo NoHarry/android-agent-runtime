@@ -1,17 +1,17 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentCapabilities
-import cc.noharry.agent.kernel.api.AgentPlugin
-import cc.noharry.agent.kernel.api.AgentPluginDescriptor
-import cc.noharry.agent.kernel.api.AgentPluginScope
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.KernelApiRange
-import cc.noharry.agent.kernel.api.KernelApiVersions
-import cc.noharry.agent.kernel.api.PluginVersion
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.AgentCapabilities
+import cc.noharry.agent.spi.AgentPlugin
+import cc.noharry.agent.spi.AgentPluginDescriptor
+import cc.noharry.agent.spi.AgentPluginScope
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.KernelApiRange
+import cc.noharry.agent.spi.KernelApiVersions
+import cc.noharry.agent.spi.PluginVersion
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -39,7 +39,7 @@ class KernelPluginIntegrationTest {
                     own(AutoCloseable { closeCount++ })
                 },
             )
-            .build()
+            .buildEngine()
 
         runtime.run(AgentRequest("request-1", "session-1", "finish")).toList()
         runtime.close()
@@ -74,7 +74,7 @@ class KernelPluginIntegrationTest {
                     }
                 },
             )
-            .build()
+            .buildEngine()
 
         runtime.run(AgentRequest("request-2", "session-2", "finish")).toList()
         runtime.close()
@@ -112,7 +112,7 @@ class KernelPluginIntegrationTest {
                 },
             )
 
-        val error = assertThrows(IllegalArgumentException::class.java) { builder.build() }
+        val error = assertThrows(IllegalArgumentException::class.java) { builder.buildEngine() }
         assertTrue(error.message.orEmpty().contains("duplicate SINGLE"))
         assertTrue(!installed)
     }

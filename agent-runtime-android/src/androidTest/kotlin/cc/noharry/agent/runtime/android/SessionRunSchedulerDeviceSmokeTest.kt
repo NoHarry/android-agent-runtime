@@ -1,203 +1,90 @@
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
+
 package cc.noharry.agent.runtime.android
 
 import androidx.test.runner.AndroidJUnit4
-import cc.noharry.agent.kernel.core.state.SessionRunAdmission
-import cc.noharry.agent.kernel.core.state.SessionRunAdmissionReason
-import cc.noharry.agent.kernel.core.state.SessionRunQueuedIdentity
-import cc.noharry.agent.kernel.core.state.SessionRunScheduler
-import cc.noharry.agent.kernel.core.state.SessionRunSchedulerConfig
-import cc.noharry.agent.kernel.core.state.SessionRunSchedulerSnapshot
-import kotlin.coroutines.coroutineContext
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.yield
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import cc.noharry.agent.AgentRuntime
+import cc.noharry.agent.AgentThread
+import cc.noharry.agent.ThreadStatus
+import cc.noharry.agent.TurnStatus
+import cc.noharry.agent.runtime.LoopSettings
+import cc.noharry.agent.runtime.RuntimeConcurrency
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.flow
+import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/** Exercises the public scheduler path on the device, including caller cancellation and runtime close. */
 @RunWith(AndroidJUnit4::class)
 class SessionRunSchedulerDeviceSmokeTest {
-    @Test
-    fun deviceSmokeProvesOverlapQueueCancelReleaseReadmitAndClose() {
-        runBlocking {
-            withTimeout(CASE_TIMEOUT_MS) {
-                val scheduler = SessionRunScheduler(DEVICE_CONFIG)
-                val jobs = mutableListOf<Job>()
-                try {
-                    val overlap = proveOverlapQueueAndCancel(scheduler, jobs)
-                    proveReleaseAndReadmit(scheduler, jobs, overlap.first, overlap.second)
-                    proveCloseReturnsAttachedAndQueued(scheduler, jobs)
-                } finally {
-                    cancelAndJoinAll(jobs)
-                }
+    @Test fun deviceSmokeProvesOverlapQueueCancelReleaseReadmitAndClose() = runBlocking {
+        withTimeout(15_000) {
+            val model = DeviceGateModel()
+            AgentRuntime.builder().model(model).settings(LoopSettings(
+                concurrency = RuntimeConcurrency(activeThreads = 2, queuedPerThread = 1, queuedTotal = 2),
+            )).build().use { runtime ->
+                val a = runtime.startThread()
+                val b = runtime.startThread()
+                proveOverlapAndCancel(model, a, b)
+                model.release("readmit")
+                assertEquals(TurnStatus.COMPLETED, runtime.startThread().run("readmit").status)
+                proveClose(model, runtime, a)
             }
         }
     }
 }
 
-private suspend fun CoroutineScope.proveOverlapQueueAndCancel(
-    scheduler: SessionRunScheduler,
-    jobs: MutableList<Job>,
-): Pair<HeldOrdinaryRun, HeldOrdinaryRun> {
-    val startedOrder = mutableListOf<String>()
-    val sessionA = holdOrdinary(scheduler, SESSION_A, RUN_A1, startedOrder)
-    val sessionB = holdOrdinary(scheduler, SESSION_B, RUN_B1, startedOrder)
-    jobs += sessionA.job
-    jobs += sessionB.job
-    sessionA.started.await()
-    sessionB.started.await()
-    val overlapping = scheduler.snapshot()
-    assertEquals(EXPECTED_ACTIVE_OVERLAP, overlapping.activeExecutionCount)
-    assertEquals(setOf(SESSION_A, SESSION_B), overlapping.owners.keys)
-
-    val queued = launch { scheduler.admitOrdinary(SESSION_A, RUN_A2) }
-    jobs += queued
-    awaitSnapshot(scheduler) { it.queuedCount == 1 && !queued.isCompleted }
-    queued.cancel()
-    withTimeout(POLL_TIMEOUT_MS) { queued.join() }
-    awaitSnapshot(scheduler) { it.queuedCount == 0 }
-    assertEquals(EXPECTED_ACTIVE_OVERLAP, scheduler.snapshot().activeExecutionCount)
-    return sessionA to sessionB
+private suspend fun CoroutineScope.proveOverlapAndCancel(model: DeviceGateModel, a: AgentThread, b: AgentThread) {
+    val first = async { a.run("a1") }
+    val second = async { b.run("b1") }
+    assertEquals(setOf("a1", "b1"), setOf(model.started.receive(), model.started.receive()))
+    assertEquals(ThreadStatus.RUNNING, a.status())
+    assertEquals(ThreadStatus.RUNNING, b.status())
+    val queued = async(start = CoroutineStart.UNDISPATCHED) { a.run("cancelled") }
+    delay(50)
+    assertFalse(queued.isCompleted)
+    queued.cancelAndJoin()
+    model.release("a1")
+    model.release("b1")
+    assertEquals(TurnStatus.COMPLETED, first.await().status)
+    assertEquals(TurnStatus.COMPLETED, second.await().status)
+    assertFalse(model.seen.contains("cancelled"))
 }
 
-private suspend fun CoroutineScope.proveReleaseAndReadmit(
-    scheduler: SessionRunScheduler,
-    jobs: MutableList<Job>,
-    sessionA: HeldOrdinaryRun,
-    sessionB: HeldOrdinaryRun,
-) {
-    sessionA.releaseAndJoin()
-    sessionB.releaseAndJoin()
-    val idle = scheduler.snapshot()
-    assertEquals(0, idle.activeExecutionCount)
-    assertTrue(idle.owners.isEmpty())
-
-    val startedOrder = mutableListOf<String>()
-    val readmit = holdOrdinary(scheduler, SESSION_C, RUN_C1, startedOrder)
-    jobs += readmit.job
-    readmit.started.await()
-    assertEquals(1, scheduler.snapshot().activeExecutionCount)
-    assertEquals(RUN_C1, scheduler.snapshot().owners[SESSION_C])
-    readmit.releaseAndJoin()
-    assertIdle(scheduler)
+private suspend fun CoroutineScope.proveClose(model: DeviceGateModel, runtime: AgentRuntime, thread: AgentThread) {
+    // Consume the already completed readmission before waiting for the new active request.
+    assertEquals("readmit", model.started.receive())
+    val owner = async { runCatching { thread.run("close-owner") } }
+    assertEquals("close-owner", model.started.receive())
+    val queued = async(start = CoroutineStart.UNDISPATCHED) { runCatching { thread.run("close-queued") } }
+    delay(50)
+    runtime.close()
+    owner.await()
+    queued.await()
+    assertFalse(model.seen.contains("close-queued"))
 }
 
-private suspend fun CoroutineScope.proveCloseReturnsAttachedAndQueued(
-    scheduler: SessionRunScheduler,
-    jobs: MutableList<Job>,
-) {
-    val owner = holdOrdinary(scheduler, SESSION_CLOSE, RUN_OWNER, mutableListOf())
-    jobs += owner.job
-    owner.started.await()
-    val queuedAdmission = CompletableDeferred<SessionRunAdmission>()
-    val queued = launch { queuedAdmission.complete(scheduler.admitOrdinary(SESSION_CLOSE, RUN_QUEUED)) }
-    jobs += queued
-    awaitSnapshot(scheduler) { it.queuedCount == 1 }
+private class DeviceGateModel : ModelClient {
+    override val providerConcurrency = ProviderConcurrencyDeclaration.threadSafe()
+    val started = Channel<String>(Channel.UNLIMITED)
+    val seen: MutableSet<String> = java.util.Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
+    private val gates = ConcurrentHashMap<String, CompletableDeferred<Unit>>()
 
-    val closed = scheduler.close()
-    assertEquals(listOf(RUN_OWNER), closed.attachedJobs.map { it.runId })
-    assertEquals(listOf(SessionRunQueuedIdentity(SESSION_CLOSE, RUN_QUEUED)), closed.queuedIdentities)
-    assertTrue(closed.attachedJobs.all { it.job.isActive })
-    closed.attachedJobs.forEach { it.job.cancel() }
-    withTimeout(POLL_TIMEOUT_MS) {
-        closed.attachedJobs.forEach { it.job.join() }
-        owner.job.join()
-        queued.join()
-    }
-    val rejected = queuedAdmission.await() as SessionRunAdmission.Rejected
-    assertEquals(SessionRunAdmissionReason.CLOSED, rejected.reason)
-    assertIdle(scheduler)
-}
+    fun release(input: String) { gates.getOrPut(input) { CompletableDeferred() }.complete(Unit) }
 
-private suspend fun awaitSnapshot(
-    scheduler: SessionRunScheduler,
-    predicate: (SessionRunSchedulerSnapshot) -> Boolean,
-): SessionRunSchedulerSnapshot {
-    return withTimeout(POLL_TIMEOUT_MS) {
-        var snap = scheduler.snapshot()
-        while (!predicate(snap)) {
-            yield()
-            snap = scheduler.snapshot()
-        }
-        snap
+    override fun complete(request: ModelRequest) = flow {
+        val input = request.messages.last { it.role == "user" }.content
+        seen.add(input)
+        started.send(input)
+        gates.getOrPut(input) { CompletableDeferred() }.await()
+        emit(ModelEvent.TextDelta("Finished $input."))
+        emit(ModelEvent.Completed)
     }
 }
-
-private suspend fun assertIdle(scheduler: SessionRunScheduler) {
-    val snap = scheduler.snapshot()
-    assertEquals(0, snap.activeExecutionCount)
-    assertEquals(0, snap.queuedCount)
-    assertTrue(snap.owners.isEmpty())
-    assertTrue(snap.readySessionIds.isEmpty())
-    assertTrue(snap.waitingOwnerRunIds.isEmpty())
-    assertTrue(snap.drainingSessionIds.isEmpty())
-}
-
-private suspend fun cancelAndJoinAll(jobs: List<Job>) {
-    jobs.forEach { it.cancel() }
-    withTimeout(POLL_TIMEOUT_MS) { jobs.forEach { it.join() } }
-}
-
-private class HeldOrdinaryRun(
-    val job: Job,
-    val started: CompletableDeferred<Unit>,
-    val hold: CompletableDeferred<Unit>,
-) {
-    suspend fun releaseAndJoin() {
-        hold.complete(Unit)
-        withTimeout(POLL_TIMEOUT_MS) { job.join() }
-    }
-}
-
-private fun CoroutineScope.holdOrdinary(
-    scheduler: SessionRunScheduler,
-    sessionId: String,
-    runId: String,
-    startedOrder: MutableList<String>,
-): HeldOrdinaryRun {
-    val started = CompletableDeferred<Unit>()
-    val hold = CompletableDeferred<Unit>()
-    val job = launch {
-        val admission = scheduler.admitOrdinary(sessionId, runId)
-        if (admission !is SessionRunAdmission.Granted) {
-            return@launch
-        }
-        try {
-            scheduler.attachJob(admission.lease, coroutineContext[Job]!!)
-            startedOrder += runId
-            started.complete(Unit)
-            hold.await()
-        } finally {
-            val completion = scheduler.completeAndQueryDrain(admission.lease)
-            completion.drainLease?.let { scheduler.finishSessionDrain(it) }
-        }
-    }
-    return HeldOrdinaryRun(job, started, hold)
-}
-
-private const val EXPECTED_ACTIVE_OVERLAP = 2
-private const val MAX_QUEUED_PER_SESSION = 8
-private const val MAX_QUEUED_GLOBAL = 16
-
-private val DEVICE_CONFIG = SessionRunSchedulerConfig(
-    maxActiveSessions = EXPECTED_ACTIVE_OVERLAP,
-    maxQueuedRunsPerSession = MAX_QUEUED_PER_SESSION,
-    maxQueuedRunsGlobal = MAX_QUEUED_GLOBAL,
-)
-private const val CASE_TIMEOUT_MS = 15_000L
-private const val POLL_TIMEOUT_MS = 5_000L
-private const val SESSION_A = "session-a"
-private const val SESSION_B = "session-b"
-private const val SESSION_C = "session-c"
-private const val SESSION_CLOSE = "session-close"
-private const val RUN_A1 = "run-a1"
-private const val RUN_A2 = "run-a2"
-private const val RUN_B1 = "run-b1"
-private const val RUN_C1 = "run-c1"
-private const val RUN_OWNER = "run-owner"
-private const val RUN_QUEUED = "run-queued"

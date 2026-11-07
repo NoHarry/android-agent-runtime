@@ -1,23 +1,23 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ExecEngine
-import cc.noharry.agent.kernel.api.ExecRequest
-import cc.noharry.agent.kernel.api.ExecResult
-import cc.noharry.agent.kernel.api.ExecToolBridge
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.ToolSource
-import cc.noharry.agent.kernel.api.ToolUse
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ExecEngine
+import cc.noharry.agent.spi.ExecRequest
+import cc.noharry.agent.spi.ExecResult
+import cc.noharry.agent.spi.ExecToolBridge
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.ToolSource
+import cc.noharry.agent.spi.ToolUse
+import cc.noharry.agent.spi.mcp.McpClientProvider
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
@@ -207,7 +207,7 @@ class ToolConcurrencyTest {
                 execEngine?.let { engine -> execEngine(engine) }
                 mcpProvider?.let { provider -> toolProvider(provider) }
             }
-            .build()
+            .buildEngine()
 }
 
 private class ToolConcurrencyModelClient : ModelClient {

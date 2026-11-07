@@ -6,13 +6,13 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.CalendarContract
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolCatalogCacheIdentity
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.ToolDescriptor
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolCatalogCacheIdentity
+import cc.noharry.agent.spi.mcp.McpClientProvider
+import cc.noharry.agent.spi.ToolDescriptor
 
 /** Optional Android calendar MCP provider backed by CalendarContract. */
 class DeviceCalendarMcpProvider internal constructor(

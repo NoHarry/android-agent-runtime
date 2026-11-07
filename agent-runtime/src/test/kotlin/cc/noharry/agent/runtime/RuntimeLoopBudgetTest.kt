@@ -1,12 +1,12 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.ConfirmationResumeResult
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.ConfirmationResumeResult
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.MAX_HOST_SYSTEM_PROMPT_BYTES
 import cc.noharry.agent.kernel.core.loop.DEFAULT_MAX_TOOL_CALLS_PER_RUN
 import cc.noharry.agent.kernel.core.loop.LoopBudgetConfig
@@ -35,7 +35,7 @@ class RuntimeLoopBudgetTest {
             .toolProvider(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
             .modelClient(backendOnlyModel(seenRequests))
             .loopBudget(maxModelRounds = 1)
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events
@@ -66,7 +66,7 @@ class RuntimeLoopBudgetTest {
                 ),
             )
             .loopBudget(maxToolCallsPerRun = 1)
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ResultAvailable>()
@@ -112,7 +112,7 @@ class RuntimeLoopBudgetTest {
                 listOf(ModelEvent.UsageDelta(inputTokens = input), ModelEvent.ToolCall("r2", "read_file", """{"path":"/note.txt"}"""), ModelEvent.Completed),
                 listOf(ModelEvent.ToolCall("done", "finish", """{"response":"done"}"""), ModelEvent.Completed),
             ))
-            val runtime = AgentRuntimeBuilder.create().workspaceRoot(root).modelClient(model).contextWindow(window).build()
+            val runtime = AgentRuntimeBuilder.create().workspaceRoot(root).modelClient(model).contextWindow(window).buildEngine()
             val events = runtime.run(agentRequest()).toList()
             assertEquals("window=$window input=$input", expected, events.filterIsInstance<AgentEvent.CompactionApplied>().size)
             assertEquals(RuntimeRunStatus.COMPLETED, events.filterIsInstance<AgentEvent.ResultAvailable>().single().result.status)
@@ -130,7 +130,7 @@ class RuntimeLoopBudgetTest {
             }
             .modelClient(finishOnlyModel())
             .loopBudget(maxWallClockMillis = 1)
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ResultAvailable>()
@@ -150,7 +150,7 @@ class RuntimeLoopBudgetTest {
             .workspaceRoot(workspace())
             .hook(confirmUntilApproved())
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val pending = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ConfirmationRequired>()

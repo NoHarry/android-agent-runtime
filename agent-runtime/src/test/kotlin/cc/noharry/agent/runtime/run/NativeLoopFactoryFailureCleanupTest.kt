@@ -1,13 +1,15 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.run
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+
+import cc.noharry.agent.runtime.DefaultTraceRedactor
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*

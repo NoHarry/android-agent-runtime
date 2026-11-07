@@ -1,20 +1,18 @@
 package cc.noharry.agent.runtime.reliability
-import cc.noharry.agent.kernel.api.reliability.CompletionItem
-import cc.noharry.agent.kernel.api.reliability.OpenConfusion
-import cc.noharry.agent.kernel.api.reliability.RuntimeBlocker
-import cc.noharry.agent.kernel.api.reliability.RuntimeEvidence
-import cc.noharry.agent.kernel.api.reliability.RuntimeEvidenceType
-import cc.noharry.agent.kernel.api.reliability.RuntimeHandoff
-import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequestStatus
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunEnvelope
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunPhase
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunSnapshot
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
-import cc.noharry.agent.kernel.api.reliability.RuntimeTraceEvent
-import cc.noharry.agent.kernel.api.reliability.RuntimeWorkpad
-import cc.noharry.agent.kernel.api.reliability.SuggestedNextAction
+import cc.noharry.agent.spi.reliability.CompletionItem
+import cc.noharry.agent.spi.reliability.OpenConfusion
+import cc.noharry.agent.spi.reliability.RuntimeBlocker
+import cc.noharry.agent.spi.reliability.RuntimeEvidence
+import cc.noharry.agent.spi.reliability.RuntimeEvidenceType
+import cc.noharry.agent.spi.reliability.RuntimeHandoff
+import cc.noharry.agent.spi.reliability.RuntimeResult
+import cc.noharry.agent.spi.reliability.RuntimeRunEnvelope
+import cc.noharry.agent.spi.reliability.RuntimeRunPhase
+import cc.noharry.agent.spi.reliability.RuntimeRunSnapshot
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.reliability.RuntimeTraceEvent
+import cc.noharry.agent.spi.reliability.RuntimeWorkpad
+import cc.noharry.agent.spi.reliability.SuggestedNextAction
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -116,7 +114,7 @@ internal object ReliabilityJsonCodecs {
             errorCode = json.optString("errorCode"),
             recoverable = json.boolOrDefault("recoverable", true),
             completion = json.objOrNull("completion")?.let(::decodeCompletion)
-                ?: cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary.unknown(),
+                ?: cc.noharry.agent.spi.reliability.RuntimeCompletionSummary.unknown(),
         )
     }
 
@@ -169,6 +167,7 @@ internal object ReliabilityJsonCodecs {
         put("eventName", value.eventName)
         put("createdAtEpochMillis", value.createdAtEpochMillis)
         value.evidenceId?.let { put("evidenceId", it) }
+        put("details", JsonObject(value.details.mapValues { JsonPrimitive(it.value) }))
     }.toString()
 
     fun decodeTrace(value: String): RuntimeTraceEvent {
@@ -178,37 +177,11 @@ internal object ReliabilityJsonCodecs {
             eventName = json.string("eventName"),
             createdAtEpochMillis = json.long("createdAtEpochMillis"),
             evidenceId = json.optString("evidenceId"),
+            details = (json["details"] as? JsonObject)?.mapValues { it.value.jsonPrimitive.content }.orEmpty(),
         )
     }
 
-    fun encodeProtocolRequest(value: RuntimeProtocolRequest): String = buildJsonObject {
-        put("protocolRequestId", value.protocolRequestId)
-        put("runId", value.runId)
-        value.sessionId?.let { put("sessionId", it) }
-        put("status", value.status.name)
-        put("kind", value.kind)
-        put("payloadJson", value.payloadJson)
-        put("createdAtEpochMillis", value.createdAtEpochMillis)
-        value.expiresAtEpochMillis?.let { put("expiresAtEpochMillis", it) }
-        value.resolvedAtEpochMillis?.let { put("resolvedAtEpochMillis", it) }
-        value.resolutionEvidenceId?.let { put("resolutionEvidenceId", it) }
-    }.toString()
 
-    fun decodeProtocolRequest(value: String): RuntimeProtocolRequest {
-        val json = obj(value)
-        return RuntimeProtocolRequest(
-            protocolRequestId = json.string("protocolRequestId"),
-            runId = json.string("runId"),
-            sessionId = json.optString("sessionId"),
-            status = RuntimeProtocolRequestStatus.valueOf(json.string("status")),
-            kind = json.string("kind"),
-            payloadJson = json.string("payloadJson"),
-            createdAtEpochMillis = json.long("createdAtEpochMillis"),
-            expiresAtEpochMillis = json.optLong("expiresAtEpochMillis"),
-            resolvedAtEpochMillis = json.optLong("resolvedAtEpochMillis"),
-            resolutionEvidenceId = json.optString("resolutionEvidenceId"),
-        )
-    }
 }
 
 private fun encodeHandoffJson(value: RuntimeHandoff): JsonObject = buildJsonObject {
@@ -257,7 +230,7 @@ private fun decodeBlocker(json: JsonObject): RuntimeBlocker = RuntimeBlocker(
     evidenceId = json.optString("evidenceId"),
 )
 
-private fun encodeCompletion(value: cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary): JsonObject = buildJsonObject {
+private fun encodeCompletion(value: cc.noharry.agent.spi.reliability.RuntimeCompletionSummary): JsonObject = buildJsonObject {
     put("outcome", value.outcome.name)
     put("requiredTotal", value.requiredTotal)
     put("requiredSucceeded", value.requiredSucceeded)
@@ -266,12 +239,12 @@ private fun encodeCompletion(value: cc.noharry.agent.kernel.api.reliability.Runt
     put("projectionDigest", value.projectionDigest)
 }
 
-private fun decodeCompletion(json: JsonObject): cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary {
+private fun decodeCompletion(json: JsonObject): cc.noharry.agent.spi.reliability.RuntimeCompletionSummary {
     val outcomeToken = json.optString("outcome")
-    val outcome = cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome.entries
+    val outcome = cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome.entries
         .firstOrNull { it.name == outcomeToken }
-        ?: cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome.UNKNOWN
-    return cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary(
+        ?: cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome.UNKNOWN
+    return cc.noharry.agent.spi.reliability.RuntimeCompletionSummary(
         outcome = outcome,
         requiredTotal = json.string("requiredTotal").toIntOrNull() ?: 0,
         requiredSucceeded = json.string("requiredSucceeded").toIntOrNull() ?: 0,

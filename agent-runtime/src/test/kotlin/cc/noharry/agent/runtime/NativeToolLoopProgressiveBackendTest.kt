@@ -1,14 +1,14 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeCandidate
-import cc.noharry.agent.kernel.api.reliability.RuntimeCandidateType
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeCandidate
+import cc.noharry.agent.spi.reliability.RuntimeCandidateType
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
@@ -33,6 +33,7 @@ class NativeToolLoopProgressiveBackendTest {
         val seenRequests = mutableListOf<ModelRequest>()
         val backend = LoopMcpProvider(exposedTools = manyTools())
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(Files.createTempDirectory("mcp-progressive-").toFile())
             .toolProvider(backend)
             .modelClient(
@@ -46,7 +47,7 @@ class NativeToolLoopProgressiveBackendTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -68,10 +69,11 @@ class NativeToolLoopProgressiveBackendTest {
         )
         val workspaceRoot = Files.createTempDirectory("mcp-progressive-").toFile()
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(workspaceRoot)
             .toolProvider(backend)
             .modelClient(tc202Model(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -95,10 +97,11 @@ class NativeToolLoopProgressiveBackendTest {
         val model = ConcurrentProgressiveModel()
         val backend = LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature")))
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(Files.createTempDirectory("mcp-progressive-").toFile())
             .toolProvider(backend)
             .modelClient(model)
-            .build()
+            .buildEngine()
 
         val runA = async { runtime.run(request("run-a", "activate", sessionId = "session-a")).toList() }
         val runB = async { runtime.run(request("run-b", "finish-only", sessionId = "session-b")).toList() }
@@ -120,11 +123,12 @@ class NativeToolLoopProgressiveBackendTest {
         val model = ConcurrentProgressiveModel()
         val backend = LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature")))
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(Files.createTempDirectory("session-activation-").toFile())
             .toolProvider(backend)
             .modelClient(model)
             .sessionActivationInheritance()
-            .build()
+            .buildEngine()
 
         runtime.run(request("run-a", "activate")).toList()
         runtime.run(request("run-b", "reuse")).toList()
@@ -139,6 +143,7 @@ class NativeToolLoopProgressiveBackendTest {
         promoteMemory(workspaceRoot, "Observed capability set: ac set temperature", scene = "cabin")
         val seenRequests = mutableListOf<ModelRequest>()
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(workspaceRoot)
             .toolProvider(hvacBackend())
             .modelClient(
@@ -151,7 +156,7 @@ class NativeToolLoopProgressiveBackendTest {
                 ),
             )
             .sessionActivationInheritance()
-            .build()
+            .buildEngine()
 
         runtime.run(request("run-hot", "有点热", scene = "cabin")).toList()
         runtime.run(request("run-tired", "我有点困", scene = "cabin")).toList()
@@ -167,6 +172,7 @@ class NativeToolLoopProgressiveBackendTest {
         promoteMemory(workspaceRoot, "Observed capability set: ac set temperature", scene = "cabin")
         val model = ConcurrentProgressiveModel()
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(workspaceRoot)
             .toolProvider(
                 LoopMcpProvider(
@@ -177,7 +183,7 @@ class NativeToolLoopProgressiveBackendTest {
             )
             .modelClient(model)
             .sessionActivationInheritance()
-            .build()
+            .buildEngine()
 
         runtime.run(request("run-a", "activate", scene = "cabin")).toList()
         runtime.run(request("run-b", "有点热", scene = "cabin")).toList()
@@ -195,10 +201,11 @@ class NativeToolLoopProgressiveBackendTest {
         val seenRequests = mutableListOf<ModelRequest>()
         val backend = routeBackend()
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(workspaceRoot)
             .toolProvider(backend)
             .modelClient(memoryGuidedRouteModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val input = "navigate to the tower"
         runtime.run(request("run-memory", input, scene = "navigation")).toList()
@@ -218,6 +225,7 @@ class NativeToolLoopProgressiveBackendTest {
         val seenRequests = mutableListOf<ModelRequest>()
         val backend = routeBackend()
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(workspaceRoot)
             .toolProvider(backend)
             .modelClient(
@@ -228,7 +236,7 @@ class NativeToolLoopProgressiveBackendTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(request("run-order", "navigate to the tower", scene = "navigation")).toList()
 
@@ -256,6 +264,7 @@ class NativeToolLoopProgressiveBackendTest {
         val seenRequests = mutableListOf<ModelRequest>()
         val backend = complexRouteBackend()
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(workspaceRoot)
             .toolProvider(backend)
             .modelClient(
@@ -269,7 +278,7 @@ class NativeToolLoopProgressiveBackendTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(request("run-hidden-search", "导航并播放音乐", scene = "navigation")).toList()
 
@@ -288,6 +297,7 @@ class NativeToolLoopProgressiveBackendTest {
         val seenRequests = mutableListOf<ModelRequest>()
         val backend = hvacBackend()
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(workspaceRoot)
             .toolProvider(backend)
             .modelClient(
@@ -298,7 +308,7 @@ class NativeToolLoopProgressiveBackendTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(request("run-topk", "有点热", scene = "cabin")).toList()
 
@@ -321,6 +331,7 @@ class NativeToolLoopProgressiveBackendTest {
         val seenRequests = mutableListOf<ModelRequest>()
         val backend = routeBackend()
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(Files.createTempDirectory("mcp-raw-intake-no-prewarm-").toFile())
             .toolProvider(backend)
             .modelClient(
@@ -331,7 +342,7 @@ class NativeToolLoopProgressiveBackendTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(
             request(
@@ -354,6 +365,7 @@ class NativeToolLoopProgressiveBackendTest {
         promoteMemory(workspaceRoot, "Observed capability set: music play search music", scene = "cabin")
         val seenRequests = mutableListOf<ModelRequest>()
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(workspaceRoot)
             .toolProvider(hvacBackend())
             .modelClient(
@@ -364,7 +376,7 @@ class NativeToolLoopProgressiveBackendTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(request("run-unrelated", "我有点困", scene = "cabin")).toList()
 
@@ -381,6 +393,7 @@ class NativeToolLoopProgressiveBackendTest {
         val seenRequests = mutableListOf<ModelRequest>()
         val backend = routeBackend()
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(workspaceRoot)
             .toolProvider(backend)
             .modelClient(
@@ -391,7 +404,7 @@ class NativeToolLoopProgressiveBackendTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(request("run-weak-hint", "navigate to the tower", scene = "navigation")).toList()
 
@@ -411,10 +424,11 @@ class NativeToolLoopProgressiveBackendTest {
         val seenRequests = mutableListOf<ModelRequest>()
         val backend = complexRouteBackend()
         val runtime = AgentRuntimeBuilder.create()
+            .loopSettings(LoopSettings(memory = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)))
             .workspaceRoot(workspaceRoot)
             .toolProvider(backend)
             .modelClient(CompletePrewarmModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val events = runtime.run(request("run-complete-prewarm", "导航并播放音乐", scene = "navigation")).toList()
 
@@ -501,7 +515,7 @@ class NativeToolLoopProgressiveBackendTest {
             seenRequests = seenRequests,
         )
 
-    private fun manyTools(): List<cc.noharry.agent.kernel.api.ToolDescriptor> =
+    private fun manyTools(): List<cc.noharry.agent.spi.ToolDescriptor> =
         (1..TOOL_COUNT).map { mcpTool("$BACKEND_TOOL_PREFIX$it") }
 
     private fun request(

@@ -1,12 +1,12 @@
-public final class cc/noharry/agent/device/DeviceCalendarMcpProvider : cc/noharry/agent/kernel/api/ToolCatalogCacheIdentity, cc/noharry/agent/kernel/api/mcp/McpClientProvider {
+public final class cc/noharry/agent/device/DeviceCalendarMcpProvider : cc/noharry/agent/spi/ToolCatalogCacheIdentity, cc/noharry/agent/spi/mcp/McpClientProvider {
 	public fun <init> (Landroid/content/Context;)V
-	public fun callTool (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/api/ToolCallContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun callTool (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/spi/ToolCallContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getCatalogCacheIdentity ()Ljava/lang/String;
 	public fun getDisplayName ()Ljava/lang/String;
-	public fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
+	public fun getProviderConcurrency ()Lcc/noharry/agent/spi/ProviderConcurrencyDeclaration;
 	public fun getProviderId ()Ljava/lang/String;
 	public fun getServerId ()Ljava/lang/String;
-	public fun initialize (Lcc/noharry/agent/kernel/api/ToolInitializeContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lcc/noharry/agent/spi/ToolInitializeContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun listPrompts (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun listResources (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun listTools (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -16,19 +16,19 @@ public class cc/noharry/agent/device/DeviceMediaListenerService : android/servic
 	public fun <init> ()V
 }
 
-public final class cc/noharry/agent/device/DeviceMediaMcpProvider : cc/noharry/agent/kernel/api/ToolCatalogCacheIdentity, cc/noharry/agent/kernel/api/mcp/McpClientProvider {
+public final class cc/noharry/agent/device/DeviceMediaMcpProvider : cc/noharry/agent/spi/ToolCatalogCacheIdentity, cc/noharry/agent/spi/mcp/McpClientProvider {
 	public static final field Companion Lcc/noharry/agent/device/DeviceMediaMcpProvider$Companion;
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;Landroid/content/ComponentName;)V
 	public fun <init> (Landroid/content/Context;Landroid/content/ComponentName;Lkotlin/jvm/functions/Function0;)V
 	public synthetic fun <init> (Landroid/content/Context;Landroid/content/ComponentName;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun callTool (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/api/ToolCallContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun callTool (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/spi/ToolCallContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getCatalogCacheIdentity ()Ljava/lang/String;
 	public fun getDisplayName ()Ljava/lang/String;
-	public fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
+	public fun getProviderConcurrency ()Lcc/noharry/agent/spi/ProviderConcurrencyDeclaration;
 	public fun getProviderId ()Ljava/lang/String;
 	public fun getServerId ()Ljava/lang/String;
-	public fun initialize (Lcc/noharry/agent/kernel/api/ToolInitializeContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lcc/noharry/agent/spi/ToolInitializeContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun listPrompts (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun listResources (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun listTools (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -44,18 +44,18 @@ public final class cc/noharry/agent/device/DeviceMediaMcpProvider$Companion {
 	public final fun notificationAccessIntent ()Landroid/content/Intent;
 }
 
-public final class cc/noharry/agent/device/DeviceNotificationMcpProvider : cc/noharry/agent/kernel/api/ToolCatalogCacheIdentity, cc/noharry/agent/kernel/api/mcp/McpClientProvider {
+public final class cc/noharry/agent/device/DeviceNotificationMcpProvider : cc/noharry/agent/spi/ToolCatalogCacheIdentity, cc/noharry/agent/spi/mcp/McpClientProvider {
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;Ljava/lang/String;)V
 	public fun <init> (Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)V
 	public synthetic fun <init> (Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun callTool (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/api/ToolCallContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun callTool (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/spi/ToolCallContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getCatalogCacheIdentity ()Ljava/lang/String;
 	public fun getDisplayName ()Ljava/lang/String;
-	public fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
+	public fun getProviderConcurrency ()Lcc/noharry/agent/spi/ProviderConcurrencyDeclaration;
 	public fun getProviderId ()Ljava/lang/String;
 	public fun getServerId ()Ljava/lang/String;
-	public fun initialize (Lcc/noharry/agent/kernel/api/ToolInitializeContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lcc/noharry/agent/spi/ToolInitializeContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun listPrompts (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun listResources (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun listTools (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

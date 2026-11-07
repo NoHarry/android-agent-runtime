@@ -10,7 +10,7 @@
 
 **可嵌入的 agent 运行时（agent harness），面向 Android 和 JVM。** 它在你的 App 进程里跑一整套 agent 循环：agent 能读写的沙箱工作区、来自你自己代码和 MCP 服务的工具、skill 和子 agent、包在每次工具调用外面的 hook 与策略，以及可持久化的会话。模型用任何 OpenAI 或 Anthropic 兼容的接口都行。
 
-> **状态：0.x，持续开发中。** 公开 API 还没冻结，次版本之间可能变化，破坏性变更会写在 [CHANGELOG](CHANGELOG.md) 里。
+> **0.5.0 尚未发布。** 本分支已使用新的 Thread / Turn / Item API，破坏性变更和迁移对照见 [CHANGELOG](CHANGELOG.md)。
 
 ## 有什么
 
@@ -22,11 +22,15 @@
 - **持久化会话。** 每个会话一份只追加的事件日志，运行可恢复，Android 上用 SQLite 存会话。
 - **可选模块。** 通过无障碍服务操作别的 App（Android Use）、能调用工具的沙箱 JavaScript、日历和通知工具，以及 A2A 客户端和服务端。
 
+> 本分支面向尚未发布的 0.5.0，新 API 使用 Thread / Turn / Item。请源码接入，或先运行
+> `./gradlew publishToMavenLocal` 并在宿主仓库配置 `mavenLocal()`。Maven Central 当前仍是 0.4.0，
+> 与下方示例的 API 不同；迁移对照见 [CHANGELOG](CHANGELOG.md)。
+
 ## 安装
 
 ```kotlin
 dependencies {
-    implementation(platform("cc.noharry:agent-bom:0.4.0"))
+    implementation(platform("cc.noharry:agent-bom:0.5.0-SNAPSHOT"))
     implementation("cc.noharry:agent-runtime-android") // Android App
     // implementation("cc.noharry:agent-runtime")      // JVM：服务端、桌面工具、测试
 }
@@ -44,15 +48,21 @@ val tools = functionTools("device") {
 }
 
 val runtime = AndroidAgentRuntime.builder(context) // 工作区、SQLite 会话、事件日志、对话历史
-    .modelClient(OpenAiModelClient({ apiKey }, model = "gpt-4o-mini", stream = true))
-    .toolProvider(tools)
+    .model(OpenAiModelClient({ apiKey }, model = "gpt-4o-mini", stream = true))
+    .tools(tools)
     .build()
 
 scope.launch {
-    runtime.run(AgentRequest(requestId = "r1", sessionId = "chat", input = "我用的是什么设备？"))
-        .collect { event -> if (event is AgentEvent.TextDelta) answer.append(event.text) }
+    runtime.startThread().runStreamed("我用的是什么设备？")
+        .collect { event -> if (event is ThreadEvent.ItemDelta) answer.append(event.text) }
 }
 ```
+
+`thread.run(text)` 返回完整的 `TurnResult`，`runStreamed` 提供 8 种事件。每个条目有稳定 id，
+`ItemCompleted` 带完整内容。批准条目在同一事件流里等待 `approve()` 或 `deny()`；提问以
+`WAITING_FOR_ANSWER` 结束当轮，下一轮输入就是回答。运行中可用 `thread.steer(text)` 插话，
+用 `thread.interrupt()` 中断。JVM 配置 `.storage(directory)` 后可在重启后恢复模型历史和
+`thread.items()`；Android 默认使用 App 私有目录。现场工具参数和结果保留原文，持久化快照遵循配置的过滤器。
 
 正式产品里别把 API key 放在设备上：把 `baseUrl` 指向你自己的后端。
 
@@ -65,10 +75,10 @@ val deepWiki = McpToolProvider(
     serverId = "deepwiki",
 )
 
-val runtime = AgentRuntimeBuilder.create()
+val runtime = AgentRuntime.builder()
     // 任何 OpenAI 兼容接口都行，传它的 baseUrl；AnthropicModelClient 走 Messages API。
-    .modelClient(OpenAiModelClient({ System.getenv("API_KEY") }, model = "gpt-4o-mini", stream = true))
-    .toolProvider(deepWiki)
+    .model(OpenAiModelClient({ System.getenv("API_KEY") }, model = "gpt-4o-mini", stream = true))
+    .tools(deepWiki)
     .workspaceRoot(File("agent-workspace"))
     .build()
 ```
@@ -81,8 +91,7 @@ val runtime = AgentRuntimeBuilder.create()
 |---|---|
 | `agent-runtime` | 运行时和宿主门面（纯 JVM）：`AgentRuntimeBuilder`、OpenAI / Anthropic 兼容的模型客户端、MCP、`functionTools`、skill、子 agent、会话与记忆、联网搜索与读网页、hook 与策略，以及工作区背后的虚拟文件系统 |
 | `agent-runtime-android` | Android 层：`AndroidAgentRuntime.builder(context)`、SQLite 会话、App 私有的事件日志，以及把用户通过 SAF 选的文件夹挂进工作区 |
-| `agent-kernel-api` | 与 Android 无关的契约：模型、工具、插件、能力、工作区、完成判定、事件日志、生命周期 |
-| `agent-kernel-core` | agent 循环（`loop`）、工具注册和搜索（`tools`）、prompt 组装和压缩（`context`）、运行状态（`state`）、插件和 `KernelRuntimeBuilder`（`plugin`）、记忆和追踪 |
+| `agent-api` | 与 Android 无关的 Thread / Turn / Item 契约，以及模型、工具、hook 和事件日志扩展接口 |
 | `agent-exec-js` | 可选：`exec_js`，能调用工具的沙箱 JavaScript（Zipline 里的 QuickJS） |
 | `agent-device-capabilities` | 可选：日历、通知和媒体控制工具 |
 | `agent-android-use` | 可选：通过无障碍服务看屏幕、操作屏幕 |
@@ -90,11 +99,11 @@ val runtime = AgentRuntimeBuilder.create()
 | `agent-a2a-client-official` | 可选：同一个客户端，改用官方 A2A Java SDK 做传输 |
 | `agent-bom` | 对齐以上所有模块的版本 |
 
-三种用法：App 依赖 `agent-runtime-android`；服务端、桌面工具或测试依赖 `agent-runtime`；自己重建运行时就基于 `agent-kernel-api` 和 `agent-kernel-core`（最小的例子见 `samples/minimal`）。可选模块最多依赖内核 API。
+Android App 依赖 `agent-runtime-android`；服务端、桌面工具或测试依赖 `agent-runtime`。可选模块最多依赖 `agent-api`。agent 循环已收进 runtime 内部，`samples/minimal` 展示只配置模型的最小宿主。
 
 ## API 稳定性
 
-项目还在 0.x：次版本（0.6 到 0.7）可能破坏 API，每一处破坏（源码层面和二进制层面）都写在 [CHANGELOG](CHANGELOG.md) 里；补丁版本不会破坏。
+从 0.5.0 起，Thread / Turn / Item 主线 API 和 `cc.noharry.agent.spi` 的主要扩展接口进入稳定承诺。高级配置和诊断仍标为实验性，迁移说明记录在 [CHANGELOG](CHANGELOG.md) 里。
 
 - 标了 `@ExperimentalAgentRuntimeApi` 或 `@ExperimentalA2aClientApi` 的声明最可能变化，需要 opt-in（不加时，运行时的会编译报错，A2A 客户端的只是警告）。
 - 标了 `@InternalAgentRuntimeApi` 的声明不算 API：只给运行时自己的模块和测试用，任何版本都可能改或删。

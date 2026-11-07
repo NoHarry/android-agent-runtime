@@ -1,10 +1,11 @@
 package cc.noharry.agent.runtime.android
 
 import android.content.Context
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.kernel.core.state.SESSION_STORE_DB_FILE
 import cc.noharry.agent.runtime.AgentRuntimeBuilder
-import cc.noharry.agent.runtime.eventlog.DurableSessionEventLogPlugin
+import cc.noharry.agent.runtime.eventlog.openFileBackedSessionEventLog
+import cc.noharry.agent.spi.SessionEventLog
 import java.io.File
 
 /**
@@ -17,8 +18,8 @@ fun AgentRuntimeBuilder.androidSqliteSessions(): AgentRuntimeBuilder =
 
 /** The durable session event log in the app's no-backup storage. */
 @ExperimentalAgentRuntimeApi
-fun DurableSessionEventLogPlugin.Companion.appPrivate(context: Context): DurableSessionEventLogPlugin =
-    DurableSessionEventLogPlugin.forRoot(appStorage(context.noBackupFilesDir, DurableSessionEventLogPlugin.ROOT_DIRECTORY))
+fun appPrivateSessionEventLog(context: Context): SessionEventLog =
+    openFileBackedSessionEventLog(appStorage(context.noBackupFilesDir, "agent-runtime/event-log"))
 
 /**
  * [name] under an app directory, as its canonical path. An app's directories sit under `/data/user/0`, a link to

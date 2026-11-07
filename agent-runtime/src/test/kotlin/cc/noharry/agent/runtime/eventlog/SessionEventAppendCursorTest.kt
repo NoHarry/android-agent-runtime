@@ -1,11 +1,11 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.eventlog
 
-import cc.noharry.agent.kernel.api.SessionEventAppend
-import cc.noharry.agent.kernel.api.SessionEventLogHealthStatus
-import cc.noharry.agent.kernel.api.SessionEventPayload
-import cc.noharry.agent.kernel.api.SessionEventType
+import cc.noharry.agent.spi.SessionEventAppend
+import cc.noharry.agent.spi.SessionEventLogHealthStatus
+import cc.noharry.agent.spi.SessionEventPayload
+import cc.noharry.agent.spi.SessionEventType
 import java.nio.file.Files
 import org.junit.Assert.*
 import org.junit.Test

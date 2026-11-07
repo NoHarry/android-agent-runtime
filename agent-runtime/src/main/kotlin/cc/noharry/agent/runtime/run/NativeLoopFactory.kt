@@ -1,25 +1,25 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.run
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ExecEngine
-import cc.noharry.agent.kernel.api.RuntimeContextProvider
-import cc.noharry.agent.kernel.api.RuntimeTurnObserver
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeHandoff
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ExecEngine
+import cc.noharry.agent.spi.RuntimeContextProvider
+import cc.noharry.agent.spi.RuntimeTurnObserver
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
+import cc.noharry.agent.spi.reliability.RuntimeCompletionSummary
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeHandoff
+import cc.noharry.agent.spi.reliability.RuntimeResult
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.BootstrapPrompt
 import cc.noharry.agent.kernel.core.context.BootstrapPromptResolver
 import cc.noharry.agent.kernel.core.context.ConversationCompactor
 import cc.noharry.agent.kernel.core.context.HistoryCompactor
 import cc.noharry.agent.kernel.core.context.SessionHistoryStore
 import cc.noharry.agent.kernel.core.loop.LoopBudgetConfig
-import cc.noharry.agent.kernel.core.loop.LoopSettings
+import cc.noharry.agent.runtime.LoopSettings
 import cc.noharry.agent.kernel.core.loop.ModelRetryConfig
 import cc.noharry.agent.kernel.core.loop.NativeLoopOutcome
 import cc.noharry.agent.kernel.core.loop.NativeLoopSummary
@@ -35,7 +35,7 @@ import cc.noharry.agent.kernel.core.tools.RuntimeMcpDebugTraceSink
 import cc.noharry.agent.kernel.core.tools.ToolActivationStore
 import cc.noharry.agent.kernel.core.tools.ToolExecutionLimiter
 import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
-import cc.noharry.agent.kernel.core.trace.TraceRedactor
+import cc.noharry.agent.runtime.TraceRedactor
 import cc.noharry.agent.runtime.NetworkToolBackend
 import cc.noharry.agent.runtime.Subagents
 import cc.noharry.agent.runtime.probe.ProbeRunAttachment
@@ -169,7 +169,7 @@ internal class NativeLoopFactory(
         requestId: String,
         answer: String,
         scene: String?,
-        modelRef: cc.noharry.agent.kernel.api.model.ModelRef?,
+        modelRef: cc.noharry.agent.spi.model.ModelRef?,
         currentStateKeys: Set<String> = emptySet(),
         workspaceId: String? = null,
         workspaceFileSystem: VfsFileSystem? = null,

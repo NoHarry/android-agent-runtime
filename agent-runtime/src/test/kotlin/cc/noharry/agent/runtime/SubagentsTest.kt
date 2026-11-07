@@ -1,9 +1,8 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.*
+import cc.noharry.agent.spi.ToolSource
 import java.nio.file.Files
 import java.util.Collections
 import kotlinx.coroutines.CoroutineScope
@@ -38,7 +37,7 @@ class SubagentsTest {
             .workspaceRoot(Files.createTempDirectory("subagents-").toFile())
             .modelClient(model)
             .subagents(subagents)
-            .build()
+            .buildEngine()
             .run(goldenRequest())
             .toList()
 
@@ -69,7 +68,7 @@ class SubagentsTest {
             .workspaceRoot(Files.createTempDirectory("subagents-").toFile())
             .modelClient(model)
             .subagents(subagents)
-            .build()
+            .buildEngine()
             .run(goldenRequest())
             .toList()
 
@@ -179,14 +178,15 @@ class SubagentsTest {
                 .modelClient(
                     GoldenScriptedModel(
                         listOf(
-                            listOf(cc.noharry.agent.kernel.api.model.ModelEvent.TextDelta("我将检索天津本周末的演出。"), cc.noharry.agent.kernel.api.model.ModelEvent.Completed),
+                            listOf(cc.noharry.agent.spi.model.ModelEvent.TextDelta("我将检索天津本周末的演出。"), cc.noharry.agent.spi.model.ModelEvent.Completed),
                             round(finish("天津周日有一场交响音乐会")),
                         ),
                     ),
                 )
                 .subagents(subagents)
                 .build()
-                .run(goldenRequest(requestId = "${spec.sessionId}-run", sessionId = spec.sessionId))
+                .startThread(ThreadOptions(threadId = spec.sessionId))
+                .runStreamed(spec.task, TurnOptions(turnId = "${spec.sessionId}-run"))
         }
         subagents.execute("spawn_agent", """{"task":"查天津演出"}""", parent)
 
@@ -226,7 +226,8 @@ class SubagentsTest {
                 .modelClient(GoldenScriptedModel(listOf(round(finish("周日有市集，咨询电话 020-87654321")))))
                 .subagents(subagents)
                 .build()
-                .run(goldenRequest(requestId = "${spec.sessionId}-run", sessionId = spec.sessionId))
+                .startThread(ThreadOptions(threadId = spec.sessionId))
+                .runStreamed(spec.task, TurnOptions(turnId = "${spec.sessionId}-run"))
         }
         subagents.execute("spawn_agent", """{"task":"查市集"}""", parent)
 
@@ -252,7 +253,8 @@ class SubagentsTest {
                 .modelClient(child)
                 .subagents(subagents)
                 .build()
-                .run(goldenRequest(requestId = "${spec.sessionId}-run", sessionId = spec.sessionId))
+                .startThread(ThreadOptions(threadId = spec.sessionId))
+                .runStreamed(spec.task, TurnOptions(turnId = "${spec.sessionId}-run"))
         }
         subagents.execute("spawn_agent", """{"task":"查高铁"}""", parent)
 
@@ -282,16 +284,16 @@ class SubagentsTest {
         assertFalse(subagents.hasUnfinished("session-1"))
     }
 
-    private fun subagents(config: SubagentConfig = SubagentConfig(), launch: (SubagentSpec) -> kotlinx.coroutines.flow.Flow<AgentEvent>) =
+    private fun subagents(config: SubagentConfig = SubagentConfig(), launch: (SubagentSpec) -> kotlinx.coroutines.flow.Flow<ThreadEvent>) =
         Subagents(config, SubagentLauncher(launch), CoroutineScope(SupervisorJob() + Dispatchers.Default))
 
     private fun answerAfter(millis: Long, answer: String) = flow {
-        emit(AgentEvent.NativeToolCallStarted("child", "web_fetch", "{}"))
-        emit(AgentEvent.TokenUsageDelta("child", inputTokens = 1200, outputTokens = 40, cacheReadTokens = 1000))
+        emit(ThreadEvent.ItemStarted(ThreadItem.ToolCall("fetch", "child", "web_fetch", ToolSource.NETWORK)))
+        emit(ThreadEvent.UsageUpdated("child", Usage(inputTokens = 1200, outputTokens = 40, cacheReadTokens = 1000)))
         delay(millis)
-        emit(AgentEvent.NativeToolCallStarted("child", "finish", "{}"))
-        emit(AgentEvent.ResultAvailable(RuntimeResult(runId = "child", status = RuntimeRunStatus.COMPLETED, response = answer)))
+        emit(ThreadEvent.ItemStarted(ThreadItem.ToolCall("finish", "child", "finish", ToolSource.TERMINAL)))
+        emit(ThreadEvent.TurnCompleted(TurnResult("child", TurnStatus.COMPLETED, answer, emptyList())))
     }
 
-    private fun neverEnds() = flow<AgentEvent> { awaitCancellation() }
+    private fun neverEnds() = flow<ThreadEvent> { awaitCancellation() }
 }

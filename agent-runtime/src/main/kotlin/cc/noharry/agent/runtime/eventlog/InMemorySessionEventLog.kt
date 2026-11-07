@@ -1,13 +1,13 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.eventlog
 
-import cc.noharry.agent.kernel.api.SessionEvent
-import cc.noharry.agent.kernel.api.SessionEventAppend
-import cc.noharry.agent.kernel.api.SessionEventLog
-import cc.noharry.agent.kernel.api.SessionEventLogDurability
-import cc.noharry.agent.kernel.api.SessionEventLogHealth
-import cc.noharry.agent.kernel.api.SessionEventQuery
+import cc.noharry.agent.spi.SessionEvent
+import cc.noharry.agent.spi.SessionEventAppend
+import cc.noharry.agent.spi.SessionEventLog
+import cc.noharry.agent.spi.SessionEventLogDurability
+import cc.noharry.agent.spi.SessionEventLogHealth
+import cc.noharry.agent.spi.SessionEventQuery
 import java.util.UUID
 
 internal class InMemorySessionEventLog(

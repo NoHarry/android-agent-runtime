@@ -33,7 +33,7 @@ apiValidation {
     // Samples and the BOM have no API of their own.
     ignoredProjects += listOf("quickstart-jvm", "quickstart-android", "minimal", "extensions", "agent-bom")
     // Public only for the runtime's own modules and tests.
-    nonPublicMarkers += "cc.noharry.agent.kernel.api.InternalAgentRuntimeApi"
+    nonPublicMarkers += "cc.noharry.agent.spi.InternalAgentRuntimeApi"
 }
 
 // Unit tests create temp dirs (createTempDirectory, TemporaryFolder, Robolectric) and rarely delete them,
@@ -54,9 +54,14 @@ subprojects {
         compilerOptions.jvmDefault.set(org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode.ENABLE)
         compilerOptions.languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
         compilerOptions.apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
+        if (project.name in setOf("agent-runtime", "agent-runtime-android")) {
+            compilerOptions.optIn.add("cc.noharry.agent.spi.InternalAgentRuntimeApi")
+            compilerOptions.optIn.add("cc.noharry.agent.spi.ExperimentalAgentRuntimeApi")
+        }
         // Tests reach the runtime's internal seams (InternalAgentRuntimeApi); agent-a2a and its client don't see kernel-api.
         if (name.endsWith("TestKotlin") && project.name !in setOf("agent-a2a", "agent-a2a-client-official")) {
-            compilerOptions.optIn.add("cc.noharry.agent.kernel.api.InternalAgentRuntimeApi")
+            compilerOptions.optIn.add("cc.noharry.agent.spi.InternalAgentRuntimeApi")
+            compilerOptions.optIn.add("cc.noharry.agent.spi.ExperimentalAgentRuntimeApi")
         }
     }
     tasks.withType<Test>().configureEach {
@@ -162,7 +167,7 @@ subprojects {
 // what core library desugaring with desugar_jdk_libs_nio 2.1.5 or later adds (java.nio.file), as the README asks hosts
 // below API 26 to enable, but only what Android 26 has itself, since hosts from 26 on need not desugar. Any other JVM
 // module needs no desugaring.
-val desugaringModules = setOf("agent-kernel-api", "agent-kernel-core", "agent-runtime")
+val desugaringModules = setOf("agent-api", "agent-runtime")
 subprojects {
     plugins.withId("org.jetbrains.kotlin.jvm") {
         if (project.parent?.name == "samples") return@withId

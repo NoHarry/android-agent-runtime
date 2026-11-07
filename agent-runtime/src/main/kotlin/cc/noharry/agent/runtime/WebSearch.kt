@@ -1,6 +1,6 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json

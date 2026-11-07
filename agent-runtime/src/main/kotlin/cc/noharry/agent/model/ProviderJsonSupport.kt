@@ -1,6 +1,6 @@
 package cc.noharry.agent.model
 
-import cc.noharry.agent.kernel.api.model.ModelClientException
+import cc.noharry.agent.spi.model.ModelClientException
 
 import cc.noharry.agent.transport.HttpEvent
 import cc.noharry.agent.transport.HttpRequest
@@ -24,11 +24,11 @@ import kotlinx.serialization.json.putJsonArray
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.Base64
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.model.ModelMessage
-import cc.noharry.agent.kernel.api.model.ModelImage
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelResponseMetadata
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelImage
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelResponseMetadata
 
 internal fun providerRequest(
     url: String,
@@ -45,7 +45,7 @@ internal fun providerRequest(
  * The messages a wire without mid-conversation tool changes can take: a system update that only loads deferred tools
  * is dropped (those tools go out as ordinary tools there).
  */
-@OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 internal fun List<ModelMessage>.withoutToolLoads(): List<ModelMessage> =
     filterNot { it.role == "system" && it.content.isBlank() && it.toolAdditions.isNotEmpty() }
 

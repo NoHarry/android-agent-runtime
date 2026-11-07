@@ -1,18 +1,18 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.CompletionImpact
-import cc.noharry.agent.kernel.api.RuntimeCommitStatus
-import cc.noharry.agent.kernel.api.RuntimeEffectKind
-import cc.noharry.agent.kernel.api.RuntimeObserverActionPreflight
-import cc.noharry.agent.kernel.api.RuntimeTurnInput
-import cc.noharry.agent.kernel.api.RuntimeTurnObserver
-import cc.noharry.agent.kernel.api.TurnInputObservation
-import cc.noharry.agent.kernel.api.TurnObservationReceipt
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.CompletionImpact
+import cc.noharry.agent.spi.RuntimeCommitStatus
+import cc.noharry.agent.spi.RuntimeEffectKind
+import cc.noharry.agent.spi.RuntimeObserverActionPreflight
+import cc.noharry.agent.spi.RuntimeTurnInput
+import cc.noharry.agent.spi.RuntimeTurnObserver
+import cc.noharry.agent.spi.TurnInputObservation
+import cc.noharry.agent.spi.TurnObservationReceipt
+import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
+import cc.noharry.agent.spi.reliability.RuntimeCompletionSummary
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.RuntimeContextHooks
 import cc.noharry.agent.kernel.core.loop.RuntimeObligationLedger
 import cc.noharry.agent.kernel.core.loop.isRequiredUnresolved
@@ -33,7 +33,7 @@ class RuntimeObserverPreflightObligationTest {
     fun nestedBusinessRefusalCannotSatisfyARequiredAction() {
         val raw = """{"committed":true,"result":{"isError":true,"structuredContent":{"status":{"name":"INVALID_ARGUMENT"}}}}"""
         val outcome = normalizeTransportResult("id", "route", true, raw)
-        assertEquals(cc.noharry.agent.kernel.api.RuntimeActionStatus.FAILED, outcome.status)
+        assertEquals(cc.noharry.agent.spi.RuntimeActionStatus.FAILED, outcome.status)
         assertEquals("INVALID_ARGUMENT", outcome.safeCode)
     }
 
@@ -45,7 +45,7 @@ class RuntimeObserverPreflightObligationTest {
             onInput = {
                 events += "onTurnInput"
                 declaredBeforeInput = ledger.snapshot().singleOrNull()
-                    ?.takeIf { it.status == cc.noharry.agent.kernel.api.RuntimeActionStatus.DECLARED }
+                    ?.takeIf { it.status == cc.noharry.agent.spi.RuntimeActionStatus.DECLARED }
                 committedObservation()
             },
         )
@@ -76,7 +76,7 @@ class RuntimeObserverPreflightObligationTest {
             ledger,
         )
         assertCannotPass(ledger)
-        assertEquals(cc.noharry.agent.kernel.api.RuntimeActionStatus.DECLARED, ledger.snapshot().single().status)
+        assertEquals(cc.noharry.agent.spi.RuntimeActionStatus.DECLARED, ledger.snapshot().single().status)
     }
 
     @Test
@@ -236,13 +236,13 @@ class RuntimeObserverPreflightObligationTest {
     ) : RuntimeTurnObserver {
         override val id: String = OBSERVER_ID
         val events = mutableListOf<String>()
-        var declaredBeforeInput: cc.noharry.agent.kernel.api.RuntimeActionOutcome? = null
+        var declaredBeforeInput: cc.noharry.agent.spi.RuntimeActionOutcome? = null
 
         override fun preflightTurnInput(input: RuntimeTurnInput): RuntimeObserverActionPreflight? = onPreflight()
 
         override suspend fun onTurnInput(input: RuntimeTurnInput): TurnInputObservation = onInput()
 
-        override suspend fun onTurnFinished(turn: cc.noharry.agent.kernel.api.RuntimeCompletedTurn): TurnObservationReceipt =
+        override suspend fun onTurnFinished(turn: cc.noharry.agent.spi.RuntimeCompletedTurn): TurnObservationReceipt =
             TurnObservationReceipt(id, enqueued = false)
 
         fun defaultPreflight(): RuntimeObserverActionPreflight =

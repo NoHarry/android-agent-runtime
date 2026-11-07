@@ -1,24 +1,19 @@
 package cc.noharry.agent.runtime.reliability
-import cc.noharry.agent.kernel.api.reliability.OpenConfusion
-import cc.noharry.agent.kernel.api.reliability.RuntimeEvidence
-import cc.noharry.agent.kernel.api.reliability.RuntimeHandoff
-import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequestStatus
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunEnvelope
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunSnapshot
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
-import cc.noharry.agent.kernel.api.reliability.RuntimeTraceEvent
-import cc.noharry.agent.kernel.api.reliability.RuntimeWorkpad
+import cc.noharry.agent.spi.reliability.OpenConfusion
+import cc.noharry.agent.spi.reliability.RuntimeEvidence
+import cc.noharry.agent.spi.reliability.RuntimeHandoff
+import cc.noharry.agent.spi.reliability.RuntimeResult
+import cc.noharry.agent.spi.reliability.RuntimeRunEnvelope
+import cc.noharry.agent.spi.reliability.RuntimeRunSnapshot
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.reliability.RuntimeTraceEvent
+import cc.noharry.agent.spi.reliability.RuntimeWorkpad
 import cc.noharry.agent.kernel.core.state.DefaultReliabilityDirectoryLister
 import cc.noharry.agent.kernel.core.state.DefaultReliabilityFileDeleter
 import cc.noharry.agent.kernel.core.state.EVIDENCE_DIR
 import cc.noharry.agent.kernel.core.state.EVIDENCE_JSONL_FILE
 import cc.noharry.agent.kernel.core.state.HANDOFF_FILE
 import cc.noharry.agent.kernel.core.state.OPEN_CONFUSION_FILE
-import cc.noharry.agent.kernel.core.state.PROTOCOL_REQUESTS_DIR
-import cc.noharry.agent.kernel.core.state.PROTOCOL_REQUESTS_JSONL_FILE
-import cc.noharry.agent.kernel.core.state.PROTOCOL_RESOLUTIONS_DIR
 import cc.noharry.agent.kernel.core.state.RESULT_FILE
 import cc.noharry.agent.kernel.core.state.RUNS_DIR
 import cc.noharry.agent.kernel.core.state.RUN_FILE
@@ -173,45 +168,6 @@ internal class FileBackedReliabilityStorage(
     override fun readTrace(runId: String): List<RuntimeTraceEvent> = storageLock.withReadLock {
         runFile(runId, TRACE_JSONL_FILE).readLinesOrEmpty()
             .mapNotNull { line -> decodeOrNull(line, ReliabilityJsonCodecs::decodeTrace) }
-    }
-
-    override fun saveProtocolRequest(request: RuntimeProtocolRequest) {
-        storageLock.withLock {
-            val encoded = ReliabilityJsonCodecs.encodeProtocolRequest(request)
-            protocolRequestFile(request.protocolRequestId).writeReliabilityText(encoded)
-            runFile(request.runId, PROTOCOL_REQUESTS_JSONL_FILE).appendReliabilityLine(encoded)
-            cleanupScheduler.onStorageMutation()
-        }
-    }
-
-    override fun readProtocolRequest(protocolRequestId: String): RuntimeProtocolRequest? = storageLock.withReadLock {
-        protocolRequestFile(protocolRequestId).decodeOrNull(ReliabilityJsonCodecs::decodeProtocolRequest)
-    }
-
-    override fun readPendingProtocolRequests(
-        sessionId: String?,
-        runId: String?,
-    ): List<RuntimeProtocolRequest> = storageLock.withReadLock {
-        protocolRequestsDir().listFiles().orEmpty()
-            .mapNotNull { it.decodeOrNull(ReliabilityJsonCodecs::decodeProtocolRequest) }
-            .filter { request ->
-                request.status.isProtocolPending() &&
-                    (runId == null || request.runId == runId) &&
-                    (sessionId == null || request.sessionId == sessionId)
-            }
-    }
-
-    override fun saveProtocolResolution(
-        protocolRequestId: String,
-        requestId: String,
-        request: RuntimeProtocolRequest,
-    ) {
-        storageLock.withLock {
-            protocolResolutionFile(protocolRequestId, requestId).writeReliabilityText(
-                ReliabilityJsonCodecs.encodeProtocolRequest(request),
-            )
-            cleanupScheduler.onStorageMutation()
-        }
     }
 
     private fun scanRunDirs(): List<File> =
@@ -384,18 +340,6 @@ internal class FileBackedReliabilityStorage(
             fileDeleter = fileDeleter,
             directoryLister = directoryLister,
         )
-        reasons += protocolRequestsDir().deleteSharedJsonOwnedByRun(
-            targetRunId = runId,
-            classify = { file -> classifyProtocolOwnership(file) },
-            fileDeleter = fileDeleter,
-            directoryLister = directoryLister,
-        )
-        reasons += protocolResolutionsDir().deleteSharedJsonOwnedByRun(
-            targetRunId = runId,
-            classify = { file -> classifyProtocolOwnership(file) },
-            fileDeleter = fileDeleter,
-            directoryLister = directoryLister,
-        )
         return reasons
     }
 
@@ -410,24 +354,6 @@ internal class FileBackedReliabilityStorage(
         return SharedJsonOwnership.OwnedBy(evidence.runId)
     }
 
-    private fun classifyProtocolOwnership(file: File): SharedJsonOwnership {
-        val text = file.readReliabilityTextOrNull() ?: return SharedJsonOwnership.Unreadable
-        val request = try {
-            ReliabilityJsonCodecs.decodeProtocolRequest(text)
-        } catch (_: Exception) {
-            return SharedJsonOwnership.Unreadable
-        }
-        return SharedJsonOwnership.OwnedBy(request.runId)
-    }
-
-    override fun readProtocolResolution(
-        protocolRequestId: String,
-        requestId: String,
-    ): RuntimeProtocolRequest? = storageLock.withReadLock {
-        protocolResolutionFile(protocolRequestId, requestId)
-            .decodeOrNull(ReliabilityJsonCodecs::decodeProtocolRequest)
-    }
-
     private fun runFile(runId: String, name: String): File = File(runDir(runId), name)
 
     private fun runDir(runId: String): File = File(runsDir(), encodeFileName(runId))
@@ -439,22 +365,8 @@ internal class FileBackedReliabilityStorage(
     private fun evidenceFile(evidenceId: String): File =
         File(evidenceDir(), "${encodeFileName(evidenceId)}.json")
 
-    private fun protocolRequestsDir(): File = File(root, PROTOCOL_REQUESTS_DIR)
 
-    private fun protocolRequestFile(protocolRequestId: String): File =
-        File(protocolRequestsDir(), "${encodeFileName(protocolRequestId)}.json")
-
-    private fun protocolResolutionFile(protocolRequestId: String, requestId: String): File =
-        File(
-            protocolResolutionsDir(),
-            "${encodeFileName(protocolRequestId)}-${encodeFileName(requestId)}.json",
-        )
-
-    private fun protocolResolutionsDir(): File = File(root, PROTOCOL_RESOLUTIONS_DIR)
 }
 
 /** Synthetic runId for storage measurement fail-closed records (not a real run directory). */
 internal const val STORAGE_MEASUREMENT_FAILURE_RUN_ID = "*"
-
-private fun RuntimeProtocolRequestStatus.isProtocolPending(): Boolean =
-    this == RuntimeProtocolRequestStatus.CREATED || this == RuntimeProtocolRequestStatus.WAITING

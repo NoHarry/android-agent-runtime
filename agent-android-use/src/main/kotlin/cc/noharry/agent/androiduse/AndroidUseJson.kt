@@ -1,7 +1,7 @@
 package cc.noharry.agent.androiduse
 
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.model.ModelImage
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.model.ModelImage
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder

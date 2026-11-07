@@ -667,3 +667,14 @@ Codex 的做法（看的是本地 codex-rs 源码，2026-10-17 的版本）：
 | 插话 | — | `turn/steer` | `postUserInput` | `steer` |
 | 中断 | `AbortSignal` | `turn/interrupt` | 取消 Flow | `interrupt()` 或取消 Flow |
 | 输入 | 文字加本地图片 | 文字、图片、文件 | 只有字符串 | 文字、图片、附件 |
+
+
+## 实现核对（2026-11-06）
+
+模块已收为 `agent-api` + `agent-runtime`；原 kernel-core 源码和测试并入 runtime，旧引擎契约只在内部使用。
+公开主线和 SPI 已使用最终包名；高级诊断仍标实验性。API dump 的量化结果为：agent-api 主线根包 649 行（入口 AgentRuntime 另在 runtime 模块）、
+agent-api 总计 2,437 行，runtime 1,829 行，所有发布模块合计 5,347 行（基线约 9,400 行）。
+这超过第 6 节的 600 / 2,000 行体积目标；统计包含 Kotlin data class 的 JVM 生成成员，以及为保留
+既有事件日志扩展能力所需的公开载荷类型。实现没有为缩小数字而隐藏宿主必需类型。
+
+测试和最终交付状态记录在同目录交接文件中。

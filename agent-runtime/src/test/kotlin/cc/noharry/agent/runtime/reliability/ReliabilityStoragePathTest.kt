@@ -1,8 +1,8 @@
 package cc.noharry.agent.runtime.reliability
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunEnvelope
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunPhase
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunSnapshot
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.reliability.RuntimeRunEnvelope
+import cc.noharry.agent.spi.reliability.RuntimeRunPhase
+import cc.noharry.agent.spi.reliability.RuntimeRunSnapshot
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.state.RUNS_DIR
 import cc.noharry.agent.kernel.core.state.RUN_FILE
 import cc.noharry.agent.kernel.core.state.encodeFileName

@@ -1,10 +1,10 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
@@ -32,7 +32,7 @@ class SessionSchedulingCloseIntegrationTest {
             .policyRule(confirmUnlessApprovedPolicy())
             .sessionConcurrency(maxActiveSessions = 1)
             .turnObserver(observer)
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
         try {
             runtime.run(request(RUN_B1, SESSION_B)).toList()
             assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, runtime.getRunState(RUN_B1)?.status)

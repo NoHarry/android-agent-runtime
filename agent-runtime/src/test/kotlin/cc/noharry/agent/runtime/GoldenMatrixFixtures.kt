@@ -1,18 +1,18 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
 
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ConfirmationChoice
-import cc.noharry.agent.kernel.api.ConfirmationDecision
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ConfirmationChoice
+import cc.noharry.agent.spi.ConfirmationDecision
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.mcp.McpClientProvider
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.policy.PolicyAction
 import cc.noharry.agent.policy.PolicyContext
 import cc.noharry.agent.policy.PolicyDecision

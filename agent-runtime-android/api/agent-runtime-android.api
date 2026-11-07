@@ -7,7 +7,7 @@ public final class cc/noharry/agent/runtime/android/AndroidAgentRuntime {
 
 public final class cc/noharry/agent/runtime/android/AndroidRuntimeKt {
 	public static final fun androidSqliteSessions (Lcc/noharry/agent/runtime/AgentRuntimeBuilder;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
-	public static final fun appPrivate (Lcc/noharry/agent/runtime/eventlog/DurableSessionEventLogPlugin$Companion;Landroid/content/Context;)Lcc/noharry/agent/runtime/eventlog/DurableSessionEventLogPlugin;
+	public static final fun appPrivateSessionEventLog (Landroid/content/Context;)Lcc/noharry/agent/spi/SessionEventLog;
 }
 
 public final class cc/noharry/agent/vfs/saf/SafVfsSource : cc/noharry/agent/vfs/VfsSource {

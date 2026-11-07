@@ -1,29 +1,29 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.AgentRuntime
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.RuntimeCompletedTurn
-import cc.noharry.agent.kernel.api.RuntimeTurnInput
-import cc.noharry.agent.kernel.api.RuntimeTurnObserver
-import cc.noharry.agent.kernel.api.SessionRunConflictPolicy
-import cc.noharry.agent.kernel.api.TurnInputObservation
-import cc.noharry.agent.kernel.api.TurnObservationReceipt
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.AgentRuntime
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.RuntimeCompletedTurn
+import cc.noharry.agent.spi.RuntimeTurnInput
+import cc.noharry.agent.spi.RuntimeTurnObserver
+import cc.noharry.agent.spi.SessionRunConflictPolicy
+import cc.noharry.agent.spi.TurnInputObservation
+import cc.noharry.agent.spi.TurnObservationReceipt
 import cc.noharry.agent.runtime.probe.PROBES_JSONL
 import cc.noharry.agent.runtime.probe.probeRunDirectory
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.mcp.McpClientProvider
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.policy.PolicyAction
 import cc.noharry.agent.policy.PolicyContext
 import cc.noharry.agent.policy.PolicyDecision
 import cc.noharry.agent.policy.PolicyRule
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.runtime.eventlog.InMemorySessionEventLog
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -121,7 +121,7 @@ internal fun runtime(
     if (eventLog != null) {
         builder.sessionEventLog(eventLog)
     }
-    return builder.build() as DefaultAgentRuntime
+    return builder.buildEngine() as DefaultAgentRuntime
 }
 
 internal fun planConfirmationRuntime(provider: GatedMcpProvider): DefaultAgentRuntime =
@@ -131,13 +131,13 @@ internal fun planConfirmationRuntime(provider: GatedMcpProvider): DefaultAgentRu
         .policyRule(confirmUnlessApprovedPolicy())
         .modelClient(directBackendCallModel())
         .sessionConcurrency(maxActiveSessions = 2)
-        .build() as DefaultAgentRuntime
+        .buildEngine() as DefaultAgentRuntime
 
 internal fun confirmationRuntime(): DefaultAgentRuntime =
     AgentRuntimeBuilder.create()
         .confirmationOnRun()
         .sessionConcurrency(maxActiveSessions = 2)
-        .build() as DefaultAgentRuntime
+        .buildEngine() as DefaultAgentRuntime
 
 internal fun request(
     runId: String,

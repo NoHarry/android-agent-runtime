@@ -1,8 +1,8 @@
 package cc.noharry.agent.model
 
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelMessage
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.transport.HttpEvent
 import cc.noharry.agent.transport.HttpRequest
 import cc.noharry.agent.transport.HttpResponse

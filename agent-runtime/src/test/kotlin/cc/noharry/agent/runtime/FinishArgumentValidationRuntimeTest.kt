@@ -1,15 +1,15 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.HookContext
-import cc.noharry.agent.kernel.api.HookDecision
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.ToolUse
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.HookContext
+import cc.noharry.agent.spi.HookDecision
+import cc.noharry.agent.spi.RuntimeHook
+import cc.noharry.agent.spi.ToolUse
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.loop.INVALID_FINISH_RESPONSE_CODE
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -26,7 +26,7 @@ class FinishArgumentValidationRuntimeTest {
         val bad = buildJsonObject { put("response", nested) }.toString()
         val runtime = AgentRuntimeBuilder.create().modelClient(FakeModelClient(eventsByRound = listOf(
             round(finishCall("nested", bad)), round(finishCall("corrected", nested)),
-        ))).build()
+        ))).buildEngine()
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
         assertEquals(RuntimeCompletionOutcome.BLOCKED, result.completion.outcome)
@@ -39,7 +39,7 @@ class FinishArgumentValidationRuntimeTest {
         val runtime = AgentRuntimeBuilder.create().modelClient(FakeModelClient(eventsByRound = listOf(
             round(finishCall("first", leakedArguments())),
             round(finishCall("fixed", """{"response":"已算路，沿途搜索失败。","outcome":"partial"}""")),
-        ), seenRequests = requests)).build()
+        ), seenRequests = requests)).buildEngine()
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
         assertEquals(RuntimeRunStatus.COMPLETED, result.status)
@@ -55,7 +55,7 @@ class FinishArgumentValidationRuntimeTest {
             val requests = mutableListOf<ModelRequest>()
             val runtime = AgentRuntimeBuilder.create().modelClient(FakeModelClient(eventsByRound = listOf(
                 round(finishCall("first", args)), round(finishCall("again", args)),
-            ), seenRequests = requests)).build()
+            ), seenRequests = requests)).buildEngine()
             val events = runtime.run(agentRequest()).toList()
             val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
             assertEquals(RuntimeRunStatus.FAILED, result.status)
@@ -69,7 +69,7 @@ class FinishArgumentValidationRuntimeTest {
         val runtime = AgentRuntimeBuilder.create().modelClient(FakeModelClient(eventsByRound = listOf(
             round(finishCall("bad", leakedArguments())),
             listOf(ModelEvent.SearchActivity("provider", "query", 1), ModelEvent.TextDelta(LEAK), ModelEvent.Completed),
-        ))).build()
+        ))).buildEngine()
         val result = runtime.run(agentRequest()).toList().filterIsInstance<AgentEvent.ResultAvailable>().single().result
         assertEquals(RuntimeRunStatus.FAILED, result.status)
         assertEquals(INVALID_FINISH_RESPONSE_CODE, result.errorCode)
@@ -82,7 +82,7 @@ class FinishArgumentValidationRuntimeTest {
         ))).hook(object : RuntimeHook {
             override suspend fun onPreToolUse(call: ToolUse, context: HookContext): HookDecision =
                 HookDecision.Allow(updatedArgumentsJson = """{"response":"done","outcome":false}""")
-        }).build()
+        }).buildEngine()
         val result = runtime.run(agentRequest()).toList().filterIsInstance<AgentEvent.ResultAvailable>().single().result
         assertEquals(RuntimeRunStatus.FAILED, result.status)
         assertEquals(INVALID_FINISH_RESPONSE_CODE, result.errorCode)

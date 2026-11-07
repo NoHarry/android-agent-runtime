@@ -1,11 +1,11 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.workspace
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.mcp.McpClientProvider
 import cc.noharry.agent.kernel.core.tools.MaterializedSchemaCacheEntry
 import cc.noharry.agent.kernel.core.tools.MaterializerContext
 import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry

@@ -1,6 +1,6 @@
 package cc.noharry.agent.model
 
-import cc.noharry.agent.kernel.api.model.ModelRef
+import cc.noharry.agent.spi.model.ModelRef
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive

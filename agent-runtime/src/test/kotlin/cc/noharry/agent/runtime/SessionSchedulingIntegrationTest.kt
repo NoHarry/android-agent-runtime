@@ -1,15 +1,14 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.ProtocolRequestResolution
-import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
-import cc.noharry.agent.kernel.api.SessionEventType
-import cc.noharry.agent.kernel.api.SessionRunConflictPolicy
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.RuntimeEvidenceConfig
+import cc.noharry.agent.spi.SessionEventType
+import cc.noharry.agent.spi.SessionRunConflictPolicy
+import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
+import cc.noharry.agent.spi.reliability.RuntimeCompletionSummary
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.loop.failed
 import cc.noharry.agent.runtime.eventlog.InMemorySessionEventLog
 import cc.noharry.agent.runtime.eventlog.scalarFields
@@ -245,29 +244,6 @@ class SessionSchedulingIntegrationTest {
     }
 
     @Test
-    fun protocolResolvedDoesNotLeaveOrphanRunning() = runSchedulingTest {
-        val runtime = AgentRuntimeBuilder.create()
-            .protocolRequestOnRun(kind = "host_control")
-            .sessionConcurrency(maxActiveSessions = 1)
-            .build() as DefaultAgentRuntime
-        try {
-            runtime.run(request(RUN_A1, SESSION_A)).toList()
-            val pending = runtime.getPendingProtocolRequests().single()
-            runtime.resolveRuntimeProtocolRequest(
-                ProtocolRequestResolution(pending.protocolRequestId, "resolution-1"),
-            )
-            val result = runtime.getRuntimeResult(RUN_A1)
-            assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRunState(RUN_A1)?.status)
-            assertEquals(RuntimeRunStatus.COMPLETED, result?.status)
-            assertEquals(RuntimeCompletionOutcome.UNKNOWN, result?.completion?.outcome)
-            assertFalse(RuntimeCompletionSummary.firstPartyPass(result!!.status, result.completion))
-            assertIdle(runtime)
-        } finally {
-            runtime.close()
-        }
-    }
-
-    @Test
     fun queuedRecorderEmitsQueuedThenRunningThenTerminal() = runSchedulingTest {
         val log = InMemorySessionEventLog()
         val gate = CompletableDeferred<Unit>()
@@ -343,7 +319,7 @@ class SessionSchedulingIntegrationTest {
             .defaultWorkspace("alpha")
             .modelClient(SingleGateFinishModel(gate, entered))
             .sessionConcurrency(maxActiveSessions = 1)
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
         try {
             val first = launch { runtime.run(request(RUN_A1, SESSION_A)).toList() }
             entered.await()
@@ -402,7 +378,7 @@ class SessionSchedulingIntegrationTest {
         val runtime = AgentRuntimeBuilder.create()
             .modelClient(finishModel())
             .sessionConcurrency(maxActiveSessions = 1)
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
         runtime.beforeCleanupForTest = { error("cleanup boom") }
         try {
             val failure = runCatching { runtime.run(request(RUN_A1, SESSION_A)).toList() }.exceptionOrNull()
@@ -433,7 +409,7 @@ private fun collectorThrowRuntime(
                 promptSha256 = null,
             ),
         )
-        .build() as DefaultAgentRuntime
+        .buildEngine() as DefaultAgentRuntime
 
 private suspend fun collectUntilStartedThrow(
     runtime: DefaultAgentRuntime,

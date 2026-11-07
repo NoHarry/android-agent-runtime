@@ -1,17 +1,17 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.core.trace.DEBUG_RAW_TRACE_NOT_ENABLED
-import cc.noharry.agent.kernel.core.trace.DebugRawTraceAccessDecision
-import cc.noharry.agent.kernel.core.trace.RELEASE_DEBUG_RAW_TRACE_ERROR
-import cc.noharry.agent.kernel.core.trace.RELEASE_RAW_TRACE_ERROR
-import cc.noharry.agent.kernel.core.trace.RuntimeBuildType
-import cc.noharry.agent.kernel.core.trace.TraceVisibilityConfig
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.runtime.DEBUG_RAW_TRACE_NOT_ENABLED
+import cc.noharry.agent.runtime.DebugRawTraceAccessDecision
+import cc.noharry.agent.runtime.RELEASE_DEBUG_RAW_TRACE_ERROR
+import cc.noharry.agent.runtime.RELEASE_RAW_TRACE_ERROR
+import cc.noharry.agent.runtime.RuntimeBuildType
+import cc.noharry.agent.runtime.TraceVisibilityConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -32,7 +32,7 @@ class TraceSecurityTest {
                         exposeRawTraceWorkspace = true,
                     ),
                 )
-                .build()
+                .buildEngine()
             null
         } catch (error: IllegalArgumentException) {
             error
@@ -51,7 +51,7 @@ class TraceSecurityTest {
                         allowDebugRawTraceAccess = true,
                     ),
                 )
-                .build()
+                .buildEngine()
             null
         } catch (error: IllegalArgumentException) {
             error
@@ -62,10 +62,10 @@ class TraceSecurityTest {
 
     @Test
     fun modelTraceSummaryRequiresExplicitOptIn() {
-        val defaultRuntime = AgentRuntimeBuilder.create().build() as DefaultAgentRuntime
+        val defaultRuntime = AgentRuntimeBuilder.create().buildEngine() as DefaultAgentRuntime
         val optInRuntime = AgentRuntimeBuilder.create()
             .traceVisibility(TraceVisibilityConfig(exposeModelTraceSummary = true))
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         assertFalse(defaultRuntime.allowsModelTraceSummary())
         assertTrue(optInRuntime.allowsModelTraceSummary())
@@ -73,10 +73,10 @@ class TraceSecurityTest {
 
     @Test
     fun debugRawTraceAccessRequiresExplicitOptIn() {
-        val defaultRuntime = AgentRuntimeBuilder.create().build() as DefaultAgentRuntime
+        val defaultRuntime = AgentRuntimeBuilder.create().buildEngine() as DefaultAgentRuntime
         val optInRuntime = AgentRuntimeBuilder.create()
             .traceVisibility(TraceVisibilityConfig(allowDebugRawTraceAccess = true))
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         val denied = defaultRuntime.debugRawTraceAccessDecision()
         val allowed = optInRuntime.debugRawTraceAccessDecision()
@@ -117,7 +117,7 @@ class TraceSecurityTest {
                     ),
                 ),
             )
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         runtime.run(agentRequest()).toList()
         val summaryText = runtime.getRedactedTraceSummary("request-1").toString()
@@ -140,7 +140,7 @@ class TraceSecurityTest {
             .toolProvider(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
             .hook(confirmWithPrompt("Need token sk-waitsecret123 phone 13800138000 lat=31.2304"))
             .modelClient(FakeModelClient(schemaThenBackendRounds()))
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         runtime.run(agentRequest()).toList()
         val summaryText = runtime.getRedactedTraceSummary("request-1").toString()

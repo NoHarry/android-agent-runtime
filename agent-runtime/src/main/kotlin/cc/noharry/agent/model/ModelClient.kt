@@ -1,11 +1,12 @@
 package cc.noharry.agent.model
 
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.model.ServerSideSearchCapability
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRef
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.model.ServerSideSearchCapability
 import cc.noharry.agent.transport.HttpTransport
 import cc.noharry.agent.transport.OkHttpHttpTransport
 import kotlinx.coroutines.flow.Flow
@@ -84,6 +85,13 @@ class OpenAiModelClient(
         this.serverSideSearch = serverSideSearch
         this.searchCapability = searchCapability
         this.maxOutputTokens = maxOutputTokens
+    }
+
+    override fun supportsImageInput(model: ModelRef?): Boolean {
+        val selected = model?.modelId?.takeIf { it.isNotBlank() } ?: this.model
+        val normalized = selected.lowercase()
+        return !isDeepSeekModel(selected) && !normalized.startsWith("gpt-3.5") &&
+            normalized != "gpt-4" && !normalized.startsWith("gpt-4-0613") && !normalized.startsWith("gpt-4-0314")
     }
 
     override fun complete(request: ModelRequest): Flow<ModelEvent> = flow {

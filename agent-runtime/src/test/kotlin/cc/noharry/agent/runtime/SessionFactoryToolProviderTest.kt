@@ -1,26 +1,26 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentCapabilities
-import cc.noharry.agent.kernel.api.AgentPlugin
-import cc.noharry.agent.kernel.api.AgentPluginDescriptor
-import cc.noharry.agent.kernel.api.AgentPluginScope
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.KernelApiRange
-import cc.noharry.agent.kernel.api.KernelApiVersions
-import cc.noharry.agent.kernel.api.PluginVersion
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.SessionCapabilityContext
-import cc.noharry.agent.kernel.api.SessionCapabilityFactory
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolCatalogCacheIdentity
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.ToolProvider
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.AgentCapabilities
+import cc.noharry.agent.spi.AgentPlugin
+import cc.noharry.agent.spi.AgentPluginDescriptor
+import cc.noharry.agent.spi.AgentPluginScope
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.KernelApiRange
+import cc.noharry.agent.spi.KernelApiVersions
+import cc.noharry.agent.spi.PluginVersion
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.SessionCapabilityContext
+import cc.noharry.agent.spi.SessionCapabilityFactory
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolCatalogCacheIdentity
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.ToolProvider
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.kernel.core.plugin.ProfileCompiler
 import cc.noharry.agent.kernel.core.plugin.RuntimeCompositionMessages
 import cc.noharry.agent.kernel.core.tools.MaterializerContext
@@ -106,7 +106,7 @@ class SessionFactoryToolProviderTest {
             .plugin(toolFactoryPlugin { context ->
                 TrackingToolProvider("live-${context.sessionId}", closed)
             })
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
         val blueprint = runtime.runtimeBlueprintForTest()!!
         val live = blueprint.resolveSessionAll(
             SessionCapabilityContext("s-live"),
@@ -177,7 +177,7 @@ class SessionFactoryToolProviderTest {
                     }
                 },
             )
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         built.run(request("order")).toList()
         built.close()

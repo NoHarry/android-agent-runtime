@@ -1,109 +1,42 @@
 package cc.noharry.agent.release
 
-import org.junit.Assert.assertEquals
+import java.io.File
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
 
 class ExperimentalAgentRuntimeApiInventoryTest {
     @Test
     fun experimentalAnnotationRequiresExplicitOptInAtErrorLevel() {
-        val source = sourceText("api/ExperimentalAgentRuntimeApi.kt")
-
+        val source = apiSource("ExperimentalAgentRuntimeApi.kt").readText()
         assertTrue(source.contains("@RequiresOptIn("))
         assertTrue(source.contains("level = RequiresOptIn.Level.ERROR"))
     }
 
     @Test
-    fun hookExtensionSurfaceIsMarkedExperimental() {
-        val runtimeSource = sourceText("api/RuntimeHooks.kt")
-        val builderSource = sourceText("runtime/AgentRuntimeBuilder.kt")
-
-        assertEquals(
-            listOf(
-                "AgentRuntimeBuilder.hook",
-                "AgentRuntimeBuilder.hookTimeoutMillis",
-                "HookDecision",
-                "HookFailurePolicy",
-                "RuntimeHook",
-                "RuntimeHookRegistration",
-                "ToolMatcher",
-            ),
-            annotatedNames(
-                "AgentRuntimeBuilder.hook" to (builderSource to "fun hook("),
-                "AgentRuntimeBuilder.hookTimeoutMillis" to (builderSource to "fun hookTimeoutMillis("),
-                "HookDecision" to (runtimeSource to "sealed interface HookDecision"),
-                "HookFailurePolicy" to (runtimeSource to "enum class HookFailurePolicy"),
-                "RuntimeHook" to (runtimeSource to "interface RuntimeHook"),
-                "RuntimeHookRegistration" to (runtimeSource to "data class RuntimeHookRegistration"),
-                "ToolMatcher" to (runtimeSource to "fun interface ToolMatcher"),
-            ),
-        )
+    fun stableExtensionContractsDoNotRequireExperimentalOptIn() {
+        val contracts = listOf("RuntimeHooks.kt", "RuntimeExec.kt", "ToolProvider.kt", "SessionEventLog.kt", "model/ModelClient.kt")
+        contracts.forEach { name ->
+            assertFalse("$name must be stable", apiSource(name).readText().contains("@ExperimentalAgentRuntimeApi\n"))
+        }
     }
 
     @Test
-    fun node4CanonicalSurfaceIsMarkedExperimental() {
-        val builderSource = sourceText("runtime/AgentRuntimeBuilder.kt")
-        val sources = NODE4_EXPERIMENTAL_SOURCE_PATHS.joinToString("\n", transform = ::sourceText)
+    fun pluginCompositionAndOldRunContractsAreInternal() {
+        val names = listOf("AgentCapabilities", "AgentPlugin", "AgentPluginDescriptor", "AgentProfile", "AgentRuntime")
+        names.forEach { name ->
+            assertFalse("$name must not be in the contracts module", apiSource("$name.kt").exists())
+            val source = File("src/main/kotlin/cc/noharry/agent/spi/$name.kt").readText()
+            assertTrue("$name must be internal", Regex("internal (?:class|interface|object) $name\\b").containsMatchIn(source))
+        }
+    }
 
-        assertEquals(
-            (NODE4_EXPERIMENTAL_DECLARATIONS.keys + "AgentRuntimeBuilder.profile").sorted(),
-            annotatedNames(
-                *NODE4_EXPERIMENTAL_DECLARATIONS.map { (name, declaration) ->
-                    name to (sources to declaration)
-                }.toTypedArray(),
-                "AgentRuntimeBuilder.profile" to (builderSource to "fun profile("),
-            ),
-        )
+    @Test
+    fun diagnosticsRemainExperimental() {
+        val diagnostics = File("src/main/kotlin/cc/noharry/agent/RuntimeDiagnostics.kt").readText()
+        assertTrue(diagnostics.contains("@ExperimentalAgentRuntimeApi"))
+        assertTrue(apiSource("RuntimeContextSpi.kt").readText().contains("@ExperimentalAgentRuntimeApi"))
     }
 }
 
-private val NODE4_EXPERIMENTAL_SOURCE_PATHS = listOf(
-    "api/AgentCapabilities.kt",
-    "api/AgentPlugin.kt",
-    "api/AgentPluginDescriptor.kt",
-    "api/AgentProfile.kt",
-    "api/KernelApiRange.kt",
-    "api/KernelApiVersion.kt",
-    "api/KernelApiVersions.kt",
-    "api/PluginVersion.kt",
-    "api/SessionCapabilityContext.kt",
-    "api/SessionCapabilityFactory.kt",
-    "api/RuntimeExec.kt",
-)
-
-private val NODE4_EXPERIMENTAL_DECLARATIONS = linkedMapOf(
-    "AgentCapabilities" to "object AgentCapabilities",
-    "AgentPlugin" to "interface AgentPlugin",
-    "AgentPluginDescriptor" to "class AgentPluginDescriptor",
-    "AgentProfile" to "class AgentProfile",
-    "ExecEngine" to "interface ExecEngine",
-    "ExecRequest" to "data class ExecRequest",
-    "ExecResult" to "data class ExecResult",
-    "ExecToolBridge" to "interface ExecToolBridge",
-    "KernelApiRange" to "class KernelApiRange",
-    "KernelApiVersion" to "class KernelApiVersion",
-    "KernelApiVersions" to "object KernelApiVersions",
-    "PluginVersion" to "class PluginVersion",
-    "SessionCapabilityContext" to "class SessionCapabilityContext",
-    "SessionCapabilityFactory" to "fun interface SessionCapabilityFactory",
-)
-
-private fun annotatedNames(vararg checks: Pair<String, Pair<String, String>>): List<String> =
-    checks.mapNotNull { (name, sourceAndDeclaration) ->
-        val (source, declaration) = sourceAndDeclaration
-        name.takeIf { source.isAnnotated("@ExperimentalAgentRuntimeApi", declaration) }
-    }.sorted()
-
-private fun sourceText(relativePath: String): String {
-    val runtime = File("src/main/kotlin/cc/noharry/agent/$relativePath")
-    if (runtime.isFile) return runtime.readText()
-    val kernel = File("../agent-kernel-api/src/main/kotlin/cc/noharry/agent/kernel/$relativePath")
-    return kernel.readText()
-}
-
-private fun String.isAnnotated(annotation: String, declaration: String): Boolean {
-    val declarationIndex = indexOf(declaration)
-    if (declarationIndex < 0) return false
-    return substring(0, declarationIndex).takeLast(160).contains(annotation)
-}
+private fun apiSource(name: String): File = File("../agent-api/src/main/kotlin/cc/noharry/agent/spi/$name")

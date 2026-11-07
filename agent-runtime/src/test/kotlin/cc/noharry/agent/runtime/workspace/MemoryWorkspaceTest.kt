@@ -49,7 +49,7 @@ class MemoryWorkspaceTest {
     fun virtualWorkspaceReadsInitializedMemoryIndex() = runBlocking {
         val workspaceRoot = Files.createTempDirectory("agent-workspace-").toFile()
 
-        AgentRuntimeBuilder.create().workspaceRoot(workspaceRoot).build()
+        AgentRuntimeBuilder.create().workspaceRoot(workspaceRoot).buildEngine()
         val result = VirtualWorkspace(workspaceRoot).executeJson(
             toolName = "read_file",
             argumentsJson = """{"path":"/memory/MEMORY.md"}""",

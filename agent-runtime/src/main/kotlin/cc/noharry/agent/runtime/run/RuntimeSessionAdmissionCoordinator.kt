@@ -1,13 +1,13 @@
 package cc.noharry.agent.runtime.run
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.SessionRunConflictPolicy
-import cc.noharry.agent.kernel.api.reliability.RuntimeBlocker
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunSnapshot
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
-import cc.noharry.agent.kernel.api.reliability.SuggestedNextAction
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.SessionRunConflictPolicy
+import cc.noharry.agent.spi.reliability.RuntimeBlocker
+import cc.noharry.agent.spi.reliability.RuntimeCompletionSummary
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeResult
+import cc.noharry.agent.spi.reliability.RuntimeRunSnapshot
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.reliability.SuggestedNextAction
 import cc.noharry.agent.kernel.core.loop.failed
 import cc.noharry.agent.kernel.core.state.ResumeFirstController
 import cc.noharry.agent.kernel.core.state.RunStateController
@@ -20,7 +20,6 @@ import cc.noharry.agent.kernel.core.state.SessionRunLease
 import cc.noharry.agent.kernel.core.state.SessionRunScheduler
 import cc.noharry.agent.kernel.core.state.SessionRunSchedulerConfig
 import cc.noharry.agent.kernel.core.state.SessionRunTransition
-import cc.noharry.agent.kernel.core.state.WAITING_PROTOCOL_BLOCKER_CODE
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineDispatcher
@@ -325,7 +324,7 @@ internal class RuntimeSessionAdmissionCoordinator(
     private fun genericWaitingBlocker(runId: String): RuntimeBlocker =
         RuntimeBlocker(
             runId = runId,
-            code = WAITING_PROTOCOL_BLOCKER_CODE,
+            code = RuntimeErrorCode.ADMISSION_POLICY_REQUIRED.wireCode,
             message = "The current session owner is waiting and must be resumed or replaced.",
             suggestedNextAction = SuggestedNextAction.INSPECT_BLOCKER,
             handoff = runStateController.handoff(runId),
@@ -342,7 +341,6 @@ internal class RuntimeSessionAdmissionCoordinator(
     private fun latestPersistedWaiting(sessionId: String): RuntimeRunSnapshot? =
         runStateController.latestSnapshot(sessionId, RuntimeRunStatus.WAITING_CONFIRMATION)
             ?: runStateController.latestSnapshot(sessionId, RuntimeRunStatus.WAITING_USER_INPUT)
-            ?: runStateController.latestSnapshot(sessionId, RuntimeRunStatus.WAITING_PROTOCOL_REQUEST)
 
     private suspend fun terminalizeReplacedRun(runId: String, lease: SessionRunLease?) {
         markFinalizingIfExecuting(runId, lease)
@@ -642,8 +640,7 @@ private fun RuntimeRunStatus.isTerminalStatus(): Boolean =
 
 private fun RuntimeRunStatus.isWaitingControlStatus(): Boolean =
     this == RuntimeRunStatus.WAITING_CONFIRMATION ||
-        this == RuntimeRunStatus.WAITING_USER_INPUT ||
-        this == RuntimeRunStatus.WAITING_PROTOCOL_REQUEST
+        this == RuntimeRunStatus.WAITING_USER_INPUT
 
 private fun RuntimeRunStatus.isResumableExecutionStatus(): Boolean =
     isWaitingControlStatus() || this == RuntimeRunStatus.RUNNING

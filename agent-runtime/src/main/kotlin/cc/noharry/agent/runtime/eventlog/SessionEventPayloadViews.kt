@@ -1,8 +1,8 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.eventlog
 
-import cc.noharry.agent.kernel.api.SessionEventPayload
+import cc.noharry.agent.spi.SessionEventPayload
 
 /** Scalar projection for current tests and Sample UI until they read typed fields directly. */
 internal fun SessionEventPayload.scalarFields(): Map<String, String> = when (this) {

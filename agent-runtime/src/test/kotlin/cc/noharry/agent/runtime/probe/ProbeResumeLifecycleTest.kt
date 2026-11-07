@@ -1,9 +1,11 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.probe
 
+import cc.noharry.agent.runtime.DefaultTraceRedactor
 
-import cc.noharry.agent.kernel.api.model.ModelEvent
+
+import cc.noharry.agent.spi.model.ModelEvent
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.context.SimpleBootstrapPromptResolver
 import cc.noharry.agent.kernel.core.loop.*

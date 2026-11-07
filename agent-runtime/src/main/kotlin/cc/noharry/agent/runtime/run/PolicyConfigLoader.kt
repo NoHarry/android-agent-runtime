@@ -1,6 +1,6 @@
 package cc.noharry.agent.runtime.run
-import cc.noharry.agent.kernel.api.ToolSource
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.ToolSource
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import cc.noharry.agent.policy.PolicyAction
 import cc.noharry.agent.policy.PolicyDecision
 import cc.noharry.agent.policy.PolicyRule

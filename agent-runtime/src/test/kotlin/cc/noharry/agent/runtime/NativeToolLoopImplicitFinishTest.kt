@@ -1,17 +1,17 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelClientException
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelMessage
-import cc.noharry.agent.kernel.api.model.ModelRef
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.mcp.McpClientProvider
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelClientException
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelRef
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
@@ -40,7 +40,7 @@ class NativeToolLoopImplicitFinishTest {
         val runtime = AgentRuntimeBuilder.create().modelClient(FakeModelClient(eventsByRound = listOf(
             listOf(ModelEvent.SearchActivity("provider", "route", 1), ModelEvent.TextDelta(planning), ModelEvent.Completed),
             listOf(ModelEvent.SearchActivity("provider", "route", 1), ModelEvent.TextDelta(planning), ModelEvent.Completed),
-        ))).build()
+        ))).buildEngine()
         val result = runtime.run(agentRequest()).toList().filterIsInstance<AgentEvent.ResultAvailable>().single().result
         assertEquals(RuntimeRunStatus.FAILED, result.status)
         assertEquals(INVALID_FINISH_RESPONSE_CODE, result.errorCode)
@@ -57,7 +57,7 @@ class NativeToolLoopImplicitFinishTest {
                     ModelEvent.Completed,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -95,7 +95,7 @@ class NativeToolLoopImplicitFinishTest {
                     ),
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val search = events.filterIsInstance<AgentEvent.SearchActivity>().single()
@@ -134,7 +134,7 @@ class NativeToolLoopImplicitFinishTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -164,7 +164,7 @@ class NativeToolLoopImplicitFinishTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ResultAvailable>()
@@ -196,7 +196,7 @@ class NativeToolLoopImplicitFinishTest {
                     ),
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -236,7 +236,7 @@ class NativeToolLoopImplicitFinishTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ResultAvailable>()

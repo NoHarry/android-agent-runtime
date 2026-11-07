@@ -1,16 +1,16 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentProfile
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.AgentProfile
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.mcp.McpClientProvider
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.kernel.core.plugin.RuntimeCompositionMessages
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -46,11 +46,11 @@ class AgentRuntimeBuilderDelegationTest {
             .modelClient(finishModel(seen))
             .toolProvider(catalogProvider("generic"))
             .toolProvider(catalogProvider("legacy"))
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         runtime.run(request("delegation")).toList()
         val providers = runtime.runtimeBlueprintForTest()!!
-            .resolveSharedAll(cc.noharry.agent.kernel.api.AgentCapabilities.TOOL_PROVIDER)
+            .resolveSharedAll(cc.noharry.agent.spi.AgentCapabilities.TOOL_PROVIDER)
         assertEquals(setOf("generic", "legacy"), providers.map { it.providerId }.toSet())
         assertEquals("delegation", runtime.runtimeBlueprintForTest()?.profile?.id)
         runtime.close()
@@ -61,7 +61,7 @@ class AgentRuntimeBuilderDelegationTest {
     fun defaultProfileIdentityIsCompiledWhenHostOmitsProfile() {
         val runtime = AgentRuntimeBuilder.create()
             .modelClient(finishModel(mutableListOf()))
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
         assertEquals(
             RuntimeCompositionMessages.DEFAULT_PROFILE_ID,
             runtime.runtimeBlueprintForTest()?.profile?.id,
@@ -95,7 +95,7 @@ private fun catalogProvider(id: String): McpClientProvider =
         ): ToolCallResult = ToolCallResult(success = true, resultJson = "{}")
     }
 
-private fun request(name: String) = cc.noharry.agent.kernel.api.AgentRequest(
+private fun request(name: String) = cc.noharry.agent.spi.AgentRequest(
     requestId = "request-$name",
     sessionId = "session-$name",
     input = name,

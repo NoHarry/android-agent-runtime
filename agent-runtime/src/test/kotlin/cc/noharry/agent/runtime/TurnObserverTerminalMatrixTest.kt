@@ -1,21 +1,19 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.CancelPendingConfirmationRequest
-import cc.noharry.agent.kernel.api.ConfirmationChoice
-import cc.noharry.agent.kernel.api.ConfirmationDecision
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.ProtocolRequestCancellation
-import cc.noharry.agent.kernel.api.ProtocolRequestRejection
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.RuntimeCompletedTurn
-import cc.noharry.agent.kernel.api.RuntimeTurnInput
-import cc.noharry.agent.kernel.api.RuntimeTurnObserver
-import cc.noharry.agent.kernel.api.TurnInputObservation
-import cc.noharry.agent.kernel.api.TurnObservationReceipt
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.CancelPendingConfirmationRequest
+import cc.noharry.agent.spi.ConfirmationChoice
+import cc.noharry.agent.spi.ConfirmationDecision
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.RuntimeCompletedTurn
+import cc.noharry.agent.spi.RuntimeTurnInput
+import cc.noharry.agent.spi.RuntimeTurnObserver
+import cc.noharry.agent.spi.TurnInputObservation
+import cc.noharry.agent.spi.TurnObservationReceipt
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.kernel.core.loop.completed
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -41,7 +39,7 @@ class TurnObserverTerminalMatrixTest {
                 AgentRuntimeBuilder.create()
                     .modelClient(finishClient())
                     .turnObserver(observer)
-                    .build()
+                    .buildEngine()
             try {
                 runtime.run(AgentRequest("n1", "s", "hello")).toList()
                 assertEquals(1, observer.finishedCount.get())
@@ -62,7 +60,7 @@ class TurnObserverTerminalMatrixTest {
                 AgentRuntimeBuilder.create()
                     .confirmationOnRun()
                     .turnObserver(rejectObs)
-                    .build()
+                    .buildEngine()
             try {
                 rejectRuntime.run(AgentRequest("c-rej", "s", "confirm")).toList()
                 val pending = rejectRuntime.getPendingConfirmation("c-rej:confirmation")!!
@@ -84,60 +82,12 @@ class TurnObserverTerminalMatrixTest {
                 AgentRuntimeBuilder.create()
                     .confirmationOnRun()
                     .turnObserver(cancelObs)
-                    .build()
+                    .buildEngine()
             try {
                 cancelRuntime.run(AgentRequest("c-can", "s", "confirm")).toList()
                 val pending = cancelRuntime.getPendingConfirmation("c-can:confirmation")!!
                 cancelRuntime.cancelPendingConfirmation(
                     CancelPendingConfirmationRequest(pending.pendingId, "cancel-1"),
-                )
-                assertEquals(1, cancelObs.finishedCount.get())
-            } finally {
-                cancelRuntime.close()
-            }
-        }
-
-    @Test
-    fun protocol_reject_and_cancel_notify_exactly_once() =
-        runBlocking {
-            val rejectObs = CountingObserver()
-            val rejectRuntime =
-                AgentRuntimeBuilder.create()
-                    .protocolRequestOnRun(kind = "demo", payloadJson = """{"k":"v"}""")
-                    .turnObserver(rejectObs)
-                    .build()
-            try {
-                val events = rejectRuntime.run(AgentRequest("p-rej", "s", "proto")).toList()
-                val created =
-                    events.filterIsInstance<AgentEvent.RuntimeProtocolRequestCreated>().single()
-                rejectRuntime.rejectRuntimeProtocolRequest(
-                    ProtocolRequestRejection(
-                        protocolRequestId = created.protocolRequest.protocolRequestId,
-                        requestId = "rej-1",
-                        reason = "test reject",
-                    ),
-                )
-                assertEquals(1, rejectObs.finishedCount.get())
-                assertEquals("CANCELLED", rejectObs.statuses.single())
-            } finally {
-                rejectRuntime.close()
-            }
-
-            val cancelObs = CountingObserver()
-            val cancelRuntime =
-                AgentRuntimeBuilder.create()
-                    .protocolRequestOnRun(kind = "demo", payloadJson = """{"k":"v"}""")
-                    .turnObserver(cancelObs)
-                    .build()
-            try {
-                val events = cancelRuntime.run(AgentRequest("p-can", "s", "proto")).toList()
-                val created =
-                    events.filterIsInstance<AgentEvent.RuntimeProtocolRequestCreated>().single()
-                cancelRuntime.cancelRuntimeProtocolRequest(
-                    ProtocolRequestCancellation(
-                        protocolRequestId = created.protocolRequest.protocolRequestId,
-                        requestId = "can-1",
-                    ),
                 )
                 assertEquals(1, cancelObs.finishedCount.get())
             } finally {
@@ -163,7 +113,7 @@ class TurnObserverTerminalMatrixTest {
                 AgentRuntimeBuilder.create()
                     .modelClient(finishClient())
                     .turnObserver(boom)
-                    .build()
+                    .buildEngine()
             try {
                 val events = runtime.run(AgentRequest("ex1", "s", "ok")).toList()
                 assertTrue(events.any { it is AgentEvent.Finished || it is AgentEvent.ResultAvailable })
@@ -182,7 +132,7 @@ class TurnObserverTerminalMatrixTest {
                     .modelClient(finishClient())
                     .turnObserver(first)
                     .turnObserver(second)
-                    .build()
+                    .buildEngine()
             try {
                 val failure =
                     runCatching {

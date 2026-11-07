@@ -1,13 +1,13 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.eventlog
 
-import cc.noharry.agent.kernel.api.SessionEventAppend
-import cc.noharry.agent.kernel.api.SessionEventLogDurability
-import cc.noharry.agent.kernel.api.SessionEventLogHealthStatus
-import cc.noharry.agent.kernel.api.SessionEventPayload
-import cc.noharry.agent.kernel.api.SessionEventQuery
-import cc.noharry.agent.kernel.api.SessionEventType
+import cc.noharry.agent.spi.SessionEventAppend
+import cc.noharry.agent.spi.SessionEventLogDurability
+import cc.noharry.agent.spi.SessionEventLogHealthStatus
+import cc.noharry.agent.spi.SessionEventPayload
+import cc.noharry.agent.spi.SessionEventQuery
+import cc.noharry.agent.spi.SessionEventType
 import cc.noharry.agent.kernel.core.state.encodeFileName
 import java.io.File
 import java.io.IOException
@@ -915,7 +915,7 @@ private fun writeCompleteSidecar(
     status: SessionEventLogHealthStatus = SessionEventLogHealthStatus.COMPLETE,
     firstFailureCode: String? = null,
 ) {
-    val health = cc.noharry.agent.kernel.api.SessionEventLogHealth(
+    val health = cc.noharry.agent.spi.SessionEventLogHealth(
         status = status,
         attemptedCount = attemptedCount,
         appendedCount = appendedCount,

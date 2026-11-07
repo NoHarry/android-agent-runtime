@@ -1,10 +1,10 @@
-public final class cc/noharry/agent/exec/js/ZiplineExecEngine : cc/noharry/agent/kernel/api/ExecEngine {
+public final class cc/noharry/agent/exec/js/ZiplineExecEngine : cc/noharry/agent/spi/ExecEngine {
 	public fun <init> ()V
 	public fun <init> (I)V
 	public fun <init> (ILjava/lang/Long;)V
 	public fun <init> (ILjava/lang/Long;Ljava/lang/Long;)V
 	public synthetic fun <init> (ILjava/lang/Long;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
-	public fun run (Lcc/noharry/agent/kernel/api/ExecRequest;Lcc/noharry/agent/kernel/api/ExecToolBridge;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun getProviderConcurrency ()Lcc/noharry/agent/spi/ProviderConcurrencyDeclaration;
+	public fun run (Lcc/noharry/agent/spi/ExecRequest;Lcc/noharry/agent/spi/ExecToolBridge;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 

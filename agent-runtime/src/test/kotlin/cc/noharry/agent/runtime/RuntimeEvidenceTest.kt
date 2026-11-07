@@ -1,14 +1,14 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
 
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeEvidenceType
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeEvidenceType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -34,7 +34,7 @@ class RuntimeEvidenceTest {
                     ModelEvent.Completed,
                 ),
             )
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         val events = runtime.run(agentRequest()).toList()
         val resultEvent = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -64,7 +64,7 @@ class RuntimeEvidenceTest {
             .toolProvider(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
             .hook(confirmWithPrompt("Need token=sk-waitsecret123 phone=13800138000"))
             .modelClient(FakeModelClient(schemaThenBackendRounds()))
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         assertTrue(runtime.run(agentRequest()).toList().any { it is AgentEvent.ConfirmationRequired })
         val handoff = requireNotNull(runtime.getRuntimeHandoff("request-1"))

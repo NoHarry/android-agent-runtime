@@ -1,0 +1,169 @@
+package cc.noharry.agent.spi
+
+/**
+ * Pre-model context SPI for host-owned context providers.
+ *
+ * Runtime owns typed contribution AST; providers must not inject
+ * free-form system instructions or fake user messages.
+ */
+interface RuntimeContextProvider : AutoCloseable {
+    val id: String
+
+    suspend fun provide(request: RuntimeContextRequest): RuntimeContextContribution
+
+    override fun close() {}
+}
+
+/**
+ * Turn observer SPI for pre-model explicit mutations and post-terminal enqueue.
+ */
+@ExperimentalAgentRuntimeApi
+interface RuntimeTurnObserver : AutoCloseable {
+    val id: String
+
+    /**
+     * Preflight for a required mutating observer action. Runtime declares the
+     * obligation before [onTurnInput]. Return null when this turn creates no obligation.
+     */
+    fun preflightTurnInput(input: RuntimeTurnInput): RuntimeObserverActionPreflight? = null
+
+    suspend fun onTurnInput(input: RuntimeTurnInput): TurnInputObservation
+
+    suspend fun onTurnFinished(turn: RuntimeCompletedTurn): TurnObservationReceipt
+
+    override fun close() {}
+}
+
+/** Business-neutral observer action declaration. Kernel does not interpret memory names. */
+@ExperimentalAgentRuntimeApi
+data class RuntimeObserverActionPreflight(
+    val observerId: String,
+    val actionName: String,
+    val effectKind: RuntimeEffectKind,
+    val completionImpact: CompletionImpact,
+    val effectKeyDigest: String? = null,
+    val argumentDigest: String? = null,
+)
+
+data class RuntimeContextRequest(
+    val runId: String,
+    val sessionId: String,
+    val requestId: String,
+    val scene: String?,
+    val input: String,
+    /** Host/runtime-injected reference clock; providers must not use wall clock. */
+    val referenceTimeEpochMillis: Long,
+    val deadlineEpochMillis: Long?,
+    /** Trusted typed host/runtime state keys that override historical provider defaults. */
+    val currentStateKeys: Set<String> = emptySet(),
+    /**
+     * The runtime instance that owns this run, so two runtimes' runs with one runId stay apart; null for host-local
+     * calls.
+     */
+    val runtimeInstanceId: String? = null,
+)
+
+@ExperimentalAgentRuntimeApi
+data class RuntimeTurnInput(
+    val runId: String,
+    val sessionId: String,
+    val requestId: String,
+    val scene: String?,
+    val input: String,
+    val referenceTimeEpochMillis: Long,
+    /** Runtime-owned observer deadline. Null only for host-local/test calls. */
+    val deadlineEpochMillis: Long? = null,
+    /** See [RuntimeContextRequest.runtimeInstanceId]. */
+    val runtimeInstanceId: String? = null,
+)
+
+@ExperimentalAgentRuntimeApi
+data class RuntimeCompletedTurn(
+    val runId: String,
+    val sessionId: String,
+    val requestId: String,
+    val scene: String?,
+    val inputDigest: String,
+    val terminalStatus: String,
+    val referenceTimeEpochMillis: Long,
+    /** See [RuntimeContextRequest.runtimeInstanceId]. */
+    val runtimeInstanceId: String? = null,
+    val completionOutcome: String? = null,
+)
+
+enum class ContextStability {
+    STABLE,
+    LIVE,
+}
+
+enum class RuntimeContextDatumKind {
+    FACT,
+    EVENT,
+    SESSION_STATE,
+    UNCERTAINTY,
+    WRITE_RECEIPT,
+}
+
+sealed interface RuntimeContextScalar {
+    @ExperimentalAgentRuntimeApi
+    data class Text(val value: String) : RuntimeContextScalar
+
+    @ExperimentalAgentRuntimeApi
+    data class Number(val value: Double) : RuntimeContextScalar
+
+    @ExperimentalAgentRuntimeApi
+    data class Flag(val value: Boolean) : RuntimeContextScalar
+}
+
+data class RuntimeContextDatum(
+    val id: String,
+    val kind: RuntimeContextDatumKind,
+    val subject: String?,
+    val predicate: String,
+    val value: RuntimeContextScalar,
+    val validFromEpochMillis: Long? = null,
+    val validToEpochMillis: Long? = null,
+)
+
+data class RuntimeContextBlock(
+    val id: String,
+    val stability: ContextStability,
+    val data: List<RuntimeContextDatum>,
+    val payloadDigest: String,
+)
+
+data class RuntimeContextContribution(
+    val providerId: String,
+    val blocks: List<RuntimeContextBlock>,
+    val fingerprint: String,
+) {
+    companion object {
+        fun empty(providerId: String): RuntimeContextContribution =
+            RuntimeContextContribution(providerId, emptyList(), fingerprint = "empty")
+    }
+}
+
+@ExperimentalAgentRuntimeApi
+data class TurnInputObservation(
+    val observerId: String,
+    val handled: Boolean,
+    val writeCommitted: Boolean = false,
+    val safeCode: String? = null,
+    val digest: String? = null,
+    val effectKind: RuntimeEffectKind = RuntimeEffectKind.UNKNOWN,
+    val completionImpact: CompletionImpact = CompletionImpact.ADVISORY,
+    val commitStatus: RuntimeCommitStatus? = null,
+    val effectKeyDigest: String? = null,
+) {
+    companion object {
+        fun noop(observerId: String): TurnInputObservation =
+            TurnInputObservation(observerId = observerId, handled = false)
+    }
+}
+
+@ExperimentalAgentRuntimeApi
+data class TurnObservationReceipt(
+    val observerId: String,
+    val enqueued: Boolean,
+    val safeCode: String? = null,
+)

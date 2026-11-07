@@ -1,20 +1,20 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelClientException
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelMessage
-import cc.noharry.agent.kernel.api.model.ModelRef
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.mcp.McpClientProvider
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelClientException
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelRef
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
@@ -66,7 +66,7 @@ class NativeToolLoopToolsAndFailureTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ResultAvailable>()
@@ -108,7 +108,7 @@ class NativeToolLoopToolsAndFailureTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ResultAvailable>()
@@ -123,7 +123,7 @@ class NativeToolLoopToolsAndFailureTest {
     }
 
     @Test
-    fun runEmitsRedactedNativeToolPublicEvents() = runBlocking {
+    fun liveToolPayloadsAreCompleteForHostRendering() = runBlocking {
         val runtime = AgentRuntimeBuilder.create()
             .workspaceRoot(Files.createTempDirectory("direct-backend-redact-").toFile())
             .toolProvider(
@@ -155,7 +155,7 @@ class NativeToolLoopToolsAndFailureTest {
                     ),
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val publicText = (
@@ -166,9 +166,9 @@ class NativeToolLoopToolsAndFailureTest {
         assertTrue(events.any { it is AgentEvent.NativeToolCallFinished })
         assertTrue(events.filterIsInstance<AgentEvent.NativeToolCallStarted>().any { it.toolCallId == "tool-1" })
         assertTrue(events.filterIsInstance<AgentEvent.NativeToolCallFinished>().any { it.toolCallId == "tool-1" })
-        assertTrue(publicText.contains("redacted"))
-        assertFalse(publicText.contains("sk-toolsecret123"))
-        assertFalse(publicText.contains("13800138000"))
+        assertFalse(publicText.contains("redacted"))
+        assertTrue(publicText.contains("sk-toolsecret123"))
+        assertTrue(publicText.contains("13800138000"))
     }
 
     @Test
@@ -187,7 +187,7 @@ class NativeToolLoopToolsAndFailureTest {
                     )
                 }
             })
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -209,7 +209,7 @@ class NativeToolLoopToolsAndFailureTest {
         val runtime = AgentRuntimeBuilder.create()
             .modelRetry(maxAttempts = 2, initialBackoffMillis = 0L, maxBackoffMillis = 0L)
             .modelClient(RecoverableOnceModelClient(seenRequests))
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -237,7 +237,7 @@ class NativeToolLoopToolsAndFailureTest {
                 fallbackChain = listOf(fallback),
             )
             .modelClient(FallbackModelClient(seenRequests))
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest().copy(modelRef = primary)).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -260,7 +260,7 @@ class NativeToolLoopToolsAndFailureTest {
             .toolProvider(backend)
             .modelRetry(maxAttempts = 2, initialBackoffMillis = 0L, maxBackoffMillis = 0L)
             .modelClient(ToolThenRecoverableFailureModelClient(seenRequests))
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -373,7 +373,7 @@ class NativeToolLoopToolsAndFailureTest {
                     throw CancellationException("cancelled")
                 }
             })
-            .build()
+            .buildEngine()
 
         val error = try {
             runtime.run(agentRequest()).toList()

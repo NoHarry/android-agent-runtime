@@ -2,18 +2,18 @@
 
 package cc.noharry.agent.samples.extensions
 
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.HookContext
-import cc.noharry.agent.kernel.api.HookDecision
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.ToolMatcher
-import cc.noharry.agent.kernel.api.ToolUse
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.ThreadEvent
+import cc.noharry.agent.ThreadItem
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.HookContext
+import cc.noharry.agent.spi.HookDecision
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.RuntimeHook
+import cc.noharry.agent.spi.ToolMatcher
+import cc.noharry.agent.spi.ToolUse
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.runtime.AgentRuntimeBuilder
 import cc.noharry.agent.runtime.functionTools
 import kotlinx.coroutines.flow.Flow
@@ -42,8 +42,8 @@ suspend fun runSample(): List<String> {
     val transcript = mutableListOf<String>()
     // No workspace: the agent has no files of its own here, and finds the providers' tools with search_tools.
     val runtime = AgentRuntimeBuilder.create()
-        .modelClient(ScriptedModel())
-        .toolProvider(noteTools)
+        .model(ScriptedModel())
+        .tools(noteTools)
         // The model sees a provider's tools as mcp__<provider id>__<tool>.
         .hook(
             RefuseDeleting { tool, reason -> transcript += "refused $tool: $reason" },
@@ -51,14 +51,13 @@ suspend fun runSample(): List<String> {
         )
         .build()
     try {
-        // Events name the tools; their arguments and results reach a hook (onPreToolUse, onPostToolUse) and the
-        // session event log, not the events.
-        val request = AgentRequest("request-1", "session-1", "Remember to buy milk, then tidy up my notes.")
-        runtime.run(request).collect { event ->
+        runtime.startThread().runStreamed("Remember to buy milk, then tidy up my notes.").collect { event ->
             when (event) {
-                is AgentEvent.NativeToolCallStarted -> transcript += "model called ${event.toolName}"
-                is AgentEvent.ResultAvailable -> transcript += "answer: ${event.result.response}"
-                is AgentEvent.Failed -> transcript += "failed: ${event.code}"
+                is ThreadEvent.ItemStarted -> (event.item as? ThreadItem.ToolCall)?.let {
+                    transcript += "model called ${it.tool}"
+                }
+                is ThreadEvent.TurnCompleted -> transcript += "answer: ${event.result.finalResponse}"
+                is ThreadEvent.TurnFailed -> transcript += "failed: ${event.error.code}"
                 else -> Unit
             }
         }

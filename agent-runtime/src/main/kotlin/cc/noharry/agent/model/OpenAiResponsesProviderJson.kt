@@ -1,4 +1,4 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.model
 
@@ -16,12 +16,12 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.model.ModelMessage
-import cc.noharry.agent.kernel.api.model.ModelTool
-import cc.noharry.agent.kernel.api.model.ServerSideSearchCapability
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelResponseMetadata
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelTool
+import cc.noharry.agent.model.ServerSideSearchCapability
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelResponseMetadata
 
 internal fun openAiResponsesRequest(
     apiKey: String,
@@ -249,7 +249,7 @@ private fun JsonObjectBuilder.putOpenAiResponsesInput(request: ModelRequest) {
         request.system?.takeIf { it.isNotBlank() }?.let { add(responseMessage("system", it)) }
         for (message in request.messages.withoutToolLoads()) {
             // What the model told the user alongside a call goes before the call, as the assistant's message.
-            message.assistantText.takeIf { it.isNotBlank() && message.isAssistantToolCall() }
+            message.content.ifBlank { message.assistantText }.takeIf { it.isNotBlank() && message.isAssistantToolCall() }
                 ?.let { add(responseMessage("assistant", it)) }
             add(responseInputItem(message))
             message.toolResultImagesFollowUp()?.let { add(responseMessage(it)) }

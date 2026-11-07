@@ -1,8 +1,8 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.mcp
 
-import cc.noharry.agent.kernel.api.ProviderConcurrencyMode
+import cc.noharry.agent.spi.ProviderConcurrencyMode
 import cc.noharry.agent.transport.HttpEvent
 import cc.noharry.agent.transport.HttpRequest
 import cc.noharry.agent.transport.HttpResponse
@@ -90,7 +90,7 @@ class McpHttpClientTest {
         }
         val provider = McpToolProvider(client(server), serverId = "weather", displayName = "Weather")
 
-        val result = provider.callTool("get_weather", """{"city":"武汉"}""", cc.noharry.agent.kernel.api.ToolCallContext("session", "run", "request"))
+        val result = provider.callTool("get_weather", """{"city":"武汉"}""", cc.noharry.agent.spi.ToolCallContext("session", "run", "request"))
 
         assertTrue(result.success)
         assertTrue(result.resultJson.contains("晴"))

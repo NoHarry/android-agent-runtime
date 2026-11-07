@@ -1,18 +1,18 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ContextStability
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.RuntimeContextBlock
-import cc.noharry.agent.kernel.api.RuntimeContextContribution
-import cc.noharry.agent.kernel.api.RuntimeContextDatum
-import cc.noharry.agent.kernel.api.RuntimeContextDatumKind
-import cc.noharry.agent.kernel.api.RuntimeContextProvider
-import cc.noharry.agent.kernel.api.RuntimeContextRequest
-import cc.noharry.agent.kernel.api.RuntimeContextScalar
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ContextStability
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.RuntimeContextBlock
+import cc.noharry.agent.spi.RuntimeContextContribution
+import cc.noharry.agent.spi.RuntimeContextDatum
+import cc.noharry.agent.spi.RuntimeContextDatumKind
+import cc.noharry.agent.spi.RuntimeContextProvider
+import cc.noharry.agent.spi.RuntimeContextRequest
+import cc.noharry.agent.spi.RuntimeContextScalar
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.kernel.core.context.RuntimeContextHooks
 import cc.noharry.agent.kernel.core.loop.failed
 import java.util.concurrent.atomic.AtomicInteger
@@ -137,7 +137,7 @@ class AggregateContextDeadlineTest {
                     )
                     .contextProvider(boom)
                     .contextProvider(ok)
-                    .build()
+                    .buildEngine()
             try {
                 runtime.run(AgentRequest("agg-ex", "s", "ping")).toList()
                 assertTrue("boom must be invoked", boomCalls.get() == 1)

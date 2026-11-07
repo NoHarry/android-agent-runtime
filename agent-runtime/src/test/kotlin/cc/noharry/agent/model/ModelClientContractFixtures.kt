@@ -14,12 +14,12 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.model.ModelMessage
-import cc.noharry.agent.kernel.api.model.ModelImage
-import cc.noharry.agent.kernel.api.model.ModelTool
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelResponseMetadata
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelImage
+import cc.noharry.agent.spi.model.ModelTool
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelResponseMetadata
 
 internal class FakeHttpTransport(
     private val executeResponse: HttpResponse = providerResponse("{}"),

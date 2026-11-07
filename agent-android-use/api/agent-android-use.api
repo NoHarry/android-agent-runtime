@@ -115,23 +115,23 @@ public final class cc/noharry/agent/androiduse/AndroidUsePresenterKt {
 	public static final field PRESENTER_TIMEOUT_MILLIS J
 }
 
-public final class cc/noharry/agent/androiduse/AndroidUseToolProvider : cc/noharry/agent/kernel/api/ToolPrefetchProvider, cc/noharry/agent/kernel/api/mcp/McpClientProvider {
+public final class cc/noharry/agent/androiduse/AndroidUseToolProvider : cc/noharry/agent/spi/ToolPrefetchProvider, cc/noharry/agent/spi/mcp/McpClientProvider {
 	public fun <init> (Landroid/content/Context;Lcc/noharry/agent/androiduse/AndroidUsePresenter;Lcc/noharry/agent/androiduse/AndroidUseOptions;)V
 	public synthetic fun <init> (Landroid/content/Context;Lcc/noharry/agent/androiduse/AndroidUsePresenter;Lcc/noharry/agent/androiduse/AndroidUseOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun callTool (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/kernel/api/ToolCallContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun callTool (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/spi/ToolCallContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getDisplayName ()Ljava/lang/String;
 	public fun getPrefetchOnSearch ()Z
 	public fun getPrefetchTimeoutMillis ()J
-	public fun getProviderConcurrency ()Lcc/noharry/agent/kernel/api/ProviderConcurrencyDeclaration;
+	public fun getProviderConcurrency ()Lcc/noharry/agent/spi/ProviderConcurrencyDeclaration;
 	public fun getProviderId ()Ljava/lang/String;
 	public fun getRemotePrefetchEnabled ()Z
 	public fun getServerId ()Ljava/lang/String;
-	public fun initialize (Lcc/noharry/agent/kernel/api/ToolInitializeContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun initialize (Lcc/noharry/agent/spi/ToolInitializeContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun listPrompts (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun listResources (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun listTools (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun localToolNames (Lcc/noharry/agent/kernel/api/ToolPrefetchRequest;)Ljava/util/List;
-	public fun prefetchTools (Lcc/noharry/agent/kernel/api/ToolPrefetchRequest;Lcc/noharry/agent/kernel/api/ToolPrefetchTrace;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun localToolNames (Lcc/noharry/agent/spi/ToolPrefetchRequest;)Ljava/util/List;
+	public fun prefetchTools (Lcc/noharry/agent/spi/ToolPrefetchRequest;Lcc/noharry/agent/spi/ToolPrefetchTrace;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class cc/noharry/agent/androiduse/ForegroundApp {

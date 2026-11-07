@@ -1,15 +1,15 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.mcp.McpClientProvider
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
@@ -35,7 +35,7 @@ class NativeToolLoopFailureBreakerTest {
                 listOf(finishCall(), ModelEvent.Completed),
             )
         val runtime = AgentRuntimeBuilder.create().workspaceRoot(Files.createTempDirectory("business-refusal-").toFile())
-            .toolProvider(backend).modelClient(FakeModelClient(eventsByRound = rounds, seenRequests = requests)).build()
+            .toolProvider(backend).modelClient(FakeModelClient(eventsByRound = rounds, seenRequests = requests)).buildEngine()
         val result = runtime.run(agentRequest()).toList().filterIsInstance<AgentEvent.ResultAvailable>().single().result
         assertEquals(RuntimeRunStatus.COMPLETED, result.status)
         assertEquals(6, backend.calls)
@@ -65,7 +65,7 @@ class NativeToolLoopFailureBreakerTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -101,7 +101,7 @@ class NativeToolLoopFailureBreakerTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -132,7 +132,7 @@ class NativeToolLoopFailureBreakerTest {
                     ),
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result

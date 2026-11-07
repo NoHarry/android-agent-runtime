@@ -1,4 +1,4 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.model
 
@@ -15,12 +15,12 @@ import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.model.ModelMessage
-import cc.noharry.agent.kernel.api.model.ModelTool
-import cc.noharry.agent.kernel.api.model.ServerSideSearchCapability
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelResponseMetadata
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelTool
+import cc.noharry.agent.model.ServerSideSearchCapability
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelResponseMetadata
 
 internal fun openAiRequest(
     apiKey: String,
@@ -149,7 +149,7 @@ private fun JsonObjectBuilder.putOpenAiMessages(request: ModelRequest, model: St
                         val reasoningContent = assistantReasoningContent(message, model, options)
                         put("role", "assistant")
                         // What the model told the user alongside the call; null when it said nothing.
-                        val said = message.assistantText.takeIf { it.isNotBlank() }
+                        val said = message.content.ifBlank { message.assistantText }.takeIf { it.isNotBlank() }
                         when {
                             reasoningContent != null -> {
                                 put("content", said.orEmpty())
@@ -177,6 +177,10 @@ private fun JsonObjectBuilder.putOpenAiMessages(request: ModelRequest, model: St
                     else -> {
                         put("role", message.role)
                         putOpenAiContent(message)
+                        if (message.role == "assistant" && !message.reasoningContent.isNullOrBlank()) {
+                            val options = request.modelRef.providerOptions(OPENAI_PROVIDER_NAME, model)
+                            assistantReasoningContent(message, model, options)?.let { put("reasoning_content", it) }
+                        }
                     }
                 }
             })
@@ -222,7 +226,7 @@ private fun assistantReasoningContent(
     // Thinking disabled: do not invent/replay reasoning_content (DeepSeek thinking mode off).
     if (options.thinkingType == THINKING_TYPE_DISABLED) return null
     if (!shouldReplayReasoningContent(model)) return null
-    return message.content.takeIf { it.isNotBlank() } ?: REASONING_REPLAY_PLACEHOLDER
+    return message.reasoningContent?.takeIf { it.isNotBlank() } ?: REASONING_REPLAY_PLACEHOLDER
 }
 
 private fun shouldReplayReasoningContent(model: String): Boolean {

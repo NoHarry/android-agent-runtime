@@ -1,16 +1,16 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
 
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.NarrationCheck
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
-import cc.noharry.agent.kernel.core.loop.LoopSettings
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.NarrationCheck
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
+import cc.noharry.agent.runtime.LoopSettings
 import java.nio.file.Files
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -27,11 +27,11 @@ class LoopSettingsBuilderTest {
     @Test
     fun theHostsNarrationCheckDecidesWhetherAnAnswerOnlyAnnounces() = runBlocking {
         val announcing = "I'll now look that up and provide the final answer."
-        val byDefault = AgentRuntimeBuilder.create().modelClient(finishingWith(announcing)).build()
+        val byDefault = AgentRuntimeBuilder.create().modelClient(finishingWith(announcing)).buildEngine()
         assertNotEquals(RuntimeRunStatus.COMPLETED, byDefault.run(request("default")).result().status)
         byDefault.close()
 
-        val accepting = AgentRuntimeBuilder.create().modelClient(finishingWith(announcing)).loopSettings(LoopSettings(narration = NarrationCheck.NONE)).build()
+        val accepting = AgentRuntimeBuilder.create().modelClient(finishingWith(announcing)).loopSettings(LoopSettings(narration = NarrationCheck.NONE)).buildEngine()
         val result = accepting.run(request("none")).result()
         assertEquals(RuntimeRunStatus.COMPLETED, result.status)
         assertEquals(announcing, result.response)
@@ -44,7 +44,7 @@ class LoopSettingsBuilderTest {
         val runtime = AgentRuntimeBuilder.create()
             .modelClient(finishingWith("done", seen))
             .protocolRules { rules -> rules.filterNot { "bing.com" in it } + "- Answer in one sentence." }
-            .build()
+            .buildEngine()
         runtime.run(request("rules")).toList()
         runtime.close()
         val system = seen.first().system.orEmpty()
@@ -57,7 +57,7 @@ class LoopSettingsBuilderTest {
             .modelClient(finishingWith("done", withWorkspace))
             .workspaceRoot(root)
             .protocolRules { rules -> rules.filterNot { "bing.com" in it } + "- Answer in one sentence." }
-            .build()
+            .buildEngine()
         workspaceRuntime.run(request("rules-workspace")).toList()
         workspaceRuntime.close()
         val assembled = withWorkspace.first().system.orEmpty()
@@ -77,7 +77,7 @@ class LoopSettingsBuilderTest {
                 .sceneAgentsMd("debug-console", "Answer with the raw log line.")
                 .sceneAgentsMd("cabin", "Rules that a blank call takes back.")
                 .sceneAgentsMd("cabin", " ")
-                .build()
+                .buildEngine()
             runtime.run(request("in-scene").copy(scene = "debug-console")).toList()
             runtime.run(request("elsewhere").copy(scene = "cabin")).toList()
             runtime.run(request("no-scene")).toList()
@@ -104,10 +104,10 @@ class LoopSettingsBuilderTest {
     @Test
     fun withoutLessonsNothingIsKeptForThem() {
         val root = Files.createTempDirectory("lessons").toFile()
-        AgentRuntimeBuilder.create().modelClient(finishingWith("done")).workspaceRoot(root).lessons(false).build().close()
+        AgentRuntimeBuilder.create().modelClient(finishingWith("done")).workspaceRoot(root).lessons(false).buildEngine().close()
         assertFalse(root.resolve("memory/lessons").exists())
         val learning = Files.createTempDirectory("lessons").toFile()
-        AgentRuntimeBuilder.create().modelClient(finishingWith("done")).workspaceRoot(learning).build().close()
+        AgentRuntimeBuilder.create().modelClient(finishingWith("done")).workspaceRoot(learning).buildEngine().close()
         assertTrue(learning.resolve("memory/lessons").exists())
         root.deleteRecursively()
         learning.deleteRecursively()

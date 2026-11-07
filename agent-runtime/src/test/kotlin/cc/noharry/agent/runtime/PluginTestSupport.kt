@@ -1,16 +1,16 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentPlugin
-import cc.noharry.agent.kernel.api.AgentPluginDescriptor
-import cc.noharry.agent.kernel.api.AgentPluginScope
-import cc.noharry.agent.kernel.api.AgentProfile
-import cc.noharry.agent.kernel.api.CapabilityCardinality
-import cc.noharry.agent.kernel.api.CapabilityKey
-import cc.noharry.agent.kernel.api.KernelApiRange
-import cc.noharry.agent.kernel.api.KernelApiVersions
-import cc.noharry.agent.kernel.api.PluginVersion
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.AgentPlugin
+import cc.noharry.agent.spi.AgentPluginDescriptor
+import cc.noharry.agent.spi.AgentPluginScope
+import cc.noharry.agent.spi.AgentProfile
+import cc.noharry.agent.spi.CapabilityCardinality
+import cc.noharry.agent.spi.CapabilityKey
+import cc.noharry.agent.spi.KernelApiRange
+import cc.noharry.agent.spi.KernelApiVersions
+import cc.noharry.agent.spi.PluginVersion
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
 
 internal fun testKey(
     name: String,

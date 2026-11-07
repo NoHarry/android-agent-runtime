@@ -1,14 +1,14 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.SessionEventType
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.SessionEventType
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -31,7 +31,7 @@ class NativeAskResumeTest {
                 })
             }
         }
-        val runtime = AgentRuntimeBuilder.create().modelClient(model).build()
+        val runtime = AgentRuntimeBuilder.create().modelClient(model).buildEngine()
         try {
             val events = runtime.run(AgentRequest("q", "s", "设置音量")).toList()
             val run = events.filterIsInstance<AgentEvent.Started>().single().runId
@@ -57,7 +57,7 @@ class NativeAskResumeTest {
             override fun complete(request: ModelRequest) =
                 flowOf(ModelEvent.ToolCall("ask-1", "ask", """{"question":"$question"}"""))
         }
-        val runtime = AgentRuntimeBuilder.create().modelClient(model).build()
+        val runtime = AgentRuntimeBuilder.create().modelClient(model).buildEngine()
         try {
             val events = runtime.run(AgentRequest("q", "s", "Count.")).toList()
             val run = events.filterIsInstance<AgentEvent.Started>().single().runId
@@ -79,7 +79,7 @@ class NativeAskResumeTest {
                 else ModelEvent.ToolCall("end", "finish", """{"response":"已纠正"}"""),
             )
         }
-        val runtime = AgentRuntimeBuilder.create().modelClient(model).build()
+        val runtime = AgentRuntimeBuilder.create().modelClient(model).buildEngine()
         try {
             runtime.run(AgentRequest("q", "s", "你好")).toList()
             assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRunState("q")?.status)

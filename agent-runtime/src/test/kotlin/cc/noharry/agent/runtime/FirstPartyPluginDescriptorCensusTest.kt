@@ -1,11 +1,11 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentCapabilities
-import cc.noharry.agent.kernel.api.AgentPlugin
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.KernelApiVersions
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.AgentCapabilities
+import cc.noharry.agent.spi.AgentPlugin
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.KernelApiVersions
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
 import cc.noharry.agent.kernel.core.plugin.DirectCapabilityPlugin
 import cc.noharry.agent.kernel.core.plugin.RuntimeCapabilityDeclarations
 import cc.noharry.agent.kernel.core.plugin.RuntimeCompositionMessages
@@ -63,11 +63,11 @@ class FirstPartyPluginDescriptorCensusTest {
     }
 }
 
-private class RecordingConcurrencyScope : cc.noharry.agent.kernel.api.AgentPluginScope {
+private class RecordingConcurrencyScope : cc.noharry.agent.spi.AgentPluginScope {
     val concurrency = mutableListOf<ProviderConcurrencyDeclaration>()
 
     override fun <T : Any> provide(
-        key: cc.noharry.agent.kernel.api.CapabilityKey<T>,
+        key: cc.noharry.agent.spi.CapabilityKey<T>,
         value: T,
         concurrency: ProviderConcurrencyDeclaration,
     ) {
@@ -75,16 +75,16 @@ private class RecordingConcurrencyScope : cc.noharry.agent.kernel.api.AgentPlugi
     }
 
     override fun <T : Any> provide(
-        key: cc.noharry.agent.kernel.api.CapabilityKey<T>,
-        factory: cc.noharry.agent.kernel.api.SessionCapabilityFactory<T>,
+        key: cc.noharry.agent.spi.CapabilityKey<T>,
+        factory: cc.noharry.agent.spi.SessionCapabilityFactory<T>,
         concurrency: ProviderConcurrencyDeclaration,
     ) {
         error("factory provide is unused by first-party census plugins")
     }
 
-    override fun <T : Any> resolve(key: cc.noharry.agent.kernel.api.CapabilityKey<T>): T? = null
+    override fun <T : Any> resolve(key: cc.noharry.agent.spi.CapabilityKey<T>): T? = null
 
-    override fun <T : Any> resolveAll(key: cc.noharry.agent.kernel.api.CapabilityKey<T>): List<T> = emptyList()
+    override fun <T : Any> resolveAll(key: cc.noharry.agent.spi.CapabilityKey<T>): List<T> = emptyList()
 
     override fun <T : AutoCloseable> own(resource: T): T = resource
 }

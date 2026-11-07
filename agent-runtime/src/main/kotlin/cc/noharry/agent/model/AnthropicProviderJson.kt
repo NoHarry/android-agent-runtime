@@ -1,4 +1,4 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.model
 
@@ -16,12 +16,12 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.model.ModelMessage
-import cc.noharry.agent.kernel.api.model.ModelTool
-import cc.noharry.agent.kernel.api.model.ServerSideSearchCapability
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelResponseMetadata
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelTool
+import cc.noharry.agent.model.ServerSideSearchCapability
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelResponseMetadata
 
 internal fun anthropicRequest(
     apiKey: String,
@@ -209,21 +209,8 @@ private fun JsonObjectBuilder.putAnthropicMessages(request: ModelRequest) {
                     message.isAssistantToolCall() -> {
                         put("role", "assistant")
                         putJsonArray("content") {
-                            // Anthropic thinking-mode contract: thinking blocks
-                            // must be passed back in subsequent turns. Output
-                            // the block whenever thinking text is present, even
-                            // if the signature is empty (DeepSeek's gateway
-                            // sends an empty signature but still requires the
-                            // thinking block to be echoed back).
-                            if (message.content.isNotBlank()) {
-                                add(buildJsonObject {
-                                    put("type", "thinking")
-                                    put("thinking", message.content)
-                                    put("signature", message.thinkingSignature ?: "")
-                                })
-                            }
-                            // What the model told the user alongside the call, after the thinking block it follows.
-                            message.assistantText.takeIf { it.isNotBlank() }?.let { said ->
+                            anthropicThinkingBlock(message)?.let(::add)
+                            message.content.ifBlank { message.assistantText }.takeIf { it.isNotBlank() }?.let { said ->
                                 add(buildJsonObject {
                                     put("type", "text")
                                     put("text", said)
@@ -258,11 +245,12 @@ private fun JsonObjectBuilder.putAnthropicMessages(request: ModelRequest) {
 }
 
 private fun JsonObjectBuilder.putAnthropicContent(message: ModelMessage) {
-    if (message.images.isEmpty()) {
+    if (message.images.isEmpty() && anthropicThinkingBlock(message) == null) {
         put("content", message.content)
         return
     }
     putJsonArray("content") {
+        anthropicThinkingBlock(message)?.let(::add)
         message.content.takeIf { it.isNotBlank() }?.let { text ->
             add(buildJsonObject {
                 put("type", "text")
@@ -279,6 +267,17 @@ private fun JsonObjectBuilder.putAnthropicContent(message: ModelMessage) {
                 })
             })
         }
+    }
+}
+
+/** Signed thinking is replayed verbatim; compatible gateways may use an empty signature. */
+private fun anthropicThinkingBlock(message: ModelMessage): JsonObject? {
+    if (message.role != "assistant") return null
+    val reasoning = message.reasoningContent?.takeIf { it.isNotBlank() } ?: return null
+    return buildJsonObject {
+        put("type", "thinking")
+        put("thinking", reasoning)
+        put("signature", message.thinkingSignature ?: "")
     }
 }
 
@@ -517,6 +516,7 @@ private fun JsonObjectBuilder.putSystemUpdateContent(message: ModelMessage) {
         return
     }
     putJsonArray("content") {
+        anthropicThinkingBlock(message)?.let(::add)
         message.content.takeIf { it.isNotBlank() }?.let { text ->
             add(buildJsonObject {
                 put("type", "text")

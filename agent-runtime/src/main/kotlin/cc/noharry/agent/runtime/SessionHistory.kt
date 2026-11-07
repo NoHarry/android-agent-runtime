@@ -1,8 +1,8 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.model.ModelMessage
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.model.ModelMessage
 import cc.noharry.agent.kernel.core.context.SessionHistoryStore
 
 /**
@@ -19,7 +19,6 @@ import cc.noharry.agent.kernel.core.context.SessionHistoryStore
  * @param maxBytesPerSession a memory guard, not the working limit: past it the oldest runs are dropped, down to half of
  * it, and the model no longer sees them. Keep it well above what the context window holds before compaction.
  */
-@ExperimentalAgentRuntimeApi
 class SessionHistory @JvmOverloads constructor(
     maxBytesPerSession: Int = DEFAULT_MAX_BYTES_PER_SESSION,
     /** How many of the most recently used sessions are kept (a multi-user server keeps more). */

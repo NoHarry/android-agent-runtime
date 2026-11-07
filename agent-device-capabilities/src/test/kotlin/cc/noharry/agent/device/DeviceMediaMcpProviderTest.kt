@@ -1,6 +1,6 @@
 package cc.noharry.agent.device
 
-import cc.noharry.agent.kernel.api.ToolCallContext
+import cc.noharry.agent.spi.ToolCallContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray

@@ -1,5 +1,5 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.kernel.core.plugin.ProfileCompiler
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -15,13 +15,13 @@ class PluginInstallOrderTest {
 
         fun plugin(
             id: String,
-            provides: Set<cc.noharry.agent.kernel.api.CapabilityKey<*>>,
-            requires: Set<cc.noharry.agent.kernel.api.CapabilityKey<*>>,
+            provides: Set<cc.noharry.agent.spi.CapabilityKey<*>>,
+            requires: Set<cc.noharry.agent.spi.CapabilityKey<*>>,
             value: String,
         ) = testPlugin(id, testDescriptor(id, provides = provides, requires = requires)) {
             observed += id
             provide(
-                provides.single() as cc.noharry.agent.kernel.api.CapabilityKey<String>,
+                provides.single() as cc.noharry.agent.spi.CapabilityKey<String>,
                 value,
                 testSerializedConcurrency,
             )

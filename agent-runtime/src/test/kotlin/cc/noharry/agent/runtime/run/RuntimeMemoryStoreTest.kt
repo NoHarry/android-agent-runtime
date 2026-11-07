@@ -1,6 +1,9 @@
 package cc.noharry.agent.runtime.run
-import cc.noharry.agent.kernel.api.reliability.RuntimeCandidate
-import cc.noharry.agent.kernel.api.reliability.RuntimeCandidateType
+
+import cc.noharry.agent.runtime.RuntimeLessonMode
+import cc.noharry.agent.runtime.RuntimeMemoryRetriever
+import cc.noharry.agent.spi.reliability.RuntimeCandidate
+import cc.noharry.agent.spi.reliability.RuntimeCandidateType
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
