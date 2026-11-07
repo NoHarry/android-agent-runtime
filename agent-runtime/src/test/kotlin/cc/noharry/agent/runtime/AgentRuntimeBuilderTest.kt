@@ -163,6 +163,19 @@ class AgentRuntimeBuilderTest {
     }
 
     @Test
+    fun conversationStoragePreservesAnExplicitEventLogRoot() = runBlocking {
+        val eventRoot = Files.createTempDirectory("builder-explicit-eventlog-").toFile()
+        val conversationRoot = Files.createTempDirectory("builder-conversations-").toFile()
+        val runtime = AgentRuntimeBuilder.create().sessionEventLogRoot(eventRoot).storage(conversationRoot)
+            .confirmationOnRun().buildEngine()
+        runtime.run(agentRequest()).toList()
+        runtime.querySessionEvents(SessionEventQuery("session-1", "request-1"))
+        assertTrue(officialStream(eventRoot, "session-1", "request-1").isFile)
+        assertFalse(File(conversationRoot, "events").exists())
+        runtime.close()
+    }
+
+    @Test
     fun packagedDurablePluginWinsOverConfiguredRoot() = runBlocking {
         val pluginRoot = Files.createTempDirectory("builder-eventlog-plugin-").toFile()
         val configuredRoot = Files.createTempDirectory("builder-eventlog-configured-").toFile()

@@ -175,10 +175,14 @@ class AgentRuntimeBuilder {
 
     fun skills(vararg skills: HostSkill): AgentRuntimeBuilder = apply { hostSkills += skills }
 
-    /** Persists conversation items and model history independently of the optional workspace. */
+    /**
+     * Persists conversation items and model history independently of the optional workspace. An explicitly configured
+     * event-log location is preserved. Use a storage directory from only one process; runtimes in that process coordinate.
+     * Provider history contains original messages, reasoning and images, including any secrets in those messages.
+     */
     fun storage(directory: File): AgentRuntimeBuilder = apply {
         threadStorageRoot = directory
-        sessionEventLogRoot = File(directory, "events")
+        if (sessionEventLogRoot == null) sessionEventLogRoot = File(directory, "events")
         if (reliabilityStorageRoot == null) reliabilityStorageRoot = File(directory, "runtime")
     }
 
