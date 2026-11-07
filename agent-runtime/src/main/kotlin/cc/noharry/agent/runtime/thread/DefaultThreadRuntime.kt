@@ -66,6 +66,7 @@ internal class DefaultThreadRuntime(
 
     override suspend fun deleteThread(threadId: String) {
         checkOpen()
+        cc.noharry.agent.runtime.Subagents.checkDeletionAllowed(threadId)
         val executing = currentCoroutineContext()[ThreadExecutionContext]
         check(executing?.ownsActiveTurn(store.coordination, threadId) != true) {
             "Cannot delete a thread from its own active turn. Delete it after the turn completes."
