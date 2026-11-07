@@ -26,8 +26,8 @@ internal class DefaultAgentThread(
     internal fun isCurrent(): Boolean = runtime.store.isCurrent(id, generation)
     private fun checkCurrent() { check(isCurrent()) { "Thread was deleted" } }
 
-    internal fun configure(options: ThreadOptions, explicitPolicy: ApprovalPolicy? = null) {
-        runtime.store.updateOptions(id, options, generation)
+    internal fun configure(options: ThreadOptions, explicitPolicy: ApprovalPolicy? = null, persist: Boolean = true) {
+        if (persist) runtime.store.updateOptions(id, options, generation)
         defaults = options
         if (explicitPolicy != null) active?.let { turn ->
             turn.approvalState.policy = explicitPolicy

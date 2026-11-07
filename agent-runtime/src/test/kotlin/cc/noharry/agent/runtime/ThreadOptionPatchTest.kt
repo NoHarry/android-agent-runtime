@@ -62,4 +62,18 @@ class ThreadOptionPatchTest {
             assertEquals(ApprovalPolicy.ASK, (runtime as DefaultThreadRuntime).store.load("replace")!!.options.approvalPolicy)
         }
     }
+
+    @Test fun resumingWithoutChangesLeavesTheSavedThreadUntouched() = runBlocking {
+        val root = threadRoot()
+        approvalBuilder(root).build().use { it.startThread(ThreadOptions(threadId = "quiet", scene = "kept")) }
+        val file = root.walkTopDown().single { it.name.endsWith(".thread.json") }
+        check(file.setLastModified(0L))
+        approvalBuilder(root).build().use { runtime ->
+            runtime.resumeThread("quiet")
+            runtime.resumeThread("quiet", ThreadOptions(scene = "kept"))
+            assertEquals(0L, file.lastModified())
+            runtime.resumeThread("quiet", ThreadOptions(scene = "changed"))
+            assertNotEquals(0L, file.lastModified())
+        }
+    }
 }

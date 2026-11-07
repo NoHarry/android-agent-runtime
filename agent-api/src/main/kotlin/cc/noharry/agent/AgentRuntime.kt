@@ -8,10 +8,16 @@ package cc.noharry.agent
  * `cc.noharry.agent.builder`); Java hosts use `AgentRuntimeBuilder.create()` from that artifact.
  */
 interface AgentRuntime : AutoCloseable {
+    /**
+     * Starts a conversation. With storage configured this writes the thread's small metadata file before returning,
+     * so an Android host calls it off the main thread.
+     */
     fun startThread(options: ThreadOptions = ThreadOptions()): AgentThread
     /**
      * Reopens saved model history and visible items when storage is configured. Without storage, history lives only
-     * in this runtime. Non-default options update the saved defaults used by future turns.
+     * in this runtime. Non-default options update the saved defaults used by future turns. With storage configured
+     * this reads the thread's small metadata file, and writes it only when the options change, before returning; an
+     * Android host calls it off the main thread.
      */
     fun resumeThread(threadId: String, options: ThreadOptions = ThreadOptions()): AgentThread
     suspend fun listThreads(): List<ThreadInfo>
