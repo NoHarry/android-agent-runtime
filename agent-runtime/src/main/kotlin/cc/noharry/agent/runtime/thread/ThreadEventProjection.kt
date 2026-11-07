@@ -74,7 +74,7 @@ internal class ThreadEventProjection(
 
     suspend fun beginApproval(item: Approval) { finishText(); start(item) }
 
-    suspend fun toolDecision(callId: String, policy: ApprovalPolicy) { tools.decision(callId, policy) }
+    suspend fun toolDecision(callId: String, source: ApprovalSource) { tools.decision(callId, source) }
 
     suspend fun resolveApproval(item: Approval) { complete(item) }
 

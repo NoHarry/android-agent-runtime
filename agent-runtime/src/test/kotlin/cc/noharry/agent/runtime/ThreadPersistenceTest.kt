@@ -22,11 +22,12 @@ class ThreadPersistenceTest {
             assertEquals("remember", runtime.listThreads().single().id)
             val thread = runtime.resumeThread("remember")
             assertTrue(thread.items().any { it is Approval })
+            assertTrue(thread.items().filterIsInstance<ThreadItem.ToolCall>().any { it.approvedBy == ApprovalSource.USER })
             val events = thread.runStreamed("set it again").toList()
             assertTurnEvents(events)
             assertFalse(events.any { it is ThreadEvent.ItemStarted && it.item is Approval })
             val tools = events.filterIsInstance<ThreadEvent.ItemCompleted>().map { it.item }.filterIsInstance<ThreadItem.ToolCall>()
-            assertTrue(tools.any { it.approvedBy == ApprovalPolicy.REMEMBER })
+            assertTrue(tools.any { it.approvedBy == ApprovalSource.REMEMBERED })
         }
     }
 

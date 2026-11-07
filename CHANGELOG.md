@@ -20,6 +20,11 @@ called out; a patch release does not break it.
 - **Notices include structured presentation values.** `Notice.details` carries retry ordinals/delays, remaining
   budgets, compaction counts and workspace ids. Hosts can localize notices without parsing the English message.
 
+- **Approval areas and sources are precise.** Remembered network approvals use the network backend's canonical
+  host parser; invalid targets are never remembered. MCP approvals cover one tool, with separate namespaces for
+  web, MCP and other tools. `ToolCall.approvedBy` now uses `ApprovalSource.USER`, `REMEMBERED` or `AUTOMATIC`;
+  a denied call has no approval source. Older snapshots with an ambiguous REMEMBER policy leave the source unset.
+
 - **Damaged history does not block unrelated conversations.** Thread listing skips unreadable or unsupported
   metadata. Invalid provider history is renamed to a `.corrupt` file and the conversation resumes with empty model
   history. Deleting a conversation does not parse that history first.

@@ -48,7 +48,8 @@ sealed interface ThreadItem {
         val output: String? = null,
         override val status: ItemStatus = ItemStatus.IN_PROGRESS,
         val network: NetworkActivity? = null,
-        val approvedBy: ApprovalPolicy? = null,
+        /** How this call was approved; null when no approval was granted or no gate was needed. */
+        val approvedBy: ApprovalSource? = null,
     ) : ThreadItem
 
     data class WebSearch(
@@ -92,6 +93,8 @@ sealed interface ThreadItem {
 
 enum class ItemStatus { IN_PROGRESS, COMPLETED, FAILED, DECLINED }
 enum class MessagePhase { COMMENTARY, FINAL }
+/** The origin of a granted approval, independent of the thread's current approval policy. */
+enum class ApprovalSource { USER, REMEMBERED, AUTOMATIC }
 enum class NoticeKind { RETRY, COMPACTION, BUDGET_LOW, WORKSPACE_CHANGED }
 
 /** Metadata about a network tool; payloads remain on the tool item. */

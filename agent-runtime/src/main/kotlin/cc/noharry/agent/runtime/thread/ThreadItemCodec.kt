@@ -90,7 +90,7 @@ internal class ThreadItemCodec(
             id, turn, value.text("tool"), value.enum("source", ToolSource.BACKEND), value.optionalText("server"),
             value.text("arguments"), value.optionalText("output"), status,
             value.obj("network")?.let { NetworkActivity(it.text("domain"), it.text("decision"), it.optionalLong("statusCode")?.toInt(), it.flag("truncated")) },
-            value.optionalText("approvedBy")?.let { ApprovalPolicy.valueOf(it) },
+            value.optionalText("approvedBy")?.let { approvalSource(it, status) },
         )
 
     private fun JsonObjectBuilder.question(item: Question) {
@@ -126,6 +126,13 @@ internal class ThreadItemCodec(
     }
 
     private fun redact(value: String): String = redactor.redact(value)
+}
+
+/** Pre-release snapshots recorded a policy instead of a source; REMEMBER did not distinguish who approved. */
+private fun approvalSource(value: String, status: ItemStatus): ApprovalSource? = when (value) {
+    "ASK" -> ApprovalSource.USER.takeIf { status == ItemStatus.COMPLETED }
+    "APPROVE_ALL" -> ApprovalSource.AUTOMATIC
+    else -> ApprovalSource.entries.firstOrNull { it.name == value }
 }
 
 /** Loaded approvals describe a past decision and can never execute a tool again. */
