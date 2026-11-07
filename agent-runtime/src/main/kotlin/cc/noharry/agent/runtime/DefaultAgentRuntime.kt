@@ -290,6 +290,8 @@ internal class DefaultAgentRuntime(
     internal suspend fun readThreadAttachment(threadId: String, sha256: String): ByteArray? =
         runtimeIo { sessionEventLog?.readAttachment(threadId, sha256) }
 
+    internal fun childApprovalPolicy(threadId: String): cc.noharry.agent.ApprovalPolicy? = subagents?.approvalPolicyFor(threadId)
+
     internal fun clearThreadHistory(threadId: String) {
         sessionHistory?.clearSession(threadId)
         activationStore.clearSession(threadId)

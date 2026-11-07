@@ -40,7 +40,7 @@ internal class DefaultThreadRuntime(
     override fun startThread(options: ThreadOptions): AgentThread {
         checkOpen()
         val id = options.threadId ?: UUID.randomUUID().toString()
-        val record = store.create(id, mergeThreadOptions(ThreadOptions(), options))
+        val record = store.create(id, newThreadOptions(id, options))
         return handle(record)
     }
 
@@ -48,10 +48,13 @@ internal class DefaultThreadRuntime(
         checkOpen()
         require(threadId.isNotBlank()) { "Thread id must not be blank" }
         require(options.threadId == null || options.threadId == threadId) { "Thread id does not match options" }
-        val saved = store.load(threadId) ?: store.create(threadId, mergeThreadOptions(ThreadOptions(), options))
+        val saved = store.load(threadId) ?: store.create(threadId, newThreadOptions(threadId, options))
         val merged = mergeThreadOptions(saved.options, options)
         return handle(saved.copy(options = merged)).also { it.configure(merged) }
     }
+
+    private fun newThreadOptions(threadId: String, options: ThreadOptions): ThreadOptions =
+        mergeThreadOptions(ThreadOptions(approvalPolicy = engine.childApprovalPolicy(threadId)), options)
 
     override suspend fun listThreads(): List<ThreadInfo> = withContext(Dispatchers.IO) {
         checkOpen()

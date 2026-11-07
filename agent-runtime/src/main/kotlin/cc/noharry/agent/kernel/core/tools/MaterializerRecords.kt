@@ -8,6 +8,7 @@ internal data class MaterializerContext(
     val scene: String? = null,
     val modelRef: ModelRef? = null,
     val timeoutMillis: Long = DEFAULT_MATERIALIZER_TIMEOUT_MILLIS,
+    val approvalPolicy: cc.noharry.agent.ApprovalPolicy = cc.noharry.agent.ApprovalPolicy.ASK,
 )
 
 internal sealed interface MaterializerReadResult {

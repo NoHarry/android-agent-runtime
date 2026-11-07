@@ -4,6 +4,8 @@ package cc.noharry.agent.runtime
 import cc.noharry.agent.ThreadEvent
 import cc.noharry.agent.ThreadItem
 import cc.noharry.agent.TurnStatus
+import cc.noharry.agent.Approval
+import cc.noharry.agent.ApprovalPolicy
 import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.spi.model.ModelRef
 import cc.noharry.agent.spi.reliability.RuntimeRunStatus
@@ -96,6 +98,10 @@ class Subagents(
     /** Whether [sessionId] is a child's own session, which a host keeps out of its conversation list. */
     fun isSubagentSession(sessionId: String): Boolean = synchronized(lock) { children.values.any { it.spec.sessionId == sessionId } }
 
+    internal fun approvalPolicyFor(sessionId: String): ApprovalPolicy? = synchronized(lock) {
+        children.values.firstOrNull { it.spec.sessionId == sessionId }?.spec?.approvalPolicy
+    }
+
     /** Stops [parentSessionId]'s children (every child without one) and reports nothing, e.g. when conversations go. */
     fun cancelSession(parentSessionId: String? = null) {
         val stopped = synchronized(lock) {
@@ -159,6 +165,7 @@ class Subagents(
                 modelRef = config.modelRef ?: call.modelRef,
                 allowDeviceControl = config.allowDeviceControl,
                 agentType = agentType,
+                approvalPolicy = call.approvalPolicy,
             )
             activeRuns += call.runId
             Child(spec, nowEpochMillis()).also { children[id] = it }
@@ -229,7 +236,10 @@ class Subagents(
     private suspend fun runChild(child: Child) {
         try {
             withTimeout(config.maxDurationMillis) {
-                launcher.launch(child.spec).collect { observe(child, it) }
+                launcher.launch(child.spec).collect { event ->
+                    respondToChildApproval(child, event)
+                    observe(child, event)
+                }
             }
             settle(child, SubagentState.FAILED, error = "The subagent ended without a result.")
         } catch (_: TimeoutCancellationException) {
@@ -278,6 +288,13 @@ class Subagents(
                 else -> settle(child, SubagentState.FAILED, error = listOfNotNull(result.error?.code, result.finalResponse.takeIf { it.isNotBlank() }, result.status.name).first())
             }
         }
+    }
+
+    /** A custom launcher may still emit a gate, but this child has no user channel to answer it. */
+    private suspend fun respondToChildApproval(child: Child, event: ThreadEvent) {
+        val approval = (event as? ThreadEvent.ItemStarted)?.item as? Approval ?: return
+        if (child.spec.approvalPolicy == ApprovalPolicy.APPROVE_ALL) approval.approve()
+        else approval.deny("A subagent cannot request approval from the user.")
     }
 
     private fun settle(child: Child, state: SubagentState, result: String = "", error: String = "") {
@@ -446,6 +463,8 @@ data class SubagentSpec(
     val allowDeviceControl: Boolean,
     /** The [SubagentType] the model named, or null for a general subagent. */
     val agentType: String? = null,
+    /** The spawning turn's effective policy, including its turn override. Launchers should apply it to the child. */
+    val approvalPolicy: ApprovalPolicy = ApprovalPolicy.ASK,
 )
 
 /**
@@ -514,7 +533,12 @@ data class SubagentStatus(
 data class SubagentReport(val parentSessionId: String, val statuses: List<SubagentStatus>)
 
 /** Who calls a subagent tool. */
-internal data class SubagentCall(val sessionId: String, val runId: String, val modelRef: ModelRef?)
+internal data class SubagentCall(
+    val sessionId: String,
+    val runId: String,
+    val modelRef: ModelRef?,
+    val approvalPolicy: ApprovalPolicy = ApprovalPolicy.ASK,
+)
 
 internal val SUBAGENT_TOOL_NAMES = setOf(SPAWN_AGENT, WAIT_AGENT, CANCEL_AGENT)
 

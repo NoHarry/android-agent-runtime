@@ -219,6 +219,7 @@ internal class DefaultAgentThread(
                 if (policy == ApprovalPolicy.REMEMBER) ApprovalSource.REMEMBERED else ApprovalSource.AUTOMATIC)
             return automatic
         }
+        if (runtime.engine.childApprovalPolicy(id) != null) return ApprovalState.DENIED
         val approval = ThreadApproval(pending.copy(runId = turn.id), runtime.nowEpochMillis() + runtime.confirmationTimeoutMillis, runtime.nowEpochMillis)
         turn.approval = approval
         try {

@@ -10,6 +10,7 @@ internal fun MaterializerContext.toWorkspaceCallContext(): WorkspaceCallContext 
         requestId = requestId,
         scene = scene,
         modelRef = modelRef,
+        approvalPolicy = approvalPolicy,
     )
 
 internal fun WorkspaceCallContext.toMaterializerContext(
@@ -22,4 +23,5 @@ internal fun WorkspaceCallContext.toMaterializerContext(
         scene = scene,
         modelRef = modelRef,
         timeoutMillis = timeoutMillis,
+        approvalPolicy = approvalPolicy,
     )

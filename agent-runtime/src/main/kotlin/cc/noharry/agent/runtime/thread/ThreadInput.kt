@@ -23,6 +23,7 @@ internal fun threadRequest(record: ThreadRecord, input: TurnInput, options: Turn
         scene = record.options.scene, modelRef = options.model ?: record.options.model,
         workspaceId = record.options.workspace, currentStateKeys = options.currentStateKeys,
         sessionRunConflictPolicy = options.onConflict, instructions = record.options.instructions,
+        approvalPolicy = options.approvalPolicy ?: record.options.approvalPolicy ?: ApprovalPolicy.ASK,
         inputImages = input.parts.filterIsInstance<InputPart.Image>().mapIndexed { index, image ->
             ModelImage(image.bytes, image.mimeType, "thread:${record.id}/$turnId/image/$index")
         },
