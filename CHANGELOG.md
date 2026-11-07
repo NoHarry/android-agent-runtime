@@ -9,6 +9,10 @@ called out; a patch release does not break it.
   `CONFIRMATION_DENIED` tool result to the model without executing the tool, so it can explain the outcome.
   Cancelling or interrupting a pending approval records `CONFIRMATION_CANCELLED` in provider history.
 
+- **Session storage backends support complete deletion.** SQLite removes the session's seven conversation tables
+  in one transaction while preserving the shared memory index. Reliability storage removes run directories and
+  shared evidence, and loop history can be deleted from disk and memory.
+
 - **Event logs can delete complete conversations.** `SessionEventLog.deleteThread` has an unsupported-by-default
   implementation for custom backends. Built-in logs delete events, attachments, health and cached identities;
   asynchronous logs drain accepted writes first and reset subscribers before a thread can be recreated.

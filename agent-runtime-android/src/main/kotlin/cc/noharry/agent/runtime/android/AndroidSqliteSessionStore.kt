@@ -33,6 +33,21 @@ internal class AndroidSqliteSessionStore(
         if (databaseHolder.isInitialized()) database.close()
     }
 
+    override fun deleteThread(threadId: String): Boolean = locked {
+        require(threadId.isNotBlank()) { "threadId must not be blank" }
+        database.beginTransaction()
+        try {
+            val ownedRuns = "SELECT $COL_RUN_ID FROM $TABLE_RUNS WHERE $COL_SESSION_ID=?"
+            listOf(TABLE_MESSAGES, TABLE_TOOL_EVENTS, TABLE_USAGE, TABLE_VFS_OPS, TABLE_MODEL_CALLS).forEach { table ->
+                database.delete(table, "$COL_SESSION_ID=? OR $COL_RUN_ID IN ($ownedRuns)", arrayOf(threadId, threadId))
+            }
+            database.delete(TABLE_RUNS, "$COL_SESSION_ID=?", arrayOf(threadId))
+            database.delete(TABLE_SESSIONS, "$COL_SESSION_ID=?", arrayOf(threadId))
+            database.setTransactionSuccessful()
+            true
+        } finally { database.endTransaction() }
+    }
+
     override fun upsertSession(session: StoredSession) {
         locked {
         val values = ContentValues().apply {

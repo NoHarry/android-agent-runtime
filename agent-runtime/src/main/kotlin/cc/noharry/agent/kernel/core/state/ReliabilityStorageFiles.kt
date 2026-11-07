@@ -121,6 +121,7 @@ internal fun File.deleteTreeWith(
     fileDeleter: ReliabilityFileDeleter = DefaultReliabilityFileDeleter,
     directoryLister: ReliabilityDirectoryLister = DefaultReliabilityDirectoryLister,
 ): Boolean {
+    if (java.nio.file.Files.isSymbolicLink(toPath())) return try { fileDeleter.delete(this) } catch (_: Exception) { false }
     if (!exists()) return true
     if (isDirectory) {
         val children = try {

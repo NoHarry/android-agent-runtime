@@ -28,6 +28,33 @@ class AndroidSqliteSessionStoreTest {
     val temp = TemporaryFolder()
 
     @Test
+    fun deletionRemovesSevenSessionTablesButKeepsOtherSessionsAndSharedMemory() {
+        val file = temp.newFile("delete-session.sqlite")
+        val store = AndroidSqliteSessionStore(file)
+        try {
+            store.persistSampleEvidence()
+            store.upsertSession(StoredSession("kept", "Kept", createdAtEpochMillis = 1, updatedAtEpochMillis = 1))
+            store.upsertRun(storedRun().copy(runId = "kept-run", sessionId = "kept"))
+            store.recordToolFinished(StoredToolResult("late", "run-1", "COMPLETED", 9, "{}", "hash", true))
+            SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+                db.execSQL("INSERT INTO memory_index(memory_id,summary,updated_at) VALUES('shared','Remember',1)")
+            }
+            assertTrue(store.deleteThread("session-1"))
+            assertTrue(store.deleteThread("session-1"))
+            assertEquals(listOf("kept"), store.listSessions().map { it.sessionId })
+            assertTrue(store.transcript("session-1").messages.isEmpty())
+            assertTrue(store.toolEvents("run-1").isEmpty())
+            assertEquals(0, store.usage("session-1").totalTokens)
+            assertTrue(store.vfsOperations("run-1").isEmpty())
+            assertTrue(store.modelCalls("run-1").isEmpty())
+            SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY).use { db ->
+                db.rawQuery("SELECT COUNT(*) FROM memory_index", null).use { it.moveToFirst(); assertEquals(1, it.getInt(0)) }
+                db.rawQuery("SELECT COUNT(*) FROM runs WHERE session_id='session-1'", null).use { it.moveToFirst(); assertEquals(0, it.getInt(0)) }
+            }
+        } finally { store.close() }
+    }
+
+    @Test
     fun persistsTranscriptToolVfsAndUsageEvidence() {
         val databaseFile = temp.newFile("runtime-session-store.sqlite")
         val store = AndroidSqliteSessionStore(databaseFile)
