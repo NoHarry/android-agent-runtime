@@ -57,8 +57,8 @@ internal class ThreadStore(
     }
 
     fun list(): List<ThreadInfo> = synchronized(lock) {
-        val threads = root?.listFiles()?.filter { it.name.endsWith(THREAD_SUFFIX) }?.map { file ->
-            codec.decode(Json.parseToJsonElement(file.readText()) as JsonObject)
+        val threads = root?.listFiles()?.filter { it.name.endsWith(THREAD_SUFFIX) }?.mapNotNull { file ->
+            try { codec.decode(Json.parseToJsonElement(file.readText()) as JsonObject) } catch (_: Exception) { null }
         } ?: memory.values.toList()
         threads.filterNot { executionSlot(it.record.id).deleting }.map { it.record.info() }.sortedByDescending { it.updatedAt }
     }
@@ -126,9 +126,7 @@ internal class ThreadStore(
         override val identity: Any get() = root?.path ?: this@ThreadStore
         override fun load(sessionId: String): StoredSessionHistory? = synchronized(lock) {
             if (root == null) modelMemory[sessionId]
-            else file(sessionId, HISTORY_SUFFIX).takeIf(File::isFile)?.let {
-                ModelHistoryCodec.decode(Json.parseToJsonElement(it.readText()) as JsonObject)
-            }
+            else readModelHistory(sessionId)
         }
 
         override fun save(sessionId: String, history: StoredSessionHistory) = synchronized(lock) {
@@ -145,6 +143,16 @@ internal class ThreadStore(
             modelMemory.clear()
             root?.listFiles()?.filter { it.name.endsWith(HISTORY_SUFFIX) }?.forEach { check(it.delete()) { "Cannot delete model history" } }
             Unit
+        }
+    }
+
+    private fun readModelHistory(sessionId: String): StoredSessionHistory? {
+        val target = file(sessionId, HISTORY_SUFFIX).takeIf(File::isFile) ?: return null
+        val contents = target.readText()
+        return try { ModelHistoryCodec.decode(Json.parseToJsonElement(contents) as JsonObject) } catch (_: RuntimeException) {
+            val suffix = if (File(target.path + ".corrupt").exists()) ".${UUID.randomUUID()}.corrupt" else ".corrupt"
+            Files.move(target.toPath(), File(target.path + suffix).toPath())
+            null
         }
     }
 

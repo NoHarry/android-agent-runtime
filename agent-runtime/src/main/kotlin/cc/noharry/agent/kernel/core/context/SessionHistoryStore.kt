@@ -119,14 +119,15 @@ internal class SessionHistoryStore @JvmOverloads constructor(
         session(sessionId)?.let { synchronized(it) { it.runs.flatten() } }.orEmpty()
 
     fun clearSession(sessionId: String) {
-        session(sessionId)?.let { session ->
+        // Deletion must not restore or parse persisted history, which may itself be damaged.
+        synchronized(sessions) { sessions[sessionId] }?.let { session ->
             synchronized(session) {
                 session.latestStarted += 1
                 session.runs = emptyList()
                 session.lastInputTokens = null
-                persistence?.delete(sessionId)
             }
         }
+        synchronized(started) { started.entries.removeAll { it.value.sessionId == sessionId } }
         persistence?.delete(sessionId)
     }
 
