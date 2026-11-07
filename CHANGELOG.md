@@ -12,6 +12,10 @@ called out; a patch release does not break it.
   resolution helpers, and an accidentally generated completion-gate overload are excluded from the public surface.
   Hosts continue to supply `VfsFileSystem` workspaces and register hooks through the builder.
 
+- **Turns finish after releasing execution.** Completion hooks and terminal events may immediately start another
+  turn or delete the thread. Interrupted and deleted turns emit one complete failure sequence; storage failures
+  report `STORAGE_FAILED`, and successful turn snapshots are written once.
+
 - **Thread option patches preserve saved approval policy.** Null values on resume retain saved defaults;
   `ThreadOptions.reset` clears selected model, workspace, scene or instruction overrides. New threads still use ASK.
 - **Independent budgets survive settings changes.** `LoopSettings.limits` defaults to null, so a settings call does
