@@ -1,7 +1,6 @@
 @file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.spi.AgentEvent
 import cc.noharry.agent.spi.HookContext
 import cc.noharry.agent.spi.HookDecision
 import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
@@ -16,7 +15,6 @@ import cc.noharry.agent.spi.model.ModelEvent
 import cc.noharry.agent.spi.model.ModelImage
 import cc.noharry.agent.spi.model.ModelMessage
 import cc.noharry.agent.spi.model.ModelRequest
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -29,7 +27,7 @@ class ToolResultImageLoopTest {
     fun providerScreenshotReachesTheNextModelRequest() = runBlocking {
         val seen = mutableListOf<ModelRequest>()
 
-        runtime(seen, imageInput = true).run(agentRequest()).toList()
+        runtime(seen, imageInput = true).use { it.startThread().run(agentRequest().input) }
 
         val toolMessage = seen[2].screenshotResult()
         assertEquals(listOf(SCREENSHOT_PATH), toolMessage.images.map { it.sourcePath })
@@ -40,7 +38,7 @@ class ToolResultImageLoopTest {
     fun textOnlyModelGetsAPlaceholderInstead() = runBlocking {
         val seen = mutableListOf<ModelRequest>()
 
-        runtime(seen, imageInput = false).run(agentRequest()).toList()
+        runtime(seen, imageInput = false).use { it.startThread().run(agentRequest().input) }
 
         val toolMessage = seen[2].screenshotResult()
         assertTrue(toolMessage.images.isEmpty())
@@ -52,9 +50,7 @@ class ToolResultImageLoopTest {
         val seen = mutableListOf<ModelRequest>()
         val runtime = runtime(seen, imageInput = true, confirmation = ConfirmBackendCalls)
 
-        val pending = runtime.run(agentRequest()).toList()
-            .filterIsInstance<AgentEvent.ConfirmationRequired>().single().pending.pendingId
-        runtime.resumeConfirmation(approve(pending))
+        runtime.use { it.startThread().collectApproving(agentRequest().input) }
 
         val toolMessage = seen.last().screenshotResult()
         assertEquals(listOf(SCREENSHOT_PATH), toolMessage.images.map { it.sourcePath })
@@ -77,7 +73,7 @@ class ToolResultImageLoopTest {
                     seenRequests = seen,
                 ),
             )
-            .buildEngine()
+            .build()
 
     private fun ModelRequest.screenshotResult(): ModelMessage =
         messages.single { it.role == "tool" && it.toolName == qualifiedMcpTool(TOOL_NAME) }

@@ -2,7 +2,8 @@
 
 package cc.noharry.agent.runtime
 import cc.noharry.agent.spi.AgentEvent
-import cc.noharry.agent.spi.ConfirmationResumeResult
+import cc.noharry.agent.ThreadEvent
+import cc.noharry.agent.TurnStatus
 import cc.noharry.agent.spi.model.ModelEvent
 import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.spi.reliability.RuntimeErrorCode
@@ -150,18 +151,13 @@ class RuntimeLoopBudgetTest {
             .workspaceRoot(workspace())
             .hook(confirmUntilApproved())
             .modelClient(backendThenFinishModel(seenRequests))
-            .buildEngine()
+            .build()
 
-        val pending = runtime.run(agentRequest()).toList()
-            .filterIsInstance<AgentEvent.ConfirmationRequired>()
-            .single()
-            .pending
-        val accepted = runtime.resumeConfirmation(approve(pending.pendingId))
+        val events = runtime.use { it.startThread().collectApproving(agentRequest().input) }
         val resumedMessages = seenRequests.last().messages
         val assistantIndex = resumedMessages.indexOfFirst { it.toolCallId == "tool-1" }
 
-        assertEquals(ConfirmationResumeResult.Accepted, accepted)
-        assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRuntimeResult("request-1")?.status)
+        assertEquals(TurnStatus.COMPLETED, (events.last() as ThreadEvent.TurnCompleted).result.status)
         assertTrue(assistantIndex >= 0)
         assertEquals("assistant", resumedMessages[assistantIndex].role)
         assertEquals("tool", resumedMessages[assistantIndex + 1].role)
