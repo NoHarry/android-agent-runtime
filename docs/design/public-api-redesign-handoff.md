@@ -5,6 +5,8 @@
 
 > 接手更新（2026-11-06）：owner 已在接手会话确认「全部按 9.3 推荐实施」。下文关于 9.2 / 9.3 等确认的记录是交接时的状态，不再是开工阻塞；Maven Central 发布仍需单独授权。实现使用 `codex/api-redesign` 分支和独立 worktree。
 
+> **2026-11-07 评审：先读 `public-api-redesign-review.md`。** 实现（SDK `dc90409`、Bothy `6713dd08`）经独立评审，发现一批发布前必须修的问题；0.5.0 不发，Bothy 不推，下一步是按那份文档修复。下面第 2 节是实现者自己记录的状态，评审结论以那份文档为准。
+
 ## 1. 一句话
 
 0.5.0 把运行时（`android-agent-runtime`）的对外 API 换成 Codex 那样的 Thread / Turn / Item，同时把 Bothy 一次迁完，之后两边都不再做结构性迁移。
