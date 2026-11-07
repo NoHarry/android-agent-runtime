@@ -33,8 +33,9 @@ public abstract interface class cc/noharry/agent/AgentThread {
 	public static synthetic fun runStreamed$default (Lcc/noharry/agent/AgentThread;Lcc/noharry/agent/TurnInput;Lcc/noharry/agent/TurnOptions;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun runStreamed$default (Lcc/noharry/agent/AgentThread;Ljava/lang/String;Lcc/noharry/agent/TurnOptions;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public abstract fun status (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun steer (Ljava/lang/String;Lcc/noharry/agent/SteerOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun steer (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun steer (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun steer (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class cc/noharry/agent/AgentThread$DefaultImpls {
@@ -46,6 +47,7 @@ public final class cc/noharry/agent/AgentThread$DefaultImpls {
 	public static synthetic fun runStreamed$default (Lcc/noharry/agent/AgentThread;Lcc/noharry/agent/TurnInput;Lcc/noharry/agent/TurnOptions;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun runStreamed$default (Lcc/noharry/agent/AgentThread;Ljava/lang/String;Lcc/noharry/agent/TurnOptions;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public static fun steer (Lcc/noharry/agent/AgentThread;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun steer (Lcc/noharry/agent/AgentThread;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public abstract class cc/noharry/agent/Approval : cc/noharry/agent/PendingRequest {
@@ -223,12 +225,28 @@ public abstract interface class cc/noharry/agent/RuntimeDiagnostics {
 	public abstract fun subscribeSessionEvents (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/AutoCloseable;
 }
 
+public final class cc/noharry/agent/SteerOptions {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/SteerOptions;
+	public static synthetic fun copy$default (Lcc/noharry/agent/SteerOptions;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/SteerOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAnswering ()Ljava/lang/String;
+	public final fun getRequestId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class cc/noharry/agent/SteerResult : java/lang/Enum {
 	public static final field ACCEPTED Lcc/noharry/agent/SteerResult;
 	public static final field EMPTY_INPUT Lcc/noharry/agent/SteerResult;
 	public static final field NOT_RUNNING Lcc/noharry/agent/SteerResult;
 	public static final field QUESTION_NOT_FOUND Lcc/noharry/agent/SteerResult;
 	public static final field QUEUE_FULL Lcc/noharry/agent/SteerResult;
+	public static final field REQUEST_ID_CONFLICT Lcc/noharry/agent/SteerResult;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/SteerResult;
 	public static fun values ()[Lcc/noharry/agent/SteerResult;
@@ -491,18 +509,20 @@ public final class cc/noharry/agent/ThreadItem$ToolCall : cc/noharry/agent/Threa
 }
 
 public final class cc/noharry/agent/ThreadItem$UserMessage : cc/noharry/agent/ThreadItem {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLcc/noharry/agent/ItemStatus;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLcc/noharry/agent/ItemStatus;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLcc/noharry/agent/ItemStatus;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLcc/noharry/agent/ItemStatus;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/util/List;
 	public final fun component4 ()Z
 	public final fun component5 ()Lcc/noharry/agent/ItemStatus;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLcc/noharry/agent/ItemStatus;)Lcc/noharry/agent/ThreadItem$UserMessage;
-	public static synthetic fun copy$default (Lcc/noharry/agent/ThreadItem$UserMessage;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLcc/noharry/agent/ItemStatus;ILjava/lang/Object;)Lcc/noharry/agent/ThreadItem$UserMessage;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLcc/noharry/agent/ItemStatus;Ljava/lang/String;)Lcc/noharry/agent/ThreadItem$UserMessage;
+	public static synthetic fun copy$default (Lcc/noharry/agent/ThreadItem$UserMessage;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ZLcc/noharry/agent/ItemStatus;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/ThreadItem$UserMessage;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getId ()Ljava/lang/String;
 	public final fun getInput ()Ljava/util/List;
+	public final fun getRequestId ()Ljava/lang/String;
 	public fun getStatus ()Lcc/noharry/agent/ItemStatus;
 	public final fun getSteer ()Z
 	public fun getTurnId ()Ljava/lang/String;

@@ -12,6 +12,11 @@ called out; a patch release does not break it.
 - **Configured event-log locations survive `storage(...)`.** Android continues using its existing `event-log`
   directory. A storage directory must be used by only one process; multiple runtimes in that process coordinate.
 
+- **Steering preserves input identity.** `SteerOptions` lets a host supply the request id echoed in
+  `ThreadItem.UserMessage`, including after restart. Ordinary steering never answers a pending question;
+  only an explicit `answering` question id does. Inputs can queue while a tool awaits approval.
+  Custom `AgentThread` implementations implement the options overload; the two convenience overloads delegate to it.
+
 - **Named conversation error codes.** `TurnErrorCodes` documents the codes used by thread admission, interruption,
   storage, questions, attachments and approvals. Provider/tool codes remain available through `RuntimeErrorCode`.
 

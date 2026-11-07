@@ -3,10 +3,13 @@ package cc.noharry.agent.runtime.thread
 import cc.noharry.agent.TurnError
 import cc.noharry.agent.ThreadItem
 import cc.noharry.agent.ThreadOptions
+import cc.noharry.agent.spi.PostUserInputRequest
+import cc.noharry.agent.spi.PostUserInputResult
 import java.util.Collections
 import java.util.WeakHashMap
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 
@@ -27,6 +30,8 @@ internal class ThreadExecutionSlot {
 }
 
 internal class ActiveThreadTurn(val id: String, val options: ThreadOptions, val owner: DefaultThreadRuntime, val generation: Long) {
+    private val steeringMutex = Mutex()
+    private val receivedInputs = linkedMapOf<String, PostUserInputRequest>()
     var job: Job? = null
     var projection: ThreadEventProjection? = null
     @Volatile var approval: ThreadApproval? = null
@@ -34,6 +39,18 @@ internal class ActiveThreadTurn(val id: String, val options: ThreadOptions, val 
     @Volatile var finalizing = false
     @Volatile var cancellation: TurnError? = null
         private set
+
+    suspend fun postInput(request: PostUserInputRequest): PostUserInputResult = steeringMutex.withLock {
+        if (finalizing) return@withLock PostUserInputResult.RunNotActive
+        owner.engine.postUserInput(request).also { result ->
+            if (result == PostUserInputResult.Accepted || result == PostUserInputResult.Duplicate) {
+                receivedInputs.getOrPut(request.requestId) { request }
+            }
+        }
+    }
+
+    /** Finalization waits for accepted posts to record their receipts before publishing its terminal snapshot. */
+    suspend fun acceptedInputs(): List<PostUserInputRequest> = steeringMutex.withLock { receivedInputs.values.toList() }
 
     fun cancel(error: TurnError = TurnError("INTERRUPTED", "The turn was interrupted.")) {
         synchronized(this) {

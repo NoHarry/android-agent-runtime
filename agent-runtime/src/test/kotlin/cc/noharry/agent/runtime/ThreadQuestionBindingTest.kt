@@ -14,6 +14,56 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ThreadQuestionBindingTest {
+    @Test fun ordinaryInputDoesNotAnswerAnyQuestionOrGetLostAfterAnExplicitAnswer() = runBlocking {
+        val model = ThreeQuestionModel()
+        threadBuilder(model).build().use { runtime ->
+            val thread = runtime.startThread()
+            val collected = async { thread.runStreamed("plan a trip").toList() }
+            model.waiting.await()
+            val questions = thread.pendingRequests().filterIsInstance<Question>()
+            assertEquals(SteerResult.ACCEPTED, thread.steer("Walk through a park"))
+            assertEquals(SteerResult.ACCEPTED, thread.steer("Generous", questions.last().id))
+            assertEquals(SteerResult.ACCEPTED, thread.steer("And stop for tea", SteerOptions(requestId = "tea")))
+            model.release.complete(Unit)
+            val events = withTimeout(5000) { collected.await() }
+            assertTurnEvents(events)
+            val messages = model.requests.last().messages.filter { it.role == "user" }.map { it.content }
+            assertTrue(messages.any { "Walk through a park" in it && "Answer to question" !in it })
+            assertTrue(messages.any { "And stop for tea" in it && "Answer to question" !in it })
+            assertTrue(messages.any { "Generous" in it && "Budget?" in it })
+            val completed = events.filterIsInstance<ThreadEvent.ItemCompleted>().map { it.item }.filterIsInstance<Question>()
+            assertEquals(ItemStatus.COMPLETED, completed.single { it.id == questions.last().id }.status)
+            assertTrue(completed.filter { it.id != questions.last().id }.all { it.status == ItemStatus.DECLINED })
+        }
+    }
+
+    @Test fun hostRequestIdIsDeduplicatedEchoedAndRestoredAfterRestart() = runBlocking {
+        val root = threadRoot()
+        val model = ThreeQuestionModel()
+        threadBuilder(model, root).build().use { runtime ->
+            val thread = runtime.startThread(ThreadOptions(threadId = "request-id"))
+            val collected = async { thread.runStreamed("plan a trip").toList() }
+            model.waiting.await()
+            val options = SteerOptions(requestId = "host-message")
+            assertEquals(SteerResult.ACCEPTED, thread.steer("Take the scenic route", options))
+            assertEquals(SteerResult.ACCEPTED, thread.steer("Take the scenic route", options))
+            assertEquals(SteerResult.REQUEST_ID_CONFLICT, thread.steer("Use the highway", options))
+            model.release.complete(Unit)
+            val events = withTimeout(5000) { collected.await() }
+            assertTurnEvents(events)
+            val started = events.filterIsInstance<ThreadEvent.ItemStarted>().map { it.item }.filterIsInstance<ThreadItem.UserMessage>()
+            val completed = events.filterIsInstance<ThreadEvent.ItemCompleted>().map { it.item }.filterIsInstance<ThreadItem.UserMessage>()
+            assertEquals("host-message", started.single { it.steer }.requestId)
+            assertEquals(started.single { it.steer }, completed.single { it.steer })
+            assertTrue(started.filter { !it.steer }.all { it.requestId == null })
+        }
+        threadBuilder(ThreadScriptModel(emptyList()), root).build().use { runtime ->
+            val item = runtime.resumeThread("request-id").items().filterIsInstance<ThreadItem.UserMessage>().single { it.steer }
+            assertEquals("host-message", item.requestId)
+            assertEquals("Take the scenic route", (item.input.single() as InputPart.Text).text)
+        }
+    }
+
     @Test fun replyingToFirstOfThreeQuestionsPreservesItsIdentityInModelInputAndEvents() = runBlocking {
         val model = ThreeQuestionModel()
         threadBuilder(model).build().use { runtime ->
