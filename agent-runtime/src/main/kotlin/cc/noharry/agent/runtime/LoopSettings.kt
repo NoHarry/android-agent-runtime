@@ -50,7 +50,6 @@ const val MAX_CONTEXT_TIMEOUT_MILLIS = 60_000L
  * in the conversation sent to the model ([newestImages]; older ones fold to a note three at a time, so up to two more
  * may stay).
  */
-@ExperimentalAgentRuntimeApi
 class LoopLimits @JvmOverloads constructor(
     val failuresPerCall: Int = DEFAULT_MAX_CONSECUTIVE_TOOL_CALL_FAILURES,
     val failuresPerTool: Int = DEFAULT_MAX_CONSECUTIVE_TOOL_FAILURES_PER_TOOL,
@@ -80,12 +79,14 @@ class LoopLimits @JvmOverloads constructor(
 internal fun LoopSettings.withLimits(limits: LoopLimits): LoopSettings = copy(limits = limits)
 
 /** How provider tools become visible to the model. */
+@ExperimentalAgentRuntimeApi
 enum class BackendTools { DIRECT, SEARCH, NATIVE_DEFERRED }
 
 /**
  * Process-local caps; provider-specific concurrency declarations remain in force. Runtimes sharing a storage
  * directory share one turn admission queue and use the most restrictive caps among its open runtime instances.
  */
+@ExperimentalAgentRuntimeApi
 data class RuntimeConcurrency(
     val tools: Int = 4,
     val models: Int = 4,

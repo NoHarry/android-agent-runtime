@@ -7,6 +7,7 @@ package cc.noharry.agent.spi
  * headers, bearer tokens, cookies and transport credentials must be removed before the
  * writer accepts the event.
  */
+@ExperimentalAgentRuntimeApi
 sealed class SessionEventPayload {
     data object Empty : SessionEventPayload()
 

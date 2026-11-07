@@ -5,6 +5,11 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **Stable budgets, experimental advanced tuning.** `LoopLimits` is stable. Narration and service-answer checks,
+  memory/concurrency/tool-exposure tuning, and structured event-log payloads remain experimental.
+- **Java event-log factory.** Open a durable log with `SessionEventLogs.openFileBackedSessionEventLog(File)`.
+  The Kotlin top-level function keeps its name; the old plugin-named JVM facade is removed.
+
 - **Breaking: Thread / Turn / Item replaces the run API.** Import the stable conversation contracts from
   `cc.noharry.agent`: start or resume an `AgentThread`, call `run` for a `TurnResult` or collect `runStreamed`.
   Eight event types replace the old event union. Items have stable ids and complete final snapshots;

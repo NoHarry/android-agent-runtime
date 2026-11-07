@@ -5,6 +5,7 @@ package cc.noharry.agent.spi
  *
  * Number literals keep their original text so integers and decimals round-trip.
  */
+@ExperimentalAgentRuntimeApi
 sealed class SessionJson {
     data object Null : SessionJson()
 

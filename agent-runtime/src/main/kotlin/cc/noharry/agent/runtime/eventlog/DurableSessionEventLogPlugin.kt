@@ -10,10 +10,8 @@ import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.spi.KernelApiRange
 import cc.noharry.agent.spi.KernelApiVersions
 import cc.noharry.agent.spi.PluginVersion
-import cc.noharry.agent.spi.SessionEventLog
 import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
 import java.io.File
-import java.util.UUID
 
 /**
  * Packaged SINGLE [AgentCapabilities.SESSION_EVENT_LOG] using a host-owned app-private
@@ -44,19 +42,9 @@ internal class DurableSessionEventLogPlugin private constructor(
 
     companion object {
         const val PLUGIN_ID: String = "durable-session-event-log"
-        /** The root's directory name under an app's no-backup storage (`agent-runtime-android`'s `appPrivate`). */
+        /** Directory name for the internal packaged log's default root. */
         const val ROOT_DIRECTORY: String = "agent-runtime"
 
         fun forRoot(root: File): DurableSessionEventLogPlugin = DurableSessionEventLogPlugin(root)
     }
 }
-
-/**
- * Opens the durable file-backed session event log under [root] directly, the same log [DurableSessionEventLogPlugin]
- * installs.
- */
-@ExperimentalAgentRuntimeApi
-fun openFileBackedSessionEventLog(
-    root: File,
-    eventIdFactory: () -> String = { UUID.randomUUID().toString() },
-): SessionEventLog = FileBackedSessionEventLog(root, eventIdFactory = eventIdFactory)
