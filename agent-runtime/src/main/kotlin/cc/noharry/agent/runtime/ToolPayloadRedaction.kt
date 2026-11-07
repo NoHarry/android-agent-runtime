@@ -18,7 +18,18 @@ private fun JsonElement.redactedToolValue(redactor: TraceRedactor): JsonElement 
         if (key.isCredentialField()) JsonPrimitive("[REDACTED_SECRET]") else value.redactedToolValue(redactor)
     })
     is JsonArray -> JsonArray(map { it.redactedToolValue(redactor) })
-    is JsonPrimitive -> if (isString) JsonPrimitive(redactor.redact(redactSecrets(content))) else this
+    is JsonPrimitive -> when {
+        !isString -> this
+        // MCP text content often carries a JSON document as a string: filtering it as text would break its syntax.
+        else -> nestedJson(content)?.let { JsonPrimitive(it.redactedToolValue(redactor).toString()) }
+            ?: JsonPrimitive(redactor.redact(redactSecrets(content)))
+    }
+}
+
+private fun nestedJson(text: String): JsonElement? {
+    val trimmed = text.trim()
+    if (!(trimmed.startsWith("{") && trimmed.endsWith("}")) && !(trimmed.startsWith("[") && trimmed.endsWith("]"))) return null
+    return try { Json.parseToJsonElement(trimmed) } catch (_: IllegalArgumentException) { null }
 }
 
 private fun String.isCredentialField(): Boolean {
