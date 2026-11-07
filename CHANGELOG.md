@@ -49,6 +49,7 @@ called out; a patch release does not break it.
   host parser; invalid targets are never remembered. MCP approvals cover one tool, with separate namespaces for
   web, MCP and other tools. `ToolCall.approvedBy` now uses `ApprovalSource.USER`, `REMEMBERED` or `AUTOMATIC`;
   a denied call has no approval source. Older snapshots with an ambiguous REMEMBER policy leave the source unset.
+  Within one turn, a web host the person approved is not asked again for later fetches.
   A call an earlier turn left waiting for approval (the process died, or a newer turn replaced it) reaches the next
   turn's model as cancelled instead of still waiting.
 

@@ -6,7 +6,9 @@ import cc.noharry.agent.*
 import cc.noharry.agent.spi.*
 import cc.noharry.agent.spi.model.ModelEvent
 import cc.noharry.agent.kernel.core.tools.NetworkToolPolicyDecision
+import cc.noharry.agent.runtime.thread.AutomaticApproval
 import cc.noharry.agent.runtime.thread.approvalDomain
+import cc.noharry.agent.runtime.thread.automaticApproval
 import cc.noharry.agent.runtime.thread.ThreadItemCodec
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
@@ -86,6 +88,21 @@ class ThreadApprovalPolicyTest {
         assertNotEquals(approvalDomain("web_fetch", """{"url":"https://example.com"}"""),
             approvalDomain("mcp__example.com__fetch", "{}"))
         assertNotEquals(approvalDomain("mcp__server_one__first", "{}"), approvalDomain("mcp__server_one__second", "{}"))
+    }
+
+    @Test fun aWebHostApprovedEarlierInTheTurnIsNotAskedAgainButOtherAreasAre() {
+        val host = checkNotNull(approvalDomain("web_fetch", """{"url":"https://example.com/a"}"""))
+        val tool = checkNotNull(approvalDomain("mcp__cabin__unlock", "{}"))
+        val turn = setOf(host, tool)
+        val samePage = approvalDomain("web_fetch", """{"url":"https://example.com/b"}""")
+        assertEquals(AutomaticApproval(ApprovalState.APPROVED, ApprovalSource.USER),
+            automaticApproval(ApprovalPolicy.ASK, samePage, { emptySet() }, turn))
+        assertNull(automaticApproval(ApprovalPolicy.ASK, tool, { emptySet() }, turn))
+        assertNull(automaticApproval(ApprovalPolicy.ASK, approvalDomain("web_fetch", """{"url":"https://other.example/"}"""), { emptySet() }, turn))
+        assertNull(automaticApproval(ApprovalPolicy.ASK, samePage, { emptySet() }, emptySet()))
+        assertEquals(ApprovalState.DENIED, automaticApproval(ApprovalPolicy.DENY_ALL, samePage, { emptySet() }, turn)?.state)
+        assertEquals(AutomaticApproval(ApprovalState.APPROVED, ApprovalSource.REMEMBERED),
+            automaticApproval(ApprovalPolicy.REMEMBER, tool, { setOf(tool) }, emptySet()))
     }
 
     @Test fun invalidNetworkTargetsNeverGetARememberableCatchAllArea() {
