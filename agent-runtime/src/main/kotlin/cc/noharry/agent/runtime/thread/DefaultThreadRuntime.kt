@@ -50,7 +50,7 @@ internal class DefaultThreadRuntime(
         require(options.threadId == null || options.threadId == threadId) { "Thread id does not match options" }
         val saved = store.load(threadId) ?: store.create(threadId, newThreadOptions(threadId, options))
         val merged = mergeThreadOptions(saved.options, options)
-        return handle(saved.copy(options = merged)).also { it.configure(merged, options.approvalPolicy) }
+        return handle(saved.copy(options = merged)).also { it.configure(merged, options.approvalPolicy, persist = merged != saved.options) }
     }
 
     private fun newThreadOptions(threadId: String, options: ThreadOptions): ThreadOptions =

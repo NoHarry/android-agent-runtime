@@ -86,6 +86,8 @@ called out; a patch release does not break it.
   `ThreadOptions.reset` clears selected model, workspace, scene or instruction overrides. New threads still use ASK.
   A policy given to `resumeThread` while a turn runs applies to that turn at once: an approval it is waiting for is
   decided by the new policy (`APPROVE_ALL` approves, `DENY_ALL` denies, `REMEMBER` approves a remembered area).
+  `startThread` and `resumeThread` do their small metadata I/O before returning (call them off the main thread on
+  Android); a resume that changes nothing no longer rewrites the saved thread.
 - **Independent budgets survive settings changes.** `LoopSettings.limits` defaults to null, so a settings call does
   not reset limits configured through `limits(...)`. An explicit settings budget still replaces them.
 
