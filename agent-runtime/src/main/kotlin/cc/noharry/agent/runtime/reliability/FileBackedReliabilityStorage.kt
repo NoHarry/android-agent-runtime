@@ -86,9 +86,10 @@ internal class FileBackedReliabilityStorage(
         val known = knownRunIds.associateBy(::encodeFileName)
         return children.filter(File::isDirectory).mapNotNull { child ->
             known[child.name]?.let { return@mapNotNull storedRunRecord(child).copy(runId = it) }
+            // A record cut short by a killed process, or written by an older version, names no owner: leave it to
+            // retention rather than refuse every deletion.
             val snapshot = File(child, RUN_FILE).decodeOrNull(ReliabilityJsonCodecs::decodeSnapshot)
-            checkNotNull(snapshot) { "Cannot determine ownership of run artifacts: ${child.name}" }
-            if (snapshot.sessionId == sessionId) storedRunRecord(child) else null
+            if (snapshot?.sessionId == sessionId) storedRunRecord(child) else null
         }
     }
 

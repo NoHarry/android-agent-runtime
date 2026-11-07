@@ -72,6 +72,22 @@ class SessionEventDeletionTest {
         } finally { release.countDown(); log.close(); pool.shutdownNow() }
     }
 
+    @Test fun aWriterWhoseWritesFailedDoesNotBlockDeletion() {
+        val root = Files.createTempDirectory("event-delete-failed-writer-").toFile()
+        val durable = FileBackedSessionEventLog(root)
+        durable.append(event("removed"))
+        val failing = AsyncSessionEventLog(durable, persistBatch = { error("disk full") })
+        try {
+            failing.append(event("removed"))
+            assertFalse(failing.flush())
+            assertTrue(failing.deleteThread("removed"))
+            assertTrue(durable.query(SessionEventQuery("removed")).isEmpty())
+        } finally {
+            failing.close()
+            root.deleteRecursively()
+        }
+    }
+
     @Test fun subscriberDropsAnOldPageAndReceivesEventsFromTheRecreatedThread() {
         val root = Files.createTempDirectory("event-delete-subscriber-").toFile()
         val log = AsyncSessionEventLog(FileBackedSessionEventLog(root))
