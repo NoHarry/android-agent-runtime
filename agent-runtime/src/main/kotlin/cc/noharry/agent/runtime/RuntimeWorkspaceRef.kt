@@ -54,6 +54,8 @@ internal class RuntimeWorkspaceRegistry(
     fun clearRun(runId: String) {
         runSelections.remove(runId)
     }
+
+    fun clearSession(sessionId: String) { sessionSelections.remove(sessionId) }
 }
 
 internal sealed interface RuntimeWorkspaceSelection {

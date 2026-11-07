@@ -74,6 +74,25 @@ internal class RuntimeSessionRecorder(
     private val modelRequestStarts = mutableMapOf<String, Long>()
     private val firstContentTimings = mutableMapOf<String, Long>()
 
+    fun deleteThread(threadId: String, runIds: Set<String>) {
+        check(store?.deleteThread(threadId) != false) { "The configured session store does not support thread deletion" }
+        synchronized(pendingLock) { pendingToolRecordings.removeAll { it.context.sessionId == threadId } }
+        synchronized(counterBaselines) { runIds.forEach(counterBaselines::remove) }
+        synchronized(modelCallSequences) { runIds.forEach(modelCallSequences::remove) }
+        synchronized(eventLock) {
+            runIdentities.entries.removeAll { it.value.sessionId == threadId }
+            runIds.forEach { runId ->
+                runStartSequences.remove(runId)
+                finishedEventRuns.remove(runId)
+                toolStartSequences.keys.removeAll { it.startsWith("$runId:") }
+                chunkSequences.remove(runId)
+                preparationTimings.remove(runId)
+                modelRequestStarts.remove(runId)
+                firstContentTimings.remove(runId)
+            }
+        }
+    }
+
     fun startRun(request: AgentRequest, runId: String) {
         startRun(request, runId, RuntimeRunStatus.RUNNING)
     }

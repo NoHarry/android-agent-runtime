@@ -112,6 +112,7 @@ internal class ThreadStore(
         attempts.delete(threadId)
         removeFile(threadId, THREAD_SUFFIX)
         removeFile(threadId, HISTORY_SUFFIX)
+        deleteQuarantinedHistory(threadId)
         coordination.stores.forEach { it.clearCachedThread(threadId) }
         Unit
     }
@@ -120,6 +121,13 @@ internal class ThreadStore(
         memory.remove(threadId)
         liveTurns.remove(threadId)
         modelMemory.remove(threadId)
+    }
+
+    private fun deleteQuarantinedHistory(threadId: String) {
+        if (root == null) return
+        val prefix = file(threadId, HISTORY_SUFFIX).name + "."
+        root.listFiles().orEmpty().filter { it.name.startsWith(prefix) && it.name.endsWith(".corrupt") }
+            .forEach { check(it.delete()) { "Cannot delete quarantined model history" } }
     }
 
     fun modelHistoryPersistence(): SessionHistoryPersistence = object : SessionHistoryPersistence {

@@ -21,6 +21,10 @@ internal class ThreadAttemptStore(
 
     fun active(threadId: String): List<ThreadAttempt> = synchronized(lock) { read(threadId).filter { it.active } }
 
+    fun executionIds(threadId: String): Set<String> = synchronized(lock) {
+        try { read(threadId).mapTo(linkedSetOf()) { it.executionId } } catch (_: RuntimeException) { emptySet() }
+    }
+
     fun begin(threadId: String, turnId: String, executionId: String): ThreadAttempt = synchronized(lock) {
         val records = read(threadId)
         val attempt = ThreadAttempt(turnId, executionId, (records.firstOrNull { it.turnId == turnId }?.attempt ?: 0) + 1, true)

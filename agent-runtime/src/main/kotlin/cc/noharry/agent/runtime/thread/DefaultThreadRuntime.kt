@@ -81,10 +81,12 @@ internal class DefaultThreadRuntime(
         try {
             drain.await()
             withContext(Dispatchers.IO) {
-                admission.owners().forEach { it.engine.clearThreadHistory(threadId) }
+                var executions = store.attempts.executionIds(threadId)
+                val owners = admission.owners()
+                owners.forEach { executions = it.engine.deleteThreadData(threadId, executions) }
                 store.delete(threadId)
+                owners.forEach { it.threads.remove(threadId) }
             }
-            threads.remove(threadId)
         } finally { synchronized(store.coordination.lock) { slot.deleting = false } }
     }
 

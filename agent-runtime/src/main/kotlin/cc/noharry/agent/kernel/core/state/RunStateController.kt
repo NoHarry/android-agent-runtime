@@ -136,6 +136,19 @@ internal class RunStateController(
     fun snapshot(runId: String): RuntimeRunSnapshot? =
         runState(runId)?.snapshot
 
+    fun deleteSession(sessionId: String, knownRunIds: Set<String>): Set<String> {
+        val cached = runs.values.filter { it.snapshot.sessionId == sessionId }.mapTo(linkedSetOf()) { it.snapshot.runId }
+        val identified = cached + knownRunIds
+        val deleted = storage?.deleteSession(sessionId, identified).orEmpty() + identified
+        deleted.forEach { runId -> locks.withRunLock(runId) {
+            runs.remove(runId)
+            openConfusions.remove(runId)
+            artifacts.evictRun(runId)
+            locks.retire(runId)
+        } }
+        return deleted
+    }
+
     fun workpad(runId: String): RuntimeWorkpad? = artifacts.workpad(runId)
 
     fun result(runId: String): RuntimeResult? = artifacts.result(runId)

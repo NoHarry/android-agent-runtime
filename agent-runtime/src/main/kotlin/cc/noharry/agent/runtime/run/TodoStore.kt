@@ -8,6 +8,7 @@ import cc.noharry.agent.kernel.core.state.encodeFileName
 import cc.noharry.agent.kernel.core.state.writeReliabilityText
 import cc.noharry.agent.vfs.VfsFileSystem
 import cc.noharry.agent.vfs.VfsReadResult
+import cc.noharry.agent.vfs.VfsStatResult
 import cc.noharry.agent.vfs.VfsWriteMode
 import cc.noharry.agent.vfs.VfsWriteResult
 import java.io.File
@@ -56,8 +57,10 @@ internal class TodoStore private constructor(
 
     override suspend fun clear(sessionId: String): Boolean {
         val file = todoDir?.let { File(it, fileName(sessionId)) }
-        if (file != null) return file.delete()
-        return workspace?.deleteTree(todoPath(sessionId)) == true
+        if (file != null) return !file.exists() || file.delete()
+        val path = todoPath(sessionId)
+        if (workspace?.stat(path) == VfsStatResult.NotFound) return true
+        return workspace?.deleteTree(path) == true
     }
 }
 

@@ -5,6 +5,11 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **Deleting a thread clears its complete runtime data.** After stopping its turns, deletion removes conversation
+  snapshots and quarantined histories, execution mappings, event logs and attachments, SQLite rows, reliability
+  artifacts, loop history and its saved plan. All runtimes sharing its storage clear their cached state. Shared
+  workspaces and global memory are preserved. A custom event/session store that cannot delete causes an explicit failure.
+
 - **Denied approvals continue the same turn.** Both explicit denial and `DENY_ALL` return a
   `CONFIRMATION_DENIED` tool result to the model without executing the tool, so it can explain the outcome.
   Cancelling or interrupting a pending approval records `CONFIRMATION_CANCELLED` in provider history.
