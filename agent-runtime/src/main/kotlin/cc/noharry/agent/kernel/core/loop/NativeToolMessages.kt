@@ -69,8 +69,12 @@ internal fun PendingNativeToolUse.awaitingConfirmationMessages(): List<ModelMess
 internal const val USER_DECLINED_CODE = "USER_DECLINED"
 internal const val CONFIRMATION_CANCELLED_CODE = "CONFIRMATION_CANCELLED"
 internal const val CONFIRMATION_EXPIRED_CODE = "CONFIRMATION_EXPIRED"
-private const val AWAITING_CONFIRMATION_RESULT =
+internal const val AWAITING_CONFIRMATION_RESULT =
     """{"ok":false,"status":"awaiting_confirmation","note":"Waiting for the user to confirm; this action has not run."}"""
+
+/** What a call still shown as waiting in an earlier run's history became: the run was interrupted or replaced. */
+internal const val INTERRUPTED_CONFIRMATION_RESULT =
+    """{"ok":false,"code":"CONFIRMATION_CANCELLED","message":"The confirmation was withdrawn before the user answered, so it was not run and the run ended there."}"""
 
 internal fun ModelEvent.ToolCall.toAssistantToolCallMessage(
     reasoningContent: String? = null,

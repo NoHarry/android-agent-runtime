@@ -1,6 +1,8 @@
 @file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.kernel.core.context
+import cc.noharry.agent.kernel.core.loop.AWAITING_CONFIRMATION_RESULT
+import cc.noharry.agent.kernel.core.loop.INTERRUPTED_CONFIRMATION_RESULT
 import cc.noharry.agent.spi.model.ModelMessage
 
 /**
@@ -56,6 +58,7 @@ internal class SessionHistoryStore @JvmOverloads constructor(
                 session.runs = trimmed(saved?.runs.orEmpty())
                 session.lastInputTokens = saved?.lastInputTokens
             }
+            session.runs = session.runs.withStaleConfirmationsClosed()
             session.latestStarted += 1
             RunStart(sessionId, session.latestStarted, session.runs)
         }
@@ -184,6 +187,16 @@ private fun List<ModelMessage>.historyBytes(): Long = sumOf { message ->
 }
 
 private fun String.utf8Size(): Long = toByteArray(Charsets.UTF_8).size.toLong()
+
+/**
+ * A new run of a session starts only when no earlier run of it still waits for a confirmation, so a call an earlier run
+ * left shown as waiting (the process died, or a newer run replaced it, while the user had not answered) never ran.
+ */
+private fun List<List<ModelMessage>>.withStaleConfirmationsClosed(): List<List<ModelMessage>> =
+    if (none { run -> run.any(ModelMessage::isAwaitingConfirmation) }) this
+    else map { run -> run.map { if (it.isAwaitingConfirmation()) it.copy(content = INTERRUPTED_CONFIRMATION_RESULT) else it } }
+
+private fun ModelMessage.isAwaitingConfirmation(): Boolean = role == "tool" && content == AWAITING_CONFIRMATION_RESULT
 
 /** Each unanswered call gets its result right after it: providers such as DeepSeek reject a result that comes later. */
 private fun List<ModelMessage>.withClosedToolCalls(): List<ModelMessage> {

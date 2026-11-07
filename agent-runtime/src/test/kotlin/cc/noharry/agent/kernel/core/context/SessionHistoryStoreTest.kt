@@ -1,6 +1,8 @@
 @file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.kernel.core.context
+import cc.noharry.agent.kernel.core.loop.AWAITING_CONFIRMATION_RESULT
+import cc.noharry.agent.kernel.core.loop.INTERRUPTED_CONFIRMATION_RESULT
 import cc.noharry.agent.spi.model.ModelMessage
 import cc.noharry.agent.spi.model.ModelImage
 import org.junit.Assert.assertEquals
@@ -21,6 +23,31 @@ class SessionHistoryStoreTest {
         assertEquals(first + own, store.prefixed("run-2", own))
         assertEquals(own, store.prefixed("run-unknown", own))
         assertTrue(store.messages("other").isEmpty())
+    }
+
+    @Test
+    fun aCallLeftWaitingForConfirmationByAnEarlierRunIsClosedWhenTheNextRunStarts() {
+        val store = SessionHistoryStore()
+        store.start("interrupted", "session")
+        store.record("interrupted", listOf(user("空调调到22度"), call("c1", "set_temp"), waiting("c1")))
+
+        store.start("next", "session")
+        val seen = store.prefixed("next", listOf(user("好了吗")))
+
+        assertTrue(seen.none { it.content == AWAITING_CONFIRMATION_RESULT })
+        assertEquals(INTERRUPTED_CONFIRMATION_RESULT, seen.single { it.role == "tool" }.content)
+        assertEquals("c1", seen.single { it.role == "tool" }.toolCallId)
+    }
+
+    @Test
+    fun aWaitingCallSavedBeforeTheProcessDiedIsClosedWhenItsSessionIsReopened() {
+        val saved = StoredSessionHistory(listOf(listOf(user("打开车窗"), call("c2", "open_window"), waiting("c2"))))
+        val store = SessionHistoryStore().apply { bindPersistence(MapPersistence(mutableMapOf("session" to saved))) }
+
+        store.start("after-restart", "session")
+
+        val seen = store.prefixed("after-restart", listOf(user("继续")))
+        assertEquals(INTERRUPTED_CONFIRMATION_RESULT, seen.single { it.role == "tool" }.content)
     }
 
     @Test
@@ -107,3 +134,11 @@ private fun assistant(text: String) = ModelMessage(role = "assistant", content =
 private fun call(id: String, name: String) =
     ModelMessage(role = "assistant", content = "", toolCallId = id, toolName = name, toolArgumentsJson = "{}")
 private fun result(id: String) = ModelMessage(role = "tool", content = """{"ok":true}""", toolCallId = id)
+private fun waiting(id: String) = ModelMessage(role = "tool", content = AWAITING_CONFIRMATION_RESULT, toolCallId = id)
+
+private class MapPersistence(private val saved: MutableMap<String, StoredSessionHistory>) : SessionHistoryPersistence {
+    override fun load(sessionId: String) = saved[sessionId]
+    override fun save(sessionId: String, history: StoredSessionHistory) { saved[sessionId] = history }
+    override fun delete(sessionId: String) { saved.remove(sessionId) }
+    override fun clear() = saved.clear()
+}
