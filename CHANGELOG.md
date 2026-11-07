@@ -5,6 +5,10 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **Damaged history does not block unrelated conversations.** Thread listing skips unreadable or unsupported
+  metadata. Invalid provider history is renamed to a `.corrupt` file and the conversation resumes with empty model
+  history. Deleting a conversation does not parse that history first.
+
 - **Conversation storage preserves display text and valid tool JSON.** User input and final answers are stored
   verbatim. Tool payloads retain JSON numeric/boolean/null types while sensitive fields and Bearer credentials are
   removed; phone and location filtering follows the configured redactor. Provider model history intentionally
