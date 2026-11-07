@@ -1,17 +1,17 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeBlocker
-import cc.noharry.agent.kernel.api.reliability.RuntimeHandoff
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunPhase
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
-import cc.noharry.agent.kernel.api.reliability.SuggestedNextAction
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeBlocker
+import cc.noharry.agent.spi.reliability.RuntimeHandoff
+import cc.noharry.agent.spi.reliability.RuntimeRunPhase
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.reliability.SuggestedNextAction
 import cc.noharry.agent.kernel.core.loop.BackendToolFailureSummary
 import cc.noharry.agent.kernel.core.loop.NativeLoopSummary
 import cc.noharry.agent.kernel.core.loop.RuntimeMemoryMatchSummary
@@ -51,7 +51,7 @@ class RunEnvelopeWorkpadTest {
                     ModelEvent.Completed,
                 ),
             )
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         runtime.run(agentRequest()).toList()
 
@@ -106,7 +106,7 @@ class RunEnvelopeWorkpadTest {
                     ),
                 ),
             )
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         runtime.run(agentRequest()).toList()
         val workpad = requireNotNull(runtime.getRuntimeWorkpad("request-1"))
@@ -140,7 +140,7 @@ class RunEnvelopeWorkpadTest {
                     ),
                 ),
             )
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         val events = runtime.run(agentRequest()).toList()
         val envelope = runtime.getRunEnvelope("request-1")

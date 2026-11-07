@@ -1,31 +1,31 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.CancelPendingConfirmationRequest
-import cc.noharry.agent.kernel.api.CompletionImpact
-import cc.noharry.agent.kernel.api.HookContext
-import cc.noharry.agent.kernel.api.HookDecision
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.RuntimeEffectKind
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.RuntimeTurnObserver
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.ToolSource
-import cc.noharry.agent.kernel.api.ToolUse
-import cc.noharry.agent.kernel.api.TurnInputObservation
-import cc.noharry.agent.kernel.api.TurnObservationReceipt
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.CancelPendingConfirmationRequest
+import cc.noharry.agent.spi.CompletionImpact
+import cc.noharry.agent.spi.HookContext
+import cc.noharry.agent.spi.HookDecision
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.RuntimeEffectKind
+import cc.noharry.agent.spi.RuntimeHook
+import cc.noharry.agent.spi.RuntimeTurnObserver
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.ToolSource
+import cc.noharry.agent.spi.ToolUse
+import cc.noharry.agent.spi.TurnInputObservation
+import cc.noharry.agent.spi.TurnObservationReceipt
+import cc.noharry.agent.spi.mcp.McpClientProvider
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
+import cc.noharry.agent.spi.reliability.RuntimeCompletionSummary
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeResult
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
@@ -150,7 +150,7 @@ class NativeToolLoopCompletionObligationTest {
                 ),
             )
             .turnObserver(observer)
-            .build()
+            .buildEngine()
         val events = runtime.run(
             AgentRequest("request-1", "session-1", "remember this"),
         ).toList()
@@ -204,7 +204,7 @@ class NativeToolLoopCompletionObligationTest {
                     ),
                 ),
             )
-            .build()
+            .buildEngine()
         val pending = runtime.run(AgentRequest("request-1", "session-1", "remember home")).toList()
             .filterIsInstance<AgentEvent.ConfirmationRequired>()
             .single()
@@ -229,9 +229,9 @@ class NativeToolLoopCompletionObligationTest {
             .modelClient(
                 FakeModelClient(schemaThenBackendRounds(finish = true)),
             )
-            .build()
+            .buildEngine()
         val pending = runtime.run(AgentRequest("request-1", "session-1", "remember this")).toList()
-            .filterIsInstance<cc.noharry.agent.kernel.api.AgentEvent.ConfirmationRequired>()
+            .filterIsInstance<cc.noharry.agent.spi.AgentEvent.ConfirmationRequired>()
             .single()
         runtime.resumeConfirmation(approve(pending.pending.pendingId))
         val result = requireNotNull(runtime.getRuntimeResult("request-1"))
@@ -252,9 +252,9 @@ class NativeToolLoopCompletionObligationTest {
             .modelClient(
                 FakeModelClient(schemaThenBackendRounds()),
             )
-            .build()
+            .buildEngine()
         val pending = first.run(AgentRequest("request-1", "session-1", "remember this")).toList()
-            .filterIsInstance<cc.noharry.agent.kernel.api.AgentEvent.ConfirmationRequired>()
+            .filterIsInstance<cc.noharry.agent.spi.AgentEvent.ConfirmationRequired>()
             .single()
         val seen = mutableListOf<ModelRequest>()
         val restored = AgentRuntimeBuilder.create()
@@ -267,18 +267,18 @@ class NativeToolLoopCompletionObligationTest {
                     seenRequests = seen,
                 ),
             )
-            .build()
+            .buildEngine()
         val resume = restored.resumeConfirmation(approve(pending.pending.pendingId))
         assertTrue(
-            resume is cc.noharry.agent.kernel.api.ConfirmationResumeResult.Rejected ||
-                resume is cc.noharry.agent.kernel.api.ConfirmationResumeResult.NotFound,
+            resume is cc.noharry.agent.spi.ConfirmationResumeResult.Rejected ||
+                resume is cc.noharry.agent.spi.ConfirmationResumeResult.NotFound,
         )
         assertTrue(seen.isEmpty())
     }
 
     @Test
     fun narrationRetryDoesNotConsumeObligationCorrectionBudget() = runBlocking {
-        val seenRequests = mutableListOf<cc.noharry.agent.kernel.api.model.ModelRequest>()
+        val seenRequests = mutableListOf<cc.noharry.agent.spi.model.ModelRequest>()
         val result = runMutatingBackend(
             firstResult = """{"ok":false,"code":"WRITE_FAILED"}""",
             finishArguments = """{"response":"All tasks completed! Let me update the todo and provide the final response."}""",
@@ -308,7 +308,7 @@ class NativeToolLoopCompletionObligationTest {
 
     @Test
     fun obligationCorrectionDoesNotConsumeNarrationRetryBudget() = runBlocking {
-        val seenRequests = mutableListOf<cc.noharry.agent.kernel.api.model.ModelRequest>()
+        val seenRequests = mutableListOf<cc.noharry.agent.spi.model.ModelRequest>()
         val result = runMutatingBackend(
             firstResult = """{"ok":false,"code":"WRITE_FAILED"}""",
             finishArguments = """{"response":"remembered home"}""",
@@ -345,7 +345,7 @@ class NativeToolLoopCompletionObligationTest {
         val hintSchema =
             """{"type":"object","annotations":{"readOnlyHint":true},"required":["value"],"properties":{"value":{"type":"string"}}}"""
         val entry = DynamicToolEntry(
-            modelTool = cc.noharry.agent.kernel.api.model.ModelTool(qualifiedMcpTool("remember_fact"), hintSchema),
+            modelTool = cc.noharry.agent.spi.model.ModelTool(qualifiedMcpTool("remember_fact"), hintSchema),
             source = DynamicToolSource.BACKEND,
             backendToolName = qualifiedMcpTool("remember_fact"),
             action = RuntimeActionDescriptor(
@@ -424,7 +424,7 @@ class NativeToolLoopCompletionObligationTest {
                 originalToolName = "remember_fact",
                 normalizedToolName = "remember_fact",
                 qualifiedName = qualified,
-                descriptor = cc.noharry.agent.kernel.api.ToolDescriptor(
+                descriptor = cc.noharry.agent.spi.ToolDescriptor(
                     name = "remember_fact",
                     inputSchemaJson = """{"type":"object","required":["value"],"properties":{"value":{"type":"string"}}}""",
                     effectKind = RuntimeEffectKind.MUTATING.name,
@@ -561,26 +561,26 @@ class NativeToolLoopCompletionObligationTest {
         val declared = ledger.declareRequiredMutating("run-1", descriptor, """{"value":"home"}""")!!
         assertFalse(declared.isSatisfied())
         ledger.recordOutcome(
-            cc.noharry.agent.kernel.api.RuntimeActionOutcome(
+            cc.noharry.agent.spi.RuntimeActionOutcome(
                 obligationId = declared.obligationId,
                 actionName = "remember_fact",
-                status = cc.noharry.agent.kernel.api.RuntimeActionStatus.SUCCEEDED,
-                commitStatus = cc.noharry.agent.kernel.api.RuntimeCommitStatus.NO_CHANGE_REQUIRED,
+                status = cc.noharry.agent.spi.RuntimeActionStatus.SUCCEEDED,
+                commitStatus = cc.noharry.agent.spi.RuntimeCommitStatus.NO_CHANGE_REQUIRED,
             ),
         )
         assertTrue(ledger.snapshot().single().isSatisfied())
         ledger.recordOutcome(
-            cc.noharry.agent.kernel.api.RuntimeActionOutcome(
+            cc.noharry.agent.spi.RuntimeActionOutcome(
                 obligationId = declared.obligationId,
                 actionName = "remember_fact",
-                status = cc.noharry.agent.kernel.api.RuntimeActionStatus.FAILED,
-                commitStatus = cc.noharry.agent.kernel.api.RuntimeCommitStatus.NOT_COMMITTED,
+                status = cc.noharry.agent.spi.RuntimeActionStatus.FAILED,
+                commitStatus = cc.noharry.agent.spi.RuntimeCommitStatus.NOT_COMMITTED,
                 safeCode = "WRITE_FAILED",
             ),
         )
         val kept = ledger.snapshot().single()
         assertTrue(kept.isSatisfied())
-        assertEquals(cc.noharry.agent.kernel.api.RuntimeCommitStatus.NO_CHANGE_REQUIRED, kept.commitStatus)
+        assertEquals(cc.noharry.agent.spi.RuntimeCommitStatus.NO_CHANGE_REQUIRED, kept.commitStatus)
         assertEquals(0, ledger.summarize(RuntimeCompletionOutcome.SUCCEEDED).requiredUnresolved)
     }
 
@@ -595,7 +595,7 @@ private suspend fun runPlainFinish(finishArguments: String): RuntimeResult {
                 ),
             ),
         )
-        .build()
+        .buildEngine()
     return runtime.run(AgentRequest("request-1", "session-1", "hello")).toList()
         .filterIsInstance<AgentEvent.ResultAvailable>().single().result
 }
@@ -638,7 +638,7 @@ private suspend fun runMutatingBackend(
         .modelClient(FakeModelClient(eventsByRound = rounds, seenRequests = seenRequests ?: mutableListOf()))
     policyConfigJson?.let(builder::policyConfigJson)
     hook?.let(builder::hook)
-    return builder.build().run(AgentRequest("request-1", "session-1", "remember home")).toList()
+    return builder.buildEngine().run(AgentRequest("request-1", "session-1", "remember home")).toList()
         .filterIsInstance<AgentEvent.ResultAvailable>().single().result
 }
 
@@ -691,8 +691,8 @@ private class RecordingObserver : RuntimeTurnObserver {
     var seen = false
     override val id: String = "required-observer"
 
-    override fun preflightTurnInput(input: cc.noharry.agent.kernel.api.RuntimeTurnInput) =
-        cc.noharry.agent.kernel.api.RuntimeObserverActionPreflight(
+    override fun preflightTurnInput(input: cc.noharry.agent.spi.RuntimeTurnInput) =
+        cc.noharry.agent.spi.RuntimeObserverActionPreflight(
             observerId = id,
             actionName = id,
             effectKind = RuntimeEffectKind.MUTATING,
@@ -700,7 +700,7 @@ private class RecordingObserver : RuntimeTurnObserver {
             effectKeyDigest = "observer-write",
         )
 
-    override suspend fun onTurnInput(input: cc.noharry.agent.kernel.api.RuntimeTurnInput): TurnInputObservation {
+    override suspend fun onTurnInput(input: cc.noharry.agent.spi.RuntimeTurnInput): TurnInputObservation {
         seen = true
         return TurnInputObservation(
             observerId = id,
@@ -709,11 +709,11 @@ private class RecordingObserver : RuntimeTurnObserver {
             safeCode = "NOT_COMMITTED",
             effectKind = RuntimeEffectKind.MUTATING,
             completionImpact = CompletionImpact.REQUIRED_ON_CALL,
-            commitStatus = cc.noharry.agent.kernel.api.RuntimeCommitStatus.NOT_COMMITTED,
+            commitStatus = cc.noharry.agent.spi.RuntimeCommitStatus.NOT_COMMITTED,
             effectKeyDigest = "observer-write",
         )
     }
 
-    override suspend fun onTurnFinished(turn: cc.noharry.agent.kernel.api.RuntimeCompletedTurn): TurnObservationReceipt =
+    override suspend fun onTurnFinished(turn: cc.noharry.agent.spi.RuntimeCompletedTurn): TurnObservationReceipt =
         TurnObservationReceipt(id, enqueued = false)
 }

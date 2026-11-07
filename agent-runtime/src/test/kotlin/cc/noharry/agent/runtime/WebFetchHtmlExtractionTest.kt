@@ -1,5 +1,5 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import cc.noharry.agent.transport.WebFetchRequest
 import cc.noharry.agent.transport.WebFetchResponse
 import cc.noharry.agent.transport.WebFetchTransport

@@ -1,29 +1,29 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
 
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.CancelPendingConfirmationRequest
-import cc.noharry.agent.kernel.api.ConfirmationChoice
-import cc.noharry.agent.kernel.api.ConfirmationDecision
-import cc.noharry.agent.kernel.api.HookContext
-import cc.noharry.agent.kernel.api.HookDecision
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.ToolMatcher
-import cc.noharry.agent.kernel.api.ToolPrefetchProvider
-import cc.noharry.agent.kernel.api.ToolPrefetchRequest
-import cc.noharry.agent.kernel.api.ToolPrefetchTrace
-import cc.noharry.agent.kernel.api.ToolProvider
-import cc.noharry.agent.kernel.api.ToolUse
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.CancelPendingConfirmationRequest
+import cc.noharry.agent.spi.ConfirmationChoice
+import cc.noharry.agent.spi.ConfirmationDecision
+import cc.noharry.agent.spi.HookContext
+import cc.noharry.agent.spi.HookDecision
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.RuntimeHook
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.ToolMatcher
+import cc.noharry.agent.spi.ToolPrefetchProvider
+import cc.noharry.agent.spi.ToolPrefetchRequest
+import cc.noharry.agent.spi.ToolPrefetchTrace
+import cc.noharry.agent.spi.ToolProvider
+import cc.noharry.agent.spi.ToolUse
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
@@ -80,9 +80,9 @@ class ConfirmationHistoryTest {
     private fun runtime(client: ModelClient, door: Door) = AgentRuntimeBuilder.create()
         .modelClient(client).toolProvider(door).sessionHistory(SessionHistory()).sessionToolActivations(SessionToolActivations())
         .hook(AskFirst, ToolMatcher.toolName("mcp__car__unlock_door"))
-        .build()
+        .buildEngine()
 
-    private suspend fun cc.noharry.agent.kernel.api.AgentRuntime.pause(runId: String, input: String) =
+    private suspend fun cc.noharry.agent.spi.AgentRuntime.pause(runId: String, input: String) =
         run(AgentRequest(runId, "s1", input)).toList().filterIsInstance<AgentEvent.ConfirmationRequired>().single().pending
 
     @Test fun anApprovedCallResumesWithItsThinkingSignatureAndWordsAndNoHandoffNote() = runBlocking {
@@ -108,7 +108,7 @@ class ConfirmationHistoryTest {
             .modelClient(Script(listOf(unlock, answer))).toolProvider(Door())
             .hook(slowly, ToolMatcher.toolName("mcp__car__unlock_door"))
             .hook(AskFirst, ToolMatcher.toolName("mcp__car__unlock_door"))
-            .build()
+            .buildEngine()
         val pending = runtime.pause("r1", "开主驾车门")
 
         assertEquals("开门吗？", pending.prompt)
@@ -162,7 +162,7 @@ class ConfirmationHistoryTest {
             .modelClient(Script(listOf(unlock))).toolProvider(Door()).sessionHistory(history)
             .sessionToolActivations(SessionToolActivations())
             .hook(AskFirst, ToolMatcher.toolName("mcp__car__unlock_door"))
-            .build()
+            .buildEngine()
         runtime.pause("r1", "开主驾车门")
 
         val waiting = history.messages("s1")

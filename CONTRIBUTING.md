@@ -32,14 +32,14 @@ need a connected device.
 
 ## Rules of the codebase
 
-- `agent-kernel-api`, `agent-kernel-core`, `agent-runtime` and `agent-a2a` are plain JVM modules. Android APIs go in
+- `agent-api`, `agent-runtime` and `agent-a2a` are plain JVM modules. Android APIs go in
   `agent-runtime-android` or an Android optional module.
-- Optional modules depend at most on `agent-kernel-api` (or `agent-a2a` for its own adapters);
+- Optional modules depend at most on `agent-api` (or `agent-a2a` for its own adapters);
   the runtime depends on none of them.
 - Every first-party `ToolProvider` and `ModelClient` declares its `providerConcurrency` explicitly, even where the
   default would do; a test checks it.
 - Messages a host may show its users have English defaults and a way to replace them (see `McpClientMessages`).
-- Public API is 0.x. New API may carry `@ExperimentalAgentRuntimeApi`; keep the quick-start path free of it.
+- The conversation API and main SPI are stable from 0.5.0. Advanced API may carry `@ExperimentalAgentRuntimeApi`; keep the quick-start path free of it.
 
 ## Tools
 

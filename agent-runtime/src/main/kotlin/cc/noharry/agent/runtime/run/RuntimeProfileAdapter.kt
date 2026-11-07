@@ -1,17 +1,17 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.run
-import cc.noharry.agent.kernel.api.AgentCapabilities
-import cc.noharry.agent.kernel.api.AgentPlugin
-import cc.noharry.agent.kernel.api.AgentProfile
-import cc.noharry.agent.kernel.api.ExecEngine
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.RuntimeContextProvider
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.RuntimeTurnObserver
-import cc.noharry.agent.kernel.api.SessionEventLog
-import cc.noharry.agent.kernel.api.ToolProvider
-import cc.noharry.agent.kernel.api.model.ModelClient
+import cc.noharry.agent.spi.AgentCapabilities
+import cc.noharry.agent.spi.AgentPlugin
+import cc.noharry.agent.spi.AgentProfile
+import cc.noharry.agent.spi.ExecEngine
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.RuntimeContextProvider
+import cc.noharry.agent.spi.RuntimeHook
+import cc.noharry.agent.spi.RuntimeTurnObserver
+import cc.noharry.agent.spi.SessionEventLog
+import cc.noharry.agent.spi.ToolProvider
+import cc.noharry.agent.spi.model.ModelClient
 import cc.noharry.agent.kernel.core.plugin.CanonicalCapabilityKeys
 import cc.noharry.agent.kernel.core.plugin.DirectCapabilityPlugin
 import cc.noharry.agent.kernel.core.plugin.ProfileCompiler

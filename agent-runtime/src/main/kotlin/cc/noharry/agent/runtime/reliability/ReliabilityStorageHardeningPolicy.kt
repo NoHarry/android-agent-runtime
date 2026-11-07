@@ -1,5 +1,5 @@
 package cc.noharry.agent.runtime.reliability
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.channels.OverlappingFileLockException

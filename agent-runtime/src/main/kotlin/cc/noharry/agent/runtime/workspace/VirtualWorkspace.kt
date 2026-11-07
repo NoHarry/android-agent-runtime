@@ -1,11 +1,11 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.workspace
-import cc.noharry.agent.kernel.api.WorkspaceCallContext
-import cc.noharry.agent.kernel.api.WorkspaceExecutionResult
-import cc.noharry.agent.kernel.api.WorkspaceExecutionTelemetry
-import cc.noharry.agent.kernel.api.WorkspacePort
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.WorkspaceCallContext
+import cc.noharry.agent.spi.WorkspaceExecutionResult
+import cc.noharry.agent.spi.WorkspaceExecutionTelemetry
+import cc.noharry.agent.spi.WorkspacePort
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.core.tools.MaterializedEntry
 import cc.noharry.agent.kernel.core.tools.MaterializerContext
 import cc.noharry.agent.kernel.core.tools.McpToolSearchHit

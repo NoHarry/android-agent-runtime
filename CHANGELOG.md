@@ -5,6 +5,55 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **Breaking: Thread / Turn / Item replaces the run API.** Import the stable conversation contracts from
+  `cc.noharry.agent`: start or resume an `AgentThread`, call `run` for a `TurnResult` or collect `runStreamed`.
+  Eight event types replace the old event union. Items have stable ids and complete final snapshots;
+  `AgentMessage.phase` distinguishes commentary and final answers.
+- **Breaking: module and package names.** `agent-kernel-api` is now `agent-api`; extension interfaces move from
+  `cc.noharry.agent.kernel.api` to `cc.noharry.agent.spi` (including `.model` and `.mcp`). The kernel implementation
+  and its tests are part of `agent-runtime`; `agent-kernel-core` is no longer published. Plugin assembly and the old
+  request/event machinery are internal. Protocol-request scaffolding is removed.
+- **Approval stays in the original stream.** Respond with `Approval.approve()` or `deny()`; pending requests are
+  also accessible through `thread.pendingRequests()`. Policies `ASK`, `REMEMBER`, `APPROVE_ALL`, and `DENY_ALL` can
+  be configured per thread or turn. Remembered areas survive runtime recreation when storage is configured.
+- **Questions and input.** `ask` ends a turn with `WAITING_FOR_ANSWER`; the next turn answers it, optionally using
+  `TurnInput.answering` to bind explicitly. Asynchronous questions accept `thread.steer` during the turn.
+  Input can include images and attachment references. An unsupported image fails with `IMAGE_INPUT_UNSUPPORTED`.
+- **Durable conversations.** `.storage(directory)` persists model history and item snapshots; Android defaults to
+  app-private storage. `resumeThread` restores history and `items()` redraws the conversation after a restart.
+  Live tool arguments and results are original; stored snapshots and diagnostic records use redaction.
+- **Breaking: host configuration.** A model is required at `build()`. Memory topics default to empty, the standard
+  narration check no longer assumes Chinese phrasing, and protocol text no longer selects a search site.
+  Hosts set their own policies explicitly. MCP server ids containing underscores are grouped correctly.
+- **Breaking: model and hook SPI.** `ModelMessage.reasoningContent` carries replayable reasoning;
+  `ServerSideSearchCapability` moves to `cc.noharry.agent.model`. Hooks use `onTurnStarted` / `onTurnFinished`,
+  and subagent launchers return `Flow<ThreadEvent>`. Diagnostic access and prompt/catalog inspection are under
+  experimental `RuntimeDiagnostics`. Advanced tuning types move to `cc.noharry.agent.runtime`.
+
+### 0.5.0 migration
+
+| 0.4.x entry | 0.5.0 entry |
+|---|---|
+| `run(AgentRequest)` | `startThread` / `resumeThread`, then `run` / `runStreamed` |
+| `TextDelta`, thinking and tool events | `ItemStarted`, `ItemDelta`, `ItemUpdated`, `ItemCompleted` |
+| `ResultAvailable` / `Finished` / `Failed` | `TurnCompleted` / `TurnFailed` |
+| `resumeConfirmation` / `getPendingConfirmation` | `pendingRequests`, `Approval.approve` / `deny` |
+| `resumeUserInput` / `getOpenConfusion` | next turn's input / `pendingRequests` |
+| `postUserInput` | `thread.steer` |
+| run state and history | `thread.status`, `thread.items`, `TurnResult` |
+| evidence, traces and raw event log | `runtime.diagnostics` |
+| protocol request methods | removed; expose a host tool instead |
+| `modelClient`, `toolProvider(s)`, `systemPrompt`, `skill` | `model`, `tools`, `instructions`, `skills` |
+| `loopSettings` | `settings(LoopSettings(...))` |
+| `loopBudget`, `contextWindow`, `modelRetry` | `limits(LoopLimits(...))` |
+| `imageInput`, deferred tool flags, `runContextAsSystem`, `lessons`, native tool flags | corresponding `LoopSettings` fields |
+| hook/model/tool/session concurrency setters | `LoopSettings.hookTimeoutMillis` / `RuntimeConcurrency` |
+| separate durable conversation setup | `storage(directory)`; Android configures it automatically |
+| `profile`, `plugin`, `nowEpochMillis` | removed from host API; internal composition/test facilities |
+| workspace, hook, context provider, observer, history, subagents, search, policy and evidence configuration | retained under their existing names; advanced options stay experimental |
+| Android `DurableSessionEventLogPlugin.appPrivate` | `appPrivateSessionEventLog(context)` |
+
+
 Fixes for Claude and OpenAI hosts, nothing in Chinese or about a car unless the host is, and an API cleaned up for use
 as a public library. **Breaking** in behaviour where noted, for hosts that use what is removed or hidden below, and for
 binaries compiled against the old constructors of `AnthropicModelClient`, `OpenAiModelClient`, `A2aServerConfig`,
@@ -34,7 +83,7 @@ binaries compiled against the old constructors of `AnthropicModelClient`, `OpenA
 - **A2A on Android 6 (API 23).** The direct and official A2A clients' failures were made with a constructor Android only
   has from API 24, and request headers were copied with `Map.forEach` (API 24 too): on Android 6 a refused endpoint
   crashed the host instead of returning a failure, and requests failed without core library desugaring.
-- **API docs for the JVM artifacts.** The javadoc jars of `agent-kernel-api`, `agent-kernel-core` and `agent-runtime`
+- **API docs for the JVM artifacts.** The javadoc jars of `agent-api` and `agent-runtime`
   were empty; they now hold the API docs, like the other artifacts'.
 - **The answer goes out as written** (behaviour change). The agent's words to the user went through the trace
   redactor, which turned long numbers (2^40 is 1099511627776, an order number) into `[REDACTED_PHONE]` and hid
@@ -106,28 +155,12 @@ binaries compiled against the old constructors of `AnthropicModelClient`, `OpenA
   was `OpenAI` or `Anthropic` (in any case), so `ModelRef("deepseek", "deepseek-v4-pro", "high")` ran with the model's
   default (DeepSeek's thinking off). It now applies whenever it names the model being called, sent as the host chose it.
   `ModelVariantRegistry.resolve` still keeps only variants it knows for the `providerId` given.
-- **A host's own content judgements and loop timing.** `AgentRuntimeBuilder.loopSettings(LoopSettings(…))` sets what
-  the runtime judges about content in the host's users' language and its domain, with today's behaviour as the
-  default: `narration`, which final answers only announce what the agent will do and go back once for a real answer
-  (`NarrationCheck`; the runtime's own, `RuntimeNarrationCheck`, knows English and Chinese phrasings); `memory`, a
-  `RuntimeMemoryRetriever(policy, topics)` for what lessons from earlier runs are matched on (`MemoryTopic`, its terms
-  read as the request is: lower case, punctuation as spaces; `MemoryTopic.DEFAULTS` are the runtime's six: climate,
-  navigation, media, the web, the display, calls) and how many reach a run; `serviceAnswer`, which tool results that
-  report a problem are a service's answer in its own terms (no route found), passed to the model as written and not
-  counted toward the failures that stop a tool (`ServiceAnswerCheck`; the runtime's own, `RuntimeServiceAnswerCheck`,
-  reads an MCP `structuredContent.status.name`); `contextTimeoutMillis`, how long context providers have together
-  (20 ms); `limits`, the loop's own (`LoopLimits`: after how many failures in a row a call with the same arguments, 2,
-  or a tool, 4, is no longer made; after how many identical calls the model is reminded it repeats itself, 3, 5 and 8;
-  how many of the newest images at least the model is sent, 3, older ones folding three at a time). A subagent's
-  runtime takes its own. `lessons(false)` keeps runs from learning lessons or using saved ones;
-  `toolDomains(…)` sets how tools are grouped into the areas the prompt lists (`ToolDomainNaming`; the runtime's own
-  groups `command_<area>_…` names, then by MCP server); `protocolRules(…)` rewords, drops or adds lines of the protocol
-  section (`ProtocolRules`), such as the Bing RSS search it suggests when no search provider is set.
-  `SessionHistory(maxBytesPerSession, maxSessions, maxRunsInFlight)` keeps more than 16 sessions and follows more than
-  64 runs at once for a server with many users. The builder methods are experimental and on `AgentRuntimeBuilder`;
-  `KernelRuntimeBuilder` keeps the defaults.
-  The defaults are expected to become neutral in a later release (no built-in topics, a narration check without
-  language-specific phrasings, no suggested search site), so a host that relies on them should set them explicitly.
+- **Host content judgements and loop timing.** `settings(LoopSettings(...))` configures narration, memory topics,
+  service-answer checks, context-provider timeouts, images, tool exposure and concurrency. `limits(LoopLimits(...))`
+  sets round/tool/time/retry/context budgets and loop protection thresholds. The default memory topic list is empty;
+  host-specific language checks and search-site preferences are explicit. `toolDomains(...)` configures area naming,
+  and `protocolRules(...)` configures protocol wording. `SessionHistory` remains available for host-owned caches;
+  `.storage(...)` adds durable history without a host recap.
 - **A host's own HTTP timeouts, proxy and sandbox limits.** `OkHttpHttpTransport(connectTimeoutMillis,
   readTimeoutMillis, proxy)` sets how long connecting (10 s) and a wait between bytes (300 s) may take and the proxy calls
   go through; a host that needs more of its HTTP client (interceptors, certificate pinning) implements `HttpTransport`
@@ -156,7 +189,7 @@ binaries compiled against the old constructors of `AnthropicModelClient`, `OpenA
   host may name (`DeviceNotificationMcpProvider(context, channelName, channelId)`; an existing channel is left as it
   is), and before Android 8.0 too. `calendar.create_event` adds to the device's primary calendar it may write, else the
   first, unless `calendarId` names one (finding it needs READ_CALENDAR as well); nothing listed the ids it required.
-- **Dependencies users compile against.** `agent-kernel-core` exposes `kotlinx-serialization-json` (its API takes and
+- **Dependencies users compile against.** `agent-runtime` exposes `kotlinx-serialization-json` (its API takes and
   returns `JsonObject`) and `agent-a2a-client-official` exposes `agent-a2a` (its module is an `A2aClientModule`) as API
   dependencies; 0.4.0 published them as runtime-only, so code using those types did not compile.
 - **Nothing in Chinese unless the device is.** Text the runtime sent in Chinese whatever the app (behaviour change):

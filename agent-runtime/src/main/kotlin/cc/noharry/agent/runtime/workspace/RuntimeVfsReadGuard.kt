@@ -1,5 +1,5 @@
 package cc.noharry.agent.runtime.workspace
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 
 internal class RuntimeVfsReadGuard {
     private val reads = linkedMapOf<String, ReadState>()

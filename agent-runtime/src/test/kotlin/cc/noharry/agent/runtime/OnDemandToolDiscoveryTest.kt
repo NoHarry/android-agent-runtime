@@ -1,8 +1,8 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.*
-import cc.noharry.agent.kernel.api.model.ModelEvent
+import cc.noharry.agent.spi.*
+import cc.noharry.agent.spi.model.ModelEvent
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*

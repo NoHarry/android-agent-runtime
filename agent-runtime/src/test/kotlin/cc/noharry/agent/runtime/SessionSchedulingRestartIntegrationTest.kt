@@ -1,13 +1,13 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.ConfirmationChoice
-import cc.noharry.agent.kernel.api.ConfirmationDecision
-import cc.noharry.agent.kernel.api.ConfirmationResumeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.ConfirmationChoice
+import cc.noharry.agent.spi.ConfirmationDecision
+import cc.noharry.agent.spi.ConfirmationResumeResult
+import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.toList
@@ -31,7 +31,7 @@ private suspend fun assertStaleWaitingTerminalizedWithoutQueueRecovery() {
         .reliabilityStorageRoot(storageRoot)
         .confirmationOnRun()
         .sessionConcurrency(maxActiveSessions = 1)
-        .build() as DefaultAgentRuntime
+        .buildEngine() as DefaultAgentRuntime
     first.run(request(RUN_A1, SESSION_A)).toList()
     assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, first.getRunState(RUN_A1)?.status)
 
@@ -39,7 +39,7 @@ private suspend fun assertStaleWaitingTerminalizedWithoutQueueRecovery() {
         .reliabilityStorageRoot(storageRoot)
         .confirmationOnRun()
         .sessionConcurrency(maxActiveSessions = 1)
-        .build() as DefaultAgentRuntime
+        .buildEngine() as DefaultAgentRuntime
     try {
         val resumed = restored.resumeConfirmation(
             ConfirmationDecision("$RUN_A1:confirmation", "resume-1", ConfirmationChoice.APPROVE),
@@ -71,7 +71,7 @@ private suspend fun CoroutineScope.assertStaleQueuedTerminalizedWithoutQueueReco
         .reliabilityStorageRoot(queuedRoot)
         .modelClient(SingleGateFinishModel(hold, entered))
         .sessionConcurrency(maxActiveSessions = 1)
-        .build() as DefaultAgentRuntime
+        .buildEngine() as DefaultAgentRuntime
     val active = launch { parked.run(request(RUN_A1, SESSION_A)).toList() }
     entered.await()
     val queued = launch { parked.run(request(RUN_A2, SESSION_A)).toList() }
@@ -82,7 +82,7 @@ private suspend fun CoroutineScope.assertStaleQueuedTerminalizedWithoutQueueReco
         .modelClient(SingleGateFinishModel(CompletableDeferred(), CompletableDeferred()))
         .sessionConcurrency(maxActiveSessions = 1)
         .confirmationOnRun()
-        .build() as DefaultAgentRuntime
+        .buildEngine() as DefaultAgentRuntime
     try {
         afterCrash.run(request(RUN_A3, SESSION_A)).toList()
         assertEquals(RuntimeRunStatus.CANCELLED, afterCrash.getRunState(RUN_A2)?.status)

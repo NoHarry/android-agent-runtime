@@ -1,7 +1,7 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.runtime.workspace.diffSummary
 import java.io.File
 import java.nio.file.Files
@@ -19,7 +19,7 @@ class NativeWorkspaceFileChangedEventTest {
         val runtime = AgentRuntimeBuilder.create()
             .workspaceRoot(workspace)
             .modelClient(FakeModelClient(eventsByRound = workspaceWriteRounds()))
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val changes = events.filterIsInstance<AgentEvent.WorkspaceFileChanged>()

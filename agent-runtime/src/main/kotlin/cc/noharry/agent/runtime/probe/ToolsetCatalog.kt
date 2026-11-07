@@ -1,6 +1,6 @@
 package cc.noharry.agent.runtime.probe
 
-import cc.noharry.agent.kernel.api.model.ModelTool
+import cc.noharry.agent.spi.model.ModelTool
 import cc.noharry.agent.kernel.core.loop.INTERACTION_TOOLS
 import cc.noharry.agent.kernel.core.tools.DynamicToolSource
 import cc.noharry.agent.kernel.core.tools.NATIVE_EXEC_TOOLS

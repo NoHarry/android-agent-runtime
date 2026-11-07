@@ -1,9 +1,9 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.*
-import cc.noharry.agent.kernel.api.model.*
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.*
+import cc.noharry.agent.spi.model.*
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.plugin.KernelRuntimeBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -52,7 +52,7 @@ class AsyncUserInteractionTest {
     @Test fun lateAnswerAtTheRoundBudgetEdgeDeliversTheWithheldFinishInsteadOfFailing() = runBlocking {
         val root = java.nio.file.Files.createTempDirectory("async-budget-edge").toFile()
         val model = QuestionModel(holdSecondRound = true)
-        val runtime = AgentRuntimeBuilder.create().modelClient(model).sessionEventLogRoot(root).loopBudget(maxModelRounds = 2).build()
+        val runtime = AgentRuntimeBuilder.create().modelClient(model).sessionEventLogRoot(root).loopBudget(maxModelRounds = 2).buildEngine()
         val seen = mutableListOf<AgentEvent>()
         val job = async { runtime.run(AgentRequest("run", "session", "plan")).collect { seen += it } }
         try {
@@ -63,7 +63,7 @@ class AsyncUserInteractionTest {
             withTimeout(10_000) { job.await() }
             assertEquals(2, model.calls)
             val result = runtime.getRuntimeResult("run")
-            assertEquals(cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus.COMPLETED, result?.status)
+            assertEquals(cc.noharry.agent.spi.reliability.RuntimeRunStatus.COMPLETED, result?.status)
             assertEquals("done", result?.response)
             assertEquals(1, seen.count { it is AgentEvent.TextDelta && it.text == "done" })
             val facts = seen.filterIsInstance<AgentEvent.UserInteraction>().map { it.interaction }
@@ -100,7 +100,7 @@ class AsyncUserInteractionTest {
     @Test fun cancellationWithAnUnansweredQuestionDoesNotStartAnotherRequestAndRecordsCancelled() = runBlocking {
         val root = java.nio.file.Files.createTempDirectory("async-cancel-log").toFile()
         val model = QuestionModel(holdSecondRound = true)
-        val runtime = AgentRuntimeBuilder.create().modelClient(model).sessionEventLogRoot(root).build()
+        val runtime = AgentRuntimeBuilder.create().modelClient(model).sessionEventLogRoot(root).buildEngine()
         val job = launch { runtime.run(AgentRequest("run", "session", "plan")).toList() }
         try {
             withTimeout(10_000) { model.secondRoundStarted.await() }
@@ -119,7 +119,7 @@ class AsyncUserInteractionTest {
     @Test fun unansweredQuestionExpiresAndCanonicalFactsSurviveClosingAndReopeningTheLog() = runBlocking {
         val root = java.nio.file.Files.createTempDirectory("async-question-log").toFile()
         val model = QuestionModel()
-        val runtime = AgentRuntimeBuilder.create().modelClient(model).sessionEventLogRoot(root).build()
+        val runtime = AgentRuntimeBuilder.create().modelClient(model).sessionEventLogRoot(root).buildEngine()
         try { runtime.run(AgentRequest("run", "session", "plan")).toList() } finally { runtime.close() }
         val reopened = cc.noharry.agent.runtime.eventlog.FileBackedSessionEventLog(root)
         val facts = reopened.replay("session", "run").mapNotNull { it.payload as? SessionEventPayload.UserInteraction }
@@ -146,7 +146,7 @@ class AsyncUserInteractionTest {
                 emit(ModelEvent.Completed)
             }
         }
-        val runtime = AgentRuntimeBuilder.create().modelClient(model).sessionEventLogRoot(root).build()
+        val runtime = AgentRuntimeBuilder.create().modelClient(model).sessionEventLogRoot(root).buildEngine()
         try {
             val events = runtime.run(AgentRequest("run", "session", "check")).toList()
             // The log keeps no key-like text; the run goes on, and the card still reaches the host.
@@ -159,7 +159,7 @@ class AsyncUserInteractionTest {
     }
 
     private fun runtime(model: ModelClient, core: Boolean): AgentRuntime = if (!core) {
-        AgentRuntimeBuilder.create().modelClient(model).build()
+        AgentRuntimeBuilder.create().modelClient(model).buildEngine()
     } else KernelRuntimeBuilder().model(model).workspace(object : WorkspacePort {
         override suspend fun execute(toolName: String, argumentsJson: String, context: WorkspaceCallContext) = WorkspaceExecutionResult("""{"ok":true}""")
     }).build()

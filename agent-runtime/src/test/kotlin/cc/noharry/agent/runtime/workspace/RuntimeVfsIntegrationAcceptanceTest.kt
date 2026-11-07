@@ -1,7 +1,7 @@
 package cc.noharry.agent.runtime.workspace
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.runtime.AgentRuntimeBuilder
 import cc.noharry.agent.runtime.FakeModelClient
 import cc.noharry.agent.runtime.agentRequest
@@ -40,7 +40,7 @@ class RuntimeVfsIntegrationAcceptanceTest {
                     ),
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result

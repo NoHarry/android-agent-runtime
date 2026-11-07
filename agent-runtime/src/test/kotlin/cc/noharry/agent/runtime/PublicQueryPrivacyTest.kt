@@ -1,13 +1,13 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.core.trace.StandardTraceRedactor
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.runtime.StandardTraceRedactor
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -28,7 +28,7 @@ class PublicQueryPrivacyTest {
                     ModelEvent.Completed,
                 ),
             )
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         val events = runtime.run(agentRequest()).toList()
 
@@ -52,7 +52,7 @@ class PublicQueryPrivacyTest {
                     ModelEvent.Completed,
                 ),
             )
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         runtime.run(agentRequest()).toList()
         val result = requireNotNull(runtime.getRuntimeResult("request-1"))
@@ -84,7 +84,7 @@ class PublicQueryPrivacyTest {
                 },
             )
             .traceRedactor { it }
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val report = listOf(
@@ -104,7 +104,7 @@ class PublicQueryPrivacyTest {
             .toolProvider(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
             .hook(confirmWithPrompt("Need token=sk-waitquery123 phone=13800138000 lat=31.2304"))
             .modelClient(FakeModelClient(schemaThenBackendRounds()))
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         val events = runtime.run(agentRequest()).toList()
         assertTrue(events.any { it is AgentEvent.ConfirmationRequired })
@@ -137,7 +137,7 @@ class PublicQueryPrivacyTest {
                     }
                 },
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val failed = events.filterIsInstance<AgentEvent.Failed>().single()

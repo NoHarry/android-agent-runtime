@@ -1,21 +1,21 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.HookContext
-import cc.noharry.agent.kernel.api.HookDecision
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.ToolUse
-import cc.noharry.agent.kernel.api.ToolUseResult
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.HookContext
+import cc.noharry.agent.spi.HookDecision
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.RuntimeHook
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.ToolUse
+import cc.noharry.agent.spi.ToolUseResult
+import cc.noharry.agent.spi.mcp.McpClientProvider
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
@@ -64,7 +64,7 @@ class NativeToolLoopBatchTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ResultAvailable>()
@@ -103,7 +103,7 @@ class NativeToolLoopBatchTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ResultAvailable>()
@@ -149,7 +149,7 @@ class NativeToolLoopBatchTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val result = withTimeout(BATCH_FINISH_TEST_TIMEOUT_MS) {
             runtime.run(agentRequest()).toList()
@@ -192,7 +192,7 @@ class NativeToolLoopBatchTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val result = withTimeout(BATCH_FINISH_TEST_TIMEOUT_MS) {
             runtime.run(agentRequest()).toList()
@@ -216,7 +216,7 @@ class NativeToolLoopBatchTest {
             .workspaceRoot(java.nio.file.Files.createTempDirectory("backend-batch-").toFile())
             .toolProvider(backend)
             .modelClient(backendBatchModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val result = runtime.run(
             AgentRequest(
@@ -247,7 +247,7 @@ class NativeToolLoopBatchTest {
             .toolProvider(backend)
             .modelClient(backendBatchModel(seenRequests))
             .toolConcurrency(1)
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ResultAvailable>()
@@ -269,7 +269,7 @@ class NativeToolLoopBatchTest {
             .workspaceRoot(java.nio.file.Files.createTempDirectory("backend-nohint-").toFile())
             .toolProvider(backend)
             .modelClient(backendBatchModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ResultAvailable>()
@@ -292,7 +292,7 @@ class NativeToolLoopBatchTest {
             .workspaceRoot(java.nio.file.Files.createTempDirectory("backend-declared-read-").toFile())
             .toolProvider(backend)
             .modelClient(backendBatchModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ResultAvailable>()
@@ -311,7 +311,7 @@ class NativeToolLoopBatchTest {
             .workspaceRoot(java.nio.file.Files.createTempDirectory("todo-backend-same-round-").toFile())
             .toolProvider(backend)
             .modelClient(todoAndBackendSameRoundModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ResultAvailable>()

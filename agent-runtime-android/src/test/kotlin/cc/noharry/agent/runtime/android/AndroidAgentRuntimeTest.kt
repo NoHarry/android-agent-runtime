@@ -1,11 +1,11 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.android
 
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import java.io.File
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertFalse
@@ -30,7 +30,7 @@ class AndroidAgentRuntimeTest {
     fun aNamedRuntimeKeepsItsFilesApart() {
         val context = RuntimeEnvironment.getApplication()
 
-        AndroidAgentRuntime.builder(context, "second").modelClient(model).build().close()
+        AndroidAgentRuntime.builder(context, "second").model(model).build().close()
 
         assertTrue(File(context.filesDir, "agent-runtime/runtimes/second/workspace").isDirectory)
         assertFalse(File(context.filesDir, "agent-runtime/workspace").exists())

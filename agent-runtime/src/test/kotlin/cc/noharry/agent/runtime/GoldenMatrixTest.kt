@@ -1,17 +1,17 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.ConfirmationResumeResult
-import cc.noharry.agent.kernel.api.SessionRunConflictPolicy
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeEvidenceType
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.ConfirmationResumeResult
+import cc.noharry.agent.spi.SessionRunConflictPolicy
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeEvidenceType
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
-import cc.noharry.agent.kernel.core.trace.RELEASE_RAW_TRACE_ERROR
-import cc.noharry.agent.kernel.core.trace.RuntimeBuildType
-import cc.noharry.agent.kernel.core.trace.TraceVisibilityConfig
+import cc.noharry.agent.runtime.RELEASE_RAW_TRACE_ERROR
+import cc.noharry.agent.runtime.RuntimeBuildType
+import cc.noharry.agent.runtime.TraceVisibilityConfig
 import cc.noharry.agent.runtime.workspace.MemoryCategory
 import cc.noharry.agent.runtime.workspace.MemoryWorkspace
 import cc.noharry.agent.runtime.workspace.VirtualFileMaterializer
@@ -40,7 +40,7 @@ class GoldenMatrixTest {
                 round(finish("climate updated")),
             ),
         )
-        val runtime = runtime(model, backend, workspace()).build() as DefaultAgentRuntime
+        val runtime = runtime(model, backend, workspace()).buildEngine() as DefaultAgentRuntime
 
         val events = runtime.run(goldenRequest()).toList()
 
@@ -69,7 +69,7 @@ class GoldenMatrixTest {
                 round(finish("memory considered")),
             ),
         )
-        val runtime = runtime(model, backend, root).build()
+        val runtime = runtime(model, backend, root).buildEngine()
 
         runtime.run(goldenRequest()).toList()
         val traceNames = runtime.getRuntimeTraceEvents("request-1").map { it.eventName }
@@ -85,7 +85,7 @@ class GoldenMatrixTest {
         val backend = GoldenMcpProvider()
         val runtime = runtime(executePlanModel(), backend, workspace())
             .policyRule(confirmUnlessApproved())
-            .build()
+            .buildEngine()
         val pending = runtime.run(goldenRequest()).toList()
             .filterIsInstance<AgentEvent.ConfirmationRequired>()
             .single()
@@ -104,7 +104,7 @@ class GoldenMatrixTest {
         val deniedBackend = GoldenMcpProvider()
         val deniedRuntime = runtime(executePlanModel(), deniedBackend, workspace())
             .policyRule(confirmUnlessApproved())
-            .build()
+            .buildEngine()
         val deniedPending = deniedRuntime.run(goldenRequest()).toList()
             .filterIsInstance<AgentEvent.ConfirmationRequired>()
             .single()
@@ -119,7 +119,7 @@ class GoldenMatrixTest {
         val timeoutRuntime = runtime(executePlanModel(), timeoutBackend, workspace())
             .nowEpochMillis { now }
             .policyRule(confirmUnlessApproved())
-            .build()
+            .buildEngine()
         val timeoutPending = timeoutRuntime.run(goldenRequest()).toList()
             .filterIsInstance<AgentEvent.ConfirmationRequired>()
             .single()
@@ -140,12 +140,12 @@ class GoldenMatrixTest {
         val releaseError = try {
             AgentRuntimeBuilder.create()
                 .traceVisibility(TraceVisibilityConfig(RuntimeBuildType.RELEASE, exposeRawTraceWorkspace = true))
-                .build()
+                .buildEngine()
             null
         } catch (error: IllegalArgumentException) {
             error.message
         }
-        val runtime = runtime(sensitiveModel(), GoldenMcpProvider(), workspace()).build() as DefaultAgentRuntime
+        val runtime = runtime(sensitiveModel(), GoldenMcpProvider(), workspace()).buildEngine() as DefaultAgentRuntime
 
         runtime.run(goldenRequest()).toList()
         val summary = runtime.getRedactedTraceSummary("request-1").toString()
@@ -192,7 +192,7 @@ class GoldenMatrixTest {
                 round(finish("two plans complete")),
             ),
         )
-        val runtime = runtime(model, backend, root).build() as DefaultAgentRuntime
+        val runtime = runtime(model, backend, root).buildEngine() as DefaultAgentRuntime
 
         runtime.run(goldenRequest()).toList()
         val workpad = runtime.getRuntimeWorkpad("request-1")
@@ -216,7 +216,7 @@ class GoldenMatrixTest {
                 round(finish("partial handled")),
             ),
         )
-        val runtime = runtime(model, backend, workspace()).build()
+        val runtime = runtime(model, backend, workspace()).buildEngine()
 
         runtime.run(goldenRequest()).toList()
 
@@ -229,7 +229,7 @@ class GoldenMatrixTest {
         val backend = GoldenMcpProvider()
         val runtime = runtime(executePlanModel(), backend, workspace())
             .policyRule(confirmUnlessApproved())
-            .build()
+            .buildEngine()
 
         runtime.run(goldenRequest()).toList()
         val missingPolicy = runtime.run(goldenRequest(requestId = "request-2")).toList()
@@ -261,7 +261,7 @@ class GoldenMatrixTest {
                 round(finish("schema fixed")),
             ),
         )
-        val runtime = runtime(model, backend, root).build()
+        val runtime = runtime(model, backend, root).buildEngine()
 
         runtime.run(goldenRequest()).toList()
 
@@ -301,6 +301,6 @@ class GoldenMatrixTest {
     private fun planCall(toolName: String, argumentsJson: String): ModelEvent.ToolCall =
         tool(qualifiedMcpTool(toolName), argumentsJson)
 
-    private fun List<cc.noharry.agent.kernel.api.reliability.RuntimeTraceEvent>.hasEvents(vararg names: String): Boolean =
+    private fun List<cc.noharry.agent.spi.reliability.RuntimeTraceEvent>.hasEvents(vararg names: String): Boolean =
         names.all { expected -> any { it.eventName == expected } }
 }

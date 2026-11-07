@@ -13,8 +13,9 @@ app's process: a sandboxed workspace the agent reads and writes, tools from your
 and subagents, hooks and policy around every tool call, and durable sessions. Bring any OpenAI- or
 Anthropic-compatible model.
 
-> **Status: 0.x, under active development.** The public API is not frozen and may change between minor releases;
-> breaking changes are listed in the [changelog](CHANGELOG.md).
+> **0.5.0 is not published yet.** This branch uses the new Thread / Turn / Item API. Build from source or run
+> `./gradlew publishToMavenLocal` and add `mavenLocal()` to your repositories. Maven Central still has 0.4.0;
+> its API differs from these examples. See the [migration guide](CHANGELOG.md#unreleased-050).
 
 ## What you get
 
@@ -35,7 +36,7 @@ Anthropic-compatible model.
 
 ```kotlin
 dependencies {
-    implementation(platform("cc.noharry:agent-bom:0.4.0"))
+    implementation(platform("cc.noharry:agent-bom:0.5.0-SNAPSHOT"))
     implementation("cc.noharry:agent-runtime-android") // an Android app
     // implementation("cc.noharry:agent-runtime")      // the JVM: a server, a desktop tool, tests
 }
@@ -55,15 +56,22 @@ val tools = functionTools("device") {
 }
 
 val runtime = AndroidAgentRuntime.builder(context) // workspace, SQLite sessions, event log, history
-    .modelClient(OpenAiModelClient({ apiKey }, model = "gpt-4o-mini", stream = true))
-    .toolProvider(tools)
+    .model(OpenAiModelClient({ apiKey }, model = "gpt-4o-mini", stream = true))
+    .tools(tools)
     .build()
 
 scope.launch {
-    runtime.run(AgentRequest(requestId = "r1", sessionId = "chat", input = "What device am I on?"))
-        .collect { event -> if (event is AgentEvent.TextDelta) answer.append(event.text) }
+    runtime.startThread().runStreamed("What device am I on?")
+        .collect { event -> if (event is ThreadEvent.ItemDelta) answer.append(event.text) }
 }
 ```
+
+Use `thread.run(text)` for a complete `TurnResult`, or `runStreamed` for eight event types. Each item has a stable
+id, and `ItemCompleted` includes its full content. An `Approval` item waits in the same stream until `approve()` or
+`deny()`; `ask` finishes with `WAITING_FOR_ANSWER`, and the next turn supplies the answer. `thread.steer(text)` adds
+input while a turn runs; `thread.interrupt()` cancels it. Configure `.storage(directory)` on the JVM to restore model
+history and `thread.items()` after restarting; Android configures private storage automatically. Live tool payloads
+are original; stored item snapshots use the configured trace redactor.
 
 Keep API keys off the device in a real app: point `baseUrl` at your own backend.
 
@@ -76,10 +84,10 @@ val deepWiki = McpToolProvider(
     serverId = "deepwiki",
 )
 
-val runtime = AgentRuntimeBuilder.create()
+val runtime = AgentRuntime.builder()
     // Any OpenAI-compatible endpoint: pass its baseUrl. AnthropicModelClient speaks the Messages API.
-    .modelClient(OpenAiModelClient({ System.getenv("API_KEY") }, model = "gpt-4o-mini", stream = true))
-    .toolProvider(deepWiki)
+    .model(OpenAiModelClient({ System.getenv("API_KEY") }, model = "gpt-4o-mini", stream = true))
+    .tools(deepWiki)
     .workspaceRoot(File("agent-workspace"))
     .build()
 ```
@@ -94,8 +102,7 @@ of your own (a scripted one standing in for an on-device model), tools from your
 |---|---|
 | `agent-runtime` | The runtime and host facade (plain JVM): `AgentRuntimeBuilder`, OpenAI- and Anthropic-compatible model clients, MCP, `functionTools`, skills, subagents, sessions and memory, web search and fetch, hooks and policy, and the workspace's virtual file system |
 | `agent-runtime-android` | The Android layer: `AndroidAgentRuntime.builder(context)`, SQLite sessions, the app-private event log, and mounting a folder the user picks through the Storage Access Framework |
-| `agent-kernel-api` | Android-neutral contracts: model, tool, plugin, capability, workspace, completion, event log, lifecycle |
-| `agent-kernel-core` | The agent loop (`loop`), tool registry and search (`tools`), prompt assembly and compaction (`context`), run state (`state`), plugins and `KernelRuntimeBuilder` (`plugin`), memory and tracing |
+| `agent-api` | Android-neutral Thread / Turn / Item contracts and stable model, tool, hook and event-log extension interfaces |
 | `agent-exec-js` | Optional: `exec_js`, sandboxed JavaScript (QuickJS through Zipline) that can call tools |
 | `agent-device-capabilities` | Optional: calendar, notification and media tools |
 | `agent-android-use` | Optional: observe and operate the screen through an accessibility service |
@@ -103,14 +110,14 @@ of your own (a scripted one standing in for an on-device model), tools from your
 | `agent-a2a-client-official` | Optional: the same client over the official A2A Java SDK |
 | `agent-bom` | One version for all of the above |
 
-Three ways in: an app depends on `agent-runtime-android`; a server, desktop tool or test on `agent-runtime`; a runtime
-of your own builds on `agent-kernel-api` and `agent-kernel-core` (`samples/minimal` is the smallest one). Optional
-modules depend at most on the kernel API.
+An Android app depends on `agent-runtime-android`; a server, desktop tool or test uses `agent-runtime`. Optional
+modules depend at most on `agent-api`. The loop implementation is internal to `agent-runtime`; `samples/minimal`
+shows a host with only a model.
 
 ## API stability
 
-The project is 0.x: a minor release (0.6 to 0.7) may break the API, and the [changelog](CHANGELOG.md) calls out every
-break, in source and in binaries; a patch release never breaks it.
+Starting with 0.5.0, the Thread / Turn / Item API and the main extension interfaces in `cc.noharry.agent.spi` are
+stable. Advanced diagnostic and tuning APIs remain experimental. The [changelog](CHANGELOG.md) records migrations.
 
 - Declarations marked `@ExperimentalAgentRuntimeApi` or `@ExperimentalA2aClientApi` are the likeliest to change, and
   ask for an opt-in (without one, the runtime's are a compile error and the A2A client's a warning).

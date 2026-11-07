@@ -28,7 +28,7 @@ class ToolProviderSchedulingBoundaryTest {
     }
 }
 
-private const val CORE_MAIN = "../agent-kernel-core/src/main/kotlin/cc/noharry/agent/kernel/core"
+private const val CORE_MAIN = "src/main/kotlin/cc/noharry/agent/kernel/core"
 private const val RUNTIME_MAIN = "src/main/kotlin/cc/noharry/agent/runtime"
 
 private val CANONICAL_SCHEDULING_FILES = listOf(

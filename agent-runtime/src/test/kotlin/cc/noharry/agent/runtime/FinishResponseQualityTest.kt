@@ -11,7 +11,7 @@ class FinishResponseQualityTest {
         assertTrue(isPureNarrationFinishResponse(
             "All done. Now finish with a concise Chinese report covering 广州塔: 329.9 kilometers, music played.",
         ))
-        assertTrue(isPureNarrationFinishResponse("已根据可用工具完成请求。"))
+        assertFalse(isPureNarrationFinishResponse("已根据可用工具完成请求。"))
         assertFalse(isPureNarrationFinishResponse("导航已开启，全程剩余329.9公里；添加途经点失败，当前路线未改变。"))
     }
 

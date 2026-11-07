@@ -1,12 +1,12 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
 
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -25,7 +25,7 @@ class ProtocolPromptRuntimeTest {
 
     private fun firstRequest(configure: AgentRuntimeBuilder.() -> Unit): ModelRequest {
         val model = Recorder()
-        val runtime = AgentRuntimeBuilder.create().modelClient(model).apply(configure).build()
+        val runtime = AgentRuntimeBuilder.create().modelClient(model).apply(configure).buildEngine()
         runBlocking { runtime.run(AgentRequest("r1", "s1", "你好")).toList() }
         runtime.close()
         return model.seen.first()

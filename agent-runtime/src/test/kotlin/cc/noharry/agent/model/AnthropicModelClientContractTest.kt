@@ -10,11 +10,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
-import cc.noharry.agent.kernel.api.model.ModelTool
+import cc.noharry.agent.spi.model.ModelTool
 import org.junit.Test
-import cc.noharry.agent.kernel.api.model.ServerSideSearchCapability
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelResponseMetadata
+import cc.noharry.agent.model.ServerSideSearchCapability
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelResponseMetadata
 
 class AnthropicModelClientContractTest {
     @Test

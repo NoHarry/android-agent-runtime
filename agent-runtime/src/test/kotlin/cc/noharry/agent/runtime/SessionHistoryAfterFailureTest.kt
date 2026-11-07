@@ -1,21 +1,21 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
 
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.ToolPrefetchProvider
-import cc.noharry.agent.kernel.api.ToolPrefetchRequest
-import cc.noharry.agent.kernel.api.ToolPrefetchTrace
-import cc.noharry.agent.kernel.api.ToolProvider
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelClientException
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.ToolPrefetchProvider
+import cc.noharry.agent.spi.ToolPrefetchRequest
+import cc.noharry.agent.spi.ToolPrefetchTrace
+import cc.noharry.agent.spi.ToolProvider
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelClientException
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
@@ -63,7 +63,7 @@ class SessionHistoryAfterFailureTest {
 
     private fun runtime(client: ModelClient, car: Car, history: SessionHistory, activations: SessionToolActivations) =
         AgentRuntimeBuilder.create().modelClient(client).toolProvider(car).sessionHistory(history)
-            .sessionToolActivations(activations).build()
+            .sessionToolActivations(activations).buildEngine()
 
     private val answer: suspend kotlinx.coroutines.flow.FlowCollector<ModelEvent>.() -> Unit = {
         emit(ModelEvent.TextDelta("好的。")); emit(ModelEvent.Completed)

@@ -1,17 +1,17 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelClientException
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelMessage
-import cc.noharry.agent.kernel.api.model.ModelRef
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.mcp.McpClientProvider
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelClientException
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelRef
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
@@ -48,7 +48,7 @@ class NativeToolLoopTest {
                     ModelEvent.Completed,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val resultEvent = events.filterIsInstance<AgentEvent.ResultAvailable>().single()
@@ -77,7 +77,7 @@ class NativeToolLoopTest {
                     ModelEvent.Completed,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val thinking = events.filterIsInstance<AgentEvent.ThinkingDelta>().single()
@@ -106,7 +106,7 @@ class NativeToolLoopTest {
                     ModelEvent.Completed,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val texts = events.filterIsInstance<AgentEvent.TextDelta>().map { it.text }
@@ -146,7 +146,7 @@ class NativeToolLoopTest {
                     ),
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val state = TodoStore(workspace.resolve("memory")).load("session-1")
@@ -161,7 +161,7 @@ class NativeToolLoopTest {
         assertEquals(listOf(TodoStatus.in_progress, TodoStatus.pending), state?.items?.map { it.status })
         assertEquals("done", result.response)
         assertEquals("done", text.text)
-        assertEquals("""{"redacted":true}""", finishEvent.result)
+        assertEquals("""{"response":"done"}""", finishEvent.result)
         assertEquals(1, todoFinishEvents.size)
         assertTodoFinishedCarriesNormalizedPayload(todoFinishEvents.single(), "Find parking")
     }
@@ -182,7 +182,7 @@ class NativeToolLoopTest {
                     ),
                 ),
             )
-            val runtime = AgentRuntimeBuilder.create().workspaceRoot(workspace).modelClient(model).build()
+            val runtime = AgentRuntimeBuilder.create().workspaceRoot(workspace).modelClient(model).buildEngine()
             runtime.run(agentRequest()).toList()
             val state = TodoStore(workspace.resolve("memory")).load("session-1")
             assertEquals(outcome, listOf(TodoStatus.completed, expected), state?.items?.map { it.status })
@@ -213,7 +213,7 @@ class NativeToolLoopTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -246,7 +246,7 @@ class NativeToolLoopTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val finalEvents = runtime.run(agentRequest()).toList()
         val result = finalEvents
@@ -317,7 +317,7 @@ class NativeToolLoopTest {
                     ),
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -337,7 +337,7 @@ class NativeToolLoopTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -361,7 +361,7 @@ class NativeToolLoopTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList().filterIsInstance<AgentEvent.ResultAvailable>().single().result
 
@@ -386,7 +386,7 @@ class NativeToolLoopTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -420,7 +420,7 @@ class NativeToolLoopTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -464,7 +464,7 @@ class NativeToolLoopTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val probes = events.filterIsInstance<AgentEvent.EmptyCompletionObserved>()
@@ -495,7 +495,7 @@ class NativeToolLoopTest {
                     ),
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result

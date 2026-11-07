@@ -1,5 +1,5 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.reliability.RuntimeCandidateType
+import cc.noharry.agent.spi.reliability.RuntimeCandidateType
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
@@ -43,7 +43,7 @@ class RuntimeMemoryRetrieverTest {
     }
 
     @Test
-    fun aHostsOwnTopicsReplaceTheRuntimes() {
+    fun hostsSupplyTopicsAndDefaultsAreNeutral() {
         val kitchen = MemoryTopic("kitchen", strongTerms = setOf("oven", "kettle"), excludedPhrases = setOf("kettlebell"))
         val retriever = RuntimeMemoryRetriever(topics = listOf(kitchen))
         val lessons = listOf(
@@ -55,7 +55,8 @@ class RuntimeMemoryRetrieverTest {
         assertEquals(listOf("kitchen"), retriever.retrieve("Preheat the oven please", lessons).matches.single().matchedDomains.toList())
         // The runtime's climate topic is not one of this host's.
         assertTrue(retriever.retrieve("有点热", lessons).lessons.isEmpty())
-        assertTrue(MemoryTopic.DEFAULTS.map { it.name }.containsAll(listOf("hvac", "navigation", "media", "web", "display", "phone")))
+        assertTrue(MemoryTopic.DEFAULTS.isEmpty())
+        assertTrue(RuntimeMemoryRetriever().retrieve("有点热", lessons).lessons.isEmpty())
         // A host's terms are read as the request is: "Wi-Fi" in any case, "Oven" as "oven".
         val net = RuntimeMemoryRetriever(topics = listOf(MemoryTopic("Net", strongTerms = setOf("Wi-Fi", "Oven"))))
         val wifi = listOf(lesson("wifi", "Observed capability set: wi fi toggle"))
@@ -64,7 +65,7 @@ class RuntimeMemoryRetrieverTest {
 
     @Test
     fun relevantPrewarmLessonIsSelectedForChineseRequest() {
-        val selection = RuntimeMemoryRetriever().retrieve(
+        val selection = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS).retrieve(
             requestText = "有点热",
             lessons = listOf(
                 lesson("nav", "Observed capability set: navi key word search", confidence = 1f),
@@ -78,7 +79,7 @@ class RuntimeMemoryRetrieverTest {
 
     @Test
     fun retrievalIsBoundedAndAvoidsDuplicateDomainLessons() {
-        val selection = RuntimeMemoryRetriever().retrieve(
+        val selection = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS).retrieve(
             requestText = "导航并播放音乐",
             lessons = listOf(
                 lesson("nav-1", "Observed capability set: navi key word search", confidence = 0.8f),
@@ -94,7 +95,7 @@ class RuntimeMemoryRetrieverTest {
 
     @Test
     fun mixedDomainLessonOnlyPrewarmsQueryRelevantToRequest() {
-        val selection = RuntimeMemoryRetriever().retrieve(
+        val selection = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS).retrieve(
             requestText = "导航去公司",
             lessons = listOf(
                 lesson(
@@ -110,7 +111,7 @@ class RuntimeMemoryRetrieverTest {
 
     @Test
     fun navigationRequestKeepsRelevantQueriesFromBroaderLesson() {
-        val selection = RuntimeMemoryRetriever().retrieve(
+        val selection = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS).retrieve(
             requestText = "navigate to the tower",
             lessons = listOf(
                 lesson(
@@ -125,7 +126,7 @@ class RuntimeMemoryRetrieverTest {
 
     @Test
     fun ambiguousChineseCompoundsDoNotTriggerCrossDomainPrewarm() {
-        val retriever = RuntimeMemoryRetriever()
+        val retriever = RuntimeMemoryRetriever(topics = TEST_MEMORY_TOPICS)
         val lessons = listOf(
             lesson("hvac", "Observed capability set: ac set temperature"),
             lesson("nav", "Observed capability set: navi calculate route"),

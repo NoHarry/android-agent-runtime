@@ -18,10 +18,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.model.ModelRef
-import cc.noharry.agent.kernel.api.model.ModelMessage
-import cc.noharry.agent.kernel.api.model.ModelTool
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.model.ModelRef
+import cc.noharry.agent.spi.model.ModelMessage
+import cc.noharry.agent.spi.model.ModelTool
 
 class OpenAiReasoningReplayTest {
     @Test
@@ -115,7 +115,8 @@ private fun toolLoopRequest(thinkingEnabled: Boolean = false): ModelRequest =
             ModelMessage(role = "user", content = "make a plan"),
             ModelMessage(
                 role = "assistant",
-                content = REASONING,
+                content = "",
+                reasoningContent = REASONING,
                 toolCallId = "call-1",
                 toolName = "demo_tool",
                 toolArgumentsJson = """{"type":"plan"}""",
@@ -141,7 +142,8 @@ private fun dedupedToolLoopRequest(thinkingEnabled: Boolean = false): ModelReque
             ModelMessage(role = "user", content = "make a plan"),
             ModelMessage(
                 role = "assistant",
-                content = REASONING,
+                content = "",
+                reasoningContent = REASONING,
                 toolCallId = "call-1",
                 toolName = "first_tool",
                 toolArgumentsJson = "{}",

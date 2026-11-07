@@ -1,7 +1,7 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
+import cc.noharry.agent.spi.RuntimeEvidenceConfig
 import cc.noharry.agent.runtime.reliability.validateRuntimeEvidenceConfig
 import java.nio.file.Files
 import org.junit.Assert.assertEquals
@@ -144,7 +144,7 @@ class RuntimeEvidenceConfigTest {
                 ),
             )
             // build() must succeed; evidence is stored for DefaultAgentRuntime
-            builder.build()
+            builder.buildEngine()
         } finally {
             root.deleteRecursively()
         }

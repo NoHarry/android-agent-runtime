@@ -1,6 +1,6 @@
 package cc.noharry.agent.model
 
-import cc.noharry.agent.kernel.api.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelEvent
 import kotlinx.serialization.json.JsonObject
 
 /** Anthropic stream usage frames are partial cumulative snapshots, not additive counters. */

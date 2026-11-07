@@ -1,6 +1,6 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
@@ -46,14 +46,15 @@ class NativeToolLoopReasoningReplayTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
         val assistantToolCall = seenRequests[1].messages[1]
         assertEquals("assistant", assistantToolCall.role)
         assertEquals("tool-1", assistantToolCall.toolCallId)
-        assertEquals(REASONING, assistantToolCall.content)
+        assertEquals(REASONING, assistantToolCall.reasoningContent)
+        assertEquals("", assistantToolCall.content)
     }
 
     @Test
@@ -90,7 +91,7 @@ class NativeToolLoopReasoningReplayTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -98,9 +99,9 @@ class NativeToolLoopReasoningReplayTest {
             .filter { it.role == "assistant" && it.toolCallId in setOf("backend-1", "backend-2") }
 
         assertEquals(listOf("backend-1", "backend-2"), assistantToolCalls.map { it.toolCallId })
-        assertEquals(REASONING, assistantToolCalls[0].content)
-        assertEquals(DEDUPED_REASONING_MARKER, assistantToolCalls[1].content)
-        assertEquals(1, assistantToolCalls.count { it.content == REASONING })
+        assertEquals(REASONING, assistantToolCalls[0].reasoningContent)
+        assertEquals(DEDUPED_REASONING_MARKER, assistantToolCalls[1].reasoningContent)
+        assertEquals(1, assistantToolCalls.count { it.reasoningContent == REASONING })
     }
 
     @Test
@@ -137,14 +138,14 @@ class NativeToolLoopReasoningReplayTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
         val assistantToolCalls = seenRequests[2].messages
             .filter { it.role == "assistant" && it.toolCallId in setOf("backend-1", "backend-2") }
 
-        assertEquals(listOf(REASONING, REASONING), assistantToolCalls.map { it.content })
+        assertEquals(listOf(REASONING, REASONING), assistantToolCalls.map { it.reasoningContent })
         assertEquals(listOf(THINKING_SIGNATURE, THINKING_SIGNATURE), assistantToolCalls.map { it.thinkingSignature })
     }
 }

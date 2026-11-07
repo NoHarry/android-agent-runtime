@@ -285,7 +285,7 @@ private fun memorySceneVersion(scene: String, lessons: List<RuntimeLesson>): Str
 
 private fun sessionRunsVersion(
     prefix: String,
-    runs: List<cc.noharry.agent.kernel.api.reliability.RuntimeRunSnapshot>,
+    runs: List<cc.noharry.agent.spi.reliability.RuntimeRunSnapshot>,
     storage: ReliabilityStorage?,
 ): String = contentVersion(
     prefix,
@@ -295,7 +295,7 @@ private fun sessionRunsVersion(
     },
 )
 
-private fun runSummaryVersion(runId: String, result: cc.noharry.agent.kernel.api.reliability.RuntimeResult): String =
+private fun runSummaryVersion(runId: String, result: cc.noharry.agent.spi.reliability.RuntimeResult): String =
     contentVersion("run-summary:$runId", "${result.status}:${result.response.hashCode()}:${result.errorCode}")
 
 private fun todoVersion(state: TodoState?): String =

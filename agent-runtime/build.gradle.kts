@@ -15,8 +15,7 @@ kotlin {
 }
 
 dependencies {
-    api(project(":agent-kernel-api"))
-    api(project(":agent-kernel-core"))
+    api(project(":agent-api"))
     // Public API exposes Flow/suspend signatures; api scope keeps external consumers compiling.
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
     // Public policy APIs expose JsonObject; api scope keeps external consumers compiling.
@@ -24,4 +23,5 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.1")
 }

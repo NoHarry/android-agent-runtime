@@ -1,9 +1,9 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.CapabilityCardinality
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.KernelApiVersions
-import cc.noharry.agent.kernel.api.SessionCapabilityContext
-import cc.noharry.agent.kernel.api.SessionCapabilityFactory
+import cc.noharry.agent.spi.CapabilityCardinality
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.KernelApiVersions
+import cc.noharry.agent.spi.SessionCapabilityContext
+import cc.noharry.agent.spi.SessionCapabilityFactory
 import cc.noharry.agent.kernel.core.loop.failed
 import cc.noharry.agent.kernel.core.plugin.PluginRegistry
 import org.junit.Assert.assertEquals

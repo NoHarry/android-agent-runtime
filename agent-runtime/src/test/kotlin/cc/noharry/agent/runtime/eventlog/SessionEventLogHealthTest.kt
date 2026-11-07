@@ -1,16 +1,16 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.eventlog
 
-import cc.noharry.agent.kernel.api.SessionEvent
-import cc.noharry.agent.kernel.api.SessionEventAppend
-import cc.noharry.agent.kernel.api.SessionEventLog
-import cc.noharry.agent.kernel.api.SessionEventLogDurability
-import cc.noharry.agent.kernel.api.SessionEventLogHealth
-import cc.noharry.agent.kernel.api.SessionEventLogHealthStatus
-import cc.noharry.agent.kernel.api.SessionEventPayload
-import cc.noharry.agent.kernel.api.SessionEventQuery
-import cc.noharry.agent.kernel.api.SessionEventType
+import cc.noharry.agent.spi.SessionEvent
+import cc.noharry.agent.spi.SessionEventAppend
+import cc.noharry.agent.spi.SessionEventLog
+import cc.noharry.agent.spi.SessionEventLogDurability
+import cc.noharry.agent.spi.SessionEventLogHealth
+import cc.noharry.agent.spi.SessionEventLogHealthStatus
+import cc.noharry.agent.spi.SessionEventPayload
+import cc.noharry.agent.spi.SessionEventQuery
+import cc.noharry.agent.spi.SessionEventType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -85,8 +85,8 @@ class SessionEventLogHealthTest {
     fun customLegacyBackendDefaultsToUnknown() {
         val log = object : SessionEventLog {
             override fun append(event: SessionEventAppend) = error("unused")
-            override fun query(query: SessionEventQuery) = emptyList<cc.noharry.agent.kernel.api.SessionEvent>()
-            override fun replay(sessionId: String, runId: String) = emptyList<cc.noharry.agent.kernel.api.SessionEvent>()
+            override fun query(query: SessionEventQuery) = emptyList<cc.noharry.agent.spi.SessionEvent>()
+            override fun replay(sessionId: String, runId: String) = emptyList<cc.noharry.agent.spi.SessionEvent>()
         }
         assertEquals(SessionEventLogDurability.UNKNOWN, log.durability())
         assertEquals(SessionEventLogHealthStatus.UNKNOWN, log.health("session-1", "run-1").status)

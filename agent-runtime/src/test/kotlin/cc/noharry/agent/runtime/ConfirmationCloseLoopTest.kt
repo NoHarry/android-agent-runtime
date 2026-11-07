@@ -1,16 +1,16 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.AgentRuntime
-import cc.noharry.agent.kernel.api.CancelPendingConfirmationRequest
-import cc.noharry.agent.kernel.api.CancelPendingResult
-import cc.noharry.agent.kernel.api.ConfirmationChoice
-import cc.noharry.agent.kernel.api.ConfirmationDecision
-import cc.noharry.agent.kernel.api.ConfirmationResumeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
-import cc.noharry.agent.kernel.api.reliability.SuggestedNextAction
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.AgentRuntime
+import cc.noharry.agent.spi.CancelPendingConfirmationRequest
+import cc.noharry.agent.spi.CancelPendingResult
+import cc.noharry.agent.spi.ConfirmationChoice
+import cc.noharry.agent.spi.ConfirmationDecision
+import cc.noharry.agent.spi.ConfirmationResumeResult
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.reliability.SuggestedNextAction
 import cc.noharry.agent.kernel.core.state.InMemoryConfirmationStore
 import cc.noharry.agent.kernel.core.state.RunStateController
 import kotlinx.coroutines.flow.toList
@@ -24,7 +24,7 @@ import org.junit.Test
 class ConfirmationCloseLoopTest {
     @Test
     fun runEmitsPendingConfirmationWhenConfigured() = runBlocking {
-        val runtime = AgentRuntimeBuilder.create().confirmationOnRun().build()
+        val runtime = AgentRuntimeBuilder.create().confirmationOnRun().buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val confirmationEvent = events.filterIsInstance<AgentEvent.ConfirmationRequired>()
@@ -143,7 +143,7 @@ class ConfirmationCloseLoopTest {
         val runtime = AgentRuntimeBuilder.create()
             .nowEpochMillis { now }
             .confirmationOnRun(expiresInMillis = 5)
-            .build()
+            .buildEngine()
         runtime.run(agentRequest()).toList()
         val pending = pendingConfirmation(runtime)
 
@@ -163,7 +163,7 @@ class ConfirmationCloseLoopTest {
 
     @Test
     fun missingConfirmationReturnsNotFound() = runBlocking {
-        val runtime = AgentRuntimeBuilder.create().build()
+        val runtime = AgentRuntimeBuilder.create().buildEngine()
 
         val result = runtime.resumeConfirmation(
             ConfirmationDecision(
@@ -177,7 +177,7 @@ class ConfirmationCloseLoopTest {
     }
 
     private suspend fun runtimeWithPendingConfirmation(): AgentRuntime {
-        val runtime = AgentRuntimeBuilder.create().confirmationOnRun().build()
+        val runtime = AgentRuntimeBuilder.create().confirmationOnRun().buildEngine()
         runtime.run(agentRequest()).toList()
         return runtime
     }

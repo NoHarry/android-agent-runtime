@@ -1,21 +1,17 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.reliability
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.reliability.RuntimeEvidence
-import cc.noharry.agent.kernel.api.reliability.RuntimeEvidenceType
-import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequestStatus
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunEnvelope
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunPhase
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunSnapshot
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.RuntimeEvidenceConfig
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.reliability.RuntimeEvidence
+import cc.noharry.agent.spi.reliability.RuntimeEvidenceType
+import cc.noharry.agent.spi.reliability.RuntimeRunEnvelope
+import cc.noharry.agent.spi.reliability.RuntimeRunPhase
+import cc.noharry.agent.spi.reliability.RuntimeRunSnapshot
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.state.DefaultReliabilityFileDeleter
 import cc.noharry.agent.kernel.core.state.EVIDENCE_DIR
-import cc.noharry.agent.kernel.core.state.PROTOCOL_REQUESTS_DIR
-import cc.noharry.agent.kernel.core.state.PROTOCOL_RESOLUTIONS_DIR
 import cc.noharry.agent.kernel.core.state.RELIABILITY_CLEANUP_MARKER_FILE
 import cc.noharry.agent.kernel.core.state.RUNS_DIR
 import cc.noharry.agent.kernel.core.state.RUN_FILE
@@ -73,18 +69,10 @@ class ReliabilityProbeRetentionProductionTest {
                 val oldDir = requireRunDir(root, "term-old")
                 assertProbeSidecarSetPresent(oldDir)
 
-                // Shared evidence + protocol for the old terminal (must leave no orphans).
+                // Shared evidence for the old terminal (must leave no orphans).
                 val seed = FileBackedReliabilityStorage(root, createPolicy)
                 seed.saveEvidence(storageEvidence("ev-old", "term-old"))
-                seed.saveProtocolRequest(storageProtocol("pr-old", "term-old"))
-                seed.saveProtocolResolution(
-                    "pr-old",
-                    "res-1",
-                    storageProtocol("pr-old", "term-old", status = RuntimeProtocolRequestStatus.RESOLVED),
-                )
                 assertTrue(evidenceFile(root, "ev-old").isFile)
-                assertTrue(protocolRequestFile(root, "pr-old").isFile)
-                assertTrue(protocolResolutionFile(root, "pr-old", "res-1").isFile)
 
                 buildEvidenceRuntime(root, createPolicy) { confirmationOnRun() }
                     .run(req("wait-conf", "needs confirm", sessionId = "sess-wait"))
@@ -111,8 +99,6 @@ class ReliabilityProbeRetentionProductionTest {
                 assertFalse(oldDir.exists())
                 assertNull(retentionStorage.readEvidence("ev-old"))
                 assertFalse(evidenceFile(root, "ev-old").exists())
-                assertFalse(protocolRequestFile(root, "pr-old").exists())
-                assertFalse(protocolResolutionFile(root, "pr-old", "res-1").exists())
                 assertEquals(RuntimeRunStatus.COMPLETED, retentionStorage.readSnapshot("term-new")?.status)
                 assertEquals(
                     RuntimeRunStatus.WAITING_CONFIRMATION,
@@ -171,9 +157,7 @@ class ReliabilityProbeRetentionProductionTest {
     ) {
         storage.saveRun(snap("old-finished", RuntimeRunStatus.COMPLETED, 1L))
         storage.saveEvidence(storageEvidence("ev-old", "old-finished"))
-        storage.saveProtocolRequest(storageProtocol("pr-old", "old-finished"))
         assertTrue(targetEvidence.isFile)
-        assertTrue(protocolRequestFile(root, "pr-old").isFile)
     }
 
     private fun assertSharedDeleteFailureMarker(
@@ -210,7 +194,6 @@ class ReliabilityProbeRetentionProductionTest {
         assertNull(retryStorage.readSnapshot("old-finished"))
         assertFalse(oldDir.exists())
         assertFalse(targetEvidence.exists())
-        assertFalse(protocolRequestFile(root, "pr-old").exists())
         val successMarker = File(root, RELIABILITY_CLEANUP_MARKER_FILE).readText()
         assertTrue(successMarker.contains("lastCleanupSuccess=true"))
         assertTrue(successMarker.contains("lastDeleteFailures=0"))
@@ -488,7 +471,7 @@ class ReliabilityProbeRetentionProductionTest {
             )
             .reliabilityRetentionPolicy(policy)
         builder.configure()
-        return builder.build() as DefaultAgentRuntime
+        return builder.buildEngine() as DefaultAgentRuntime
     }
 
     private fun reloadStorage(root: File, policy: ReliabilityRetentionPolicy): FileBackedReliabilityStorage =
@@ -536,21 +519,6 @@ class ReliabilityProbeRetentionProductionTest {
             createdAtEpochMillis = 1L,
         )
 
-    private fun storageProtocol(
-        protocolRequestId: String,
-        runId: String,
-        status: RuntimeProtocolRequestStatus = RuntimeProtocolRequestStatus.WAITING,
-    ): RuntimeProtocolRequest =
-        RuntimeProtocolRequest(
-            protocolRequestId = protocolRequestId,
-            runId = runId,
-            sessionId = "sess-ret",
-            status = status,
-            kind = "test",
-            payloadJson = """{"k":"v"}""",
-            createdAtEpochMillis = 1L,
-        )
-
     private fun FileBackedReliabilityStorage.saveRun(
         pair: Pair<RuntimeRunSnapshot, RuntimeRunEnvelope>,
     ) {
@@ -578,16 +546,4 @@ class ReliabilityProbeRetentionProductionTest {
     private fun evidenceFile(root: File, evidenceId: String): File =
         File(File(root, EVIDENCE_DIR), "${encodeFileName(evidenceId)}.json")
 
-    private fun protocolRequestFile(root: File, protocolRequestId: String): File =
-        File(File(root, PROTOCOL_REQUESTS_DIR), "${encodeFileName(protocolRequestId)}.json")
-
-    private fun protocolResolutionFile(
-        root: File,
-        protocolRequestId: String,
-        requestId: String,
-    ): File =
-        File(
-            File(root, PROTOCOL_RESOLUTIONS_DIR),
-            "${encodeFileName(protocolRequestId)}-${encodeFileName(requestId)}.json",
-        )
 }

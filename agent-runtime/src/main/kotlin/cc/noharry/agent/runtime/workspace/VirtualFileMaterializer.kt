@@ -1,6 +1,6 @@
 package cc.noharry.agent.runtime.workspace
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.core.loop.failed
 import cc.noharry.agent.kernel.core.tools.MaterializedEntry
 import cc.noharry.agent.kernel.core.tools.MaterializedSchemaCacheEntry

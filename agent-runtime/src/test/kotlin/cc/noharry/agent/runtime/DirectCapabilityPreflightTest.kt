@@ -1,20 +1,20 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentCapabilities
-import cc.noharry.agent.kernel.api.AgentPlugin
-import cc.noharry.agent.kernel.api.AgentPluginDescriptor
-import cc.noharry.agent.kernel.api.AgentPluginScope
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.KernelApiRange
-import cc.noharry.agent.kernel.api.KernelApiVersions
-import cc.noharry.agent.kernel.api.PluginContractMessages
-import cc.noharry.agent.kernel.api.PluginVersion
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.SessionCapabilityFactory
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.AgentCapabilities
+import cc.noharry.agent.spi.AgentPlugin
+import cc.noharry.agent.spi.AgentPluginDescriptor
+import cc.noharry.agent.spi.AgentPluginScope
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.KernelApiRange
+import cc.noharry.agent.spi.KernelApiVersions
+import cc.noharry.agent.spi.PluginContractMessages
+import cc.noharry.agent.spi.PluginVersion
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.SessionCapabilityFactory
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.kernel.core.plugin.RuntimeCapabilityDeclarations
 import cc.noharry.agent.kernel.core.plugin.RuntimeCompositionMessages
 import cc.noharry.agent.runtime.run.RuntimeProfileAdapter
@@ -35,7 +35,7 @@ class DirectCapabilityPreflightTest {
                     installed = true
                     provide(AgentCapabilities.MODEL_CLIENT, model, testSerializedConcurrency)
                 })
-                .build()
+                .buildEngine()
         }
         assertTrue(error.message.orEmpty().contains(PluginContractMessages.DUPLICATE_SINGLE))
         assertTrue(!installed)
@@ -47,13 +47,13 @@ class DirectCapabilityPreflightTest {
             AgentRuntimeBuilder.create()
                 .plugin(
                     describedPlugin("factory-model", AgentCapabilities.MODEL_CLIENT) {
-                        val factory = SessionCapabilityFactory<cc.noharry.agent.kernel.api.model.ModelClient> {
+                        val factory = SessionCapabilityFactory<cc.noharry.agent.spi.model.ModelClient> {
                             preflightFinishModel()
                         }
                         provide(AgentCapabilities.MODEL_CLIENT, factory)
                     },
                 )
-                .build()
+                .buildEngine()
         }
         assertTrue(
             error.message.orEmpty().contains(RuntimeCompositionMessages.UNSUPPORTED_FACTORY_COMPOSITION),
@@ -62,9 +62,9 @@ class DirectCapabilityPreflightTest {
 
     @Test
     fun noncanonicalBuiltinDiagnostic_failsAtRuntimeAdapter() {
-        val alias = cc.noharry.agent.kernel.api.CapabilityKey<cc.noharry.agent.kernel.api.ToolProvider>(
+        val alias = cc.noharry.agent.spi.CapabilityKey<cc.noharry.agent.spi.ToolProvider>(
             "tool_provider",
-            cc.noharry.agent.kernel.api.CapabilityCardinality.MULTIPLE,
+            cc.noharry.agent.spi.CapabilityCardinality.MULTIPLE,
         )
         val error = assertThrows(IllegalStateException::class.java) {
             RuntimeProfileAdapter.compile(
@@ -74,15 +74,15 @@ class DirectCapabilityPreflightTest {
                     describedPlugin("alias-tools", alias) {
                         provide(
                             alias,
-                            object : cc.noharry.agent.kernel.api.ToolProvider {
+                            object : cc.noharry.agent.spi.ToolProvider {
                                 override val providerId: String = "alias"
                                 override val providerConcurrency = testSerializedConcurrency
-                                override suspend fun listTools() = emptyList<cc.noharry.agent.kernel.api.ToolDescriptor>()
+                                override suspend fun listTools() = emptyList<cc.noharry.agent.spi.ToolDescriptor>()
                                 override suspend fun callTool(
                                     toolName: String,
                                     argumentsJson: String,
-                                    context: cc.noharry.agent.kernel.api.ToolCallContext,
-                                ) = cc.noharry.agent.kernel.api.ToolCallResult(success = true, resultJson = "{}")
+                                    context: cc.noharry.agent.spi.ToolCallContext,
+                                ) = cc.noharry.agent.spi.ToolCallResult(success = true, resultJson = "{}")
                             },
                             testSerializedConcurrency,
                         )
@@ -102,7 +102,7 @@ class DirectCapabilityPreflightTest {
                         ProviderConcurrencyDeclaration.sessionFactory(1)
                     override fun complete(request: ModelRequest) = flowOf(ModelEvent.Completed)
                 })
-                .build()
+                .buildEngine()
         }
         assertTrue(error.message.orEmpty().contains("SESSION_FACTORY"))
     }
@@ -121,7 +121,7 @@ private fun preflightFinishModel(): ModelClient =
 
 private fun describedPlugin(
     id: String,
-    key: cc.noharry.agent.kernel.api.CapabilityKey<*>,
+    key: cc.noharry.agent.spi.CapabilityKey<*>,
     install: AgentPluginScope.() -> Unit,
 ): AgentPlugin =
     object : AgentPlugin {

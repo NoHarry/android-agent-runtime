@@ -15,8 +15,8 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":agent-kernel-api"))
-    implementation(project(":agent-kernel-core"))
+    implementation(project(":agent-api"))
+    implementation(project(":agent-runtime"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
 
     testImplementation("junit:junit:4.13.2")

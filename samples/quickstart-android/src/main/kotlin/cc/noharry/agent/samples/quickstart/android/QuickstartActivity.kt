@@ -9,9 +9,10 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.AgentRuntime
+import cc.noharry.agent.ThreadEvent
+import cc.noharry.agent.ThreadItem
+import cc.noharry.agent.ThreadOptions
+import cc.noharry.agent.AgentRuntime
 import cc.noharry.agent.model.OpenAiModelClient
 import cc.noharry.agent.runtime.android.AndroidAgentRuntime
 import cc.noharry.agent.runtime.functionTools
@@ -67,11 +68,11 @@ class QuickstartActivity : Activity() {
         val agent = runtime ?: buildRuntime().also { runtime = it }
         output.append("\n> $question\n")
         running = scope.launch {
-            agent.run(AgentRequest(requestId = "turn-${++turn}", sessionId = "quickstart", input = question)).collect { event ->
+            agent.startThread(ThreadOptions(threadId = "quickstart")).runStreamed(question).collect { event ->
                 when (event) {
-                    is AgentEvent.TextDelta -> output.append(event.text)
-                    is AgentEvent.NativeToolCallStarted -> output.append("[tool] ${event.toolName}\n")
-                    is AgentEvent.Failed -> output.append("\n[failed] ${event.code}: ${event.message}\n")
+                    is ThreadEvent.ItemDelta -> output.append(event.text)
+                    is ThreadEvent.ItemStarted -> (event.item as? ThreadItem.ToolCall)?.let { output.append("[tool] ${it.tool}\n") }
+                    is ThreadEvent.TurnFailed -> output.append("\n[failed] ${event.error.code}: ${event.error.message}\n")
                     else -> Unit
                 }
             }
@@ -88,13 +89,14 @@ class QuickstartActivity : Activity() {
             tool("now", "The current local date and time.", readOnly = true) { java.util.Date().toString() }
         }
         return AndroidAgentRuntime.builder(this)
-            .modelClient(OpenAiModelClient({ key }, model = model.text.toString(), baseUrl = baseUrl.text.toString(), stream = true))
-            .toolProvider(device)
+            .model(OpenAiModelClient({ key }, model = model.text.toString(), baseUrl = baseUrl.text.toString(), stream = true))
+            .tools(device)
             .build()
     }
 
     override fun onDestroy() {
         scope.cancel()
+        runtime?.close()
         super.onDestroy()
     }
 

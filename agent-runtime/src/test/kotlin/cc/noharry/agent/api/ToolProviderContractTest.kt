@@ -1,8 +1,8 @@
 @file:OptIn(ExperimentalAgentRuntimeApi::class)
 
-package cc.noharry.agent.kernel.api
+package cc.noharry.agent.spi
 
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
+import cc.noharry.agent.spi.mcp.McpClientProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Test

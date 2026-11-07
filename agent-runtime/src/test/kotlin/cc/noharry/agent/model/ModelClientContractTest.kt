@@ -1,11 +1,11 @@
 package cc.noharry.agent.model
 
-import cc.noharry.agent.kernel.api.model.ModelClientException
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelImage
-import cc.noharry.agent.kernel.api.model.ModelResponseMetadata
-import cc.noharry.agent.kernel.api.model.ServerSideSearchCapability
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.model.ModelClientException
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelImage
+import cc.noharry.agent.spi.model.ModelResponseMetadata
+import cc.noharry.agent.model.ServerSideSearchCapability
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.core.loop.completed
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking

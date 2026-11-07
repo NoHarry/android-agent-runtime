@@ -1,11 +1,11 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.ExecEngine
-import cc.noharry.agent.kernel.api.ExecRequest
-import cc.noharry.agent.kernel.api.ExecResult
-import cc.noharry.agent.kernel.api.ExecToolBridge
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ExecEngine
+import cc.noharry.agent.spi.ExecRequest
+import cc.noharry.agent.spi.ExecResult
+import cc.noharry.agent.spi.ExecToolBridge
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

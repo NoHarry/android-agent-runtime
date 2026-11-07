@@ -1,15 +1,15 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.CancelPendingConfirmationRequest
-import cc.noharry.agent.kernel.api.ConfirmationChoice
-import cc.noharry.agent.kernel.api.ConfirmationDecision
-import cc.noharry.agent.kernel.api.ConfirmationResumeResult
-import cc.noharry.agent.kernel.api.SessionRunConflictPolicy
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunPhase
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.CancelPendingConfirmationRequest
+import cc.noharry.agent.spi.ConfirmationChoice
+import cc.noharry.agent.spi.ConfirmationDecision
+import cc.noharry.agent.spi.ConfirmationResumeResult
+import cc.noharry.agent.spi.SessionRunConflictPolicy
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeRunPhase
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.toList
@@ -203,7 +203,7 @@ class SessionSchedulingResumeIntegrationTest {
             val cancelled = runtime.cancelPendingConfirmation(
                 CancelPendingConfirmationRequest("$RUN_A1:confirmation", "cancel-race"),
             )
-            assertTrue(cancelled is cc.noharry.agent.kernel.api.CancelPendingResult.Cancelled)
+            assertTrue(cancelled is cc.noharry.agent.spi.CancelPendingResult.Cancelled)
             assertEquals(RuntimeRunStatus.CANCELLED, runtime.getRunState(RUN_A1)?.status)
             releasePersist.complete(Unit)
             val resumeResult = resume.await()
@@ -230,7 +230,7 @@ class SessionSchedulingResumeIntegrationTest {
             .policyRule(confirmUnlessApprovedPolicy())
             .modelClient(askThenConfirmModel())
             .sessionConcurrency(maxActiveSessions = 1)
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
         try {
             runtime.run(request(RUN_A1, SESSION_A)).toList()
             assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, runtime.getRunState(RUN_A1)?.status)

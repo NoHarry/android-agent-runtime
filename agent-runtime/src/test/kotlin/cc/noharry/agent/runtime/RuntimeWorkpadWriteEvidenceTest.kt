@@ -1,5 +1,5 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelEvent
 import cc.noharry.agent.kernel.core.state.encodeFileName
 import java.io.File
 import java.nio.file.Files
@@ -37,7 +37,7 @@ class RuntimeWorkpadWriteEvidenceTest {
                     ),
                 ),
             )
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         runtime.run(agentRequest()).toList()
 

@@ -1,5 +1,5 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.core.loop.failed
 import cc.noharry.agent.kernel.core.tools.NetworkToolActivityResult
 import cc.noharry.agent.kernel.core.tools.NetworkToolPolicyDecision

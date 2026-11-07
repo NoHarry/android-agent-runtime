@@ -1,8 +1,8 @@
 package cc.noharry.agent.runtime.run
-import cc.noharry.agent.kernel.api.reliability.RuntimeCandidate
-import cc.noharry.agent.kernel.api.reliability.RuntimeCandidateType
+import cc.noharry.agent.spi.reliability.RuntimeCandidate
+import cc.noharry.agent.spi.reliability.RuntimeCandidateType
 import cc.noharry.agent.kernel.core.memory.RuntimeLesson
-import cc.noharry.agent.kernel.core.memory.RuntimeLessonMode
+import cc.noharry.agent.runtime.RuntimeLessonMode
 import cc.noharry.agent.kernel.core.memory.RuntimeMemoryPort
 import cc.noharry.agent.kernel.core.memory.mergeRuntimeMemoryContent
 import cc.noharry.agent.kernel.core.memory.runtimeMemoryLessonsMatch

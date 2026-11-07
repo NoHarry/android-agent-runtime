@@ -26,7 +26,7 @@ kotlin {
 }
 
 dependencies {
-    api(project(":agent-kernel-api"))
+    api(project(":agent-api"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("app.cash.zipline:zipline:1.16.0")
 

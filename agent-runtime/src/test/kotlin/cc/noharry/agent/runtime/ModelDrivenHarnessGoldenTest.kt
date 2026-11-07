@@ -1,19 +1,19 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ConfirmationResumeResult
-import cc.noharry.agent.kernel.api.HookContext
-import cc.noharry.agent.kernel.api.HookDecision
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.ToolSource
-import cc.noharry.agent.kernel.api.ToolUse
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ConfirmationResumeResult
+import cc.noharry.agent.spi.HookContext
+import cc.noharry.agent.spi.HookDecision
+import cc.noharry.agent.spi.RuntimeHook
+import cc.noharry.agent.spi.ToolSource
+import cc.noharry.agent.spi.ToolUse
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.state.encodeFileName
 import cc.noharry.agent.runtime.workspace.MAX_WORKSPACE_WRITE_FILE_BYTES
 import cc.noharry.agent.runtime.workspace.VirtualWorkspace
@@ -37,7 +37,7 @@ class ModelDrivenHarnessGoldenTest {
             ),
         )
         val backend = GoldenMcpProvider()
-        val runtime = runtime(model, backend, workspace()).build()
+        val runtime = runtime(model, backend, workspace()).buildEngine()
 
         val events = runtime.run(goldenRequest()).toList()
 
@@ -55,7 +55,7 @@ class ModelDrivenHarnessGoldenTest {
                 round(finish("wrote")),
             ),
         )
-        val runtime = runtime(model, GoldenMcpProvider(), root).build()
+        val runtime = runtime(model, GoldenMcpProvider(), root).buildEngine()
 
         runtime.run(goldenRequest()).toList()
         val overBudget = VirtualWorkspace(root).executeJson(
@@ -78,7 +78,7 @@ class ModelDrivenHarnessGoldenTest {
             .toolProvider(backend)
             .hook(denyTool("set_temperature"))
             .modelClient(backendThenFinishModel(seen))
-            .build()
+            .buildEngine()
 
         runtime.run(goldenRequest()).toList()
 
@@ -96,7 +96,7 @@ class ModelDrivenHarnessGoldenTest {
             .toolProvider(backend)
             .hook(confirmUntilApproved())
             .modelClient(backendThenFinishModel(mutableListOf()))
-            .build()
+            .buildEngine()
         val pending = runtime.run(goldenRequest()).toList().filterIsInstance<AgentEvent.ConfirmationRequired>().single()
 
         assertEquals(ConfirmationResumeResult.Accepted, runtime.resumeConfirmation(approve(pending.pending.pendingId)))
@@ -112,7 +112,7 @@ class ModelDrivenHarnessGoldenTest {
             .toolProvider(backend)
             .policyConfigJson(BACKEND_CONFIRM_POLICY)
             .modelClient(backendThenFinishModel(mutableListOf()))
-            .build()
+            .buildEngine()
         val pending = confirmRuntime.run(goldenRequest()).toList()
             .filterIsInstance<AgentEvent.ConfirmationRequired>()
             .single()
@@ -122,14 +122,14 @@ class ModelDrivenHarnessGoldenTest {
         )
 
         assertEquals(ConfirmationResumeResult.Accepted, confirmRuntime.resumeConfirmation(approve(pending.pending.pendingId)))
-        runtime(writeModel, GoldenMcpProvider(), root).policyConfigJson(MEMORY_WRITE_ALLOW_POLICY).build()
+        runtime(writeModel, GoldenMcpProvider(), root).policyConfigJson(MEMORY_WRITE_ALLOW_POLICY).buildEngine()
             .run(goldenRequest()).toList()
         assertEquals("ok", File(root, "memory/note.txt").readText())
     }
 
     @Test
     fun tc106InvalidPolicyConfigFailsFast() {
-        val result = runCatching { AgentRuntimeBuilder.create().policyConfigJson("""{"rules":[{"decision":"unknown"}]}""").build() }
+        val result = runCatching { AgentRuntimeBuilder.create().policyConfigJson("""{"rules":[{"decision":"unknown"}]}""").buildEngine() }
 
         assertTrue(requireNotNull(result.exceptionOrNull()).message.orEmpty().contains("POLICY_CONFIG_INVALID"))
     }
@@ -137,7 +137,7 @@ class ModelDrivenHarnessGoldenTest {
     @Test
     fun tc107BootstrapPromptReachesModelRequest() = runBlocking {
         val seen = mutableListOf<ModelRequest>()
-        AgentRuntimeBuilder.create().systemPrompt("host append").modelClient(finishOnlySeenModel(seen)).build()
+        AgentRuntimeBuilder.create().systemPrompt("host append").modelClient(finishOnlySeenModel(seen)).buildEngine()
             .run(goldenRequest()).toList()
 
         val system = seen.single().system.orEmpty()
@@ -155,7 +155,7 @@ class ModelDrivenHarnessGoldenTest {
             .toolProvider(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
             .modelClient(backendOnlySeenModel(seen))
             .loopBudget(maxModelRounds = 1)
-            .build()
+            .buildEngine()
         var now = 0L
         val timeoutRuntime = AgentRuntimeBuilder.create().nowEpochMillis {
             val current = now
@@ -163,7 +163,7 @@ class ModelDrivenHarnessGoldenTest {
             current
         }.modelClient(finishOnlyModel())
             .loopBudget(maxWallClockMillis = 1)
-            .build()
+            .buildEngine()
 
         budgetRuntime.run(goldenRequest()).toList()
         timeoutRuntime.run(goldenRequest("request-timeout")).toList()
@@ -179,7 +179,7 @@ class ModelDrivenHarnessGoldenTest {
             .workspaceRoot(workspace())
             .toolProvider(LoopMcpProvider(exposedTools = listOfTools()))
             .modelClient(backendThenFinishModel(sameRuntimeSeen))
-            .build()
+            .buildEngine()
         sameRuntime.run(goldenRequest()).toList()
         val sameRuntimeMessages = sameRuntimeSeen.last().messages
         assertTrue(sameRuntimeMessages.any { it.role == "tool" && it.content.contains("ok") })
@@ -190,7 +190,7 @@ class ModelDrivenHarnessGoldenTest {
             .toolProvider(LoopMcpProvider(exposedTools = listOfTools()))
             .hook(confirmUntilApproved())
             .modelClient(backendThenFinishModel(mutableListOf()))
-            .build()
+            .buildEngine()
         val pending = first.run(goldenRequest()).toList()
             .filterIsInstance<AgentEvent.ConfirmationRequired>()
             .single()
@@ -198,7 +198,7 @@ class ModelDrivenHarnessGoldenTest {
         val restored = AgentRuntimeBuilder.create()
             .reliabilityStorageRoot(root)
             .modelClient(finishOnlySeenModel(seen))
-            .build()
+            .buildEngine()
         val result = restored.resumeConfirmation(approve(pending.pending.pendingId))
 
         assertTrue(
@@ -223,7 +223,7 @@ class ModelDrivenHarnessGoldenTest {
             workspace(),
         )
             .hook(sourceRecorder(seenSources))
-            .build()
+            .buildEngine()
 
         runtime.run(goldenRequest()).toList()
 

@@ -1,17 +1,14 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ConfirmationChoice
-import cc.noharry.agent.kernel.api.ConfirmationDecision
-import cc.noharry.agent.kernel.api.ConfirmationResumeResult
-import cc.noharry.agent.kernel.api.ProtocolRequestCloseLoopResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeProtocolRequestStatus
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunPhase
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
-import cc.noharry.agent.kernel.api.reliability.RuntimeWorkpad
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ConfirmationChoice
+import cc.noharry.agent.spi.ConfirmationDecision
+import cc.noharry.agent.spi.ConfirmationResumeResult
+import cc.noharry.agent.spi.reliability.RuntimeResult
+import cc.noharry.agent.spi.reliability.RuntimeRunPhase
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.reliability.RuntimeWorkpad
 import cc.noharry.agent.kernel.core.loop.NativeLoopSummary
 import cc.noharry.agent.kernel.core.state.InMemoryConfirmationStore
-import cc.noharry.agent.kernel.core.state.InMemoryProtocolRequestStore
 import cc.noharry.agent.kernel.core.state.ReliabilityStorage
 import cc.noharry.agent.kernel.core.state.RunStateController
 import cc.noharry.agent.kernel.core.state.RunStateLockRegistry
@@ -146,43 +143,6 @@ class RunStateConcurrencyTest {
     }
 
     @Test
-    fun lateTerminalResultDoesNotRewriteEvictedPersistentRun() {
-        val storage = FileBackedReliabilityStorage(
-            Files.createTempDirectory("runtime-late-terminal-").toFile(),
-        )
-        val clock = AtomicLong()
-        val controller = RunStateController(
-            nowEpochMillis = clock::incrementAndGet,
-            storage = storage,
-            retentionPolicy = RuntimeStateRetentionPolicy(maxTerminalRuns = 1),
-        )
-        completeRun(controller, "old-terminal")
-        completeRun(controller, "new-terminal")
-        val original = requireNotNull(controller.result("old-terminal"))
-        val originalTraceCount = controller.traceEvents("old-terminal").size
-
-        val recorded = controller.applyRuntimeResult(
-            RuntimeResult(
-                runId = "old-terminal",
-                status = RuntimeRunStatus.FAILED,
-                response = "late-old-terminal",
-            ),
-        )
-        controller.markProtocolRequestResolved("old-terminal")
-
-        val restored = RunStateController(clock::incrementAndGet, storage = storage)
-        assertEquals(original, recorded)
-        assertEquals(RuntimeRunStatus.COMPLETED, restored.snapshot("old-terminal")?.status)
-        assertEquals(original, restored.result("old-terminal"))
-        assertEquals(originalTraceCount, restored.traceEvents("old-terminal").size)
-        assertEquals(1, controller.cachedTerminalRunCount())
-        assertEquals(1, controller.cachedResultCount())
-        assertEquals(1, controller.cachedWorkpadCount())
-        assertEquals(0, controller.cachedTraceCount("old-terminal"))
-        assertTrue(controller.cachedTraceCount("new-terminal") > 0)
-    }
-
-    @Test
     fun duplicateTerminalResultRepairsPartialStorageFailure() {
         val delegate = FileBackedReliabilityStorage(
             Files.createTempDirectory("runtime-terminal-retry-").toFile(),
@@ -215,7 +175,7 @@ class RunStateConcurrencyTest {
     }
 
     @Test
-    fun confirmationAndProtocolTransitionsAreSingleWinnerUnderConcurrency() = runBlocking {
+    fun confirmationTransitionsAreSingleWinnerUnderConcurrency() = runBlocking {
         val clock = AtomicLong()
         val confirmationStore = InMemoryConfirmationStore(clock::incrementAndGet)
         val pending = confirmationStore.create("run-1", "session-1", Long.MAX_VALUE / 2)
@@ -230,50 +190,6 @@ class RunStateConcurrencyTest {
         }
         assertEquals(1, confirmationResults.count { it == ConfirmationResumeResult.Accepted })
 
-        val protocolStore = InMemoryProtocolRequestStore(clock::incrementAndGet)
-        val protocol = protocolStore.create("run-2", "session-1", "test", "{}", null)
-        val protocolResults = coroutineScope {
-            (0 until CONCURRENT_TRANSITIONS).map { index ->
-                async(Dispatchers.Default) {
-                    protocolStore.transition(
-                        protocol.protocolRequestId,
-                        "resolution-$index",
-                        RuntimeProtocolRequestStatus.RESOLVED,
-                    )
-                }
-            }.awaitAll()
-        }
-        assertEquals(1, protocolResults.count { it is ProtocolRequestCloseLoopResult.Updated })
-    }
-
-    @Test
-    fun protocolTerminalCacheIsBoundedWithoutBreakingRecentIdempotency() {
-        val clock = AtomicLong()
-        val store = InMemoryProtocolRequestStore(
-            nowEpochMillis = clock::incrementAndGet,
-            retentionPolicy = RuntimeStateRetentionPolicy(maxTerminalRuns = 2),
-        )
-
-        repeat(3) { index ->
-            val runId = "protocol-run-$index"
-            val request = store.create(runId, "session-1", "test", "{}", null)
-            store.transition(request.protocolRequestId, "resolution-$index", RuntimeProtocolRequestStatus.RESOLVED)
-            store.retainTerminalRun(runId)
-        }
-
-        assertEquals(2, store.cachedRequestCount())
-        val recent = store.transition(
-            "protocol-run-2:protocol-request",
-            "resolution-2",
-            RuntimeProtocolRequestStatus.RESOLVED,
-        )
-        val evicted = store.transition(
-            "protocol-run-0:protocol-request",
-            "resolution-0",
-            RuntimeProtocolRequestStatus.RESOLVED,
-        )
-        assertTrue(recent is ProtocolRequestCloseLoopResult.AlreadyApplied)
-        assertEquals(ProtocolRequestCloseLoopResult.NotFound, evicted)
     }
 
     private fun completeRun(controller: RunStateController, runId: String) {

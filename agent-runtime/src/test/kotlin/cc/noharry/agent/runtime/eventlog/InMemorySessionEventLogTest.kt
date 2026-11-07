@@ -1,13 +1,13 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.eventlog
 
-import cc.noharry.agent.kernel.api.SessionEventAppend
-import cc.noharry.agent.kernel.api.SessionEventLogHealthStatus
-import cc.noharry.agent.kernel.api.SessionEventPayload
-import cc.noharry.agent.kernel.api.SessionEventQuery
-import cc.noharry.agent.kernel.api.SessionEventType
-import cc.noharry.agent.kernel.api.SessionJson
+import cc.noharry.agent.spi.SessionEventAppend
+import cc.noharry.agent.spi.SessionEventLogHealthStatus
+import cc.noharry.agent.spi.SessionEventPayload
+import cc.noharry.agent.spi.SessionEventQuery
+import cc.noharry.agent.spi.SessionEventType
+import cc.noharry.agent.spi.SessionJson
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertThrows
@@ -130,11 +130,11 @@ class InMemorySessionEventLogTest {
         log.append(event(SessionEventType.RUN_STARTED))
 
         assertEquals(
-            cc.noharry.agent.kernel.api.SessionEventLogHealthStatus.VOLATILE,
+            cc.noharry.agent.spi.SessionEventLogHealthStatus.VOLATILE,
             log.health("session-1", "run-1").status,
         )
         assertEquals(
-            cc.noharry.agent.kernel.api.SessionEventLogDurability.VOLATILE,
+            cc.noharry.agent.spi.SessionEventLogDurability.VOLATILE,
             log.durability(),
         )
     }

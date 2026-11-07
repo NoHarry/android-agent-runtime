@@ -21,7 +21,7 @@ internal class RuntimeWorkspaceRegistry(
     private val runSelections = ConcurrentHashMap<String, String>()
 
     fun select(
-        request: cc.noharry.agent.kernel.api.AgentRequest,
+        request: cc.noharry.agent.spi.AgentRequest,
         runId: String = request.requestId,
     ): RuntimeWorkspaceSelection {
         val requestedId = request.workspaceId?.trim()?.takeIf { it.isNotEmpty() }

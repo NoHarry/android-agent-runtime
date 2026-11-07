@@ -1,16 +1,16 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.ToolInitializeContext
-import cc.noharry.agent.kernel.api.ToolInitializeResult
-import cc.noharry.agent.kernel.api.ToolPromptDescriptor
-import cc.noharry.agent.kernel.api.ToolProvider
-import cc.noharry.agent.kernel.api.ToolProviderStatus
-import cc.noharry.agent.kernel.api.ToolResourceDescriptor
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.ToolInitializeContext
+import cc.noharry.agent.spi.ToolInitializeResult
+import cc.noharry.agent.spi.ToolPromptDescriptor
+import cc.noharry.agent.spi.ToolProvider
+import cc.noharry.agent.spi.ToolProviderStatus
+import cc.noharry.agent.spi.ToolResourceDescriptor
 import cc.noharry.agent.kernel.core.tools.MaterializerContext
 import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
 import java.util.concurrent.atomic.AtomicInteger

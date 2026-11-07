@@ -1,6 +1,6 @@
 package cc.noharry.agent.policy
 
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import kotlinx.serialization.json.JsonObject
 
 internal class PolicyEngine(

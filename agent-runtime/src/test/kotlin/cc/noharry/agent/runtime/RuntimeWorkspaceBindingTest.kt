@@ -1,14 +1,14 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeResult
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.loop.failed
 import cc.noharry.agent.vfs.VfsFileSystem
 import java.io.File
@@ -30,7 +30,7 @@ class RuntimeWorkspaceBindingTest {
             .workspace(RuntimeWorkspaceRef("beta", VfsFileSystem.singleFileRoot(beta)))
             .defaultWorkspace("alpha")
             .modelClient(readThenFinishModel(seenRequests, "done"))
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest(workspaceId = "beta")).toList()
 
@@ -49,7 +49,7 @@ class RuntimeWorkspaceBindingTest {
             .workspace(RuntimeWorkspaceRef("beta", VfsFileSystem.singleFileRoot(beta)))
             .defaultWorkspace("alpha")
             .modelClient(readThenFinishModel(seenRequests, "done"))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest(requestId = "request-1", workspaceId = "beta")).toList()
         runtime.run(agentRequest(requestId = "request-2")).toList()
@@ -89,8 +89,8 @@ class RuntimeWorkspaceBindingTest {
         resumeRuntime(root, alpha, beta, seen).use { restored ->
             val result = restored.resumeConfirmation(approve(pending.pending.pendingId))
             assertTrue(
-                result is cc.noharry.agent.kernel.api.ConfirmationResumeResult.Rejected ||
-                    result is cc.noharry.agent.kernel.api.ConfirmationResumeResult.NotFound,
+                result is cc.noharry.agent.spi.ConfirmationResumeResult.Rejected ||
+                    result is cc.noharry.agent.spi.ConfirmationResumeResult.NotFound,
             )
             assertEquals(emptyList<ModelRequest>(), seen)
         }
@@ -102,7 +102,7 @@ class RuntimeWorkspaceBindingTest {
         val runtime = AgentRuntimeBuilder.create()
             .workspace(RuntimeWorkspaceRef("known", VfsFileSystem.singleFileRoot(workspace("content"))))
             .modelClient(readThenFinishModel(seenRequests, "done"))
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest(workspaceId = "missing")).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -145,7 +145,7 @@ class RuntimeWorkspaceBindingTest {
             File(it, "note.txt").writeText(content)
         }
 
-    private fun waitingRuntime(root: File, alpha: File, beta: File): cc.noharry.agent.kernel.api.AgentRuntime =
+    private fun waitingRuntime(root: File, alpha: File, beta: File): cc.noharry.agent.spi.AgentRuntime =
         workspaceRuntime(root, alpha, beta, askThenWaitModel())
 
     private fun resumeRuntime(
@@ -153,21 +153,21 @@ class RuntimeWorkspaceBindingTest {
         alpha: File,
         beta: File,
         seen: MutableList<ModelRequest>,
-    ): cc.noharry.agent.kernel.api.AgentRuntime = workspaceRuntime(root, alpha, beta, readThenFinishModel(seen, "done"))
+    ): cc.noharry.agent.spi.AgentRuntime = workspaceRuntime(root, alpha, beta, readThenFinishModel(seen, "done"))
 
     private fun sameRuntime(
         root: File,
         alpha: File,
         beta: File,
         seen: MutableList<ModelRequest>,
-    ): cc.noharry.agent.kernel.api.AgentRuntime = workspaceRuntime(root, alpha, beta, askThenReadThenFinishModel(seen, "done"))
+    ): cc.noharry.agent.spi.AgentRuntime = workspaceRuntime(root, alpha, beta, askThenReadThenFinishModel(seen, "done"))
 
     private fun workspaceRuntime(
         root: File,
         alpha: File,
         beta: File,
         model: FakeModelClient,
-    ): cc.noharry.agent.kernel.api.AgentRuntime =
+    ): cc.noharry.agent.spi.AgentRuntime =
         AgentRuntimeBuilder.create()
             .reliabilityStorageRoot(root)
             .workspace(RuntimeWorkspaceRef("alpha", VfsFileSystem.singleFileRoot(alpha)))
@@ -176,7 +176,7 @@ class RuntimeWorkspaceBindingTest {
             .toolProvider(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
             .hook(confirmUntilApproved())
             .modelClient(model)
-            .build()
+            .buildEngine()
 
     private fun askThenReadThenFinishModel(
         seenRequests: MutableList<ModelRequest>,
@@ -201,7 +201,7 @@ class RuntimeWorkspaceBindingTest {
 
     private suspend fun assertProcessRestartAdmissionUnsupported(
         result: RuntimeResult?,
-        runtime: cc.noharry.agent.kernel.api.AgentRuntime,
+        runtime: cc.noharry.agent.spi.AgentRuntime,
     ) {
         assertEquals(RuntimeRunStatus.CANCELLED, result?.status)
         assertEquals(RuntimeErrorCode.PROCESS_RESTART_ADMISSION_UNSUPPORTED.wireCode, result?.errorCode)
@@ -223,7 +223,7 @@ class RuntimeWorkspaceBindingTest {
             workspaceId = workspaceId,
         )
 
-    private inline fun cc.noharry.agent.kernel.api.AgentRuntime.use(block: (cc.noharry.agent.kernel.api.AgentRuntime) -> Unit) {
+    private inline fun cc.noharry.agent.spi.AgentRuntime.use(block: (cc.noharry.agent.spi.AgentRuntime) -> Unit) {
         try {
             block(this)
         } finally {

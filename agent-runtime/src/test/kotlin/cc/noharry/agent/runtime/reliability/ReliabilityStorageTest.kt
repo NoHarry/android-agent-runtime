@@ -1,18 +1,18 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.reliability
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeEvidence
-import cc.noharry.agent.kernel.api.reliability.RuntimeEvidenceType
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunEnvelope
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunPhase
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunSnapshot
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeEvidence
+import cc.noharry.agent.spi.reliability.RuntimeEvidenceType
+import cc.noharry.agent.spi.reliability.RuntimeRunEnvelope
+import cc.noharry.agent.spi.reliability.RuntimeRunPhase
+import cc.noharry.agent.spi.reliability.RuntimeRunSnapshot
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.state.ReliabilityRetentionPolicy
 import cc.noharry.agent.runtime.AgentRuntimeBuilder
 import cc.noharry.agent.runtime.DefaultAgentRuntime
@@ -219,7 +219,7 @@ class ReliabilityStorageTest {
             .toolProvider(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
             .hook(confirmWithPrompt("Need token=sk-waitstorage123"))
         model?.let { builder.modelClient(it) }
-        return builder.build() as DefaultAgentRuntime
+        return builder.buildEngine() as DefaultAgentRuntime
     }
 
     private fun agentRequest(): AgentRequest = AgentRequest(

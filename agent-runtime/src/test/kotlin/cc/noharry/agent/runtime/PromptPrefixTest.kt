@@ -1,12 +1,12 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
 
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import java.nio.file.Files
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -46,7 +46,7 @@ class PromptPrefixTest {
             .sessionHistory(SessionHistory())
             .sessionToolActivations(SessionToolActivations())
             .runContext("当前时间 08:00")
-            .build()
+            .buildEngine()
         runtime.run(AgentRequest("r1", "s1", "空调多少度")).toList()
         runtime.run(AgentRequest("r2", "s1", "现在呢")).toList()
 
@@ -70,7 +70,7 @@ class PromptPrefixTest {
                 .sessionToolActivations(activations)
                 .deferredBackendTools()
                 .runContext("当前时间 $now")
-                .build()
+                .buildEngine()
             runtime.run(AgentRequest(run, "s1", input)).toList()
             runtime.close()
         }

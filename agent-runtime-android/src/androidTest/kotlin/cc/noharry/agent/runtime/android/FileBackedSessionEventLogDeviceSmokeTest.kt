@@ -1,14 +1,14 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.android
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnit4
-import cc.noharry.agent.kernel.api.SessionEventAppend
-import cc.noharry.agent.kernel.api.SessionEventLog
-import cc.noharry.agent.kernel.api.SessionEventLogHealthStatus
-import cc.noharry.agent.kernel.api.SessionEventType
-import cc.noharry.agent.kernel.core.state.encodeFileName
+import cc.noharry.agent.spi.SessionEventAppend
+import cc.noharry.agent.spi.SessionEventLog
+import cc.noharry.agent.spi.SessionEventLogHealthStatus
+import cc.noharry.agent.spi.SessionEventType
+import android.util.Base64
 import cc.noharry.agent.runtime.eventlog.openFileBackedSessionEventLog
 import java.io.File
 import java.util.UUID
@@ -132,6 +132,9 @@ private fun event(
     type = type,
     sourceEventSequences = sourceEventSequences,
 )
+
+private fun encodeFileName(value: String): String =
+    Base64.encodeToString(value.toByteArray(Charsets.UTF_8), Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
 
 private fun eventFile(root: File, sessionId: String, runId: String): File =
     File(root, "$STREAMS_RELATIVE/${encodeFileName(sessionId)}/${encodeFileName(runId)}/segments/000001.jsonl")

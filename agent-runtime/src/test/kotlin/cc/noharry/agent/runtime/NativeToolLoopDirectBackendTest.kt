@@ -1,9 +1,9 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
@@ -38,7 +38,7 @@ class NativeToolLoopDirectBackendTest {
                 modelRound(ModelEvent.ToolCall("invalid", qualifiedMcpTool(tool), """{"midPois":[$point,$point,$point,$point]}""")),
                 modelRound(ModelEvent.ToolCall("valid", qualifiedMcpTool(tool), """{"midPois":[$point,$point,$point]}""")),
                 modelRound(finish("finish", "corrected")),
-            ), seenRequests = requests)).build()
+            ), seenRequests = requests)).buildEngine()
         runtime.run(agentRequest()).toList()
         assertEquals(listOf(tool), backend.calledTools)
         assertTrue(requests[2].messages.last().content.contains("maxItems=3"))
@@ -72,7 +72,7 @@ class NativeToolLoopDirectBackendTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -92,7 +92,7 @@ class NativeToolLoopDirectBackendTest {
             .workspaceRoot(Files.createTempDirectory("direct-backend-").toFile())
             .toolProvider(backend)
             .modelClient(directBackendModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -117,7 +117,7 @@ class NativeToolLoopDirectBackendTest {
             .workspaceRoot(Files.createTempDirectory("direct-backend-").toFile())
             .toolProvider(backend)
             .modelClient(schemaValidationBackendModel(seenRequests, "{}"))
-            .build()
+            .buildEngine()
 
         val result = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ResultAvailable>()
@@ -142,7 +142,7 @@ class NativeToolLoopDirectBackendTest {
             .workspaceRoot(Files.createTempDirectory("direct-backend-").toFile())
             .toolProvider(backend)
             .modelClient(schemaValidationBackendModel(seenRequests, """{"degreesCelsius":"hot"}"""))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
         val validationResult = seenRequests[2].messages.last().content
@@ -162,7 +162,7 @@ class NativeToolLoopDirectBackendTest {
             .workspaceRoot(Files.createTempDirectory("direct-backend-").toFile())
             .toolProvider(backend)
             .modelClient(collisionBackendModel(seenRequests))
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         runtime.run(agentRequest()).toList()
 
@@ -207,7 +207,7 @@ class NativeToolLoopDirectBackendTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build() as DefaultAgentRuntime
+            .buildEngine() as DefaultAgentRuntime
 
         runtime.run(agentRequest()).toList()
 

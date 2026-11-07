@@ -1,20 +1,20 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.ConfirmationResumeResult
-import cc.noharry.agent.kernel.api.HookContext
-import cc.noharry.agent.kernel.api.HookDecision
-import cc.noharry.agent.kernel.api.HookFailurePolicy
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.RuntimeHookRegistration
-import cc.noharry.agent.kernel.api.ToolMatcher
-import cc.noharry.agent.kernel.api.ToolSource
-import cc.noharry.agent.kernel.api.ToolUse
-import cc.noharry.agent.kernel.api.ToolUseResult
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.ConfirmationResumeResult
+import cc.noharry.agent.spi.HookContext
+import cc.noharry.agent.spi.HookDecision
+import cc.noharry.agent.spi.HookFailurePolicy
+import cc.noharry.agent.spi.RuntimeHook
+import cc.noharry.agent.spi.RuntimeHookRegistration
+import cc.noharry.agent.spi.ToolMatcher
+import cc.noharry.agent.spi.ToolSource
+import cc.noharry.agent.spi.ToolUse
+import cc.noharry.agent.spi.ToolUseResult
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.loop.failed
 import cc.noharry.agent.kernel.core.loop.recordPostToolUse
 import cc.noharry.agent.kernel.core.tools.MCP_RESULT_INVALID_JSON_CODE
@@ -80,7 +80,7 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .hook(denyTool("set_temperature"))
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val result = events.filterIsInstance<AgentEvent.ResultAvailable>().single().result
@@ -100,7 +100,7 @@ class RuntimeHookPolicyTest {
             .hookTimeoutMillis(1)
             .hook(slowAllowHook())
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -117,7 +117,7 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .hook(throwingHook())
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -134,7 +134,7 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .hook(throwingHook(), failurePolicy = HookFailurePolicy.FAIL_OPEN)
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -155,7 +155,7 @@ class RuntimeHookPolicyTest {
                 failurePolicy = HookFailurePolicy.FAIL_OPEN,
             )
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -183,7 +183,7 @@ class RuntimeHookPolicyTest {
                 failurePolicy = HookFailurePolicy.FAIL_OPEN,
             )
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -202,7 +202,7 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .hook(countingHook(preHookCalls))
             .modelClient(malformedBackendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -222,7 +222,7 @@ class RuntimeHookPolicyTest {
             .hook(rewriteToolArguments("set_temperature", TEMPERATURE_REWRITE_ARGS))
             .hook(recordPreHookArguments("set_temperature", seenHookArguments))
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -244,7 +244,7 @@ class RuntimeHookPolicyTest {
                 ),
             )
             .modelClient(writeThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -261,7 +261,7 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .hook(rewriteToolArguments("set_temperature", TEMPERATURE_REWRITE_ARGS))
             .modelClient(executePlanThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -278,7 +278,7 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .hook(rewriteToolArguments("set_temperature", "[]"))
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -294,7 +294,7 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .hook(cancellingHook())
             .modelClient(backendOnlyModel())
-            .build()
+            .buildEngine()
 
         val result = runCatching { runtime.run(agentRequest()).toList() }
 
@@ -311,7 +311,7 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .hook(denyTool("set_temperature"))
             .modelClient(executePlanThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -328,7 +328,7 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .hook(confirmUntilApproved())
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val pending = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ConfirmationRequired>()
@@ -360,7 +360,7 @@ class RuntimeHookPolicyTest {
                 .toolProvider(backend)
                 .hook(confirmUntilApproved())
                 .modelClient(backendThenFinishModel(mutableListOf()))
-                .build()
+                .buildEngine()
 
             val pending = runtime.run(agentRequest().copy(requestId = "confirmed-failure-$index")).toList()
                 .filterIsInstance<AgentEvent.ConfirmationRequired>()
@@ -385,7 +385,7 @@ class RuntimeHookPolicyTest {
             .hook(rewriteToolArguments("set_temperature", TEMPERATURE_REWRITE_ARGS))
             .hook(confirmUntilApproved())
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val pending = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ConfirmationRequired>()
@@ -411,7 +411,7 @@ class RuntimeHookPolicyTest {
                 """.trimIndent(),
             )
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val pending = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ConfirmationRequired>()
@@ -433,7 +433,7 @@ class RuntimeHookPolicyTest {
             .policyConfigJson(BACKEND_DENY_POLICY)
             .hook(confirmUntilApproved())
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
 
@@ -453,7 +453,7 @@ class RuntimeHookPolicyTest {
             .policyConfigJson(BACKEND_CONFIRM_POLICY)
             .hook(confirmWithPrompt("Host needs approval", "Host approval?"))
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val pending = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ConfirmationRequired>()
@@ -480,7 +480,7 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .hook(alwaysAsks, ToolMatcher.source(ToolSource.BACKEND))
             .modelClient(backendThenFinishModel(mutableListOf()))
-            .build()
+            .buildEngine()
 
         val pending = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ConfirmationRequired>()
@@ -528,7 +528,7 @@ class RuntimeHookPolicyTest {
                 matcher = ToolMatcher.toolName(qualifiedMcpTool("set_temperature")),
             )
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -550,7 +550,7 @@ class RuntimeHookPolicyTest {
                 timeoutMillis = 1,
             )
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -568,7 +568,7 @@ class RuntimeHookPolicyTest {
             .hook(slowAllowHook())
             .hookTimeoutMillis(1)
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -587,7 +587,7 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .hook(blockingPostHook(postStarted, releasePostHook))
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         try {
             val eventsDeferred = async {
@@ -617,7 +617,7 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .policyConfigPath("/config/policy/backend-confirm.json")
             .modelClient(backendThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val pending = runtime.run(agentRequest()).toList()
             .filterIsInstance<AgentEvent.ConfirmationRequired>()
@@ -634,7 +634,7 @@ class RuntimeHookPolicyTest {
         val result = runCatching {
             AgentRuntimeBuilder.create()
                 .policyConfigJson("""{"rules":[{"decision":"unknown"}]}""")
-                .build()
+                .buildEngine()
         }
 
         assertTrue(requireNotNull(result.exceptionOrNull()).message.orEmpty().contains("POLICY_CONFIG_INVALID"))
@@ -645,7 +645,7 @@ class RuntimeHookPolicyTest {
         val result = runCatching {
             AgentRuntimeBuilder.create()
                 .policyConfigJson("""{"rules":[{"match":{"sources":["BACKENDD"]},"decision":"deny"}]}""")
-                .build()
+                .buildEngine()
         }
 
         assertTrue(requireNotNull(result.exceptionOrNull()).message.orEmpty().contains("POLICY_CONFIG_INVALID"))
@@ -663,7 +663,7 @@ class RuntimeHookPolicyTest {
                 """.trimIndent(),
             )
             .modelClient(writeThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -705,7 +705,7 @@ class RuntimeHookPolicyTest {
                         seenRequests = seenRequests,
                     ),
                 )
-                .build()
+                .buildEngine()
 
             runtime.run(agentRequest().copy(requestId = "canonical-policy-$index")).toList()
 
@@ -724,7 +724,8 @@ class RuntimeHookPolicyTest {
             .modelClient(finishOnlyModel())
             .build()
 
-        runtime.run(agentRequest()).toList()
+        runtime.startThread(cc.noharry.agent.ThreadOptions(threadId = "session-1"))
+            .run("hello", cc.noharry.agent.TurnOptions(turnId = "request-1"))
 
         assertEquals(listOf("started:request-1", "finished:request-1:COMPLETED"), events)
     }

@@ -1,10 +1,10 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.kernel.core.context.*
 import cc.noharry.agent.kernel.core.loop.*
 import cc.noharry.agent.kernel.core.memory.*
@@ -35,7 +35,7 @@ class ContextDrivenRuntimeTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(contextRequest()).toList()
 
@@ -65,7 +65,7 @@ class ContextDrivenRuntimeTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(contextRequest()).toList()
 
@@ -80,7 +80,7 @@ class ContextDrivenRuntimeTest {
         val runtime = AgentRuntimeBuilder.create()
             .virtualWorkspace(vfsWithSkill())
             .modelClient(todoModel(seenRequests))
-            .build()
+            .buildEngine()
 
         val events = runtime.run(contextRequest()).toList()
 
@@ -130,7 +130,7 @@ class ContextDrivenRuntimeTest {
         val runtime = AgentRuntimeBuilder.create()
             .virtualWorkspace(workspace)
             .modelClient(todoModel(mutableListOf()))
-            .build()
+            .buildEngine()
 
         runtime.run(contextRequest()).toList()
 
@@ -151,7 +151,7 @@ class ContextDrivenRuntimeTest {
             .virtualWorkspace(workspace)
             .toolProvider(backend)
             .modelClient(FakeModelClient(eventsByRound = memoryPromotionRounds(runCount = 3)))
-            .build()
+            .buildEngine()
 
         runtime.run(memoryRequest(index = 1)).toList()
 
@@ -189,7 +189,7 @@ class ContextDrivenRuntimeTest {
                 ),
             )
         }
-        val runtime = builder.build()
+        val runtime = builder.buildEngine()
 
         runtime.run(contextRequest()).toList()
 
@@ -239,7 +239,7 @@ class ContextDrivenRuntimeTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(contextRequest()).toList()
 
@@ -285,7 +285,7 @@ class ContextDrivenRuntimeTest {
                     seenRequests = seenRequests,
                 ),
             )
-            .build()
+            .buildEngine()
 
         runtime.run(contextRequest()).toList()
 

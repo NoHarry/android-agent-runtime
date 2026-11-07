@@ -1,10 +1,12 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.model.ModelRef
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.ThreadEvent
+import cc.noharry.agent.ThreadItem
+import cc.noharry.agent.TurnStatus
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.model.ModelRef
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.tools.TERMINAL_TOOLS
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -43,7 +45,6 @@ import kotlinx.serialization.json.putJsonArray
  * [onReport], for the host to deliver as a new turn: one report per run's children, once none of them still works (or
  * the first news has waited [SubagentConfig.reportHoldMillis]). Children live in memory only.
  */
-@ExperimentalAgentRuntimeApi
 class Subagents(
     config: SubagentConfig = SubagentConfig(),
     private val launcher: SubagentLauncher,
@@ -241,7 +242,7 @@ class Subagents(
         }
     }
 
-    private fun observe(child: Child, event: AgentEvent) {
+    private fun observe(child: Child, event: ThreadEvent) {
         val visible = synchronized(lock) {
             if (child.state.finished) return
             child.lastActivity = nowEpochMillis()
@@ -249,28 +250,32 @@ class Subagents(
             if (recovered) child.state = SubagentState.RUNNING
             when (event) {
                 // Its closing finish is not a step of the work.
-                is AgentEvent.NativeToolCallStarted -> if (event.toolName in TERMINAL_TOOL_NAMES) recovered else {
+                is ThreadEvent.ItemStarted -> (event.item as? ThreadItem.ToolCall)?.let { tool ->
+                    if (tool.tool in TERMINAL_TOOL_NAMES) return@let recovered
                     child.toolCalls += 1
-                    child.latest = "${event.toolName} ${event.arguments}".take(MAX_LATEST_CHARS)
+                    child.latest = "${tool.tool} ${tool.arguments}".take(MAX_LATEST_CHARS)
                     true
-                }
-                is AgentEvent.TokenUsageDelta -> {
+                } ?: recovered
+                is ThreadEvent.UsageUpdated -> {
                     child.modelCalls += 1
-                    child.inputTokens += event.inputTokens.toLong()
-                    child.cachedTokens += event.cacheReadTokens.toLong()
-                    child.outputTokens += event.outputTokens.toLong() + event.reasoningTokens.toLong()
+                    child.inputTokens = event.usage.inputTokens.toLong()
+                    child.cachedTokens = event.usage.cacheReadTokens.toLong()
+                    child.outputTokens = event.usage.outputTokens.toLong() + event.usage.reasoningTokens.toLong()
                     true
                 }
                 else -> recovered
             }
         }
         if (visible) notifyStatus(child)
-        if (event is AgentEvent.ResultAvailable) {
+        if (event is ThreadEvent.TurnFailed) {
+            settle(child, SubagentState.FAILED, error = event.error.message)
+        }
+        if (event is ThreadEvent.TurnCompleted) {
             val result = event.result
             when (result.status) {
-                RuntimeRunStatus.COMPLETED -> settle(child, SubagentState.COMPLETED, result = result.response)
-                RuntimeRunStatus.CANCELLED -> settle(child, SubagentState.CANCELLED, error = result.errorCode ?: "Cancelled.")
-                else -> settle(child, SubagentState.FAILED, error = listOfNotNull(result.errorCode, result.response.takeIf { it.isNotBlank() }, result.status.name).first())
+                TurnStatus.COMPLETED -> settle(child, SubagentState.COMPLETED, result = result.finalResponse)
+                TurnStatus.INTERRUPTED -> settle(child, SubagentState.CANCELLED, error = result.error?.code ?: "Cancelled.")
+                else -> settle(child, SubagentState.FAILED, error = listOfNotNull(result.error?.code, result.finalResponse.takeIf { it.isNotBlank() }, result.status.name).first())
             }
         }
     }
@@ -398,7 +403,6 @@ class Subagents(
 }
 
 /** Limits and defaults for [Subagents]. */
-@ExperimentalAgentRuntimeApi
 data class SubagentConfig(
     /** 1: subagents cannot start their own (dsh and Codex default). */
     val maxDepth: Int = 1,
@@ -426,7 +430,6 @@ data class SubagentConfig(
 }
 
 /** One child for the host to run. */
-@ExperimentalAgentRuntimeApi
 data class SubagentSpec(
     val id: String,
     /** The child's own session, separate from the conversation's. */
@@ -449,7 +452,6 @@ data class SubagentSpec(
  * A kind of subagent the host offers (such as one that looks up train and flight times): the model names it in
  * spawn_agent's `agent`, and the host's launcher runs that child with the type's own instructions, tools and limits.
  */
-@ExperimentalAgentRuntimeApi
 data class SubagentType(
     /** What the model writes: lowercase letters, digits and hyphens. */
     val name: String,
@@ -465,12 +467,10 @@ data class SubagentType(
 private val SUBAGENT_TYPE_NAME = Regex("[a-z][a-z0-9-]{0,39}")
 
 /** Runs one child to its end, e.g. on a runtime built for it; [Subagents] reads progress and the result from the events. */
-@ExperimentalAgentRuntimeApi
 fun interface SubagentLauncher {
-    fun launch(spec: SubagentSpec): Flow<AgentEvent>
+    fun launch(spec: SubagentSpec): Flow<ThreadEvent>
 }
 
-@ExperimentalAgentRuntimeApi
 enum class SubagentState(val wireName: String) {
     RUNNING("running"),
     STALLED("stalled"),
@@ -483,7 +483,6 @@ enum class SubagentState(val wireName: String) {
     val finished: Boolean get() = this != RUNNING && this != STALLED
 }
 
-@ExperimentalAgentRuntimeApi
 data class SubagentStatus(
     val id: String,
     val label: String,
@@ -512,7 +511,6 @@ data class SubagentStatus(
 )
 
 /** Results and stalls of one run's children that the run did not collect, for the host to deliver as one new turn. */
-@ExperimentalAgentRuntimeApi
 data class SubagentReport(val parentSessionId: String, val statuses: List<SubagentStatus>)
 
 /** Who calls a subagent tool. */

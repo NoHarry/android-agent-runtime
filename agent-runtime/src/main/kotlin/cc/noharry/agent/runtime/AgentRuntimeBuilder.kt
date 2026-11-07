@@ -1,29 +1,29 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentPlugin
-import cc.noharry.agent.kernel.api.AgentProfile
-import cc.noharry.agent.kernel.api.AgentRuntime
-import cc.noharry.agent.kernel.api.ExecEngine
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.HookFailurePolicy
-import cc.noharry.agent.kernel.api.RuntimeContextProvider
-import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.RuntimeHookRegistration
-import cc.noharry.agent.kernel.api.RuntimeTurnObserver
-import cc.noharry.agent.kernel.api.SessionEventLog
-import cc.noharry.agent.kernel.api.ToolMatcher
-import cc.noharry.agent.kernel.api.ToolProvider
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelRef
+import cc.noharry.agent.spi.AgentPlugin
+import cc.noharry.agent.spi.AgentProfile
+import cc.noharry.agent.spi.AgentRuntime as EngineRuntime
+import cc.noharry.agent.spi.ExecEngine
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.HookFailurePolicy
+import cc.noharry.agent.spi.RuntimeContextProvider
+import cc.noharry.agent.spi.RuntimeEvidenceConfig
+import cc.noharry.agent.spi.RuntimeHook
+import cc.noharry.agent.spi.RuntimeHookRegistration
+import cc.noharry.agent.spi.RuntimeTurnObserver
+import cc.noharry.agent.spi.SessionEventLog
+import cc.noharry.agent.spi.ToolMatcher
+import cc.noharry.agent.spi.ToolProvider
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelRef
 import cc.noharry.agent.kernel.core.context.BootstrapPromptProvider
 import cc.noharry.agent.kernel.core.context.BootstrapPromptResolver
 import cc.noharry.agent.kernel.core.context.ContextBootstrapPromptResolver
 import cc.noharry.agent.kernel.core.context.ContextCatalog
 import cc.noharry.agent.kernel.core.context.ConversationCompactor
 import cc.noharry.agent.kernel.core.context.HistoryCompactor
-import cc.noharry.agent.kernel.core.context.ProtocolRules
+import cc.noharry.agent.runtime.ProtocolRules
 import cc.noharry.agent.kernel.core.context.ProtocolTools
 import cc.noharry.agent.kernel.core.context.SimpleBootstrapPromptResolver
 import cc.noharry.agent.kernel.core.context.defaultContextCatalog
@@ -34,7 +34,7 @@ import cc.noharry.agent.kernel.core.loop.DEFAULT_MAX_MODEL_ROUNDS
 import cc.noharry.agent.kernel.core.loop.DEFAULT_MAX_TOOL_CALLS_PER_RUN
 import cc.noharry.agent.kernel.core.loop.DEFAULT_MODEL_RETRY_MAX_ATTEMPTS
 import cc.noharry.agent.kernel.core.loop.LoopBudgetConfig
-import cc.noharry.agent.kernel.core.loop.LoopSettings
+import cc.noharry.agent.runtime.LoopSettings
 import cc.noharry.agent.kernel.core.loop.ModelRetryConfig
 import cc.noharry.agent.kernel.core.plugin.ProfileCompiler
 import cc.noharry.agent.kernel.core.plugin.RuntimeBlueprint
@@ -47,7 +47,6 @@ import cc.noharry.agent.kernel.core.state.FileBackedLoopHistoryStore
 import cc.noharry.agent.kernel.core.state.InMemoryLoopHistoryStore
 import cc.noharry.agent.kernel.core.state.LoopHistoryStore
 import cc.noharry.agent.kernel.core.state.MAX_LOOP_HISTORY_BYTES
-import cc.noharry.agent.kernel.core.state.ProtocolRequestTemplate
 import cc.noharry.agent.kernel.core.state.ReliabilityRetentionPolicy
 import cc.noharry.agent.kernel.core.state.ReliabilityStorage
 import cc.noharry.agent.kernel.core.state.SessionRunSchedulerConfig
@@ -62,13 +61,13 @@ import cc.noharry.agent.kernel.core.tools.MaterializerContext
 import cc.noharry.agent.kernel.core.tools.ProviderConcurrencyLimiter
 import cc.noharry.agent.kernel.core.tools.ToolActivationStore
 import cc.noharry.agent.kernel.core.tools.ToolDomainIndexer
-import cc.noharry.agent.kernel.core.tools.ToolDomainNaming
+import cc.noharry.agent.runtime.ToolDomainNaming
 import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
 import cc.noharry.agent.kernel.core.tools.WORKSPACE_TOOL_NAMES
-import cc.noharry.agent.kernel.core.trace.DefaultTraceRedactor
-import cc.noharry.agent.kernel.core.trace.StandardTraceRedactor
-import cc.noharry.agent.kernel.core.trace.TraceRedactor
-import cc.noharry.agent.kernel.core.trace.TraceVisibilityConfig
+import cc.noharry.agent.runtime.DefaultTraceRedactor
+import cc.noharry.agent.runtime.StandardTraceRedactor
+import cc.noharry.agent.runtime.TraceRedactor
+import cc.noharry.agent.runtime.TraceVisibilityConfig
 import cc.noharry.agent.policy.PolicyEngine
 import cc.noharry.agent.policy.PolicyRule
 import cc.noharry.agent.runtime.reliability.FileBackedReliabilityStorage
@@ -105,80 +104,107 @@ class AgentRuntimeBuilder {
 
     private constructor()
 
-    private val declarations = RuntimeCapabilityDeclarations.Collector()
-    private val plugins = mutableListOf<AgentPlugin>()
-    private var profile: AgentProfile? = null
-    private var workspaceRoot: File? = null
-    private var sessionStoreFactory: ((File) -> SessionStore)? = null
-    private var virtualWorkspace: VfsFileSystem? = null
-    private val runtimeWorkspaces = linkedMapOf<String, RuntimeWorkspaceRef>()
-    private var defaultWorkspaceId: String? = null
-    private var confirmationTemplate: ConfirmationTemplate? = null
-    private var protocolRequestTemplate: ProtocolRequestTemplate? = null
-    private var reliabilityStorageRoot: File? = null
-    private var reliabilityRetentionPolicy: ReliabilityRetentionPolicy = ReliabilityRetentionPolicy()
-    private var reliabilityStorageHardeningPolicy: ReliabilityStorageHardeningPolicy =
+    internal val declarations = RuntimeCapabilityDeclarations.Collector()
+    internal val plugins = mutableListOf<AgentPlugin>()
+    internal var profile: AgentProfile? = null
+    internal var configuredModel: ModelClient? = null
+    internal var threadStorageRoot: File? = null
+    internal var workspaceRoot: File? = null
+    internal var sessionStoreFactory: ((File) -> SessionStore)? = null
+    internal var virtualWorkspace: VfsFileSystem? = null
+    internal val runtimeWorkspaces = linkedMapOf<String, RuntimeWorkspaceRef>()
+    internal var defaultWorkspaceId: String? = null
+    internal var confirmationTemplate: ConfirmationTemplate? = null
+    internal var reliabilityStorageRoot: File? = null
+    internal var reliabilityRetentionPolicy: ReliabilityRetentionPolicy = ReliabilityRetentionPolicy()
+    internal var reliabilityStorageHardeningPolicy: ReliabilityStorageHardeningPolicy =
         ReliabilityStorageHardeningPolicy()
     /** Validated host evidence config from experimental [runtimeEvidence]; null = disabled. */
-    private var evidenceConfig: InternalRuntimeEvidenceConfig? = null
-    private var traceVisibilityConfig: TraceVisibilityConfig = TraceVisibilityConfig()
-    private var traceRedactor: TraceRedactor = DefaultTraceRedactor
-    private var nowEpochMillis: () -> Long = { System.currentTimeMillis() }
-    private val policyRules = mutableListOf<PolicyRule>()
-    private val policyConfigJsons = mutableListOf<String>()
-    private val policyConfigFiles = mutableListOf<File>()
-    private val policyConfigPaths = mutableListOf<String>()
-    private val hooks = mutableListOf<PendingRuntimeHookRegistration>()
-    private var hookTimeoutMillis: Long = DEFAULT_HOOK_TIMEOUT_MILLIS
-    private var hostSystemPrompt: String? = null
-    private var runContext: String = ""
-    private var loopBudget: LoopBudgetConfig = LoopBudgetConfig()
-    private var contextInputTokenThreshold: Long? = null
-    private var contextWindowTokens: Long? = null
-    private val historyByteBudget: Int get() = if (contextInputTokenThreshold == null) MAX_LOOP_HISTORY_BYTES else Int.MAX_VALUE
-    private var maxConcurrentToolCalls: Int = DEFAULT_MAX_CONCURRENT_TOOL_CALLS
-    private var maxConcurrentModelCalls: Int = DEFAULT_MAX_CONCURRENT_MODEL_CALLS
-    private var sessionRunSchedulerConfig: SessionRunSchedulerConfig = defaultSessionRunSchedulerConfig()
-    private var modelRetryConfig: ModelRetryConfig = ModelRetryConfig()
-    private var sessionEventLogRoot: File? = null
-    private var agentsMdContent: String? = null
-    private val sceneRules = mutableMapOf<String, String>()
-    private val hostSkills = mutableListOf<HostSkill>()
-    private var sessionActivationInheritance: Boolean = false
-    private var sessionToolActivations: SessionToolActivations? = null
-    private var sessionHistory: SessionHistory? = null
-    private var subagents: Subagents? = null
-    private var webSearchProvider: WebSearchProvider? = null
-    private var webFetchFallback: WebFetchFallback? = null
-    private var loopSettings: LoopSettings = LoopSettings()
-    private var lessons: Boolean = true
-    private var toolDomains: ToolDomainNaming = ToolDomainIndexer.CONVENTIONS
-    private var protocolRules: ProtocolRules = ProtocolRules.DEFAULT
-    private var deferredBackendTools: Boolean = false
-    private var nativeDeferredTools: Boolean = false
-    private var runContextAsSystem: Boolean = false
-    private var networkConfirmationPolicy: NetworkToolConfirmationPolicy = NetworkToolConfirmationPolicy.REQUIRE_PER_HOST
-    private var nativeWebFetchEnabled: Boolean = true
-    private var disabledNativeTools: Set<String> = emptySet()
+    internal var evidenceConfig: InternalRuntimeEvidenceConfig? = null
+    internal var traceVisibilityConfig: TraceVisibilityConfig = TraceVisibilityConfig()
+    internal var traceRedactor: TraceRedactor = DefaultTraceRedactor
+    internal var nowEpochMillis: () -> Long = { System.currentTimeMillis() }
+    internal val policyRules = mutableListOf<PolicyRule>()
+    internal val policyConfigJsons = mutableListOf<String>()
+    internal val policyConfigFiles = mutableListOf<File>()
+    internal val policyConfigPaths = mutableListOf<String>()
+    internal val hooks = mutableListOf<PendingRuntimeHookRegistration>()
+    internal var hookTimeoutMillis: Long = DEFAULT_HOOK_TIMEOUT_MILLIS
+    internal var hostSystemPrompt: String? = null
+    internal var runContext: String = ""
+    internal var loopBudget: LoopBudgetConfig = LoopBudgetConfig()
+    internal var contextInputTokenThreshold: Long? = null
+    internal var contextWindowTokens: Long? = null
+    internal val historyByteBudget: Int get() = if (contextInputTokenThreshold == null) MAX_LOOP_HISTORY_BYTES else Int.MAX_VALUE
+    internal var maxConcurrentToolCalls: Int = DEFAULT_MAX_CONCURRENT_TOOL_CALLS
+    internal var maxConcurrentModelCalls: Int = DEFAULT_MAX_CONCURRENT_MODEL_CALLS
+    internal var sessionRunSchedulerConfig: SessionRunSchedulerConfig = defaultSessionRunSchedulerConfig()
+    internal var modelRetryConfig: ModelRetryConfig = ModelRetryConfig()
+    internal var sessionEventLogRoot: File? = null
+    internal var agentsMdContent: String? = null
+    internal val sceneRules = mutableMapOf<String, String>()
+    internal val hostSkills = mutableListOf<HostSkill>()
+    internal var sessionActivationInheritance: Boolean = false
+    internal var sessionToolActivations: SessionToolActivations? = null
+    internal var sessionHistory: SessionHistory? = null
+    internal var subagents: Subagents? = null
+    internal var webSearchProvider: WebSearchProvider? = null
+    internal var webFetchFallback: WebFetchFallback? = null
+    internal var loopSettings: LoopSettings = LoopSettings()
+    internal var lessons: Boolean = true
+    internal var toolDomains: ToolDomainNaming = ToolDomainIndexer.CONVENTIONS
+    internal var protocolRules: ProtocolRules = ProtocolRules.DEFAULT
+    internal var deferredBackendTools: Boolean = false
+    internal var nativeDeferredTools: Boolean = false
+    internal var runContextAsSystem: Boolean = false
+    internal var networkConfirmationPolicy: NetworkToolConfirmationPolicy = NetworkToolConfirmationPolicy.REQUIRE_PER_HOST
+    internal var nativeWebFetchEnabled: Boolean = true
+    internal var disabledNativeTools: Set<String> = emptySet()
 
-    fun modelClient(client: ModelClient): AgentRuntimeBuilder = apply {
+    fun model(client: ModelClient): AgentRuntimeBuilder = apply {
+        configuredModel = client
         declarations.modelClient(client)
     }
 
+    /** Registers tools implemented by the host or a connected MCP server. */
+    fun tools(vararg providers: ToolProvider): AgentRuntimeBuilder = tools(providers.toList())
+
+    fun tools(providers: List<ToolProvider>): AgentRuntimeBuilder = apply {
+        providers.forEach(declarations::toolProvider)
+    }
+
+    fun skills(vararg skills: HostSkill): AgentRuntimeBuilder = apply { hostSkills += skills }
+
+    /** Persists conversation items and model history independently of the optional workspace. */
+    fun storage(directory: File): AgentRuntimeBuilder = apply {
+        threadStorageRoot = directory
+        sessionEventLogRoot = File(directory, "events")
+        if (reliabilityStorageRoot == null) reliabilityStorageRoot = File(directory, "runtime")
+    }
+
+    /** The round, tool, time, context and retry budgets for turns. */
+    fun limits(limits: LoopLimits): AgentRuntimeBuilder = apply {
+        loopBudget(limits.maxModelRounds, limits.maxToolCallsPerTurn, limits.maxWallClockMillis)
+        limits.contextWindowTokens?.let { contextWindow(it, limits.compactionThresholdRatio) }
+        modelRetry(limits.modelRetryAttempts, limits.retryInitialBackoffMillis, limits.retryMaxBackoffMillis, limits.fallbackModels)
+        loopSettings = loopSettings.withLimits(limits)
+    }
+
+    internal fun modelClient(client: ModelClient): AgentRuntimeBuilder = model(client)
+
     /** Sets the immutable profile identity compiled through [ProfileCompiler]. */
     @ExperimentalAgentRuntimeApi
-    fun profile(profile: AgentProfile): AgentRuntimeBuilder = apply {
+    internal fun profile(profile: AgentProfile): AgentRuntimeBuilder = apply {
         this.profile = profile
     }
 
     /** Installs one trusted, host-packaged plugin into the single runtime Kernel. */
     @ExperimentalAgentRuntimeApi
-    fun plugin(plugin: AgentPlugin): AgentRuntimeBuilder = apply {
+    internal fun plugin(plugin: AgentPlugin): AgentRuntimeBuilder = apply {
         plugins += plugin
     }
 
     /** Uses a host-supplied append-only event authority instead of the Kernel default. */
-    @ExperimentalAgentRuntimeApi
     fun sessionEventLog(log: SessionEventLog): AgentRuntimeBuilder = apply {
         declarations.sessionEventLog(log)
     }
@@ -188,18 +214,17 @@ class AgentRuntimeBuilder {
      * not supply [sessionEventLog] and no packaged [AgentCapabilities.SESSION_EVENT_LOG] exists.
      * Business [virtualWorkspace] is never selected as the EventLog writer.
      */
-    @ExperimentalAgentRuntimeApi
     fun sessionEventLogRoot(root: File): AgentRuntimeBuilder = apply {
         sessionEventLogRoot = root
     }
 
-    /** Registers a generic [ToolProvider]. Canonical capability is [cc.noharry.agent.kernel.api.AgentCapabilities.TOOL_PROVIDER]. */
-    fun toolProvider(provider: ToolProvider): AgentRuntimeBuilder = apply {
+    /** Registers a generic [ToolProvider]. Canonical capability is [cc.noharry.agent.spi.AgentCapabilities.TOOL_PROVIDER]. */
+    internal fun toolProvider(provider: ToolProvider): AgentRuntimeBuilder = apply {
         declarations.toolProvider(provider)
     }
 
-    /** Registers generic [ToolProvider]s. Canonical capability is [cc.noharry.agent.kernel.api.AgentCapabilities.TOOL_PROVIDER]. */
-    fun toolProviders(providers: List<ToolProvider>): AgentRuntimeBuilder = apply {
+    /** Registers generic [ToolProvider]s. Canonical capability is [cc.noharry.agent.spi.AgentCapabilities.TOOL_PROVIDER]. */
+    internal fun toolProviders(providers: List<ToolProvider>): AgentRuntimeBuilder = apply {
         providers.forEach(declarations::toolProvider)
     }
 
@@ -207,7 +232,6 @@ class AgentRuntimeBuilder {
      * Registers a pre-model [RuntimeContextProvider].
      * IDs must be unique; implementations live outside `agent-runtime`.
      */
-    @ExperimentalAgentRuntimeApi
     fun contextProvider(provider: RuntimeContextProvider): AgentRuntimeBuilder = apply {
         declarations.contextProvider(provider)
     }
@@ -225,7 +249,8 @@ class AgentRuntimeBuilder {
      * Keeps sessions, runs, messages and usage in the store [factory] opens under the [workspaceRoot]; without a
      * workspace root there is no session store. `agent-runtime-android` supplies an SQLite store.
      */
-    @ExperimentalAgentRuntimeApi
+    /** @suppress */
+    @cc.noharry.agent.spi.InternalAgentRuntimeApi
     fun sessionStore(factory: (workspaceRoot: File) -> SessionStore): AgentRuntimeBuilder = apply {
         sessionStoreFactory = factory
     }
@@ -262,24 +287,11 @@ class AgentRuntimeBuilder {
     }
 
     /**
-     * Adds a scaffold ProtocolRequest emitted during each run.
-     *
-     * This is a development hook for validation.
-     */
-    internal fun protocolRequestOnRun(
-        kind: String,
-        payloadJson: String = "{}",
-        expiresInMillis: Long? = null,
-    ): AgentRuntimeBuilder = apply {
-        protocolRequestTemplate = ProtocolRequestTemplate(kind, payloadJson, expiresInMillis)
-    }
-
-    /**
      * Host/test injectable wall clock for referenceTime and runtime timers.
      * Required for deterministic temporal event Runtime E2E (validTime vs learnedAt).
      */
     @ExperimentalAgentRuntimeApi
-    fun nowEpochMillis(clock: () -> Long): AgentRuntimeBuilder = apply {
+    internal fun nowEpochMillis(clock: () -> Long): AgentRuntimeBuilder = apply {
         nowEpochMillis = clock
     }
 
@@ -289,7 +301,6 @@ class AgentRuntimeBuilder {
     }
 
     /** Adds a host runtime hook. */
-    @ExperimentalAgentRuntimeApi
     fun hook(
         hook: RuntimeHook,
         matcher: ToolMatcher = ToolMatcher.All,
@@ -307,13 +318,15 @@ class AgentRuntimeBuilder {
 
     /** Sets the pre-hook timeout in milliseconds. */
     @ExperimentalAgentRuntimeApi
-    fun hookTimeoutMillis(timeoutMillis: Long): AgentRuntimeBuilder = apply {
+    internal fun hookTimeoutMillis(timeoutMillis: Long): AgentRuntimeBuilder = apply {
         require(timeoutMillis > 0) { "hookTimeoutMillis must be positive." }
         hookTimeoutMillis = timeoutMillis
     }
 
     /** Appends host instructions after the internal protocol prompt. */
-    fun systemPrompt(text: String): AgentRuntimeBuilder = apply {
+    internal fun systemPrompt(text: String): AgentRuntimeBuilder = instructions(text)
+
+    fun instructions(text: String): AgentRuntimeBuilder = apply {
         validateHostSystemPrompt(text)
         hostSystemPrompt = text.takeIf { it.isNotBlank() }
     }
@@ -324,7 +337,6 @@ class AgentRuntimeBuilder {
      * from run to run out of the system prompt lets the provider's prompt cache keep the system prompt and the tool list
      * across runs. At most 16 KiB.
      */
-    @ExperimentalAgentRuntimeApi
     fun runContext(text: String): AgentRuntimeBuilder = apply {
         validateRunContext(text)
         runContext = text
@@ -350,7 +362,7 @@ class AgentRuntimeBuilder {
     }
 
     /** Registers a host-provided skill for progressive disclosure. */
-    fun skill(hostSkill: HostSkill): AgentRuntimeBuilder = apply {
+    internal fun skill(hostSkill: HostSkill): AgentRuntimeBuilder = apply {
         hostSkills += hostSkill
     }
 
@@ -373,7 +385,6 @@ class AgentRuntimeBuilder {
      * Starts each run's requests with its session's earlier runs from [history], which the host shares across the
      * runtimes it builds for one session, and adds the run to it when it ends.
      */
-    @ExperimentalAgentRuntimeApi
     fun sessionHistory(history: SessionHistory): AgentRuntimeBuilder = apply {
         sessionHistory = history
     }
@@ -383,7 +394,6 @@ class AgentRuntimeBuilder {
      * it builds (children outlive runs). Needs a workspace. A child's own runtime gets the same instance, so its tool
      * list matches its parent's; [SubagentConfig.maxDepth] refuses a child's spawn.
      */
-    @ExperimentalAgentRuntimeApi
     fun subagents(subagents: Subagents): AgentRuntimeBuilder = apply {
         this.subagents = subagents
     }
@@ -405,8 +415,23 @@ class AgentRuntimeBuilder {
      * builds, takes its own.
      */
     @ExperimentalAgentRuntimeApi
-    fun loopSettings(settings: LoopSettings): AgentRuntimeBuilder = apply {
+    internal fun loopSettings(settings: LoopSettings): AgentRuntimeBuilder = settings(settings)
+
+    fun settings(settings: LoopSettings): AgentRuntimeBuilder = apply {
+        limits(settings.limits)
         loopSettings = settings
+        imageInput(settings.imageInputEnabled)
+        deferredBackendTools(settings.backendTools == BackendTools.SEARCH)
+        nativeDeferredTools(settings.backendTools == BackendTools.NATIVE_DEFERRED)
+        runContextAsSystem(settings.runContextAsSystem)
+        lessons(settings.learnLessons)
+        nativeWebFetchEnabled(settings.nativeWebFetchEnabled)
+        disabledNativeTools(settings.disabledNativeTools)
+        networkConfirmationPolicy(settings.networkConfirmationPolicy)
+        hookTimeoutMillis(settings.hookTimeoutMillis)
+        toolConcurrency(settings.concurrency.tools)
+        modelConcurrency(settings.concurrency.models)
+        sessionConcurrency(settings.concurrency.activeThreads, settings.concurrency.queuedPerThread, settings.concurrency.queuedTotal)
     }
 
     /**
@@ -414,7 +439,7 @@ class AgentRuntimeBuilder {
      * saved before; on by default when the runtime has a workspace to keep them in.
      */
     @ExperimentalAgentRuntimeApi
-    fun lessons(enabled: Boolean): AgentRuntimeBuilder = apply {
+    internal fun lessons(enabled: Boolean): AgentRuntimeBuilder = apply {
         lessons = enabled
     }
 
@@ -423,13 +448,11 @@ class AgentRuntimeBuilder {
      * drop or add lines, such as the web search fallback offered when no search provider is set, or the folders the
      * workspace may be written in.
      */
-    @ExperimentalAgentRuntimeApi
     fun protocolRules(rules: ProtocolRules): AgentRuntimeBuilder = apply {
         protocolRules = rules
     }
 
     /** How tools are grouped into the areas the prompt lists for the model ([ToolDomainNaming]). */
-    @ExperimentalAgentRuntimeApi
     fun toolDomains(naming: ToolDomainNaming): AgentRuntimeBuilder = apply {
         toolDomains = naming
     }
@@ -451,7 +474,7 @@ class AgentRuntimeBuilder {
      * the provider's prompt cache. Hooks, policy, confirmation and events still see the real tool.
      */
     @ExperimentalAgentRuntimeApi
-    fun deferredBackendTools(enabled: Boolean = true): AgentRuntimeBuilder = apply {
+    internal fun deferredBackendTools(enabled: Boolean = true): AgentRuntimeBuilder = apply {
         deferredBackendTools = enabled
     }
 
@@ -463,7 +486,7 @@ class AgentRuntimeBuilder {
      * [deferredBackendTools].
      */
     @ExperimentalAgentRuntimeApi
-    fun nativeDeferredTools(enabled: Boolean = true): AgentRuntimeBuilder = apply {
+    internal fun nativeDeferredTools(enabled: Boolean = true): AgentRuntimeBuilder = apply {
         nativeDeferredTools = enabled
     }
 
@@ -473,12 +496,12 @@ class AgentRuntimeBuilder {
      * API).
      */
     @ExperimentalAgentRuntimeApi
-    fun runContextAsSystem(enabled: Boolean = true): AgentRuntimeBuilder = apply {
+    internal fun runContextAsSystem(enabled: Boolean = true): AgentRuntimeBuilder = apply {
         runContextAsSystem = enabled
     }
 
     /** Sets native loop budgets. */
-    fun loopBudget(
+    internal fun loopBudget(
         maxModelRounds: Int = DEFAULT_MAX_MODEL_ROUNDS,
         maxToolCallsPerRun: Int = DEFAULT_MAX_TOOL_CALLS_PER_RUN,
         maxWallClockMillis: Long? = null,
@@ -490,7 +513,7 @@ class AgentRuntimeBuilder {
      * Whether the model accepts image input (default true). When false, every image in a
      * request, such as a tool screenshot, becomes a text placeholder; the EventLog still keeps it.
      */
-    fun imageInput(enabled: Boolean): AgentRuntimeBuilder = apply {
+    internal fun imageInput(enabled: Boolean): AgentRuntimeBuilder = apply {
         loopBudget = loopBudget.copy(imageInputEnabled = enabled)
     }
 
@@ -499,7 +522,7 @@ class AgentRuntimeBuilder {
      * Uses reported inclusive input tokens per model call, not billing totals; disables legacy
      * byte-triggered compaction/history trimming. Existing defaults remain when unset.
      */
-    fun contextWindow(tokens: Long, compactionThresholdRatio: Double = 0.8): AgentRuntimeBuilder = apply {
+    internal fun contextWindow(tokens: Long, compactionThresholdRatio: Double = 0.8): AgentRuntimeBuilder = apply {
         require(tokens > 0) { "Context window must be positive." }
         require(compactionThresholdRatio > 0.0 && compactionThresholdRatio <= 1.0) { "Compaction ratio must be in (0, 1]." }
         contextInputTokenThreshold = kotlin.math.ceil(tokens * compactionThresholdRatio).toLong().coerceAtLeast(1)
@@ -507,7 +530,7 @@ class AgentRuntimeBuilder {
     }
 
     /** Sets the runtime-wide cap for concurrent tool executions. */
-    fun toolConcurrency(
+    internal fun toolConcurrency(
         maxConcurrentCalls: Int = 4,
     ): AgentRuntimeBuilder = apply {
         require(maxConcurrentCalls > 0) { "maxConcurrentCalls must be positive." }
@@ -518,7 +541,7 @@ class AgentRuntimeBuilder {
      * Sets the runtime-wide cap for concurrent model completions, including history
      * compaction. The same wrapper is shared by the loop and [HistoryCompactor].
      */
-    fun modelConcurrency(
+    internal fun modelConcurrency(
         maxConcurrentCalls: Int = 4,
     ): AgentRuntimeBuilder = apply {
         require(maxConcurrentCalls > 0) { "maxConcurrentCalls must be positive." }
@@ -531,7 +554,7 @@ class AgentRuntimeBuilder {
      * per runtime and ordinary-run admission is wired in-process; process-restored admission
      * remains deferred.
      */
-    fun sessionConcurrency(
+    internal fun sessionConcurrency(
         maxActiveSessions: Int = DEFAULT_MAX_ACTIVE_SESSIONS,
         maxQueuedRunsPerSession: Int = DEFAULT_MAX_QUEUED_RUNS_PER_SESSION,
         maxQueuedRunsGlobal: Int = DEFAULT_MAX_QUEUED_RUNS_GLOBAL,
@@ -547,7 +570,7 @@ class AgentRuntimeBuilder {
     }
 
     /** Sets recoverable model retry and fallback behavior. */
-    fun modelRetry(
+    internal fun modelRetry(
         maxAttempts: Int = DEFAULT_MODEL_RETRY_MAX_ATTEMPTS,
         initialBackoffMillis: Long = 250L,
         maxBackoffMillis: Long = 2_000L,
@@ -565,7 +588,7 @@ class AgentRuntimeBuilder {
      * Controls host-level confirmation for `web_fetch`. `ALLOW_ALL_HOSTS` skips the per-host
      * confirmation gate entirely (URL validation and private-address denial still apply).
      */
-    fun networkConfirmationPolicy(policy: NetworkToolConfirmationPolicy): AgentRuntimeBuilder = apply {
+    internal fun networkConfirmationPolicy(policy: NetworkToolConfirmationPolicy): AgentRuntimeBuilder = apply {
         networkConfirmationPolicy = policy
     }
 
@@ -574,7 +597,7 @@ class AgentRuntimeBuilder {
      * expose a model-visible `web_search` server tool should set this false to avoid the model
      * preferring `web_fetch` over `web_search`.
      */
-    fun nativeWebFetchEnabled(enabled: Boolean): AgentRuntimeBuilder = apply {
+    internal fun nativeWebFetchEnabled(enabled: Boolean): AgentRuntimeBuilder = apply {
         nativeWebFetchEnabled = enabled
     }
 
@@ -583,12 +606,11 @@ class AgentRuntimeBuilder {
      * Copies the set; unknown names and protocol-required finish are rejected.
      * An engine is still required for exec_js.
      */
-    fun disabledNativeTools(names: Set<String>): AgentRuntimeBuilder = apply {
+    internal fun disabledNativeTools(names: Set<String>): AgentRuntimeBuilder = apply {
         disabledNativeTools = cc.noharry.agent.kernel.core.tools.snapshotDisabledNativeTools(names)
     }
 
     /** Registers a host-provided exec engine. */
-    @ExperimentalAgentRuntimeApi
     fun execEngine(engine: ExecEngine): AgentRuntimeBuilder = apply {
         declarations.execEngine(engine)
     }
@@ -615,10 +637,9 @@ class AgentRuntimeBuilder {
     /**
      * How the run's public events, summaries and failure reports hide personal data: [DefaultTraceRedactor] unless set;
      * the agent's answers and questions to the user go out as written, for the host to filter if it wants. A
-     * [StandardTraceRedactor][cc.noharry.agent.kernel.core.trace.StandardTraceRedactor] keeps phone numbers or coordinates
+     * [StandardTraceRedactor][cc.noharry.agent.runtime.StandardTraceRedactor] keeps phone numbers or coordinates
      * in events and summaries where an app needs them shown. Secrets are hidden after [redactor] whatever it does.
      */
-    @ExperimentalAgentRuntimeApi
     fun traceRedactor(redactor: TraceRedactor): AgentRuntimeBuilder = apply {
         traceRedactor = TraceRedactor { value -> SECRETS_ONLY.redact(redactor.redact(value)) }
     }
@@ -663,7 +684,20 @@ class AgentRuntimeBuilder {
     }
 
     /** Builds the runtime synchronously; call from a worker thread when storage or files are configured. */
-    fun build(): AgentRuntime {
+    fun build(): cc.noharry.agent.AgentRuntime {
+        val model = requireNotNull(configuredModel) { "Configure a model with model(...) before building a runtime." }
+        val store = cc.noharry.agent.runtime.thread.ThreadStore(threadStorageRoot, traceRedactor, nowEpochMillis)
+        val history = sessionHistory ?: SessionHistory().also { sessionHistory = it }
+        if (threadStorageRoot != null) history.store.bindPersistence(store.modelHistoryPersistence())
+        val engine = buildEngine() as DefaultAgentRuntime
+        return cc.noharry.agent.runtime.thread.DefaultThreadRuntime(
+            engine, store, loopBudget.imageInputEnabled,
+            confirmationTemplate?.expiresInMillis ?: DEFAULT_CONFIRMATION_TIMEOUT_MILLIS,
+            nowEpochMillis, model::supportsImageInput, sessionRunSchedulerConfig,
+        )
+    }
+
+    internal fun buildEngine(): EngineRuntime {
         val compiled = RuntimeProfileAdapter.compile(
             profile = profile ?: AgentProfile(RuntimeCompositionMessages.DEFAULT_PROFILE_ID),
             declarations = declarations.snapshot(),
@@ -679,272 +713,18 @@ class AgentRuntimeBuilder {
         }
     }
 
-    private fun buildRuntimeInfrastructure(
-        capabilities: BlueprintCapabilities,
-        blueprint: RuntimeBlueprint,
-    ): RuntimeInfrastructure {
-        traceVisibilityConfig.validate()
-        val configTexts = policyConfigJsons +
-            policyConfigFiles.map { it.readText() } +
-            policyConfigPaths.map(::readPolicyConfigPath)
-        val policyEngine = PolicyEngine(policyRules.toList() + configTexts.flatMap(PolicyConfigLoader::load))
-        val providerConcurrencyLimiter = ProviderConcurrencyLimiter()
-        val mcpRegistry = ToolProviderRegistry(
-            providers = emptyList(),
-            concurrencyLimiter = providerConcurrencyLimiter,
-            blueprint = blueprint,
-        )
-        workspaceRoot?.let { MemoryWorkspace(File(it, MEMORY_WORKSPACE_DIR)).initialize() }
-        val storage = buildStorageInfrastructure()
-        return RuntimeInfrastructure(
-            mcpRegistry = mcpRegistry,
-            providerConcurrencyLimiter = providerConcurrencyLimiter,
-            workspaceRegistry = RuntimeWorkspaceRegistry(runtimeWorkspaces.values.toList(), defaultWorkspaceId),
-            hookChain = buildHookChain(policyEngine, capabilities.hooks),
-            storage = storage,
-            context = buildContextInfrastructure(storage.reliabilityStorage, mcpRegistry),
-        )
-    }
-
-    private fun createRuntime(
-        capabilities: BlueprintCapabilities,
-        infrastructure: RuntimeInfrastructure,
-        blueprint: RuntimeBlueprint,
-    ): AgentRuntime {
-        val limitedModel = capabilities.modelClient?.let { client ->
-            ConcurrencyLimitedModelClient(
-                delegate = client,
-                limiter = infrastructure.providerConcurrencyLimiter,
-                maxConcurrentModelCalls = maxConcurrentModelCalls,
-            )
-        }
-        val limitedExec = capabilities.execEngine?.let { engine ->
-            ConcurrencyLimitedExecEngine(
-                delegate = engine,
-                limiter = infrastructure.providerConcurrencyLimiter,
-            )
-        }
-        return DefaultAgentRuntime(
-            modelClient = limitedModel,
-            mcpRegistry = infrastructure.mcpRegistry,
-            workspaceRegistry = infrastructure.workspaceRegistry,
-            confirmationTemplate = confirmationTemplate,
-            protocolRequestTemplate = protocolRequestTemplate,
-            nowEpochMillis = nowEpochMillis,
-            hookChain = infrastructure.hookChain,
-            traceVisibilityConfig = traceVisibilityConfig,
-            traceRedactor = traceRedactor,
-            reliabilityStorage = infrastructure.storage.reliabilityStorage,
-            materializerSchemaCache = infrastructure.storage.schemaCache,
-            bootstrapPrompt = BootstrapPromptProvider.build(hostSystemPrompt, tools = protocolTools(), protocolRules = protocolRules),
-            promptResolver = infrastructure.context.promptResolver,
-            contextRouter = infrastructure.context.contextRouter,
-            todoStore = infrastructure.context.todoStore,
-            memoryStore = infrastructure.context.memoryStore,
-            sessionActivationInheritance = sessionActivationInheritance,
-            historyCompactor = HistoryCompactor(limitedModel, inputTokenThreshold = contextInputTokenThreshold),
-            loopBudget = loopBudget,
-            maxConcurrentToolCalls = maxConcurrentToolCalls,
-            modelRetryConfig = modelRetryConfig,
-            execEngine = limitedExec,
-            loopHistoryStore = infrastructure.storage.loopHistoryStore,
-            sessionStore = infrastructure.storage.sessionStore,
-            sessionEventLog = capabilities.eventLog,
-            networkConfirmationPolicy = networkConfirmationPolicy,
-            nativeWebFetchEnabled = nativeWebFetchEnabled,
-            disabledNativeTools = offeredNativeToolsExcluded(),
-            reliabilityStorageRoot = reliabilityStorageRoot,
-            // Packs come only from validated evidence allowlist (string ids), never host-supplied ProbePack.
-            probePacks = evidenceConfig?.takeIf { it.probesEnabled }?.resolvePacks() ?: emptyList(),
-            evidenceConfig = evidenceConfig,
-            contextProviders = capabilities.contextProviders,
-            turnObservers = capabilities.turnObservers,
-            blueprint = blueprint,
-            sessionRunSchedulerConfig = sessionRunSchedulerConfig,
-            activationStore = sessionToolActivations?.store ?: ToolActivationStore(nowEpochMillis = nowEpochMillis),
-            runContext = runContext,
-            sessionHistory = sessionHistory?.store,
-            backendToolExposure = when {
-                nativeDeferredTools -> BackendToolExposure.NATIVE_DEFERRED
-                deferredBackendTools -> BackendToolExposure.CALL_TOOL
-                else -> BackendToolExposure.DIRECT
-            },
-            runContextAsSystem = runContextAsSystem,
-            conversationCompactor = conversationCompactor(limitedModel),
-            subagents = subagents,
-            webSearchProvider = webSearchProvider,
-            webFetchFallback = webFetchFallback,
-            loopSettings = loopSettings,
-        )
-    }
-
-    /**
-     * With session history and a context window, the session's oldest runs are summarized when a request reaches the
-     * compaction threshold; the newest 16% of the window (as dsh keeps) stays as it was.
-     */
-    private fun conversationCompactor(model: ModelClient?): ConversationCompactor? {
-        val threshold = contextInputTokenThreshold ?: return null
-        val window = contextWindowTokens ?: return null
-        if (sessionHistory == null) return null
-        val retain = (window * CONVERSATION_RETAIN_RATIO).toLong().coerceAtMost(threshold - 1)
-        return ConversationCompactor(model, threshold, retain, nowEpochMillis)
-    }
-
     /** Builds without configuration or storage I/O on the caller context. */
-    suspend fun buildAsync(): AgentRuntime = withContext(Dispatchers.IO) { build() }
+    suspend fun buildAsync(): cc.noharry.agent.AgentRuntime = withContext(Dispatchers.IO) { build() }
 
-    private fun buildStorageInfrastructure(): StorageInfrastructure =
-        StorageInfrastructure(
-            reliabilityStorage = reliabilityStorageRoot?.let {
-                FileBackedReliabilityStorage(it, reliabilityRetentionPolicy, reliabilityStorageHardeningPolicy)
-            },
-            schemaCache = reliabilityStorageRoot?.let(::FileBackedMaterializerSchemaCache),
-            loopHistoryStore = reliabilityStorageRoot?.let { FileBackedLoopHistoryStore(it, historyByteBudget) }
-                ?: InMemoryLoopHistoryStore(historyByteBudget),
-            sessionStore = workspaceRoot?.let { root -> sessionStoreFactory?.invoke(root) },
-        )
-
-    private fun buildHookChain(
-        policyEngine: PolicyEngine,
-        pluginHooks: List<RuntimeHook>,
-    ): RuntimeHookChain =
-        RuntimeHookChain(
-            listOf(
-                RuntimeHookRegistration(
-                    hook = PolicyHookAdapter(policyEngine),
-                    timeoutMillis = hookTimeoutMillis,
-                    failurePolicy = HookFailurePolicy.FAIL_CLOSED,
-                ),
-            ) +
-                hooks.map { it.toRegistration(hookTimeoutMillis) } +
-                pluginHooks.map {
-                    RuntimeHookRegistration(
-                        hook = it,
-                        timeoutMillis = hookTimeoutMillis,
-                        failurePolicy = HookFailurePolicy.FAIL_CLOSED,
-                    )
-                },
-        )
-
-    private fun buildContextInfrastructure(
-        reliabilityStorage: ReliabilityStorage?,
-        mcpRegistry: ToolProviderRegistry,
-    ): ContextInfrastructure {
-        val memoryDir = workspaceRoot?.let { File(it, MEMORY_WORKSPACE_DIR) }
-        val todoStore = memoryDir?.let(::TodoStore)
-        val memoryStore = if (lessons) {
-            memoryDir?.let { RuntimeMemoryStore(it, nowEpochMillis) } ?: virtualWorkspace?.let { RuntimeMemoryStore(it, nowEpochMillis) }
-        } else {
-            null
-        }
-        val skillRegistry = SkillRegistry(hostSkills.toList(), virtualWorkspace)
-        val contextRouter = ContextMaterializerRouter(
-            storage = reliabilityStorage,
-            memoryStore = memoryStore,
-            todoStore = todoStore,
-            skillRegistry = skillRegistry,
-            agentsMdContent = agentsMdContent,
-        )
-        val promptResolver = promptResolver(todoStore, skillRegistry, mcpRegistry)
-        return ContextInfrastructure(todoStore, memoryStore, contextRouter, promptResolver)
-    }
-
-    private fun promptResolver(
-        todoStore: TodoStore?,
-        skillRegistry: SkillRegistry,
-        mcpRegistry: ToolProviderRegistry,
-    ): BootstrapPromptResolver {
-        val tools = protocolTools()
-        val sceneGuidance = sceneRules.toMap()
-        val files = runtimeWorkspaces.isNotEmpty()
-        return when {
-            shouldUseContextPrompt(todoStore) -> ContextBootstrapPromptResolver(
-                hostSystemPrompt,
-                // Without a workspace there is no read_file: no context paths to read and no skill files to open.
-                skillRegistry.takeIf { files },
-                contextCatalog = if (files) defaultContextCatalog() else ContextCatalog(emptyList()),
-                toolDomainIndexProvider = {
-                    ToolDomainIndexer.index(mcpRegistry.allTools(MaterializerContext()), toolDomains)
-                },
-                tools = tools,
-                protocolRules = protocolRules,
-                sceneGuidance = sceneGuidance,
-            )
-            // Without a workspace the prompt is the same every round, except for a scene that has its own rules.
-            sceneGuidance.isNotEmpty() -> BootstrapPromptResolver { scene, _ ->
-                BootstrapPromptProvider.build(
-                    hostSystemPrompt,
-                    scene = scene?.takeIf { it in sceneGuidance },
-                    tools = tools,
-                    protocolRules = protocolRules,
-                    sceneGuidance = sceneGuidance,
-                )
-            }
-            else -> SimpleBootstrapPromptResolver(BootstrapPromptProvider.build(hostSystemPrompt, tools = tools, protocolRules = protocolRules))
-        }
-    }
-
-    /** The native tools this runtime offers, for the protocol prompt. */
-    private fun protocolTools() = ProtocolTools(
-        webFetch = nativeWebFetchEnabled && "web_fetch" !in disabledNativeTools,
-        webSearch = webSearchProvider != null && "web_search" !in disabledNativeTools,
-        disabled = offeredNativeToolsExcluded(),
-    )
-
-    private fun shouldUseContextPrompt(todoStore: TodoStore?): Boolean =
-        todoStore != null ||
-            virtualWorkspace != null ||
-            agentsMdContent != null ||
-            hostSkills.isNotEmpty()
-
-    private fun readPolicyConfigPath(path: String): String {
-        val workspace = virtualWorkspace ?: throw PolicyConfigException(
-            "policyConfigPath requires virtualWorkspace(...).",
-        )
-        return when (val result = runBlocking { workspace.read(path, 0, MAX_POLICY_CONFIG_BYTES) }) {
-            is VfsReadResult.Found -> result.text
-            is VfsReadResult.Error -> throw PolicyConfigException(result.message)
-            VfsReadResult.BinaryUnsupported -> throw PolicyConfigException("Policy config must be text.")
-            VfsReadResult.InvalidPath -> throw PolicyConfigException("Invalid policy config path: $path")
-            VfsReadResult.NotFound -> throw PolicyConfigException("Policy config not found: $path")
-            VfsReadResult.ReadDenied -> throw PolicyConfigException("Policy config read denied: $path")
-        }
-    }
-
-    /** The native tools left out: the host's, and the file tools when the runtime has no workspace for them. */
-    private fun offeredNativeToolsExcluded(): Set<String> =
-        if (runtimeWorkspaces.isEmpty()) disabledNativeTools + (WORKSPACE_TOOL_NAMES - "search_tools") else disabledNativeTools
-
-    private fun registerWorkspace(ref: RuntimeWorkspaceRef, makeDefault: Boolean) {
+    internal fun registerWorkspace(ref: RuntimeWorkspaceRef, makeDefault: Boolean) {
         runtimeWorkspaces[ref.workspaceId] = ref
         if (makeDefault) defaultWorkspaceId = ref.workspaceId
     }
 
-    private data class ContextInfrastructure(
-        val todoStore: TodoStore?,
-        val memoryStore: RuntimeMemoryStore?,
-        val contextRouter: ContextMaterializerRouter,
-        val promptResolver: BootstrapPromptResolver,
-    )
 
-    private data class StorageInfrastructure(
-        val reliabilityStorage: ReliabilityStorage?,
-        val schemaCache: MaterializerSchemaCacheStore?,
-        val loopHistoryStore: LoopHistoryStore,
-        val sessionStore: SessionStore?,
-    )
-
-    private data class RuntimeInfrastructure(
-        val mcpRegistry: ToolProviderRegistry,
-        val providerConcurrencyLimiter: ProviderConcurrencyLimiter,
-        val workspaceRegistry: RuntimeWorkspaceRegistry,
-        val hookChain: RuntimeHookChain,
-        val storage: StorageInfrastructure,
-        val context: ContextInfrastructure,
-    )
 }
 
-private data class PendingRuntimeHookRegistration(
+internal data class PendingRuntimeHookRegistration(
     val hook: RuntimeHook,
     val matcher: ToolMatcher,
     val timeoutMillis: Long?,
@@ -963,12 +743,12 @@ private fun normalizedPolicyConfigPath(path: String): String =
     VfsPathResolver.normalize(path)?.value
         ?: throw PolicyConfigException("Policy config path must be an absolute VFS path.")
 
-private const val MEMORY_WORKSPACE_DIR = "memory"
-private const val MAX_POLICY_CONFIG_BYTES = 128 * 1024
-private const val DEFAULT_WORKSPACE_ID = "default"
+internal const val MEMORY_WORKSPACE_DIR = "memory"
+internal const val MAX_POLICY_CONFIG_BYTES = 128 * 1024
+internal const val DEFAULT_WORKSPACE_ID = "default"
 
 /** Recent conversation kept verbatim when the session is compacted, as a fraction of the window (dsh: 0.16). */
-private const val CONVERSATION_RETAIN_RATIO = 0.16
+internal const val CONVERSATION_RETAIN_RATIO = 0.16
 
 /** What a host's redactor is always followed by: secrets hidden, nothing else changed. */
-private val SECRETS_ONLY = StandardTraceRedactor(phones = false, locations = false)
+internal val SECRETS_ONLY = StandardTraceRedactor(phones = false, locations = false)

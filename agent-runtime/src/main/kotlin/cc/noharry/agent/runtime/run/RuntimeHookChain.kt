@@ -1,15 +1,15 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.run
-import cc.noharry.agent.kernel.api.HookContext
-import cc.noharry.agent.kernel.api.HookDecision
-import cc.noharry.agent.kernel.api.HookFailurePolicy
-import cc.noharry.agent.kernel.api.RuntimeHook
-import cc.noharry.agent.kernel.api.RuntimeHookRegistration
-import cc.noharry.agent.kernel.api.ToolUse
-import cc.noharry.agent.kernel.api.ToolUseResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
+import cc.noharry.agent.spi.HookContext
+import cc.noharry.agent.spi.HookDecision
+import cc.noharry.agent.spi.HookFailurePolicy
+import cc.noharry.agent.spi.RuntimeHook
+import cc.noharry.agent.spi.RuntimeHookRegistration
+import cc.noharry.agent.spi.ToolUse
+import cc.noharry.agent.spi.ToolUseResult
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeResult
 import cc.noharry.agent.kernel.core.loop.HookChainPort
 import cc.noharry.agent.kernel.core.loop.PreToolUseOutcome
 import cc.noharry.agent.kernel.core.loop.failed
@@ -131,13 +131,15 @@ internal class RuntimeHookChain(
 
     override suspend fun onRunStarted(context: HookContext) {
         hooks.forEach { registration ->
-            registration.observeSafely { onRunStarted(context) }
+            registration.observeSafely { onTurnStarted(context) }
         }
     }
 
-    override suspend fun onRunFinished(result: RuntimeResult, context: HookContext) {
+    override suspend fun onRunFinished(result: RuntimeResult, context: HookContext) = Unit
+
+    suspend fun onTurnFinished(result: cc.noharry.agent.TurnResult, context: HookContext) {
         hooks.forEach { registration ->
-            registration.observeSafely { onRunFinished(result, context) }
+            registration.observeSafely { onTurnFinished(result, context) }
         }
     }
 

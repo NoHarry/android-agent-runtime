@@ -2,7 +2,7 @@ package cc.noharry.agent.androiduse
 
 import android.content.res.Resources
 import android.os.Build
-import cc.noharry.agent.kernel.api.ToolDescriptor
+import cc.noharry.agent.spi.ToolDescriptor
 import java.util.Locale
 
 /** [fallbackOnly]: the model is told to look for a dedicated tool first ([AndroidUseOptions.fallbackOnly]). */

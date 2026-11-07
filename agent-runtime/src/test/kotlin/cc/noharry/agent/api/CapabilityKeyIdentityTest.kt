@@ -1,4 +1,4 @@
-package cc.noharry.agent.kernel.api
+package cc.noharry.agent.spi
 
 import cc.noharry.agent.kernel.core.plugin.PluginRegistry
 import cc.noharry.agent.runtime.testDescriptor

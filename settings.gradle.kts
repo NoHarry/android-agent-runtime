@@ -24,9 +24,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "android-agent-runtime"
 
-// The kernel: Android-neutral contracts and the agent loop.
-include(":agent-kernel-api")
-include(":agent-kernel-core")
+// Android-neutral conversation contracts and extension interfaces.
+include(":agent-api")
 // The runtime (plain JVM) and its Android layer.
 include(":agent-runtime")
 include(":agent-runtime-android")

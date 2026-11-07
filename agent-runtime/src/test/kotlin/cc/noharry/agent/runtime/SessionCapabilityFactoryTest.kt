@@ -1,13 +1,13 @@
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentCapabilities
-import cc.noharry.agent.kernel.api.CapabilityCardinality
-import cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.SessionCapabilityContext
-import cc.noharry.agent.kernel.api.SessionCapabilityFactory
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolProvider
+import cc.noharry.agent.spi.AgentCapabilities
+import cc.noharry.agent.spi.CapabilityCardinality
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.SessionCapabilityContext
+import cc.noharry.agent.spi.SessionCapabilityFactory
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolProvider
 import cc.noharry.agent.kernel.core.plugin.PluginRegistry
 import cc.noharry.agent.kernel.core.plugin.RuntimeCompositionMessages
 import java.util.concurrent.atomic.AtomicBoolean
@@ -144,7 +144,7 @@ class SessionCapabilityFactoryTest {
                             override val providerConcurrency =
                                 ProviderConcurrencyDeclaration.threadSafe(8)
 
-                            override suspend fun listTools() = emptyList<cc.noharry.agent.kernel.api.ToolDescriptor>()
+                            override suspend fun listTools() = emptyList<cc.noharry.agent.spi.ToolDescriptor>()
 
                             override suspend fun callTool(
                                 toolName: String,

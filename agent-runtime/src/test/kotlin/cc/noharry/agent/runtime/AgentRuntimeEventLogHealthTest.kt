@@ -1,14 +1,14 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.SessionEventAppend
-import cc.noharry.agent.kernel.api.SessionEventLog
-import cc.noharry.agent.kernel.api.SessionEventLogHealthStatus
-import cc.noharry.agent.kernel.api.SessionEventQuery
-import cc.noharry.agent.kernel.api.SessionEventType
+import cc.noharry.agent.spi.SessionEventAppend
+import cc.noharry.agent.spi.SessionEventLog
+import cc.noharry.agent.spi.SessionEventLogHealthStatus
+import cc.noharry.agent.spi.SessionEventQuery
+import cc.noharry.agent.spi.SessionEventType
 import cc.noharry.agent.kernel.core.tools.ToolProviderRegistry
-import cc.noharry.agent.kernel.core.trace.DefaultTraceRedactor
-import cc.noharry.agent.kernel.core.trace.TraceVisibilityConfig
+import cc.noharry.agent.runtime.DefaultTraceRedactor
+import cc.noharry.agent.runtime.TraceVisibilityConfig
 import cc.noharry.agent.runtime.eventlog.FileBackedSessionEventLog
 import cc.noharry.agent.runtime.eventlog.appendForcedLine
 import cc.noharry.agent.runtime.run.RuntimeHookChain
@@ -34,8 +34,8 @@ class AgentRuntimeEventLogHealthTest {
         val runtime = runtimeWithLog(
             object : SessionEventLog {
                 override fun append(event: SessionEventAppend) = error("unused")
-                override fun query(query: SessionEventQuery) = emptyList<cc.noharry.agent.kernel.api.SessionEvent>()
-                override fun replay(sessionId: String, runId: String) = emptyList<cc.noharry.agent.kernel.api.SessionEvent>()
+                override fun query(query: SessionEventQuery) = emptyList<cc.noharry.agent.spi.SessionEvent>()
+                override fun replay(sessionId: String, runId: String) = emptyList<cc.noharry.agent.spi.SessionEvent>()
             },
         )
 
@@ -81,7 +81,6 @@ private fun runtimeWithLog(log: SessionEventLog?): DefaultAgentRuntime = Default
     modelClient = null,
     mcpRegistry = ToolProviderRegistry(),
     confirmationTemplate = null,
-    protocolRequestTemplate = null,
     nowEpochMillis = { 100 },
     hookChain = RuntimeHookChain.empty(),
     traceVisibilityConfig = TraceVisibilityConfig(),

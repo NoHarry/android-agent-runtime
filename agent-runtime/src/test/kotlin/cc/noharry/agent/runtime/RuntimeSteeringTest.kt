@@ -1,16 +1,16 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
 
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.PostUserInputRequest
-import cc.noharry.agent.kernel.api.PostUserInputResult
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.PostUserInputRequest
+import cc.noharry.agent.spi.PostUserInputResult
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
@@ -26,7 +26,7 @@ class RuntimeSteeringTest {
     @Test
     fun acceptedInputDuringFinalRoundContinuesOnceAndRejectsDuplicateOrWrongSession() = runBlocking {
         val model = SteeringModelClient(firstRoundFinishes = true)
-        val runtime = AgentRuntimeBuilder.create().modelClient(model).build()
+        val runtime = AgentRuntimeBuilder.create().modelClient(model).buildEngine()
         try {
             val running = async { runtime.run(agentRequest()).toList() }
             model.firstRoundStarted.await()
@@ -49,7 +49,7 @@ class RuntimeSteeringTest {
         val model = SteeringModelClient()
         val runtime = AgentRuntimeBuilder.create()
             .modelClient(model)
-            .build()
+            .buildEngine()
 
         val eventsDeferred = async { runtime.run(agentRequest()).toList() }
         model.firstRoundStarted.await()
@@ -86,7 +86,7 @@ class RuntimeSteeringTest {
     fun postUserInputRejectsUnknownOrInactiveRuns() = runBlocking {
         val runtime = AgentRuntimeBuilder.create()
             .modelClient(FakeModelClient(ModelEvent.ToolCall("finish-1", "finish", """{"response":"done"}""")))
-            .build()
+            .buildEngine()
 
         assertEquals(
             PostUserInputResult.NotFound,

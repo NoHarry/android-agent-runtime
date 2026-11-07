@@ -1,7 +1,7 @@
 package cc.noharry.agent.samples.quickstart
 
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.AgentRequest
+import cc.noharry.agent.ThreadEvent
+import cc.noharry.agent.ThreadItem
 import cc.noharry.agent.mcp.McpHttpClient
 import cc.noharry.agent.mcp.McpToolProvider
 import cc.noharry.agent.model.OpenAiModelClient
@@ -23,7 +23,7 @@ fun main(args: Array<String>) = runBlocking {
         tool("now", "The current local date and time.", readOnly = true) { LocalDateTime.now().toString() }
     }
     val builder = AgentRuntimeBuilder.create()
-        .modelClient(
+        .model(
             OpenAiModelClient(
                 apiKeyProvider = { apiKey },
                 model = System.getenv("AGENT_MODEL") ?: "gpt-4o-mini",
@@ -31,19 +31,25 @@ fun main(args: Array<String>) = runBlocking {
                 stream = true,
             ),
         )
-        .toolProvider(clock)
+        .tools(clock)
         .workspaceRoot(Files.createTempDirectory("agent-workspace").toFile())
     System.getenv("MCP_URL")?.let { url ->
         val client = McpHttpClient(url, headers = { emptyMap() }, http = OkHttpHttpTransport(), clientName = "quickstart", clientVersion = "0.1")
-        builder.toolProvider(McpToolProvider(client, serverId = "remote"))
+        builder.tools(McpToolProvider(client, serverId = "remote"))
     }
     val question = args.joinToString(" ").ifBlank { "What time is it now?" }
-    builder.build().run(AgentRequest(requestId = "r1", sessionId = "s1", input = question)).collect { event ->
-        when (event) {
-            is AgentEvent.TextDelta -> print(event.text)
-            is AgentEvent.NativeToolCallStarted -> println("[tool] ${event.toolName}")
-            is AgentEvent.Failed -> println("[failed] ${event.code}: ${event.message}")
-            else -> Unit
+    builder.build().use { runtime ->
+        runtime.startThread().runStreamed(question).collect { event ->
+            when (event) {
+                is ThreadEvent.ItemDelta -> print(event.text)
+                is ThreadEvent.ItemStarted -> when (val item = event.item) {
+                    is ThreadItem.ToolCall -> println("[tool] ${item.tool}")
+                    is cc.noharry.agent.Approval -> item.deny("This command-line sample has no approval UI.")
+                    else -> Unit
+                }
+                is ThreadEvent.TurnFailed -> println("[failed] ${event.error.code}: ${event.error.message}")
+                else -> Unit
+            }
         }
     }
     println()

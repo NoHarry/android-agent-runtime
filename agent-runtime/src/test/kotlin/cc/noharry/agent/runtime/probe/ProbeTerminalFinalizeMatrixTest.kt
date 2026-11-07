@@ -1,14 +1,14 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime.probe
 
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
 
-import cc.noharry.agent.kernel.api.AgentRequest
-import cc.noharry.agent.kernel.api.RuntimeEvidenceConfig
-import cc.noharry.agent.kernel.api.model.ModelClient
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
+import cc.noharry.agent.spi.AgentRequest
+import cc.noharry.agent.spi.RuntimeEvidenceConfig
+import cc.noharry.agent.spi.model.ModelClient
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.runtime.AgentRuntimeBuilder
 import java.io.File
 import kotlinx.coroutines.flow.Flow
@@ -45,7 +45,7 @@ class ProbeTerminalFinalizeMatrixTest {
                         ),
                     )
                     .nowEpochMillis { 1_700_000_000_000L }
-                    .build()
+                    .buildEngine()
             try {
                 runtime.run(AgentRequest("term-run", "s", "hello")).toList()
                 val text = collectText(root)
@@ -79,7 +79,7 @@ class ProbeTerminalFinalizeMatrixTest {
                         ),
                     )
                     .nowEpochMillis { 1L }
-                    .build()
+                    .buildEngine()
             val b =
                 AgentRuntimeBuilder.create()
                     .modelClient(finishClient())
@@ -92,7 +92,7 @@ class ProbeTerminalFinalizeMatrixTest {
                         ),
                     )
                     .nowEpochMillis { 1L }
-                    .build()
+                    .buildEngine()
             a.run(AgentRequest("same", "s", "a")).toList()
             b.run(AgentRequest("same", "s", "b")).toList()
             a.close()

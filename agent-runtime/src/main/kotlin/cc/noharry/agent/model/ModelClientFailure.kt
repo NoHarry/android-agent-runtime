@@ -1,7 +1,7 @@
 package cc.noharry.agent.model
 
-import cc.noharry.agent.kernel.api.model.ModelClientException
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.model.ModelClientException
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.core.loop.failed
 import kotlinx.coroutines.CancellationException
 

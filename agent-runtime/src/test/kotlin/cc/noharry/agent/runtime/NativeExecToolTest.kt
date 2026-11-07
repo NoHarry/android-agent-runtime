@@ -1,25 +1,25 @@
-@file:OptIn(cc.noharry.agent.kernel.api.ExperimentalAgentRuntimeApi::class)
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.kernel.api.AgentEvent
-import cc.noharry.agent.kernel.api.CompletionImpact
-import cc.noharry.agent.kernel.api.ExecEngine
-import cc.noharry.agent.kernel.api.ExecRequest
-import cc.noharry.agent.kernel.api.ExecResult
-import cc.noharry.agent.kernel.api.ExecToolBridge
-import cc.noharry.agent.kernel.api.ProviderConcurrencyDeclaration
-import cc.noharry.agent.kernel.api.RuntimeEffectKind
-import cc.noharry.agent.kernel.api.ToolCallContext
-import cc.noharry.agent.kernel.api.ToolCallResult
-import cc.noharry.agent.kernel.api.ToolDescriptor
-import cc.noharry.agent.kernel.api.mcp.McpClientProvider
-import cc.noharry.agent.kernel.api.model.ModelEvent
-import cc.noharry.agent.kernel.api.model.ModelRequest
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionOutcome
-import cc.noharry.agent.kernel.api.reliability.RuntimeCompletionSummary
-import cc.noharry.agent.kernel.api.reliability.RuntimeErrorCode
-import cc.noharry.agent.kernel.api.reliability.RuntimeResult
-import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
+import cc.noharry.agent.spi.AgentEvent
+import cc.noharry.agent.spi.CompletionImpact
+import cc.noharry.agent.spi.ExecEngine
+import cc.noharry.agent.spi.ExecRequest
+import cc.noharry.agent.spi.ExecResult
+import cc.noharry.agent.spi.ExecToolBridge
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.RuntimeEffectKind
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.mcp.McpClientProvider
+import cc.noharry.agent.spi.model.ModelEvent
+import cc.noharry.agent.spi.model.ModelRequest
+import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
+import cc.noharry.agent.spi.reliability.RuntimeCompletionSummary
+import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.reliability.RuntimeResult
+import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.loop.failed
 import cc.noharry.agent.kernel.core.tools.cancelledToolResult
 import java.nio.file.Files
@@ -37,7 +37,7 @@ class NativeExecToolTest {
             .workspaceRoot(Files.createTempDirectory("exec-output-").toFile())
             .execEngine(outputOnlyExecEngine("script started"))
             .modelClient(execThenFinishModel())
-            .build()
+            .buildEngine()
 
         val events = runtime.run(agentRequest()).toList()
         val output = events.filterIsInstance<AgentEvent.ExecOutputDelta>().single()
@@ -58,7 +58,7 @@ class NativeExecToolTest {
             .policyConfigJson(BACKEND_DENY_POLICY)
             .execEngine(callBackendExecEngine())
             .modelClient(schemaExecThenFinishModel(seenRequests))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -76,7 +76,7 @@ class NativeExecToolTest {
             .execEngine(callBackendExecEngine())
             .modelClient(schemaExecThenFinishModel(seenRequests))
             .loopBudget(maxToolCallsPerRun = 2)
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -93,7 +93,7 @@ class NativeExecToolTest {
             .toolProvider(backend)
             .execEngine(callBackendExecEngine())
             .modelClient(schemaDirectExecThenFinishModel())
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -117,7 +117,7 @@ class NativeExecToolTest {
             .toolProvider(backend)
             .execEngine(successThenMissingExecEngine())
             .modelClient(schemaExecThenFinishModel(mutableListOf()))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -141,7 +141,7 @@ class NativeExecToolTest {
             .toolProvider(backend)
             .execEngine(successThenFailedExecEngine())
             .modelClient(schemaExecThenFinishModel(mutableListOf()))
-            .build()
+            .buildEngine()
 
         runtime.run(agentRequest()).toList()
 
@@ -412,7 +412,7 @@ private suspend fun runRequiredExecNested(
         .execEngine(requiredNestedExecEngine(secondArgumentsJson))
         .modelClient(FakeModelClient(eventsByRound = rounds))
     policyConfigJson?.let(builder::policyConfigJson)
-    return builder.build().run(agentRequest()).toList()
+    return builder.buildEngine().run(agentRequest()).toList()
         .filterIsInstance<AgentEvent.ResultAvailable>().single().result
 }
 
