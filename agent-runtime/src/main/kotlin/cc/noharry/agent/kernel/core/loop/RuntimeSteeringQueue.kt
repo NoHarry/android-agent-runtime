@@ -82,13 +82,13 @@ internal class RuntimeSteeringQueue(
 
     fun inFlight(runId: String): List<RuntimeSteeringInput> = withRun(runId) { inFlight.toList() } ?: emptyList()
 
-    fun questions(runId: String, callId: String, questions: List<UserInteraction>): List<UserInteraction> {
+    fun questions(runId: String, questions: List<UserInteraction>): List<UserInteraction> {
         val run = checkNotNull(find(runId)) { "Run is not active" }
         return synchronized(run) {
             check(run.open) { "Run is not active" }
             check(run.questions.size + questions.size <= MAX_RUN_QUESTIONS) { "Question limit reached" }
-            val identified = questions.mapIndexed { index, question -> question.copy(questionId = "$runId/$callId/$index") }
-            check(identified.none { it.questionId in run.questions }) { "Question call id already used" }
+            val batch = ++run.questionBatch
+            val identified = questions.mapIndexed { index, question -> question.copy(questionId = "$runId/questions/$batch/$index") }
             identified.forEach {
                 run.record(it)
                 run.questions[it.questionId] = it
@@ -144,6 +144,7 @@ internal class RuntimeSteeringQueue(
         val pending = ArrayDeque<RuntimeSteeringInput>()
         val inFlight = mutableListOf<RuntimeSteeringInput>()
         val questions = linkedMapOf<String, UserInteraction>()
+        var questionBatch = 0
 
         fun record(fact: UserInteraction, public: Boolean = true) {
             recorder?.invoke(fact) ?: buffered.add(fact)

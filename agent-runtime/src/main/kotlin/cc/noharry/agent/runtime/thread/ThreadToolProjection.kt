@@ -34,7 +34,7 @@ internal class ThreadToolProjection(
         val id = event.toolCallId.ifEmpty { nextId() }
         if (id in calls) return
         val item = ThreadItem.ToolCall(
-            id = "$turnId:tool:$id", turnId = turnId, tool = event.toolName,
+            id = nextId(), turnId = turnId, tool = event.toolName,
             source = source(event.toolName), server = server(event.toolName), arguments = event.arguments,
             approvedBy = decisions.remove(event.toolCallId),
         )

@@ -16,6 +16,10 @@ called out; a patch release does not break it.
 - **Configured event-log locations survive `storage(...)`.** Android continues using its existing `event-log`
   directory. A storage directory must be used by only one process; multiple runtimes in that process coordinate.
 
+- **Repeated provider tool ids do not collide with conversation items.** Tool items use turn-local ids, duplicate
+  calls within one response retain distinct tool-result associations, and asynchronous questions use independent
+  batch ids. OpenAI chat responses without tool ids receive unique fallback ids in both streaming modes.
+
 - **Steering preserves input identity.** `SteerOptions` lets a host supply the request id echoed in
   `ThreadItem.UserMessage`, including after restart. Ordinary steering never answers a pending question;
   only an explicit `answering` question id does. Inputs can queue while a tool awaits approval.

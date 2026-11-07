@@ -28,7 +28,7 @@ internal class NativeUserInteraction(private val inputs: RuntimeSteeringQueue) {
             val options = question["options"]?.let { parseOptions(it as? JsonArray ?: throw IllegalArgumentException("Invalid options")) }.orEmpty()
             UserInteraction("QUESTION", "PENDING", text = title, options = options)
         }
-        val registered = inputs.questions(context.runId, event.id, questions)
+        val registered = inputs.questions(context.runId, questions)
         inputs.projectPublic(context.runId, events)
         return buildJsonObject {
             put("accepted", true)
