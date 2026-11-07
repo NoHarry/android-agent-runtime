@@ -1,11 +1,17 @@
 @file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
+import cc.noharry.agent.ThreadEvent
+import cc.noharry.agent.ThreadOptions
+import cc.noharry.agent.TurnOptions
+import cc.noharry.agent.TurnStatus
+import cc.noharry.agent.runtime.thread.DefaultThreadRuntime
 import cc.noharry.agent.spi.AgentEvent
 import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
 import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
@@ -25,48 +31,35 @@ class SessionSchedulingCloseIntegrationTest {
         val observer = CountingTerminalObserver()
         val holdA = CompletableDeferred<Unit>()
         val enteredA = CompletableDeferred<Unit>()
-        val runtime = AgentRuntimeBuilder.create()
-            .workspaceRoot(java.nio.file.Files.createTempDirectory("sched-close-").toFile())
-            .modelClient(MixedWaitingAndHoldModel(holdA, enteredA))
-            .toolProvider(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
-            .policyRule(confirmUnlessApprovedPolicy())
-            .sessionConcurrency(maxActiveSessions = 1)
-            .turnObserver(observer)
-            .buildEngine() as DefaultAgentRuntime
-        try {
-            runtime.run(request(RUN_B1, SESSION_B)).toList()
-            assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, runtime.getRunState(RUN_B1)?.status)
-
-            val active = launch { runtime.run(request(RUN_A1, SESSION_A)).toList() }
-            enteredA.await()
-            val queued = launch { runtime.run(request(RUN_A2, SESSION_A)).toList() }
-            awaitQueued(runtime, RUN_A2)
-
-            runtime.close()
-            active.join()
-            queued.join()
-
-            assertEquals(RuntimeRunStatus.CANCELLED, runtime.getRunState(RUN_A1)?.status)
-            assertEquals(RuntimeRunStatus.CANCELLED, runtime.getRunState(RUN_A2)?.status)
-            assertEquals(RuntimeRunStatus.CANCELLED, runtime.getRunState(RUN_B1)?.status)
-            assertEquals(RuntimeErrorCode.RUNTIME_CLOSED.wireCode, runtime.getRuntimeResult(RUN_A1)?.errorCode)
-            assertEquals(RuntimeErrorCode.RUNTIME_CLOSED.wireCode, runtime.getRuntimeResult(RUN_A2)?.errorCode)
-            assertEquals(RuntimeErrorCode.RUNTIME_CLOSED.wireCode, runtime.getRuntimeResult(RUN_B1)?.errorCode)
-            assertEquals(RuntimeCompletionOutcome.UNKNOWN, runtime.getRuntimeResult(RUN_A1)?.completion?.outcome)
-            assertEquals(1, observer.counts[RUN_A1])
-            assertEquals(1, observer.counts[RUN_A2])
-            assertEquals(1, observer.counts[RUN_B1])
-
-            val afterClose = runtime.run(request(RUN_C1, SESSION_C)).toList()
-            assertTrue(afterClose.none { it is AgentEvent.Started })
-            assertEquals(
-                RuntimeErrorCode.RUNTIME_CLOSED.wireCode,
-                afterClose.filterIsInstance<AgentEvent.Failed>().single().code,
-            )
-            assertNull(runtime.getRunState(RUN_C1))
-        } finally {
-            runtime.close()
-        }
+        threadBuilder(MixedWaitingAndHoldModel(holdA, enteredA))
+            .tools(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
+            .policyRule(confirmUnlessApprovedPolicy()).sessionConcurrency(maxActiveSessions = 2)
+            .turnObserver(observer).build().use { runtime ->
+                val a = runtime.startThread(ThreadOptions(threadId = SESSION_A))
+                val b = runtime.startThread(ThreadOptions(threadId = SESSION_B))
+                val waiting = async { b.runStreamed(RUN_B1, TurnOptions(turnId = RUN_B1)).toList() }
+                b.awaitApproval(RUN_B1)
+                val active = async { a.runStreamed(RUN_A1, TurnOptions(turnId = RUN_A1)).toList() }
+                enteredA.await()
+                val queued = async { a.runStreamed(RUN_A2, TurnOptions(turnId = RUN_A2)).toList() }
+                runtime.awaitQueued(1)
+                val executions = listOf(SESSION_A to RUN_A1, SESSION_B to RUN_B1).map {
+                    checkNotNull(runtime.diagnostics.getRunState(it.first, it.second)).runId
+                }
+                runtime.close()
+                for (events in listOf(active.await(), waiting.await())) {
+                    assertTurnEvents(events)
+                    assertEquals(TurnStatus.INTERRUPTED, (events.last() as ThreadEvent.TurnCompleted).result.status)
+                }
+                val rejected = queued.await()
+                assertTurnEvents(rejected)
+                assertEquals("RUNTIME_CLOSED", (rejected.last() as ThreadEvent.TurnFailed).error.code)
+                executions.forEach { assertEquals(1, observer.counts[it]) }
+                assertEquals(2, observer.counts.size)
+                assertNull(runtime.diagnostics.getRunState(SESSION_A, RUN_A2))
+                assertTrue(runCatching { a.run("after close") }.exceptionOrNull() is IllegalStateException)
+                assertIdle((runtime as DefaultThreadRuntime).engine)
+            }
     }
 
     @Test

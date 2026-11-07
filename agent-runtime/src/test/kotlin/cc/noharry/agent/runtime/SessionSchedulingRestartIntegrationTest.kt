@@ -1,100 +1,42 @@
 @file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.spi.AgentEvent
-import cc.noharry.agent.spi.ConfirmationChoice
-import cc.noharry.agent.spi.ConfirmationDecision
-import cc.noharry.agent.spi.ConfirmationResumeResult
-import cc.noharry.agent.spi.reliability.RuntimeCompletionOutcome
-import cc.noharry.agent.spi.reliability.RuntimeErrorCode
-import cc.noharry.agent.spi.reliability.RuntimeRunStatus
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.launch
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+
+import cc.noharry.agent.*
+import cc.noharry.agent.spi.reliability.*
+import cc.noharry.agent.runtime.reliability.FileBackedReliabilityStorage
+import cc.noharry.agent.runtime.thread.ThreadStore
+import java.io.File
+import org.junit.Assert.*
 import org.junit.Test
-import java.nio.file.Files
 
 class SessionSchedulingRestartIntegrationTest {
-    @Test
-    fun processRestartStaleWaitingAndQueuedAreTerminalizedWithoutQueueRecovery() = runSchedulingTest {
-        assertStaleWaitingTerminalizedWithoutQueueRecovery()
-        assertStaleQueuedTerminalizedWithoutQueueRecovery()
-    }
-}
-
-private suspend fun assertStaleWaitingTerminalizedWithoutQueueRecovery() {
-    val storageRoot = Files.createTempDirectory("runtime-restart-honesty-").toFile()
-    val first = AgentRuntimeBuilder.create()
-        .reliabilityStorageRoot(storageRoot)
-        .confirmationOnRun()
-        .sessionConcurrency(maxActiveSessions = 1)
-        .buildEngine() as DefaultAgentRuntime
-    first.run(request(RUN_A1, SESSION_A)).toList()
-    assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, first.getRunState(RUN_A1)?.status)
-
-    val restored = AgentRuntimeBuilder.create()
-        .reliabilityStorageRoot(storageRoot)
-        .confirmationOnRun()
-        .sessionConcurrency(maxActiveSessions = 1)
-        .buildEngine() as DefaultAgentRuntime
-    try {
-        val resumed = restored.resumeConfirmation(
-            ConfirmationDecision("$RUN_A1:confirmation", "resume-1", ConfirmationChoice.APPROVE),
-        )
-        assertTrue(resumed is ConfirmationResumeResult.Rejected || resumed is ConfirmationResumeResult.NotFound)
-
-        val replacement = restored.run(request(RUN_A2, SESSION_A)).toList()
-        assertTrue(replacement.any { it is AgentEvent.ConfirmationRequired })
-        assertEquals(RuntimeRunStatus.CANCELLED, restored.getRunState(RUN_A1)?.status)
-        assertEquals(
-            RuntimeErrorCode.PROCESS_RESTART_ADMISSION_UNSUPPORTED.wireCode,
-            restored.getRuntimeResult(RUN_A1)?.errorCode,
-        )
-        assertEquals(
-            RuntimeCompletionOutcome.UNKNOWN,
-            restored.getRuntimeResult(RUN_A1)?.completion?.outcome,
-        )
-        assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, restored.getRunState(RUN_A2)?.status)
-    } finally {
-        restored.close()
-    }
-}
-
-private suspend fun CoroutineScope.assertStaleQueuedTerminalizedWithoutQueueRecovery() {
-    val hold = CompletableDeferred<Unit>()
-    val entered = CompletableDeferred<Unit>()
-    val queuedRoot = Files.createTempDirectory("runtime-restart-queued-").toFile()
-    val parked = AgentRuntimeBuilder.create()
-        .reliabilityStorageRoot(queuedRoot)
-        .modelClient(SingleGateFinishModel(hold, entered))
-        .sessionConcurrency(maxActiveSessions = 1)
-        .buildEngine() as DefaultAgentRuntime
-    val active = launch { parked.run(request(RUN_A1, SESSION_A)).toList() }
-    entered.await()
-    val queued = launch { parked.run(request(RUN_A2, SESSION_A)).toList() }
-    awaitQueued(parked, RUN_A2)
-
-    val afterCrash = AgentRuntimeBuilder.create()
-        .reliabilityStorageRoot(queuedRoot)
-        .modelClient(SingleGateFinishModel(CompletableDeferred(), CompletableDeferred()))
-        .sessionConcurrency(maxActiveSessions = 1)
-        .confirmationOnRun()
-        .buildEngine() as DefaultAgentRuntime
-    try {
-        afterCrash.run(request(RUN_A3, SESSION_A)).toList()
-        assertEquals(RuntimeRunStatus.CANCELLED, afterCrash.getRunState(RUN_A2)?.status)
-        assertEquals(
-            RuntimeErrorCode.PROCESS_RESTART_ADMISSION_UNSUPPORTED.wireCode,
-            afterCrash.getRuntimeResult(RUN_A2)?.errorCode,
-        )
-        assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, afterCrash.getRunState(RUN_A3)?.status)
-    } finally {
-        afterCrash.close()
-        hold.complete(Unit)
-        active.cancel()
-        queued.cancel()
+    @Test fun abandonedWaitingAndQueuedAttemptsAreCancelledWithoutReplayingTheirWork() = runSchedulingTest {
+        val root = threadRoot()
+        val storage = File(root, "storage")
+        val store = ThreadStore(storage)
+        store.create(SESSION_A, ThreadOptions(threadId = SESSION_A))
+        val reliability = FileBackedReliabilityStorage(File(storage, "runtime"))
+        val stale = listOf(RuntimeRunStatus.WAITING_CONFIRMATION, RuntimeRunStatus.QUEUED)
+        stale.forEachIndexed { index, status ->
+            val execution = "abandoned-$index"
+            store.attempts.begin(SESSION_A, "old-$index", execution)
+            val phase = if (status == RuntimeRunStatus.QUEUED) RuntimeRunPhase.QUEUED else RuntimeRunPhase.WAITING_CONFIRMATION
+            reliability.saveRun(RuntimeRunSnapshot(execution, SESSION_A, status, 1),
+                RuntimeRunEnvelope(execution, "old-$index", SESSION_A, status, phase, 1, 1))
+        }
+        val model = ThreadScriptModel(listOf(finishEvents("fresh")))
+        threadBuilder(model, root).build().use { runtime ->
+            val thread = runtime.resumeThread(SESSION_A)
+            assertTrue(thread.pendingRequests().isEmpty())
+            assertEquals("fresh", thread.run("fresh request", TurnOptions(turnId = "new")).finalResponse)
+            assertEquals(1, model.requests.size)
+            assertEquals(listOf("fresh request"), model.requests.single().messages.filter { it.role == "user" }.map { it.content })
+            stale.indices.forEach { index ->
+                assertEquals(RuntimeRunStatus.CANCELLED, reliability.readSnapshot("abandoned-$index")?.status)
+                assertEquals("INTERRUPTED", reliability.readResult("abandoned-$index")?.errorCode)
+                assertFalse(checkNotNull(store.attempts.latest(SESSION_A, "old-$index")).active)
+            }
+        }
     }
 }

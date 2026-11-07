@@ -89,16 +89,6 @@ internal fun countProbeTerminals(root: File, runId: String): Int {
     return probes.readLines().count { it.contains("\"stageId\":\"run.terminal\"") }
 }
 
-internal suspend fun assertIdleOwnersExcept(
-    runtime: DefaultAgentRuntime,
-    vararg owners: Pair<String, String>,
-) {
-    val snap = runtime.sessionSchedulerSnapshotForTest()
-    assertEquals(owners.toMap(), snap.owners)
-    assertEquals(0, snap.activeExecutionCount)
-    assertEquals(owners.map { it.second }.toSet(), snap.waitingOwnerRunIds.toSet())
-}
-
 internal fun runtime(
     model: ModelClient,
     maxActive: Int = 4,
@@ -123,21 +113,6 @@ internal fun runtime(
     }
     return builder.buildEngine() as DefaultAgentRuntime
 }
-
-internal fun planConfirmationRuntime(provider: GatedMcpProvider): DefaultAgentRuntime =
-    AgentRuntimeBuilder.create()
-        .workspaceRoot(java.nio.file.Files.createTempDirectory("sched-confirm-").toFile())
-        .toolProvider(provider)
-        .policyRule(confirmUnlessApprovedPolicy())
-        .modelClient(directBackendCallModel())
-        .sessionConcurrency(maxActiveSessions = 2)
-        .buildEngine() as DefaultAgentRuntime
-
-internal fun confirmationRuntime(): DefaultAgentRuntime =
-    AgentRuntimeBuilder.create()
-        .confirmationOnRun()
-        .sessionConcurrency(maxActiveSessions = 2)
-        .buildEngine() as DefaultAgentRuntime
 
 internal fun request(
     runId: String,
@@ -180,18 +155,6 @@ internal fun directBackendCallModel(): ModelClient =
                     name = qualifiedMcpTool("set_temperature"),
                     argumentsJson = directBackendCallJson(),
                 ),
-                ModelEvent.Completed,
-            ),
-            listOf(ModelEvent.ToolCall("finish-1", "finish", """{"response":"done"}"""), ModelEvent.Completed),
-        ),
-    )
-
-internal fun askThenConfirmModel(): ModelClient =
-    FakeModelClient(
-        eventsByRound = listOf(
-            listOf(schemaRead("set_temperature"), ModelEvent.Completed),
-            listOf(
-                ModelEvent.ToolCall("backend-1", qualifiedMcpTool("set_temperature"), directBackendCallJson()),
                 ModelEvent.Completed,
             ),
             listOf(ModelEvent.ToolCall("finish-1", "finish", """{"response":"done"}"""), ModelEvent.Completed),
