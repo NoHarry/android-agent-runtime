@@ -37,6 +37,8 @@ internal class ActiveThreadTurn(val id: String, val options: ThreadOptions, val 
     var job: Job? = null
     var projection: ThreadEventProjection? = null
     @Volatile var approval: ThreadApproval? = null
+    /** Web hosts the person approved in this turn; see [automaticApproval]. */
+    val approvedThisTurn: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
     @Volatile var items: List<ThreadItem> = emptyList()
     @Volatile var finalizing = false
     @Volatile var cancellation: TurnError? = null

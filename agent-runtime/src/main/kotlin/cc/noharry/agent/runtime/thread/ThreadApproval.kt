@@ -77,12 +77,37 @@ internal class ThreadApproval(
     }
 }
 
+/** A decision a policy makes without asking, and who made it (null for a denial). */
+internal data class AutomaticApproval(val state: ApprovalState, val source: ApprovalSource?)
+
+/**
+ * What [policy] decides without asking the person, or null to ask. Besides the thread's remembered areas, a web host
+ * the person approved earlier in the same turn is not asked again, as before turns waited for approvals themselves.
+ */
+internal fun automaticApproval(
+    policy: ApprovalPolicy,
+    domain: String?,
+    remembered: () -> Set<String>,
+    approvedThisTurn: Set<String>,
+): AutomaticApproval? = when {
+    policy == ApprovalPolicy.APPROVE_ALL -> AutomaticApproval(ApprovalState.APPROVED, ApprovalSource.AUTOMATIC)
+    policy == ApprovalPolicy.DENY_ALL -> AutomaticApproval(ApprovalState.DENIED, null)
+    domain == null -> null
+    policy == ApprovalPolicy.REMEMBER && domain in remembered() -> AutomaticApproval(ApprovalState.APPROVED, ApprovalSource.REMEMBERED)
+    domain.startsWith(WEB_FETCH_AREA) && domain in approvedThisTurn -> AutomaticApproval(ApprovalState.APPROVED, ApprovalSource.USER)
+    else -> null
+}
+
+internal fun isTurnRememberedArea(domain: String?): Boolean = domain?.startsWith(WEB_FETCH_AREA) == true
+
+private const val WEB_FETCH_AREA = "web_fetch:"
+
 /** Invalid network targets cannot create a remembered approval for a broader area. */
 internal fun approvalDomain(tool: String, arguments: String): String? {
     if (tool.startsWith("mcp__")) {
         val qualified = tool.removePrefix("mcp__")
         return "mcp:${qualified.substringBefore("__")}:${qualified.substringAfter("__", "")}"
     }
-    if (tool == "web_fetch") return webFetchApprovalHost(arguments)?.let { "web_fetch:$it" }
+    if (tool == "web_fetch") return webFetchApprovalHost(arguments)?.let { "$WEB_FETCH_AREA$it" }
     return "tool:$tool"
 }

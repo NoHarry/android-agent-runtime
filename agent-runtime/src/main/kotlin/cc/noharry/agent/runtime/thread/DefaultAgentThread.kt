@@ -214,16 +214,10 @@ internal class DefaultAgentThread(
         val projection = checkNotNull(turn.projection)
         val policy = turn.approvalState.policy
         val domain = approvalDomain(pending.toolName.orEmpty(), pending.argumentsJson.orEmpty())
-        val automatic = when (policy) {
-            ApprovalPolicy.APPROVE_ALL -> ApprovalState.APPROVED
-            ApprovalPolicy.DENY_ALL -> ApprovalState.DENIED
-            ApprovalPolicy.REMEMBER -> if (domain != null && domain in runtime.store.rememberedDomains(id)) ApprovalState.APPROVED else null
-            ApprovalPolicy.ASK -> null
-        }
+        val automatic = automaticApproval(policy, domain, { runtime.store.rememberedDomains(id) }, turn.approvedThisTurn)
         if (automatic != null) {
-            if (automatic == ApprovalState.APPROVED) projection.toolDecision(pending.idempotencyKey,
-                if (policy == ApprovalPolicy.REMEMBER) ApprovalSource.REMEMBERED else ApprovalSource.AUTOMATIC)
-            return automatic
+            automatic.source?.let { projection.toolDecision(pending.idempotencyKey, it) }
+            return automatic.state
         }
         if (runtime.engine.childApprovalPolicy(id) != null) return ApprovalState.DENIED
         val approval = ThreadApproval(pending.copy(runId = turn.id), runtime.nowEpochMillis() + runtime.confirmationTimeoutMillis, runtime.nowEpochMillis)
@@ -239,6 +233,7 @@ internal class DefaultAgentThread(
             if (domain != null && decision == ApprovalState.APPROVED && (turn.approvalState.policy == ApprovalPolicy.REMEMBER || approval.scope == ApprovalScope.THREAD)) {
                 withContext(Dispatchers.IO) { runtime.store.rememberDomain(id, domain, generation) }
             }
+            if (decision == ApprovalState.APPROVED && isTurnRememberedArea(domain)) turn.approvedThisTurn += checkNotNull(domain)
             if (decision == ApprovalState.APPROVED) projection.toolDecision(pending.idempotencyKey, approval.approvedBy ?: ApprovalSource.USER)
             projection.resolveApproval(approval.snapshot())
             return decision
