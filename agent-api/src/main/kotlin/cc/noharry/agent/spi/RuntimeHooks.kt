@@ -50,8 +50,11 @@ data class ToolUseResult(
 
 /** Context passed to host hooks and policy rules. */
 data class HookContext(
+    /** Public conversation id ([cc.noharry.agent.AgentThread.id]). */
     val sessionId: String,
+    /** Unique execution-attempt id; it can change when a public turn is retried after process loss. */
     val runId: String,
+    /** Public turn id ([cc.noharry.agent.TurnResult.turnId]), scoped to [sessionId]. */
     val requestId: String,
     val approvedConfirmation: Boolean = false,
 )
