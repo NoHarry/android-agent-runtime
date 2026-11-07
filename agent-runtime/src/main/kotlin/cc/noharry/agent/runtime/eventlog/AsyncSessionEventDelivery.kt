@@ -18,6 +18,8 @@ internal class AsyncSessionEventDelivery(
     private val dirty = AtomicBoolean(false)
     private val scheduled = AtomicBoolean(false)
     private val closed = AtomicBoolean(false)
+    private val cursorLock = Any()
+    private val generations = mutableMapOf<String, Any>()
     private val readGate = Any()
     private val executor = Executors.newSingleThreadExecutor { task ->
         Thread(task, "SessionEventLog-subscriber").apply { isDaemon = true }
@@ -42,21 +44,29 @@ internal class AsyncSessionEventDelivery(
 
     private fun deliver() {
         for ((key, target) in positions()) {
-            var cursor = cursors[key] ?: initialPosition(key)
+            val fallback = initialPosition(key)
+            val version = synchronized(cursorLock) { generations.getOrPut(key.sessionId) { Any() } }
+            var cursor = synchronized(cursorLock) { cursors[key] ?: fallback }
             while (!closed.get() && cursor < target) {
                 val events = synchronized(readGate) {
                     if (closed.get()) emptyList() else runCatching { page(key, cursor) }.getOrDefault(emptyList())
                 }
                 if (events.isEmpty()) break
                 for (event in events) {
-                    if (closed.get()) return
+                    if (closed.get() || synchronized(cursorLock) { generations[key.sessionId] !== version }) return
                     if (event.sequence != cursor + 1) return
                     runCatching { listener(event) }
                     cursor = event.sequence
-                    cursors[key] = cursor
+                    synchronized(cursorLock) { if (generations[key.sessionId] === version) cursors[key] = cursor }
                 }
             }
         }
+    }
+
+    /** Discard an old page already read by a slow subscriber and reset its cursors for a recreated thread. */
+    fun forgetThread(threadId: String) {
+        synchronized(cursorLock) { generations.remove(threadId); cursors.keys.removeAll { it.sessionId == threadId } }
+        signal()
     }
 
     override fun close() {

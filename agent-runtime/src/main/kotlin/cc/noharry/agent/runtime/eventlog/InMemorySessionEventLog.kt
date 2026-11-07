@@ -75,6 +75,15 @@ internal class InMemorySessionEventLog(
 
     override fun durability(): SessionEventLogDurability = SessionEventLogDurability.VOLATILE
 
+    override fun deleteThread(threadId: String): Boolean = synchronized(lock) {
+        require(threadId.isNotBlank()) { "threadId must not be blank" }
+        events.filter { it.sessionId == threadId }.forEach { eventIds.remove(it.eventId) }
+        events.removeAll { it.sessionId == threadId }
+        streams.keys.removeAll { it.sessionId == threadId }
+        liveHealth.keys.removeAll { it.sessionId == threadId }
+        true
+    }
+
     override fun health(sessionId: String, runId: String): SessionEventLogHealth = synchronized(lock) {
         require(sessionId.isNotBlank()) { "sessionId must not be blank" }
         require(runId.isNotBlank()) { "runId must not be blank" }

@@ -1323,6 +1323,7 @@ public final class cc/noharry/agent/spi/SessionEventAppend {
 
 public abstract interface class cc/noharry/agent/spi/SessionEventLog {
 	public abstract fun append (Lcc/noharry/agent/spi/SessionEventAppend;)Lcc/noharry/agent/spi/SessionEvent;
+	public fun deleteThread (Ljava/lang/String;)Z
 	public fun durability ()Lcc/noharry/agent/spi/SessionEventLogDurability;
 	public fun health (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/spi/SessionEventLogHealth;
 	public fun putAttachment (Ljava/lang/String;Lcc/noharry/agent/spi/SessionAttachmentRef;[B)Z
@@ -1333,6 +1334,7 @@ public abstract interface class cc/noharry/agent/spi/SessionEventLog {
 }
 
 public final class cc/noharry/agent/spi/SessionEventLog$DefaultImpls {
+	public static fun deleteThread (Lcc/noharry/agent/spi/SessionEventLog;Ljava/lang/String;)Z
 	public static fun durability (Lcc/noharry/agent/spi/SessionEventLog;)Lcc/noharry/agent/spi/SessionEventLogDurability;
 	public static fun health (Lcc/noharry/agent/spi/SessionEventLog;Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/spi/SessionEventLogHealth;
 	public static fun putAttachment (Lcc/noharry/agent/spi/SessionEventLog;Ljava/lang/String;Lcc/noharry/agent/spi/SessionAttachmentRef;[B)Z
