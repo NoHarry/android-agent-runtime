@@ -30,6 +30,8 @@ internal class AsyncSessionEventLog(
     private var pendingBytes = 0L
     private var closing = false
     private var failure: String? = null
+    /** The writer gave up after a failed write; a full acceptance queue alone leaves it writing. */
+    private var writerStopped = false
     private val openedStreams = java.util.Collections.synchronizedSet(mutableSetOf<EventStreamKey>())
 
     init { rootGate.withLock { synchronized(INSTANCES) { INSTANCES[this] = true } } }
@@ -110,6 +112,7 @@ internal class AsyncSessionEventLog(
             } catch (error: Exception) {
                 lock.withLock {
                     failure = safeFailureCode(error)
+                    writerStopped = true
                     changed.signalAll()
                 }
                 signalDeliveries()
@@ -129,6 +132,16 @@ internal class AsyncSessionEventLog(
             bytes += next.bytes
         }
         return batch
+    }
+
+    /** Waits until nothing accepted can still reach storage: all of it written, or the writer stopped on a failure. */
+    internal fun awaitSettled(): Boolean = lock.withLock {
+        var remaining = TimeUnit.SECONDS.toNanos(FLUSH_TIMEOUT_SECONDS)
+        while (pending.isNotEmpty() && !writerStopped) {
+            if (remaining <= 0) return@withLock false
+            remaining = changed.awaitNanos(remaining)
+        }
+        true
     }
 
     /** Waits only for storage, never for UI callbacks. Failure stays visible in health. */
@@ -243,8 +256,9 @@ internal class AsyncSessionEventLog(
             val gate = ROOT_GATES.computeIfAbsent(identity) { ReentrantLock() }
             return gate.withLock {
                 val writers = synchronized(INSTANCES) { INSTANCES.keys.filter { it.rootGate === gate } }
-                // A writer whose writes failed has stopped writing, so nothing it holds can land after the deletion.
-                writers.forEach { it.flush() }
+                // Nothing a writer accepted may land after the deletion. A writer that stopped on a failed write holds
+                // nothing that can; one refusing new events because its queue is full is still writing, so wait.
+                writers.forEach { check(it.awaitSettled()) { "Cannot delete data while event-log writes are in flight" } }
                 delete().also { deleted -> if (deleted) writers.forEach { it.forgetThread(threadId) } }
             }
         }

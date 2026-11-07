@@ -233,7 +233,9 @@ internal class DefaultAgentThread(
             if (domain != null && decision == ApprovalState.APPROVED && (turn.approvalState.policy == ApprovalPolicy.REMEMBER || approval.scope == ApprovalScope.THREAD)) {
                 withContext(Dispatchers.IO) { runtime.store.rememberDomain(id, domain, generation) }
             }
-            if (decision == ApprovalState.APPROVED && isTurnRememberedArea(domain)) turn.approvedThisTurn += checkNotNull(domain)
+            // Only the person's own yes carries over; one a policy gave ends with the policy.
+            val byPerson = (approval.approvedBy ?: ApprovalSource.USER) == ApprovalSource.USER
+            if (decision == ApprovalState.APPROVED && byPerson && isTurnRememberedArea(domain)) turn.approvedThisTurn += checkNotNull(domain)
             if (decision == ApprovalState.APPROVED) projection.toolDecision(pending.idempotencyKey, approval.approvedBy ?: ApprovalSource.USER)
             projection.resolveApproval(approval.snapshot())
             return decision
