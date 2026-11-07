@@ -43,6 +43,7 @@ internal class ThreadItemCodec(
             }
             is ThreadItem.Notice -> {
                 put("kind", "notice"); put("noticeKind", item.kind.name); put("message", redact(item.message))
+                put("details", item.details.toJson())
             }
             is ThreadItem.Error -> {
                 put("kind", "error"); put("code", item.code); put("message", redact(item.message))
@@ -64,7 +65,7 @@ internal class ThreadItemCodec(
             "tool" -> tool(value, id, turn, status)
             "search" -> ThreadItem.WebSearch(id, turn, value.text("provider"), value.text("query"), value.optionalLong("resultCount")?.toInt(), status)
             "file" -> ThreadItem.FileChange(id, turn, value.text("path"), value.number("added"), value.number("removed"), value.text("tool"), status)
-            "notice" -> ThreadItem.Notice(id, turn, value.enum("noticeKind", NoticeKind.WORKSPACE_CHANGED), value.text("message"), status)
+            "notice" -> ThreadItem.Notice(id, turn, value.enum("noticeKind", NoticeKind.WORKSPACE_CHANGED), value.text("message"), status, value.obj("details").noticeDetails())
             "error" -> ThreadItem.Error(id, turn, value.text("code"), value.text("message"), value.flag("recoverable"), status)
             "question" -> Question(id, turn, value.text("text"), value.array("choices").map { (it as JsonPrimitive).content }, value.flag("async"), value.optionalLong("expiresAt"), status)
             "approval" -> StoredApproval(id, turn, value.text("tool"), value.text("arguments"), value.text("domain"), value.text("reason"), value.optionalLong("expiresAt"), status, value.enum("state", ApprovalState.CANCELLED))

@@ -76,6 +76,7 @@ sealed interface ThreadItem {
         val kind: NoticeKind,
         val message: String,
         override val status: ItemStatus = ItemStatus.COMPLETED,
+        val details: NoticeDetails = NoticeDetails(),
     ) : ThreadItem
 
     data class Error(

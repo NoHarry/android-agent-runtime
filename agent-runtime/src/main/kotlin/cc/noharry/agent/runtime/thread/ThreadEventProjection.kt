@@ -55,10 +55,13 @@ internal class ThreadEventProjection(
             is AgentEvent.ExecOutputDelta -> tools.output(event.text)
             is AgentEvent.SearchActivity -> instant(ThreadItem.WebSearch(nextId(), turnId, event.provider, event.queryPreview, event.resultCount))
             is AgentEvent.WorkspaceFileChanged -> instant(ThreadItem.FileChange(nextId(), turnId, event.path, event.addedLines, event.removedLines, event.toolName))
-            is AgentEvent.WorkspaceChanged -> notice(NoticeKind.WORKSPACE_CHANGED, event.workspaceId)
-            is AgentEvent.RetryAttempted -> notice(NoticeKind.RETRY, "Retry ${event.attempt} in ${event.delayMillis} ms")
-            is AgentEvent.BudgetWarning -> notice(NoticeKind.BUDGET_LOW, "${event.roundsRemaining} rounds, ${event.toolCallsRemaining} tool calls remaining")
-            is AgentEvent.CompactionApplied -> notice(NoticeKind.COMPACTION, "History compacted from ${event.beforeMessageCount} to ${event.afterMessageCount} messages")
+            is AgentEvent.WorkspaceChanged -> notice(NoticeKind.WORKSPACE_CHANGED, event.workspaceId, NoticeDetails(workspaceId = event.workspaceId))
+            is AgentEvent.RetryAttempted -> notice(NoticeKind.RETRY, "Retry ${event.attempt} in ${event.delayMillis} ms",
+                NoticeDetails(attempt = event.attempt, delayMillis = event.delayMillis))
+            is AgentEvent.BudgetWarning -> notice(NoticeKind.BUDGET_LOW, "${event.roundsRemaining} rounds, ${event.toolCallsRemaining} tool calls remaining",
+                NoticeDetails(roundsRemaining = event.roundsRemaining, toolCallsRemaining = event.toolCallsRemaining))
+            is AgentEvent.CompactionApplied -> notice(NoticeKind.COMPACTION, "History compacted from ${event.beforeMessageCount} to ${event.afterMessageCount} messages",
+                NoticeDetails(beforeMessageCount = event.beforeMessageCount, afterMessageCount = event.afterMessageCount))
             is AgentEvent.UserInteraction -> interaction(event.interaction)
             is AgentEvent.SteeringAccepted -> Unit // The full canonical INPUT fact carries the message.
             is AgentEvent.ConfirmationRequired -> { finishText(); start(approval(event.pending)) }
@@ -233,7 +236,8 @@ internal class ThreadEventProjection(
     }
 
     private suspend fun instant(item: ThreadItem) { start(item); complete(item) }
-    private suspend fun notice(kind: NoticeKind, message: String) = instant(ThreadItem.Notice(nextId(), turnId, kind, message))
+    private suspend fun notice(kind: NoticeKind, message: String, details: NoticeDetails) =
+        instant(ThreadItem.Notice(nextId(), turnId, kind, message, details = details))
 }
 
 private fun total(a: Int, b: Int): Int = (a.toLong() + b.coerceAtLeast(0)).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()

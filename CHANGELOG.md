@@ -13,6 +13,9 @@ called out; a patch release does not break it.
   implementation for custom backends. Built-in logs delete events, attachments, health and cached identities;
   asynchronous logs drain accepted writes first and reset subscribers before a thread can be recreated.
 
+- **Notices include structured presentation values.** `Notice.details` carries retry ordinals/delays, remaining
+  budgets, compaction counts and workspace ids. Hosts can localize notices without parsing the English message.
+
 - **Damaged history does not block unrelated conversations.** Thread listing skips unreadable or unsupported
   metadata. Invalid provider history is renamed to a `.corrupt` file and the conversation resumes with empty model
   history. Deleting a conversation does not parse that history first.
