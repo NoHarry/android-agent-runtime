@@ -138,6 +138,11 @@ called out; a patch release does not break it.
 Rebuild host code against 0.5.0. The module/package changes and constructor changes are binary breaks.
 Kotlin hosts import `cc.noharry.agent.builder`; Java hosts construct with `AgentRuntimeBuilder.create()`.
 
+The public API dumps total 5,253 lines across the published modules, down from about 9,400: `agent-api` 2,658
+(the conversation API in `cc.noharry.agent` 770, extension interfaces the rest) and `agent-runtime` 1,514.
+Most of what remains beyond the conversation API is the session event payload types and the workspace file system
+that hosts implementing their own storage or workspaces need.
+
 | 0.4.x runtime entry | 0.5.0 entry |
 |---|---|
 | `run(AgentRequest)` | `startThread` / `resumeThread`, then `run` / `runStreamed` |
