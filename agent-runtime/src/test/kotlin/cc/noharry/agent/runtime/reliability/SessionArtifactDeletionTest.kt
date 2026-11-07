@@ -39,6 +39,18 @@ class SessionArtifactDeletionTest {
         assertNull(storage.readEvidence("evidence-one"))
     }
 
+    @Test fun anotherRunWhoseRecordCannotBeReadDoesNotBlockDeletion() {
+        val root = Files.createTempDirectory("delete-unreadable-other-").toFile()
+        val storage = FileBackedReliabilityStorage(root)
+        saveRun(storage, "removed", "one")
+        saveRun(storage, "kept", "torn")
+        File(root, "runs/${encodeFileName("torn")}/run.json").writeText("{\"runId\":")
+        File(root, "runs/orphan").mkdirs()
+        assertEquals(setOf("one"), storage.deleteSession("removed"))
+        assertNull(storage.readSnapshot("one"))
+        assertTrue(File(root, "runs/${encodeFileName("torn")}").isDirectory)
+    }
+
     @Test fun failedDeletesAreReportedAndCanBeRetried() {
         val root = Files.createTempDirectory("delete-failing-run-").toFile()
         val storage = FileBackedReliabilityStorage(root)

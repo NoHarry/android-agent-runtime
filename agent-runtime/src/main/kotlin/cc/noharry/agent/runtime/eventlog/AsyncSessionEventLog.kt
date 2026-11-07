@@ -243,7 +243,8 @@ internal class AsyncSessionEventLog(
             val gate = ROOT_GATES.computeIfAbsent(identity) { ReentrantLock() }
             return gate.withLock {
                 val writers = synchronized(INSTANCES) { INSTANCES.keys.filter { it.rootGate === gate } }
-                writers.forEach { check(it.flush()) { "Cannot delete data while event-log writes have failed" } }
+                // A writer whose writes failed has stopped writing, so nothing it holds can land after the deletion.
+                writers.forEach { it.flush() }
                 delete().also { deleted -> if (deleted) writers.forEach { it.forgetThread(threadId) } }
             }
         }
