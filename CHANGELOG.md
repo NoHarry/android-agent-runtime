@@ -10,6 +10,12 @@ called out; a patch release does not break it.
   artifacts, loop history and its saved plan. All runtimes sharing its storage clear their cached state. Shared
   workspaces and global memory are preserved. A custom event/session store that cannot delete causes an explicit failure.
 
+- **Subagents inherit the spawning turn's approval policy.** `SubagentSpec.approvalPolicy` includes per-turn
+  overrides. Child runtimes sharing `Subagents` use it as their default; custom launchers should pass it explicitly.
+  Approval gates without a user channel are denied immediately unless automatically allowed. The coordinator also
+  answers gates emitted by custom launchers using the inherited policy. Children remain unable to ask the user
+  after approval or denial resumes their loop.
+
 - **Denied approvals continue the same turn.** Both explicit denial and `DENY_ALL` return a
   `CONFIRMATION_DENIED` tool result to the model without executing the tool, so it can explain the outcome.
   Cancelling or interrupting a pending approval records `CONFIRMATION_CANCELLED` in provider history.

@@ -122,6 +122,7 @@ internal data class AgentRequest(
     val inputImages: List<cc.noharry.agent.spi.model.ModelImage> = emptyList(),
     val instructions: String? = null,
     private val executionIdOverride: String? = null,
+    val approvalPolicy: cc.noharry.agent.ApprovalPolicy = cc.noharry.agent.ApprovalPolicy.ASK,
 ) {
     val executionId: String get() = executionIdOverride ?: requestId
 
