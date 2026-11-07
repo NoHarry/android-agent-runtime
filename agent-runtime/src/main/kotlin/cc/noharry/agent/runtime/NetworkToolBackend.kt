@@ -37,6 +37,7 @@ internal class NetworkToolBackend(
     /** Fetches a page web_fetch's own request could not get. */
     private val fetchFallback: WebFetchService? = null,
 ) : NetworkToolPort {
+    private val threadApprovalRuns = ConcurrentHashMap.newKeySet<String>()
     private val confirmedHostsByRun = ConcurrentHashMap<String, MutableSet<String>>()
 
     init {
@@ -50,7 +51,7 @@ internal class NetworkToolBackend(
         if (confirmationPolicy == NetworkToolConfirmationPolicy.ALLOW_ALL_HOSTS) {
             return NetworkToolPolicyDecision.Allowed
         }
-        if (confirmedHostsByRun[runId]?.contains(host) == true) {
+        if (runId !in threadApprovalRuns && confirmedHostsByRun[runId]?.contains(host) == true) {
             return NetworkToolPolicyDecision.Allowed
         }
         return NetworkToolPolicyDecision.RequiresConfirmation(
@@ -66,7 +67,10 @@ internal class NetworkToolBackend(
             authorize(runId, argumentsJson)
         }
 
+    internal fun useThreadApprovals(runId: String) { threadApprovalRuns.add(runId) }
+
     override fun rememberConfirmed(runId: String, argumentsJson: String) {
+        if (runId in threadApprovalRuns) return
         val target = parseFetchTarget(argumentsJson)
         val host = target.host ?: return
         if (target.errorResult != null) return
@@ -74,6 +78,7 @@ internal class NetworkToolBackend(
     }
 
     fun clearRun(runId: String) {
+        threadApprovalRuns.remove(runId)
         confirmedHostsByRun.remove(runId)
     }
 

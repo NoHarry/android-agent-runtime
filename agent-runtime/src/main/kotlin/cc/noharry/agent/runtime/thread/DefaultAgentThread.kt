@@ -26,9 +26,13 @@ internal class DefaultAgentThread(
     internal fun isCurrent(): Boolean = runtime.store.isCurrent(id, generation)
     private fun checkCurrent() { check(isCurrent()) { "Thread was deleted" } }
 
-    internal fun configure(options: ThreadOptions) {
+    internal fun configure(options: ThreadOptions, explicitPolicy: ApprovalPolicy? = null) {
         runtime.store.updateOptions(id, options, generation)
         defaults = options
+        if (explicitPolicy != null) active?.let { turn ->
+            turn.approvalState.policy = explicitPolicy
+            turn.approval?.let { gate -> gate.applyPolicy(explicitPolicy, gate.domain in runtime.store.rememberedDomains(id)) }
+        }
     }
 
     override suspend fun run(input: TurnInput, options: TurnOptions): TurnResult {
@@ -110,7 +114,9 @@ internal class DefaultAgentThread(
 
     private suspend fun ProducerScope<ThreadEvent>.execute(input: TurnInput, options: TurnOptions, turnId: String): FinishedThreadTurn {
         val mailbox = ThreadEventMailbox(this)
-        val turn = ActiveThreadTurn(turnId, defaults, runtime, generation)
+        val turn = ActiveThreadTurn(turnId, defaults, runtime, generation).also {
+            it.approvalState.policy = options.approvalPolicy ?: defaults.approvalPolicy ?: ApprovalPolicy.ASK
+        }
         val projection = ThreadEventProjection(id, turnId, input, { error("Approval must be handled in the active turn") }) { event ->
             turn.items = turn.projection?.items().orEmpty()
             if (event !is ThreadEvent.TurnCompleted && event !is ThreadEvent.TurnFailed) {
@@ -167,12 +173,12 @@ internal class DefaultAgentThread(
                 throw ThreadInputException("QUESTION_NOT_FOUND", "The question is not pending in this thread.")
             }
             val resolved = resolveThreadAttachments(input) { runtime.engine.readThreadAttachment(id, it) }
-            val request = threadRequest(record, resolved, options, turn.id, turn.executionId)
+            val request = threadRequest(record, resolved, options, turn.id, turn.executionId, turn.approvalState)
             if (request.inputImages.isNotEmpty() && (!runtime.imageInputEnabled || !runtime.supportsImages(request.modelRef))) {
                 projection.fail(TurnError("IMAGE_INPUT_UNSUPPORTED", "The selected model does not accept image input."))
                 return
             }
-            runtime.engine.runThread(request) { pending -> approve(turn, pending, options) }.collect(projection::accept)
+            runtime.engine.runThread(request) { pending -> approve(turn, pending) }.collect(projection::accept)
             if (projection.result == null) projection.fail(TurnError("MISSING_TURN_RESULT", "The model stopped without completing the turn."))
         } catch (_: CancellationException) {
             turn.approval?.cancel()
@@ -204,9 +210,9 @@ internal class DefaultAgentThread(
         }
     }
 
-    private suspend fun approve(turn: ActiveThreadTurn, pending: PendingConfirmation, options: TurnOptions): ApprovalState {
+    private suspend fun approve(turn: ActiveThreadTurn, pending: PendingConfirmation): ApprovalState {
         val projection = checkNotNull(turn.projection)
-        val policy = options.approvalPolicy ?: turn.options.approvalPolicy ?: ApprovalPolicy.ASK
+        val policy = turn.approvalState.policy
         val domain = approvalDomain(pending.toolName.orEmpty(), pending.argumentsJson.orEmpty())
         val automatic = when (policy) {
             ApprovalPolicy.APPROVE_ALL -> ApprovalState.APPROVED
@@ -223,12 +229,17 @@ internal class DefaultAgentThread(
         val approval = ThreadApproval(pending.copy(runId = turn.id), runtime.nowEpochMillis() + runtime.confirmationTimeoutMillis, runtime.nowEpochMillis)
         turn.approval = approval
         try {
+            approval.applyPolicy(turn.approvalState.policy, domain != null && domain in runtime.store.rememberedDomains(id))
+            if (approval.state != ApprovalState.PENDING) {
+                approval.approvedBy?.let { projection.toolDecision(pending.idempotencyKey, it) }
+                return approval.state
+            }
             projection.beginApproval(approval)
             val decision = approval.await()
-            if (domain != null && decision == ApprovalState.APPROVED && (policy == ApprovalPolicy.REMEMBER || approval.scope == ApprovalScope.THREAD)) {
+            if (domain != null && decision == ApprovalState.APPROVED && (turn.approvalState.policy == ApprovalPolicy.REMEMBER || approval.scope == ApprovalScope.THREAD)) {
                 withContext(Dispatchers.IO) { runtime.store.rememberDomain(id, domain, generation) }
             }
-            if (decision == ApprovalState.APPROVED) projection.toolDecision(pending.idempotencyKey, ApprovalSource.USER)
+            if (decision == ApprovalState.APPROVED) projection.toolDecision(pending.idempotencyKey, approval.approvedBy ?: ApprovalSource.USER)
             projection.resolveApproval(approval.snapshot())
             return decision
         } finally { approval.cancel(); turn.approval = null }

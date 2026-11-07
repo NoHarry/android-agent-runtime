@@ -123,6 +123,7 @@ internal data class AgentRequest(
     val instructions: String? = null,
     private val executionIdOverride: String? = null,
     val approvalPolicy: cc.noharry.agent.ApprovalPolicy = cc.noharry.agent.ApprovalPolicy.ASK,
+    val approvalState: ApprovalPolicyState? = null,
 ) {
     val executionId: String get() = executionIdOverride ?: requestId
 
@@ -382,3 +383,6 @@ internal sealed interface CancelPendingResult {
 
     data object NotFound : CancelPendingResult
 }
+
+/** Shared only by an active turn and its tool contexts; explicit host policy patches update it. */
+internal class ApprovalPolicyState(@Volatile var policy: cc.noharry.agent.ApprovalPolicy)

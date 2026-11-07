@@ -25,6 +25,8 @@ internal class ThreadApproval(
         private set
     @Volatile var scope: ApprovalScope = ApprovalScope.ONCE
         private set
+    @Volatile var approvedBy: ApprovalSource? = null
+        private set
     override val status: ItemStatus get() = when (state) {
         ApprovalState.PENDING -> ItemStatus.IN_PROGRESS
         ApprovalState.APPROVED -> ItemStatus.COMPLETED
@@ -34,17 +36,27 @@ internal class ThreadApproval(
     override suspend fun approve(scope: ApprovalScope): RespondResult = respond(ApprovalState.APPROVED, scope)
     override suspend fun deny(reason: String?): RespondResult = respond(ApprovalState.DENIED, ApprovalScope.ONCE)
 
-    private fun respond(value: ApprovalState, scope: ApprovalScope): RespondResult = synchronized(this) {
+    private fun respond(value: ApprovalState, scope: ApprovalScope, source: ApprovalSource = ApprovalSource.USER): RespondResult = synchronized(this) {
         if (state == ApprovalState.PENDING && clock() >= expiresAt) complete(ApprovalState.EXPIRED)
         when (state) {
             ApprovalState.EXPIRED -> RespondResult.EXPIRED
             ApprovalState.CANCELLED -> RespondResult.NOT_FOUND
             ApprovalState.PENDING -> {
                 this.scope = scope
+                approvedBy = source.takeIf { value == ApprovalState.APPROVED }
                 complete(value)
                 RespondResult.ACCEPTED
             }
             else -> RespondResult.ALREADY_ANSWERED
+        }
+    }
+
+    fun applyPolicy(policy: ApprovalPolicy, remembered: Boolean) {
+        when (policy) {
+            ApprovalPolicy.APPROVE_ALL -> respond(ApprovalState.APPROVED, ApprovalScope.ONCE, ApprovalSource.AUTOMATIC)
+            ApprovalPolicy.DENY_ALL -> respond(ApprovalState.DENIED, ApprovalScope.ONCE)
+            ApprovalPolicy.REMEMBER -> if (remembered) respond(ApprovalState.APPROVED, ApprovalScope.THREAD, ApprovalSource.REMEMBERED)
+            ApprovalPolicy.ASK -> Unit
         }
     }
 
