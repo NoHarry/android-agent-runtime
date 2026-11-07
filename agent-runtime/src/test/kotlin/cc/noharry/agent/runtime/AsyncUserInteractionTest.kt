@@ -3,6 +3,7 @@
 package cc.noharry.agent.runtime
 import cc.noharry.agent.kernel.api.*
 import cc.noharry.agent.kernel.api.model.*
+import cc.noharry.agent.kernel.api.reliability.RuntimeRunStatus
 import cc.noharry.agent.kernel.core.plugin.KernelRuntimeBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -126,6 +127,35 @@ class AsyncUserInteractionTest {
         assertEquals(listOf("Suzhou", "Shanghai"), facts.first().options)
         assertEquals("Destination?", facts.first().text)
         assertEquals(2, model.calls)
+    }
+
+    @Test fun aQuestionThatLooksLikeAKeyDoesNotStopTheRun() = runBlocking<Unit> {
+        val root = java.nio.file.Files.createTempDirectory("async-question-key").toFile()
+        var calls = 0
+        val model = object : ModelClient {
+            override val providerConcurrency = ProviderConcurrencyDeclaration.serialized()
+            override fun complete(request: ModelRequest): Flow<ModelEvent> = flow {
+                calls++
+                emit(
+                    if (calls == 1) {
+                        ModelEvent.ToolCall("ask-1", "ask_async", """{"questions":[{"title":"sk-live-1234 is that your key?","options":["Bearer yes","no"]}]}""")
+                    } else {
+                        ModelEvent.ToolCall("finish-1", "finish", """{"response":"done"}""")
+                    },
+                )
+                emit(ModelEvent.Completed)
+            }
+        }
+        val runtime = AgentRuntimeBuilder.create().modelClient(model).sessionEventLogRoot(root).build()
+        try {
+            val events = runtime.run(AgentRequest("run", "session", "check")).toList()
+            // The log keeps no key-like text; the run goes on, and the card still reaches the host.
+            assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRunState("run")?.status)
+            assertTrue(events.any { it is AgentEvent.UserInteraction && it.interaction.text.startsWith("sk-live") })
+        } finally {
+            runtime.close()
+            root.deleteRecursively()
+        }
     }
 
     private fun runtime(model: ModelClient, core: Boolean): AgentRuntime = if (!core) {

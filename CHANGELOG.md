@@ -37,6 +37,11 @@ The API is cleaned up for use as a public library. **Breaking** for hosts that u
   exactly as the model wrote them. Thinking, tool events, summaries and the reports of runs that did not complete are
   filtered as before; a host that wants the answer filtered applies a redactor itself, on the whole text or the result
   (`DefaultTraceRedactor.redact(…)`).
+- **A question that looks like a key no longer ends the run.** The durable event log refuses text that starts like a
+  credential (`sk-`, `Bearer `), and a question card (`ask_async`) whose title or option did so failed the run: it was
+  the one record not left out of the log when refused. It now is, and the card still reaches the host. Likewise a
+  user's reply that starts like a key (`postUserInput`) is now accepted and reaches the model, left out of the log,
+  where it was refused with an exception.
 - **A runtime without a workspace reaches its tools.** Tools from providers (`functionTools`, MCP) are found with
   `search_tools`, which only a workspace ran: without one, the model was offered `search_tools` and the file tools, all
   answering `WORKSPACE_NOT_CONFIGURED`, and could call only the tools a `ToolPrefetchProvider` had brought in.

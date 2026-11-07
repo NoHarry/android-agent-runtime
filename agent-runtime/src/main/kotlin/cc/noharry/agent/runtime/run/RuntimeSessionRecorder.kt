@@ -190,8 +190,9 @@ internal class RuntimeSessionRecorder(
     }
 
     override fun recordInteraction(context: MaterializerContext, interaction: SessionEventPayload.UserInteraction) {
+        // As every other record: a fact the log refuses (key-like text in a question) is left out, not the run's end.
         synchronized(eventLock) {
-            eventLog?.append(SessionEventAppend(
+            appendEventSafely(SessionEventAppend(
                 sessionId = context.sessionId, runId = context.runId, requestId = context.requestId,
                 type = SessionEventType.USER_INTERACTION, payload = interaction,
                 sourceEventSequences = runStartSource(context.runId),

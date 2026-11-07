@@ -10,8 +10,9 @@ import cc.noharry.agent.kernel.core.trace.LoopSessionRecorder
 /**
  * One input owner per run. Each run has its own lock, so host input for one session never waits on
  * another session's recorder; admission and normal terminal sealing share that per-run lock, and the
- * canonical RECEIVED fact is appended before the input becomes drainable. Facts are also queued for
- * the loop to project onto the public event stream at its next safe point.
+ * canonical RECEIVED fact is recorded before the input becomes drainable (a fact the log refuses, such
+ * as key-like text, is left out of it). Facts are also queued for the loop to project onto the public
+ * event stream at its next safe point.
  */
 class RuntimeSteeringQueue(
     private val nowEpochMillis: () -> Long = { System.currentTimeMillis() },
