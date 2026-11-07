@@ -648,6 +648,8 @@ internal class DefaultAgentRuntime(
             idempotencyKey = paused?.toolCallId.orEmpty(), prompt = outcome.prompt,
             toolName = paused?.toolUse?.toolName, argumentsJson = paused?.toolUse?.argumentsJson,
         )
+        // This turn stays in its original stream, so inputs can queue while the host decides.
+        steeringQueue.resume(request.requestId)
         val decision = approve(pending)
         if (decision == cc.noharry.agent.ApprovalState.APPROVED && paused != null) {
             steeringQueue.resume(request.requestId)

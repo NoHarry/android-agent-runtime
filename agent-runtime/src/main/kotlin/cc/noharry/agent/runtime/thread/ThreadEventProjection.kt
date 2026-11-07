@@ -5,6 +5,7 @@ package cc.noharry.agent.runtime.thread
 import cc.noharry.agent.*
 import cc.noharry.agent.spi.AgentEvent
 import cc.noharry.agent.spi.PendingConfirmation
+import cc.noharry.agent.spi.PostUserInputRequest
 import cc.noharry.agent.spi.SessionEventPayload
 import cc.noharry.agent.spi.reliability.RuntimeResult
 import cc.noharry.agent.spi.reliability.RuntimeRunStatus
@@ -74,6 +75,14 @@ internal class ThreadEventProjection(
 
     suspend fun resolveApproval(item: Approval) { complete(item) }
 
+    /** Inputs accepted before cancellation or an approval failure still belong to this turn's transcript. */
+    suspend fun retainSteeringInputs(inputs: List<PostUserInputRequest>) {
+        for (input in inputs) interaction(SessionEventPayload.UserInteraction(
+            "INPUT", "RECEIVED", inputRequestId = input.requestId, text = input.text,
+        ))
+        result = result?.copy(items = items())
+    }
+
     private suspend fun text(value: String, thinking: Boolean) {
         if (thinking) {
             finishMessage()
@@ -123,7 +132,7 @@ internal class ThreadEventProjection(
         if (fact.kind == "INPUT") {
             val id = "$turnId:input:${fact.inputRequestId}"
             if (fact.state == "RECEIVED" && id !in records) {
-                instant(ThreadItem.UserMessage(id, turnId, listOf(InputPart.Text(fact.text)), steer = true))
+                instant(ThreadItem.UserMessage(id, turnId, listOf(InputPart.Text(fact.text)), steer = true, requestId = fact.inputRequestId))
             }
             return
         }

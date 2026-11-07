@@ -25,6 +25,7 @@ internal class ThreadItemCodec(
         when (item) {
             is ThreadItem.UserMessage -> {
                 put("kind", "user"); put("input", JsonArray(item.input.map(::input))); put("steer", item.steer)
+                item.requestId?.let { put("requestId", it) }
             }
             is ThreadItem.AgentMessage -> {
                 put("kind", "agent"); put("text", if (item.phase == MessagePhase.FINAL) item.text else redact(item.text))
@@ -57,7 +58,7 @@ internal class ThreadItemCodec(
         val turn = value.text("turnId")
         val status = value.enum("status", ItemStatus.COMPLETED)
         return when (value.text("kind")) {
-            "user" -> ThreadItem.UserMessage(id, turn, value.array("input").map { input(it as JsonObject) }, value.flag("steer"), status)
+            "user" -> ThreadItem.UserMessage(id, turn, value.array("input").map { input(it as JsonObject) }, value.flag("steer"), status, value.optionalText("requestId"))
             "agent" -> ThreadItem.AgentMessage(id, turn, value.text("text"), value.enum("phase", MessagePhase.COMMENTARY), status)
             "reasoning" -> ThreadItem.Reasoning(id, turn, value.text("text"), status)
             "tool" -> tool(value, id, turn, status)

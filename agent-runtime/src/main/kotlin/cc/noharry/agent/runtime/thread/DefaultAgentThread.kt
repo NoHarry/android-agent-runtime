@@ -139,6 +139,7 @@ internal class DefaultAgentThread(
     private suspend fun finalizeTurn(turn: ActiveThreadTurn): TurnResult {
         val projection = checkNotNull(turn.projection)
         turn.finalizing = true
+        projection.retainSteeringInputs(turn.acceptedInputs())
         if (projection.result == null) {
             val error = turn.cancellation ?: TurnError("MISSING_TURN_RESULT", "The model stopped without completing the turn.")
             projection.fail(error, interrupted = error.code == "INTERRUPTED")
@@ -209,22 +210,21 @@ internal class DefaultAgentThread(
         } finally { approval.cancel(); turn.approval = null }
     }
 
-    override suspend fun steer(text: String): SteerResult = steer(text, null)
-
-    override suspend fun steer(text: String, answering: String?): SteerResult {
+    override suspend fun steer(text: String, options: SteerOptions): SteerResult {
         checkCurrent()
         if (text.isBlank()) return SteerResult.EMPTY_INPUT
+        val answering = options.answering
         val turn = active ?: return if (answering == null) SteerResult.NOT_RUNNING else SteerResult.QUESTION_NOT_FOUND
-        val questions = turn.items.filterIsInstance<Question>().filter { it.async && it.status == ItemStatus.IN_PROGRESS }
-        val question = if (answering == null) questions.lastOrNull() else questions.firstOrNull { it.id == answering }
+        val question = answering?.let { target -> turn.items.filterIsInstance<Question>().firstOrNull { it.async && it.id == target } }
         if (answering != null && question == null) return SteerResult.QUESTION_NOT_FOUND
-        val result = turn.owner.engine.postUserInput(PostUserInputRequest(turn.id, UUID.randomUUID().toString(), text, id,
+        val result = turn.postInput(PostUserInputRequest(turn.id, options.requestId ?: UUID.randomUUID().toString(), text, id,
             question?.id?.removePrefix("${turn.id}:question:")))
         return when (result) {
             PostUserInputResult.Accepted, PostUserInputResult.Duplicate -> SteerResult.ACCEPTED
             is PostUserInputResult.Rejected -> when (result.code) {
                 "INPUT_LIMIT" -> SteerResult.QUEUE_FULL
                 "QUESTION_NOT_FOUND", "QUESTION_ALREADY_ANSWERED" -> SteerResult.QUESTION_NOT_FOUND
+                "REQUEST_ID_CONFLICT" -> SteerResult.REQUEST_ID_CONFLICT
                 else -> SteerResult.NOT_RUNNING
             }
             else -> SteerResult.NOT_RUNNING

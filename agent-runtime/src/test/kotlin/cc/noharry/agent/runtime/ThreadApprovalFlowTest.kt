@@ -10,6 +10,35 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ThreadApprovalFlowTest {
+    @Test fun inputQueuedDuringApprovalSurvivesDenial() = runBlocking { acceptedInputSurvivesApprovalEnd("deny") }
+
+    @Test fun inputQueuedDuringApprovalSurvivesInterruption() = runBlocking { acceptedInputSurvivesApprovalEnd("interrupt") }
+
+    @Test fun inputQueuedDuringApprovalSurvivesExpiry() = runBlocking { acceptedInputSurvivesApprovalEnd("expire") }
+
+    @Test fun inputWhileWaitingForApprovalQueuesUntilExecutionContinues() = runBlocking {
+        val requests = mutableListOf<cc.noharry.agent.spi.model.ModelRequest>()
+        approvalBuilder(requests = requests).build().use { runtime ->
+            val thread = runtime.startThread()
+            val events = mutableListOf<ThreadEvent>()
+            thread.runStreamed("set temperature").collect { event ->
+                events += event
+                if (event is ThreadEvent.ItemStarted && event.item is Approval) {
+                    assertEquals(ThreadStatus.WAITING_FOR_APPROVAL, thread.status())
+                    val before = requests.size
+                    assertEquals(SteerResult.ACCEPTED, thread.steer("Then explain the setting", SteerOptions("during-approval")))
+                    assertEquals(before, requests.size)
+                    (event.item as Approval).approve()
+                }
+            }
+            assertTurnEvents(events)
+            assertTrue(requests.last().messages.any { it.role == "user" && it.content.contains("Then explain the setting") })
+            val input = events.filterIsInstance<ThreadEvent.ItemCompleted>().map { it.item }
+                .filterIsInstance<ThreadItem.UserMessage>().single { it.steer }
+            assertEquals("during-approval", input.requestId)
+        }
+    }
+
     @Test fun approvingContinuesTheOriginalFlowAndOnlyOneResponderWins() = runBlocking {
         approvalBuilder().build().use { runtime ->
             val thread = runtime.startThread()
@@ -84,6 +113,30 @@ class ThreadApprovalFlowTest {
             assertTurnEvents(events)
             assertEquals(TurnStatus.INTERRUPTED, (events.last() as ThreadEvent.TurnCompleted).result.status)
             assertEquals(ThreadStatus.IDLE, thread.status())
+        }
+    }
+
+    private suspend fun acceptedInputSurvivesApprovalEnd(action: String) {
+        val built = approvalBuilder().build() as DefaultThreadRuntime
+        DefaultThreadRuntime(built.engine, built.store, confirmationTimeoutMillis = 100).use { runtime ->
+            val thread = runtime.startThread()
+            val events = mutableListOf<ThreadEvent>()
+            thread.runStreamed("set temperature").collect { event ->
+                events += event
+                if (event is ThreadEvent.ItemStarted && event.item is Approval) {
+                    assertEquals(SteerResult.ACCEPTED, thread.steer("Remember this input", SteerOptions("approval-end")))
+                    when (action) {
+                        "deny" -> (event.item as Approval).deny()
+                        "interrupt" -> thread.interrupt()
+                    }
+                }
+            }
+            assertTurnEvents(events)
+            val inputs = events.filterIsInstance<ThreadEvent.ItemCompleted>().map { it.item }
+                .filterIsInstance<ThreadItem.UserMessage>().filter { it.steer }
+            assertEquals("approval-end", inputs.single().requestId)
+            assertEquals("Remember this input", (inputs.single().input.single() as InputPart.Text).text)
+            assertEquals(inputs, thread.items().filterIsInstance<ThreadItem.UserMessage>().filter { it.steer })
         }
     }
 }
