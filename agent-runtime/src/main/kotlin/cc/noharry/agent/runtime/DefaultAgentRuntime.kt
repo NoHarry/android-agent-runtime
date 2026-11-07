@@ -293,6 +293,21 @@ internal class DefaultAgentRuntime(
     internal fun clearThreadHistory(threadId: String) {
         sessionHistory?.clearSession(threadId)
         activationStore.clearSession(threadId)
+        workspaceRegistry.clearSession(threadId)
+    }
+
+    /** Called after the conversation's turns have drained, including across runtimes sharing its storage. */
+    internal suspend fun deleteThreadData(threadId: String, knownExecutionIds: Set<String>): Set<String> {
+        check(sessionEventLog?.deleteThread(threadId) != false) { "The configured event log does not support thread deletion" }
+        val executions = runStateController.deleteSession(threadId, knownExecutionIds)
+        sessionRecorder.deleteThread(threadId, executions)
+        check(todoStore?.clear(threadId) != false) { "Cannot delete the thread's saved plan" }
+        clearThreadHistory(threadId)
+        executions.forEach { executionId ->
+            loopHistoryStore.delete(executionId)
+            workspaceRegistry.clearRun(executionId)
+        }
+        return executions
     }
 
     /** A persisted attempt without a saved conversation result cannot be resumed after process loss. */
