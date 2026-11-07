@@ -2,11 +2,8 @@
 
 package cc.noharry.agent.runtime
 
-import cc.noharry.agent.spi.AgentEvent
-import cc.noharry.agent.spi.AgentRequest
-import cc.noharry.agent.spi.CancelPendingConfirmationRequest
-import cc.noharry.agent.spi.ConfirmationChoice
-import cc.noharry.agent.spi.ConfirmationDecision
+import cc.noharry.agent.*
+
 import cc.noharry.agent.spi.HookContext
 import cc.noharry.agent.spi.HookDecision
 import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
@@ -23,11 +20,9 @@ import cc.noharry.agent.spi.ToolUse
 import cc.noharry.agent.spi.model.ModelClient
 import cc.noharry.agent.spi.model.ModelEvent
 import cc.noharry.agent.spi.model.ModelRequest
-import cc.noharry.agent.spi.reliability.RuntimeRunStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -80,93 +75,106 @@ class ConfirmationHistoryTest {
     private fun runtime(client: ModelClient, door: Door) = AgentRuntimeBuilder.create()
         .modelClient(client).toolProvider(door).sessionHistory(SessionHistory()).sessionToolActivations(SessionToolActivations())
         .hook(AskFirst, ToolMatcher.toolName("mcp__car__unlock_door"))
-        .buildEngine()
+        .build()
 
-    private suspend fun cc.noharry.agent.spi.AgentRuntime.pause(runId: String, input: String) =
-        run(AgentRequest(runId, "s1", input)).toList().filterIsInstance<AgentEvent.ConfirmationRequired>().single().pending
-
-    @Test fun anApprovedCallResumesWithItsThinkingSignatureAndWordsAndNoHandoffNote() = runBlocking {
-        val script = Script(listOf(unlock, answer))
-        val runtime = runtime(script, Door())
-        val pending = runtime.pause("r1", "开主驾车门")
-        runtime.resumeConfirmation(ConfirmationDecision(pending.pendingId, "d1", ConfirmationChoice.APPROVE))
-
-        val resumed = script.seen[1].messages
-        val call = resumed.single { it.role == "assistant" && it.toolCallId == "call_1" }
-        assertEquals("sig-1", call.thinkingSignature)
-        assertEquals("我来开门。", call.assistantText)
-        assertEquals("开主驾车门", resumed.first().content)
-        assertTrue(resumed.none { it.role == "system" })
+    private suspend fun AgentThread.collectTurn(
+        turnId: String,
+        input: String,
+        respond: suspend (Approval) -> Unit,
+    ): List<ThreadEvent> {
+        val events = mutableListOf<ThreadEvent>()
+        runStreamed(input, TurnOptions(turnId = turnId)).collect { event ->
+            events += event
+            if (event is ThreadEvent.ItemStarted && event.item is Approval) respond(event.item as Approval)
+        }
+        assertTurnEvents(events)
+        return events
     }
 
-    @Test fun theConfirmationSaysWhichCallWaitsAndWithWhatArguments() = runBlocking {
+    @Test fun anApprovedCallResumesWithItsThinkingSignatureAndWordsAndNoHandoffNote() = runBlocking<Unit> {
+        val script = Script(listOf(unlock, answer))
+        runtime(script, Door()).use { runtime ->
+            runtime.startThread(ThreadOptions(threadId = "s1")).collectTurn("r1", "开主驾车门") { it.approve() }
+            val resumed = script.seen[1].messages
+            val call = resumed.single { it.role == "assistant" && it.toolCallId == "call_1" }
+            assertEquals("sig-1", call.thinkingSignature)
+            assertEquals("我来开门。", call.assistantText)
+            assertEquals("开主驾车门", resumed.first().content)
+            assertTrue(resumed.none { it.role == "system" })
+        }
+    }
+
+    @Test fun theApprovalSaysWhichCallWaitsAndWithWhatArguments() = runBlocking<Unit> {
         val slowly = object : RuntimeHook {
             override suspend fun onPreToolUse(call: ToolUse, context: HookContext) =
                 HookDecision.Allow(updatedArgumentsJson = """{"door":"driver","speed":"slow"}""")
         }
-        val runtime = AgentRuntimeBuilder.create()
-            .modelClient(Script(listOf(unlock, answer))).toolProvider(Door())
+        AgentRuntimeBuilder.create().modelClient(Script(listOf(unlock, answer))).toolProvider(Door())
             .hook(slowly, ToolMatcher.toolName("mcp__car__unlock_door"))
             .hook(AskFirst, ToolMatcher.toolName("mcp__car__unlock_door"))
-            .buildEngine()
-        val pending = runtime.pause("r1", "开主驾车门")
-
-        assertEquals("开门吗？", pending.prompt)
-        assertEquals("mcp__car__unlock_door", pending.toolName)
-        assertEquals("""{"door":"driver","speed":"slow"}""", pending.argumentsJson)
-        assertEquals(pending, runtime.getPendingConfirmation(pending.pendingId))
+            .build().use { runtime ->
+                val thread = runtime.startThread(ThreadOptions(threadId = "s1"))
+                thread.collectTurn("r1", "开主驾车门") { pending ->
+                    assertEquals("开门吗？", pending.reason)
+                    assertEquals("mcp__car__unlock_door", pending.tool)
+                    assertEquals("""{"door":"driver","speed":"slow"}""", pending.arguments)
+                    assertEquals(pending, thread.pendingRequests().single())
+                    pending.approve()
+                }
+            }
     }
 
-    @Test fun aFailedApprovedCallEndsTheRunAndTheNextRunSeesIt() = runBlocking {
+    @Test fun aFailedApprovedCallEndsTheTurnAndTheNextTurnSeesIt() = runBlocking<Unit> {
         val script = Script(listOf(unlock, answer))
-        val runtime = runtime(script, Door("""{"ok":false,"code":"DOOR_JAMMED"}"""))
-        val pending = runtime.pause("r1", "开主驾车门")
-        runtime.resumeConfirmation(ConfirmationDecision(pending.pendingId, "d1", ConfirmationChoice.APPROVE))
-        runtime.run(AgentRequest("r2", "s1", "门开了吗")).toList()
-
-        assertEquals(RuntimeRunStatus.FAILED, runtime.getRuntimeResult("r1")?.status)
-        val next = script.seen[1].messages
-        assertTrue(next.any { it.role == "tool" && it.content.contains("DOOR_JAMMED") })
-        assertTrue(next.any { it.role == "user" && it.content.contains("ended without an answer") })
+        runtime(script, Door("""{"ok":false,"code":"DOOR_JAMMED"}""")).use { runtime ->
+            val thread = runtime.startThread(ThreadOptions(threadId = "s1"))
+            val events = thread.collectTurn("r1", "开主驾车门") { it.approve() }
+            assertEquals("DOOR_JAMMED", (events.last() as ThreadEvent.TurnFailed).error.code)
+            thread.run("门开了吗")
+            val next = script.seen[1].messages
+            assertTrue(next.any { it.role == "tool" && it.content.contains("DOOR_JAMMED") })
+            assertTrue(next.any { it.role == "user" && it.content.contains("ended without an answer") })
+        }
     }
 
-    @Test fun theNextRunKnowsTheUserDeclined() = runBlocking {
-        val script = Script(listOf(unlock, answer))
+    @Test fun theCurrentAndNextTurnKnowTheUserDeclined() = runBlocking<Unit> {
+        val script = Script(listOf(unlock, answer, answer))
         val door = Door()
-        val runtime = runtime(script, door)
-        val pending = runtime.pause("r1", "开主驾车门")
-        runtime.resumeConfirmation(ConfirmationDecision(pending.pendingId, "d1", ConfirmationChoice.DENY))
-        runtime.run(AgentRequest("r2", "s1", "门开了吗")).toList()
-
-        assertTrue(door.calls.isEmpty())
-        val next = script.seen[1].messages
-        assertEquals("开主驾车门", next.first().content)
-        assertTrue(next.any { it.role == "assistant" && it.toolCallId == "call_1" && it.thinkingSignature == "sig-1" })
-        assertTrue(next.any { it.role == "tool" && it.content.contains("USER_DECLINED") })
-        assertEquals("门开了吗", next.last().content)
+        runtime(script, door).use { runtime ->
+            val thread = runtime.startThread(ThreadOptions(threadId = "s1"))
+            thread.collectTurn("r1", "开主驾车门") { it.deny() }
+            thread.run("门开了吗")
+            assertTrue(door.calls.isEmpty())
+            for (request in script.seen.drop(1)) {
+                assertTrue(request.messages.any { it.role == "assistant" && it.toolCallId == "call_1" && it.thinkingSignature == "sig-1" })
+                assertTrue(request.messages.any { it.role == "tool" && it.content.contains("CONFIRMATION_DENIED") })
+            }
+            assertEquals("门开了吗", script.seen.last().messages.last().content)
+        }
     }
 
-    @Test fun theNextRunKnowsTheConfirmationWasWithdrawn() = runBlocking {
+    @Test fun theNextTurnKnowsTheApprovalWasWithdrawn() = runBlocking<Unit> {
         val script = Script(listOf(unlock, answer))
-        val runtime = runtime(script, Door())
-        val pending = runtime.pause("r1", "开主驾车门")
-        runtime.cancelPendingConfirmation(CancelPendingConfirmationRequest(pending.pendingId, "c1"))
-        runtime.run(AgentRequest("r2", "s1", "门开了吗")).toList()
-
-        assertTrue(script.seen[1].messages.any { it.role == "tool" && it.content.contains("CONFIRMATION_CANCELLED") })
+        runtime(script, Door()).use { runtime ->
+            val thread = runtime.startThread(ThreadOptions(threadId = "s1"))
+            thread.collectTurn("r1", "开主驾车门") { thread.interrupt() }
+            thread.run("门开了吗")
+            assertTrue(script.seen[1].messages.any { it.role == "tool" && it.content.contains("CONFIRMATION_CANCELLED") })
+        }
     }
 
-    @Test fun whileTheConfirmationWaitsTheSessionShowsTheCallAsWaiting() = runBlocking {
+    @Test fun whileApprovalWaitsTheSessionShowsTheCallAsWaiting() = runBlocking<Unit> {
         val history = SessionHistory()
-        val runtime = AgentRuntimeBuilder.create()
-            .modelClient(Script(listOf(unlock))).toolProvider(Door()).sessionHistory(history)
-            .sessionToolActivations(SessionToolActivations())
-            .hook(AskFirst, ToolMatcher.toolName("mcp__car__unlock_door"))
-            .buildEngine()
-        runtime.pause("r1", "开主驾车门")
-
-        val waiting = history.messages("s1")
-        assertTrue(waiting.any { it.role == "assistant" && it.toolCallId == "call_1" })
-        assertTrue(waiting.last().content.contains("awaiting_confirmation"))
+        AgentRuntimeBuilder.create().modelClient(Script(listOf(unlock))).toolProvider(Door()).sessionHistory(history)
+            .sessionToolActivations(SessionToolActivations()).hook(AskFirst, ToolMatcher.toolName("mcp__car__unlock_door"))
+            .build().use { runtime ->
+                val thread = runtime.startThread(ThreadOptions(threadId = "s1"))
+                thread.collectTurn("r1", "开主驾车门") {
+                    val waiting = history.messages("s1")
+                    assertTrue(waiting.any { it.role == "assistant" && it.toolCallId == "call_1" })
+                    assertTrue(waiting.last().content.contains("awaiting_confirmation"))
+                    thread.interrupt()
+                }
+            }
     }
 }

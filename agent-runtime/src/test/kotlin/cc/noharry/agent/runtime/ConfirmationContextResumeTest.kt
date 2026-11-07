@@ -1,11 +1,14 @@
 @file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
+import cc.noharry.agent.Approval
+import cc.noharry.agent.ThreadEvent
+import cc.noharry.agent.ThreadOptions
+import cc.noharry.agent.TurnOptions
 import cc.noharry.agent.spi.*
 import cc.noharry.agent.spi.model.ModelRequest
 import cc.noharry.agent.kernel.core.state.FileBackedLoopHistoryStore
 import java.nio.file.Files
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -31,11 +34,11 @@ class ConfirmationContextResumeTest {
         val runtime = AgentRuntimeBuilder.create().workspaceRoot(root)
             .toolProvider(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
             .hook(confirmUntilApproved()).contextProvider(provider)
-            .modelClient(backendThenFinishModel(requests)).buildEngine()
+            .modelClient(backendThenFinishModel(requests)).build()
         try {
-            val events = runtime.run(AgentRequest("context-run", "context-session", "set temperature", currentStateKeys = setOf("media.volume"))).toList()
-            val pending = events.filterIsInstance<AgentEvent.ConfirmationRequired>().single().pending.pendingId
-            runtime.resumeConfirmation(approve(pending))
+            runtime.startThread(ThreadOptions(threadId = "context-session"))
+                .runStreamed("set temperature", TurnOptions(turnId = "context-run", currentStateKeys = setOf("media.volume")))
+                .collect { event -> if (event is ThreadEvent.ItemStarted && event.item is Approval) (event.item as Approval).approve() }
             assertTrue(requests.size >= 3)
             assertTrue(requests.all { it.system.orEmpty().contains("RESUME_SENTINEL") })
             assertEquals(1, providerCalls)
