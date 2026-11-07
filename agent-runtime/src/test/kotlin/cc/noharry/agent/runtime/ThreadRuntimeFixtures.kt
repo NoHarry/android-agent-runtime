@@ -39,6 +39,28 @@ internal fun assertTurnEvents(events: List<ThreadEvent>) {
     assertTrue(open.isEmpty())
 }
 
+/** Drives the real approval card in its original turn and verifies that the fixture actually reached a gate. */
+internal suspend fun AgentThread.collectApproving(
+    input: String,
+    options: TurnOptions = TurnOptions(),
+    inspect: suspend (Approval) -> Unit = {},
+): List<ThreadEvent> {
+    val events = mutableListOf<ThreadEvent>()
+    var approvals = 0
+    runStreamed(input, options).collect { event ->
+        events += event
+        if (event is ThreadEvent.ItemStarted && event.item is Approval) {
+            approvals++
+            val pending = event.item as Approval
+            inspect(pending)
+            assertEquals(RespondResult.ACCEPTED, pending.approve())
+        }
+    }
+    assertTrue("Expected an approval gate", approvals > 0)
+    assertTurnEvents(events)
+    return events
+}
+
 internal class ThreadScriptModel(
     private val scripts: List<List<ModelEvent>>,
     val requests: MutableList<ModelRequest> = mutableListOf(),

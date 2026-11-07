@@ -2,7 +2,9 @@
 
 package cc.noharry.agent.runtime
 import cc.noharry.agent.spi.AgentEvent
-import cc.noharry.agent.spi.ConfirmationResumeResult
+import cc.noharry.agent.Approval
+import cc.noharry.agent.ThreadEvent
+import cc.noharry.agent.TurnStatus
 import cc.noharry.agent.spi.HookContext
 import cc.noharry.agent.spi.HookDecision
 import cc.noharry.agent.spi.HookFailurePolicy
@@ -328,18 +330,13 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .hook(confirmUntilApproved())
             .modelClient(backendThenFinishModel(seenRequests))
-            .buildEngine()
+            .build()
 
-        val pending = runtime.run(agentRequest()).toList()
-            .filterIsInstance<AgentEvent.ConfirmationRequired>()
-            .single()
-            .pending
-        val accepted = runtime.resumeConfirmation(approve(pending.pendingId))
+        val events = runtime.use { it.startThread().collectApproving(agentRequest().input) }
 
-        assertEquals(ConfirmationResumeResult.Accepted, accepted)
         assertEquals(listOf("set_temperature"), backend.calledTools)
-        assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRuntimeResult("request-1")?.status)
-        assertEquals("recovered", runtime.getRuntimeResult("request-1")?.response)
+        assertEquals(TurnStatus.COMPLETED, (events.last() as ThreadEvent.TurnCompleted).result.status)
+        assertEquals("recovered", (events.last() as ThreadEvent.TurnCompleted).result.finalResponse)
     }
 
     @Test
@@ -350,7 +347,8 @@ class RuntimeHookPolicyTest {
             "not-json" to MCP_RESULT_INVALID_JSON_CODE,
         )
 
-        failures.forEachIndexed { index, (resultJson, expectedCode) ->
+        failures.forEach { (resultJson, expectedCode) ->
+            val requests = mutableListOf<ModelRequest>()
             val backend = LoopMcpProvider(
                 resultJson = resultJson,
                 exposedTools = listOf(mcpTool("set_temperature")),
@@ -359,18 +357,13 @@ class RuntimeHookPolicyTest {
                 .workspaceRoot(hookWorkspace())
                 .toolProvider(backend)
                 .hook(confirmUntilApproved())
-                .modelClient(backendThenFinishModel(mutableListOf()))
-                .buildEngine()
+                .modelClient(backendThenFinishModel(requests))
+                .build()
 
-            val pending = runtime.run(agentRequest().copy(requestId = "confirmed-failure-$index")).toList()
-                .filterIsInstance<AgentEvent.ConfirmationRequired>()
-                .single()
-                .pending
-
-            assertEquals(ConfirmationResumeResult.Accepted, runtime.resumeConfirmation(approve(pending.pendingId)))
-            val result = runtime.getRuntimeResult("confirmed-failure-$index")
-            assertEquals(RuntimeRunStatus.FAILED, result?.status)
-            assertEquals(expectedCode, result?.errorCode)
+            val events = runtime.use { it.startThread().collectApproving(agentRequest().input) }
+            val failure = (events.last() as ThreadEvent.TurnFailed).error
+            assertEquals(expectedCode, failure.code)
+            assertEquals(2, requests.size)
             assertEquals(listOf("set_temperature"), backend.calledTools)
         }
     }
@@ -385,15 +378,10 @@ class RuntimeHookPolicyTest {
             .hook(rewriteToolArguments("set_temperature", TEMPERATURE_REWRITE_ARGS))
             .hook(confirmUntilApproved())
             .modelClient(backendThenFinishModel(seenRequests))
-            .buildEngine()
+            .build()
 
-        val pending = runtime.run(agentRequest()).toList()
-            .filterIsInstance<AgentEvent.ConfirmationRequired>()
-            .single()
-            .pending
-        val accepted = runtime.resumeConfirmation(approve(pending.pendingId))
+        runtime.use { it.startThread().collectApproving(agentRequest().input) }
 
-        assertEquals(ConfirmationResumeResult.Accepted, accepted)
         assertEquals(listOf("set_temperature"), backend.calledTools)
         assertEquals(listOf(TEMPERATURE_REWRITE_ARGS), backend.calledArguments)
     }
@@ -411,15 +399,10 @@ class RuntimeHookPolicyTest {
                 """.trimIndent(),
             )
             .modelClient(backendThenFinishModel(seenRequests))
-            .buildEngine()
+            .build()
 
-        val pending = runtime.run(agentRequest()).toList()
-            .filterIsInstance<AgentEvent.ConfirmationRequired>()
-            .single()
-            .pending
-        val accepted = runtime.resumeConfirmation(approve(pending.pendingId))
+        runtime.use { it.startThread().collectApproving(agentRequest().input) }
 
-        assertEquals(ConfirmationResumeResult.Accepted, accepted)
         assertEquals(listOf("set_temperature"), backend.calledTools)
     }
 
@@ -433,11 +416,11 @@ class RuntimeHookPolicyTest {
             .policyConfigJson(BACKEND_DENY_POLICY)
             .hook(confirmUntilApproved())
             .modelClient(backendThenFinishModel(seenRequests))
-            .buildEngine()
+            .build()
 
-        val events = runtime.run(agentRequest()).toList()
+        val events = runtime.use { it.startThread().runStreamed(agentRequest().input).toList() }
 
-        assertTrue(events.filterIsInstance<AgentEvent.ConfirmationRequired>().isEmpty())
+        assertTrue(events.none { it is ThreadEvent.ItemStarted && it.item is Approval })
         assertTrue(backend.calledTools.isEmpty())
         assertTrue(seenRequests.containsToolResult("POLICY_DENIED"))
         assertTrue(seenRequests.containsToolResult("policy blocked"))
@@ -453,18 +436,13 @@ class RuntimeHookPolicyTest {
             .policyConfigJson(BACKEND_CONFIRM_POLICY)
             .hook(confirmWithPrompt("Host needs approval", "Host approval?"))
             .modelClient(backendThenFinishModel(seenRequests))
-            .buildEngine()
+            .build()
 
-        val pending = runtime.run(agentRequest()).toList()
-            .filterIsInstance<AgentEvent.ConfirmationRequired>()
-            .single()
-            .pending
-        val prompt = runtime.getRuntimeHandoff("request-1")?.nextActions?.single().orEmpty()
-        val accepted = runtime.resumeConfirmation(approve(pending.pendingId))
+        var prompt = ""
+        runtime.use { it.startThread().collectApproving(agentRequest().input) { approval -> prompt = approval.reason } }
 
         assertTrue(prompt.contains("Approve backend?"))
         assertTrue(prompt.contains("Host approval?"))
-        assertEquals(ConfirmationResumeResult.Accepted, accepted)
         assertEquals(listOf("set_temperature"), backend.calledTools)
     }
 
@@ -480,16 +458,12 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .hook(alwaysAsks, ToolMatcher.source(ToolSource.BACKEND))
             .modelClient(backendThenFinishModel(mutableListOf()))
-            .buildEngine()
+            .build()
 
-        val pending = runtime.run(agentRequest()).toList()
-            .filterIsInstance<AgentEvent.ConfirmationRequired>()
-            .single()
-            .pending
+        val events = runtime.use { it.startThread().collectApproving(agentRequest().input) }
 
-        assertEquals(ConfirmationResumeResult.Accepted, runtime.resumeConfirmation(approve(pending.pendingId)))
         assertEquals(listOf("set_temperature"), backend.calledTools)
-        assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRuntimeResult("request-1")?.status)
+        assertEquals(TurnStatus.COMPLETED, (events.last() as ThreadEvent.TurnCompleted).result.status)
     }
 
     @Test
@@ -617,15 +591,10 @@ class RuntimeHookPolicyTest {
             .toolProvider(backend)
             .policyConfigPath("/config/policy/backend-confirm.json")
             .modelClient(backendThenFinishModel(seenRequests))
-            .buildEngine()
+            .build()
 
-        val pending = runtime.run(agentRequest()).toList()
-            .filterIsInstance<AgentEvent.ConfirmationRequired>()
-            .single()
-            .pending
-        val accepted = runtime.resumeConfirmation(approve(pending.pendingId))
+        runtime.use { it.startThread().collectApproving(agentRequest().input) }
 
-        assertEquals(ConfirmationResumeResult.Accepted, accepted)
         assertEquals(listOf("set_temperature"), backend.calledTools)
     }
 
