@@ -727,7 +727,9 @@ class RuntimeHookPolicyTest {
         runtime.startThread(cc.noharry.agent.ThreadOptions(threadId = "session-1"))
             .run("hello", cc.noharry.agent.TurnOptions(turnId = "request-1"))
 
-        assertEquals(listOf("started:request-1", "finished:request-1:COMPLETED"), events)
+        val executionId = checkNotNull(runtime.diagnostics.getRunState("session-1", "request-1")).runId
+        assertTrue(executionId != "request-1")
+        assertEquals(listOf("started:$executionId", "finished:$executionId:COMPLETED"), events)
     }
 
 }
