@@ -92,7 +92,7 @@ class AsyncUserInteractionTest {
                 val expired = seen.filterIsInstance<AgentEvent.UserInteraction>().single { it.interaction.state == "EXPIRED" }.interaction
                 assertEquals("COMPLETED", expired.reason)
                 assertTrue(seen.indexOfFirst { it is AgentEvent.UserInteraction && it.interaction.state == "EXPIRED" } < seen.lastIndex)
-                assertEquals(PostUserInputResult.RunNotActive, runtime.postUserInput(PostUserInputRequest("run", "late", "answer", "session", "run/ask-1/0")))
+                assertEquals(PostUserInputResult.RunNotActive, runtime.postUserInput(PostUserInputRequest("run", "late", "answer", "session", expired.questionId)))
             } finally { runtime.close() }
         }
     }
@@ -101,10 +101,15 @@ class AsyncUserInteractionTest {
         val root = java.nio.file.Files.createTempDirectory("async-cancel-log").toFile()
         val model = QuestionModel(holdSecondRound = true)
         val runtime = AgentRuntimeBuilder.create().modelClient(model).sessionEventLogRoot(root).buildEngine()
-        val job = launch { runtime.run(AgentRequest("run", "session", "plan")).toList() }
+        val questionId = CompletableDeferred<String>()
+        val job = launch { runtime.run(AgentRequest("run", "session", "plan")).collect { event ->
+            if (event is AgentEvent.UserInteraction && event.interaction.kind == "QUESTION" && event.interaction.state == "PENDING") {
+                questionId.complete(event.interaction.questionId)
+            }
+        } }
         try {
             withTimeout(10_000) { model.secondRoundStarted.await() }
-            assertEquals(PostUserInputResult.Accepted, runtime.postUserInput(PostUserInputRequest("run", "early", "Suzhou", "session", "run/ask-1/0")))
+            assertEquals(PostUserInputResult.Accepted, runtime.postUserInput(PostUserInputRequest("run", "early", "Suzhou", "session", questionId.await())))
             withTimeout(10_000) { job.cancelAndJoin() }
             assertEquals(2, model.calls)
             assertEquals(PostUserInputResult.RunNotActive, runtime.postUserInput(PostUserInputRequest("run", "late", "answer")))

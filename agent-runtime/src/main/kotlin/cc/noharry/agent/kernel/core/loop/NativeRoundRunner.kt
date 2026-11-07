@@ -35,6 +35,7 @@ import cc.noharry.agent.kernel.core.trace.LoopSessionRecorder
 import cc.noharry.agent.kernel.core.trace.ModelCallProbe
 import cc.noharry.agent.kernel.core.trace.NativePublicEventBuffer
 import java.security.MessageDigest
+import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -82,6 +83,7 @@ internal class NativeRoundRunner(
         var thinkingSignature: String? = null
         val toolResults = mutableListOf<ModelMessage>()
         val pendingToolCalls = mutableListOf<ModelEvent.ToolCall>()
+        val seenToolCallIds = mutableSetOf<String>()
         val cancellationHistory = CancellationLegalHistoryTracker()
         var immediateOutcome: RoundOutcome? = null
         val toolSchemaStarted = System.nanoTime()
@@ -132,9 +134,10 @@ internal class NativeRoundRunner(
                         return@roundEvents
                     }
                     if (event is ModelEvent.ToolCall) {
-                        cancellationHistory.observe(event, thinking.toString(), thinkingSignature)
+                        val identified = uniqueToolCall(event, seenToolCallIds)
+                        cancellationHistory.observe(identified, thinking.toString(), thinkingSignature)
                         if (immediateOutcome == null) {
-                            pendingToolCalls += toolSet.unwrapCallTool(event)?.also { wireCalls[it.id] = event } ?: event
+                            pendingToolCalls += toolSet.unwrapCallTool(identified)?.also { wireCalls[it.id] = identified } ?: identified
                         }
                         return@roundEvents
                     }
@@ -938,6 +941,14 @@ private fun String.isEchoedData(): Boolean {
     val trimmed = trim()
     if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) return false
     return runCatching { kotlinx.serialization.json.Json.parseToJsonElement(trimmed) }.isSuccess
+}
+
+/** Some compatible providers repeat or omit ids; each call in one response still needs its own tool result. */
+private fun uniqueToolCall(event: ModelEvent.ToolCall, seen: MutableSet<String>): ModelEvent.ToolCall {
+    if (event.id.isNotBlank() && seen.add(event.id)) return event
+    var id: String
+    do { id = "tool-call-${UUID.randomUUID()}" } while (!seen.add(id))
+    return event.copy(id = id)
 }
 
 private fun missingFinish(message: String): RoundOutcome.Failed = RoundOutcome.Failed(

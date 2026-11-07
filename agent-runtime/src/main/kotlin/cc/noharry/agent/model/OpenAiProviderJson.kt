@@ -21,6 +21,7 @@ import cc.noharry.agent.spi.model.ModelTool
 import cc.noharry.agent.model.ServerSideSearchCapability
 import cc.noharry.agent.spi.model.ModelEvent
 import cc.noharry.agent.spi.model.ModelResponseMetadata
+import java.util.UUID
 
 internal fun openAiRequest(
     apiKey: String,
@@ -238,12 +239,12 @@ private fun shouldReplayReasoningContent(model: String): Boolean {
 }
 
 private fun openAiToolCalls(calls: JsonArray?): List<ModelEvent.ToolCall> =
-    calls.orEmpty().mapNotNull { element ->
-        val call = element as? JsonObject ?: return@mapNotNull null
-        val function = call.obj("function") ?: return@mapNotNull null
+    calls.orEmpty().mapIndexedNotNull { index, element ->
+        val call = element as? JsonObject ?: return@mapIndexedNotNull null
+        val function = call.obj("function") ?: return@mapIndexedNotNull null
         ModelEvent.ToolCall(
-            id = call.string("id") ?: "openai-tool-call",
-            name = function.string("name") ?: return@mapNotNull null,
+            id = call.string("id")?.takeIf(String::isNotBlank) ?: "openai-tool-call-${UUID.randomUUID()}-$index",
+            name = function.string("name") ?: return@mapIndexedNotNull null,
             argumentsJson = function.rawOrString("arguments") ?: "{}",
         )
     }
@@ -274,8 +275,8 @@ private fun collectOpenAiToolCallDeltas(
     calls.orEmpty().forEachIndexed { fallbackIndex, element ->
         val call = element as? JsonObject ?: return@forEachIndexed
         val index = call.int("index") ?: fallbackIndex
-        val accumulator = accumulators.getOrPut(index) { OpenAiToolCallAccumulator() }
-        call.string("id")?.let { accumulator.id = it }
+        val accumulator = accumulators.getOrPut(index) { OpenAiToolCallAccumulator(id = "openai-tool-call-${UUID.randomUUID()}-$index") }
+        call.string("id")?.takeIf(String::isNotBlank)?.let { accumulator.id = it }
         val function = call.obj("function") ?: return@forEachIndexed
         function.string("name")?.let { accumulator.name = it }
         function.string("arguments")?.let { accumulator.arguments.append(it) }
@@ -283,7 +284,7 @@ private fun collectOpenAiToolCallDeltas(
 }
 
 internal data class OpenAiToolCallAccumulator(
-    var id: String = "openai-tool-call",
+    var id: String,
     var name: String? = null,
     val arguments: StringBuilder = StringBuilder(),
 ) {

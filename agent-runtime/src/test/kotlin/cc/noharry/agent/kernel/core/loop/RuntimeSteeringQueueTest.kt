@@ -58,7 +58,7 @@ class RuntimeSteeringQueueTest {
     @Test fun questionAnswerIsCorrelatedAndUnansweredQuestionsDoNotPreventSealing() {
         val facts = mutableListOf<UserInteraction>()
         val queue = queue(facts)
-        val ids = queue.questions("run", "ask", listOf(
+        val ids = queue.questions("run", listOf(
             UserInteraction("QUESTION", "PENDING", text = "Destination?"),
             UserInteraction("QUESTION", "PENDING", text = "Time?"),
         )).map { it.questionId }
@@ -89,7 +89,7 @@ class RuntimeSteeringQueueTest {
     @Test fun closeRecordsTheReasonOnceAndLaterConsumptionOrClearAddsNothing() {
         val facts = mutableListOf<UserInteraction>()
         val queue = queue(facts)
-        val question = queue.questions("run", "ask", listOf(UserInteraction("QUESTION", "PENDING", text = "Destination?"))).single()
+        val question = queue.questions("run", listOf(UserInteraction("QUESTION", "PENDING", text = "Destination?"))).single()
         assertEquals(PostUserInputResult.Accepted, queue.post(input().copy(questionId = question.questionId)))
         val drained = queue.drain("run").single()
         queue.close("run", "CANCELLED")
@@ -129,7 +129,7 @@ class RuntimeSteeringQueueTest {
     @Test fun questionsOnAClosedRunAreRefusedAsUnavailableNotAsBadArguments() {
         val queue = queue()
         queue.close("run", "COMPLETED")
-        val error = runCatching { queue.questions("run", "ask", listOf(UserInteraction("QUESTION", "PENDING", text = "?"))) }.exceptionOrNull()
+        val error = runCatching { queue.questions("run", listOf(UserInteraction("QUESTION", "PENDING", text = "?"))) }.exceptionOrNull()
         assertTrue(error is IllegalStateException)
     }
 
