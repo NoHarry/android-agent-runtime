@@ -19,7 +19,7 @@ internal fun threadRequest(record: ThreadRecord, input: TurnInput, options: Turn
         }
     }.joinToString("\n")
     return AgentRequest(
-        requestId = turnId, executionId = executionId, sessionId = record.id, input = frameAnswer(text, input.answering, record.pendingQuestion),
+        requestId = turnId, executionIdOverride = executionId, sessionId = record.id, input = frameAnswer(text, input.answering, record.pendingQuestion),
         scene = record.options.scene, modelRef = options.model ?: record.options.model,
         workspaceId = record.options.workspace, currentStateKeys = options.currentStateKeys,
         sessionRunConflictPolicy = options.onConflict, instructions = record.options.instructions,

@@ -121,8 +121,10 @@ internal data class AgentRequest(
     val sessionRunConflictPolicy: SessionRunConflictPolicy? = null,
     val inputImages: List<cc.noharry.agent.spi.model.ModelImage> = emptyList(),
     val instructions: String? = null,
-    val executionId: String = requestId,
+    private val executionIdOverride: String? = null,
 ) {
+    val executionId: String get() = executionIdOverride ?: requestId
+
     /** Safe Java constructor used by host smoke and typical three-field callers. */
     constructor(requestId: String, sessionId: String, input: String) : this(
         requestId = requestId,
