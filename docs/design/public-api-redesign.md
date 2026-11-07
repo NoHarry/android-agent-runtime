@@ -303,7 +303,7 @@ sealed interface RespondResult {
 **提问。** 运行时现在给模型两个提问工具，对应两种 `Question`。这是推荐做法，见第 9 节第 1 问。
 
 - `ask`（缺了信息就什么都做不了时用）：流里出现 `ItemCompleted(Question(async = false))`，这一轮以 `TurnCompleted(status = WAITING_FOR_ANSWER, pending = 那个提问)` 结束。下一轮 `run(...)` 的输入就是回答。运行时在内部照现在 `resumeUserInput` 的做法接着同一个 run 跑：模型看到的历史里，`ask` 的工具结果后面紧跟着用户的回答。现在 Bothy 在 `FollowUpReply.kt` 里自己给回答套的框，也挪进 SDK。宿主想明确绑定，就传 `TurnInput(answering = questionId)`。如果下一轮输入其实是新请求（用户不理提问、说了别的），按现有回答框的规则当作新请求处理。
-- `ask_async`（一边问一边继续干活，最多 3 题）：流里出现 `Question(async = true)`，这一轮照常继续跑。回答用 `thread.steer(text)` 插进来；这一轮结束时还没回答的问题作废。
+- `ask_async`（一边问一边继续干活，最多 3 题）：流里出现 `Question(async = true)`，这一轮照常继续跑。回答用 `thread.steer(text, answering = questionId)` 插进来；不带 `answering` 的普通插话不绑定任何问题，由模型自己理解。这一轮结束时还没回答的问题作废。
 
 这么分的理由：批准是工具执行前的一道闸，时间短，宿主或策略能马上回应；提问要等人，可能很久，甚至永远不回答。让一个轮次一直开着，会长期占住会话的运行权（session lease）。
 
@@ -513,7 +513,7 @@ Codex 的做法（看的是本地 codex-rs 源码，2026-10-17 的版本）：
 
 选项：
 
-- **A（推荐）**：`ask` 结束当轮，下一轮的输入就是回答；`ask_async` 在当轮里给出问题条目，回答用 `steer`（4.6）。理由有三条：跟 Codex 的默认模式一致；车上的人常常不回答；现在的实现本来就是这样，改动最小。
+- **A（推荐）**：`ask` 结束当轮，下一轮的输入就是回答；`ask_async` 在当轮里给出问题条目，回答用带 `answering` 的 `steer`（4.6）。理由有三条：跟 Codex 的默认模式一致；车上的人常常不回答；现在的实现本来就是这样，改动最小。
 - B：`ask` 也像 Codex 的 Plan 模式那样，当轮一直挂着等回答。这只适合有人盯着屏幕的场景，以后需要可以加成选项。
 
 **2. 工具调用条目给不给原文。**
