@@ -934,7 +934,7 @@ private fun PendingNativeToolUse.toToolCallEvent(toolUse: ToolUse): ModelEvent.T
         argumentsJson = toolUse.argumentsJson,
     )
 
-private fun ToolSource.toDynamicToolSource(): DynamicToolSource? = when (this) {
+internal fun ToolSource.toDynamicToolSource(): DynamicToolSource? = when (this) {
     ToolSource.NATIVE_READ -> DynamicToolSource.NATIVE_READ
     ToolSource.NATIVE_WRITE -> DynamicToolSource.NATIVE_WRITE
     ToolSource.NETWORK -> DynamicToolSource.NETWORK
