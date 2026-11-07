@@ -3,6 +3,7 @@ package cc.noharry.agent.runtime.thread
 import cc.noharry.agent.*
 import cc.noharry.agent.kernel.core.context.SessionHistoryPersistence
 import cc.noharry.agent.kernel.core.context.StoredSessionHistory
+import cc.noharry.agent.kernel.core.state.deleteTreeWith
 import cc.noharry.agent.runtime.DefaultTraceRedactor
 import cc.noharry.agent.runtime.TraceRedactor
 import java.io.File
@@ -10,7 +11,6 @@ import java.io.FileOutputStream
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
-import java.security.MessageDigest
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.serialization.json.Json
@@ -19,7 +19,7 @@ import kotlinx.serialization.json.JsonObject
 /** One private storage root for provider history and redacted thread snapshots. Call from the runtime I/O dispatcher. */
 internal class ThreadStore(
     root: File? = null,
-    redactor: TraceRedactor = DefaultTraceRedactor,
+    private val redactor: TraceRedactor = DefaultTraceRedactor,
     private val nowEpochMillis: () -> Long = System::currentTimeMillis,
 ) {
     private val root = root?.canonicalFile
@@ -28,7 +28,7 @@ internal class ThreadStore(
     internal val attempts = ThreadAttemptStore(this.root, lock)
     private val codec = ThreadRecordCodec(redactor)
     private val memory = linkedMapOf<String, StoredThread>()
-    private val liveTurns = linkedMapOf<String, LinkedHashMap<String, TurnResult>>()
+    private val memoryTurns = linkedMapOf<String, LinkedHashMap<String, TurnResult>>()
     private val modelMemory = mutableMapOf<String, StoredSessionHistory>()
     init { synchronized(lock) { coordination.stores.add(this) } }
 
@@ -69,7 +69,7 @@ internal class ThreadStore(
         if (generation != null && !isCurrent(threadId, generation)) return@synchronized
         beforeSaveTurnForTest?.invoke(result)
         val current = requireNotNull(read(threadId)) { "Thread does not exist: $threadId" }
-        val turns = current.turns.filterNot { it.turnId == result.turnId } + result
+        val turns = current.turnIds.filterNot { it == result.turnId } + result.turnId
         val pending = when {
             result.status == TurnStatus.WAITING_FOR_ANSWER -> result.pending as? Question
             result.error?.code in INPUT_REJECTION_CODES -> current.record.pendingQuestion
@@ -77,21 +77,21 @@ internal class ThreadStore(
         }
         val record = current.record.copy(updatedAt = nowEpochMillis(),
             status = if (pending != null) ThreadStatus.WAITING_FOR_ANSWER else ThreadStatus.IDLE, pendingQuestion = pending)
-        write(current.copy(record = record, turns = turns))
-        liveTurns.getOrPut(threadId) { linkedMapOf() }[result.turnId] = result
+        writeTurn(threadId, result)
+        write(current.copy(record = record, turnIds = turns))
     }
 
     fun items(threadId: String, afterTurnId: String? = null, generation: Long? = null): List<ThreadItem> = synchronized(lock) {
         requireGeneration(threadId, generation)
-        val turns = read(threadId)?.turns.orEmpty()
-        val offset = afterTurnId?.let { id -> turns.indexOfFirst { it.turnId == id }.let { if (it < 0) turns.size else it + 1 } } ?: 0
-        turns.drop(offset).flatMap { liveTurns[threadId]?.get(it.turnId)?.items ?: it.items }
+        val turns = read(threadId)?.turnIds.orEmpty()
+        val offset = afterTurnId?.let { id -> turns.indexOf(id).let { if (it < 0) turns.size else it + 1 } } ?: 0
+        turns.drop(offset).flatMap { readTurn(threadId, it)?.items.orEmpty() }
     }
 
     fun turn(threadId: String, turnId: String, generation: Long? = null): TurnResult? = synchronized(lock) {
         requireGeneration(threadId, generation)
-        val saved = read(threadId)?.turns?.firstOrNull { it.turnId == turnId } ?: return@synchronized null
-        liveTurns[threadId]?.get(turnId) ?: saved
+        if (turnId !in read(threadId)?.turnIds.orEmpty()) return@synchronized null
+        readTurn(threadId, turnId)
     }
 
     fun updateOptions(threadId: String, options: ThreadOptions, generation: Long? = null) = synchronized(lock) {
@@ -113,13 +113,14 @@ internal class ThreadStore(
         removeFile(threadId, THREAD_SUFFIX)
         removeFile(threadId, HISTORY_SUFFIX)
         deleteQuarantinedHistory(threadId)
+        if (root != null) check(dataDirectory(threadId).deleteTreeWith()) { "Cannot delete thread snapshots and images" }
         coordination.stores.forEach { it.clearCachedThread(threadId) }
         Unit
     }
 
     private fun clearCachedThread(threadId: String) {
         memory.remove(threadId)
-        liveTurns.remove(threadId)
+        memoryTurns.remove(threadId)
         modelMemory.remove(threadId)
     }
 
@@ -139,7 +140,7 @@ internal class ThreadStore(
 
         override fun save(sessionId: String, history: StoredSessionHistory) = synchronized(lock) {
             if (root == null) modelMemory[sessionId] = history
-            else atomicWrite(file(sessionId, HISTORY_SUFFIX), ModelHistoryCodec.encode(history).toString())
+            else atomicWrite(file(sessionId, HISTORY_SUFFIX), ModelHistoryCodec.encode(history, blobs(sessionId)).toString())
         }
 
         override fun delete(sessionId: String) = synchronized(lock) {
@@ -157,7 +158,7 @@ internal class ThreadStore(
     private fun readModelHistory(sessionId: String): StoredSessionHistory? {
         val target = file(sessionId, HISTORY_SUFFIX).takeIf(File::isFile) ?: return null
         val contents = target.readText()
-        return try { ModelHistoryCodec.decode(Json.parseToJsonElement(contents) as JsonObject) } catch (_: RuntimeException) {
+        return try { ModelHistoryCodec.decode(Json.parseToJsonElement(contents) as JsonObject, blobs(sessionId)) } catch (_: RuntimeException) {
             val suffix = if (File(target.path + ".corrupt").exists()) ".${UUID.randomUUID()}.corrupt" else ".corrupt"
             Files.move(target.toPath(), File(target.path + suffix).toPath())
             null
@@ -165,7 +166,27 @@ internal class ThreadStore(
     }
 
     private fun read(id: String): StoredThread? = if (root == null) memory[id] else {
-        file(id, THREAD_SUFFIX).takeIf(File::isFile)?.let { codec.decode(Json.parseToJsonElement(it.readText()) as JsonObject) }
+        file(id, THREAD_SUFFIX).takeIf(File::isFile)?.let { target ->
+            val json = Json.parseToJsonElement(target.readText()) as JsonObject
+            codec.decode(json).also { stored ->
+                if (json.number("version") == 1) {
+                    json.array("turns").forEach { writeTurn(id, codec.turn(it as JsonObject)) }
+                    write(stored)
+                }
+            }
+        }
+    }
+
+    private fun readTurn(threadId: String, turnId: String): TurnResult? {
+        if (root == null) return memoryTurns[threadId]?.get(turnId)
+        val target = turnFile(threadId, turnId).takeIf(File::isFile) ?: return null
+        return ThreadRecordCodec(redactor, blobs(threadId)).turn(Json.parseToJsonElement(target.readText()) as JsonObject)
+            .also { check(it.turnId == turnId) { "Turn snapshot identity mismatch" } }
+    }
+
+    private fun writeTurn(threadId: String, result: TurnResult) {
+        if (root == null) memoryTurns.getOrPut(threadId) { linkedMapOf() }[result.turnId] = result
+        else atomicWrite(turnFile(threadId, result.turnId), ThreadRecordCodec(redactor, blobs(threadId)).turn(result).toString())
     }
 
     private fun write(thread: StoredThread) {
@@ -180,9 +201,12 @@ internal class ThreadStore(
     }
 
     private fun file(id: String, suffix: String): File {
-        val digest = MessageDigest.getInstance("SHA-256").digest(id.toByteArray(Charsets.UTF_8))
-        return File(requireNotNull(root), digest.joinToString("") { "%02x".format(it.toInt() and 0xff) } + suffix)
+        return File(requireNotNull(root), storageHash(id.toByteArray(Charsets.UTF_8)) + suffix)
     }
+
+    private fun dataDirectory(id: String): File = file(id, ".data")
+    private fun turnFile(threadId: String, turnId: String): File = File(dataDirectory(threadId), "turns/${storageHash(turnId.toByteArray(Charsets.UTF_8))}.json")
+    private fun blobs(threadId: String): ThreadBlobStore? = root?.let { ThreadBlobStore(File(dataDirectory(threadId), "blobs")) }
 
     private companion object {
         val roots = ConcurrentHashMap<String, ThreadCoordination>()
@@ -193,13 +217,15 @@ internal class ThreadStore(
     }
 }
 
-internal fun atomicWrite(target: File, contents: String) {
+internal fun atomicWrite(target: File, contents: String) = atomicWrite(target, contents.toByteArray(Charsets.UTF_8))
+
+internal fun atomicWrite(target: File, contents: ByteArray) {
     val directory = requireNotNull(target.parentFile)
     check(directory.isDirectory || directory.mkdirs()) { "Cannot create thread storage directory" }
     val temporary = File(directory, ".${target.name}.${UUID.randomUUID()}.tmp")
     try {
         FileOutputStream(temporary).use { output ->
-            output.write(contents.toByteArray(Charsets.UTF_8))
+            output.write(contents)
             output.fd.sync()
         }
         try {

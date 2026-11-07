@@ -48,8 +48,8 @@ class ThreadStoragePrivacyTest {
             assertEquals(original, (items.filterIsInstance<ThreadItem.UserMessage>().single().input.single() as InputPart.Text).text)
             assertEquals(original, items.filterIsInstance<ThreadItem.AgentMessage>().last { it.phase == MessagePhase.FINAL }.text)
         }
-        val saved = File(root, "storage").listFiles().orEmpty().single { it.name.endsWith(".thread.json") }
-        val turn = Json.parseToJsonElement(saved.readText()).jsonObject.getValue("turns").jsonArray.single().jsonObject
+        val saved = File(root, "storage").walkTopDown().single { it.isFile && it.parentFile.name == "turns" }
+        val turn = Json.parseToJsonElement(saved.readText()).jsonObject
         assertEquals(original, turn.getValue("finalResponse").jsonPrimitive.content)
     }
 

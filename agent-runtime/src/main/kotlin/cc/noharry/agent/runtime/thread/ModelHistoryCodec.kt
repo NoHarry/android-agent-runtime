@@ -14,24 +14,24 @@ import kotlinx.serialization.json.put
 
 /** Provider history preserves signed thinking, tool payloads and images exactly; it is not a public log. */
 internal object ModelHistoryCodec {
-    fun encode(history: StoredSessionHistory): JsonObject = buildJsonObject {
+    fun encode(history: StoredSessionHistory, blobs: ThreadBlobStore? = null): JsonObject = buildJsonObject {
         put("version", 1)
-        put("runs", JsonArray(history.runs.map { JsonArray(it.map(::message)) }))
+        put("runs", JsonArray(history.runs.map { run -> JsonArray(run.map { message(it, blobs) }) }))
         history.lastInputTokens?.let { put("lastInputTokens", it) }
     }
 
-    fun decode(value: JsonObject): StoredSessionHistory {
+    fun decode(value: JsonObject, blobs: ThreadBlobStore? = null): StoredSessionHistory {
         require(value.number("version") == 1) { "Unsupported model history version" }
         return StoredSessionHistory(
-            value.array("runs").map { run -> (run as JsonArray).map { message(it as JsonObject) } },
+            value.array("runs").map { run -> (run as JsonArray).map { message(it as JsonObject, blobs) } },
             value.optionalLong("lastInputTokens"),
         )
     }
 
-    private fun message(value: ModelMessage): JsonObject = buildJsonObject {
+    private fun message(value: ModelMessage, blobs: ThreadBlobStore?): JsonObject = buildJsonObject {
         put("role", value.role)
         put("content", value.content)
-        put("images", JsonArray(value.images.map(::image)))
+        put("images", JsonArray(value.images.map { image(it, blobs) }))
         value.toolCallId?.let { put("toolCallId", it) }
         value.toolName?.let { put("toolName", it) }
         value.toolArgumentsJson?.let { put("toolArgumentsJson", it) }
@@ -41,9 +41,9 @@ internal object ModelHistoryCodec {
         put("assistantText", value.assistantText)
     }
 
-    private fun message(value: JsonObject): ModelMessage = ModelMessage(
+    private fun message(value: JsonObject, blobs: ThreadBlobStore?): ModelMessage = ModelMessage(
         role = value.text("role"), content = value.text("content"),
-        images = value.array("images").map { image(it as JsonObject) },
+        images = value.array("images").map { image(it as JsonObject, blobs) },
         toolCallId = value.optionalText("toolCallId"), toolName = value.optionalText("toolName"),
         toolArgumentsJson = value.optionalText("toolArgumentsJson"),
         thinkingSignature = value.optionalText("thinkingSignature"),
@@ -51,15 +51,16 @@ internal object ModelHistoryCodec {
         assistantText = value.text("assistantText"), reasoningContent = value.optionalText("reasoningContent"),
     )
 
-    private fun image(value: ModelImage): JsonObject = buildJsonObject {
-        put("bytes", Base64.getEncoder().encodeToString(value.bytes))
+    private fun image(value: ModelImage, blobs: ThreadBlobStore?): JsonObject = buildJsonObject {
+        if (blobs == null) put("bytes", Base64.getEncoder().encodeToString(value.bytes))
+        else { put("blobSha256", blobs.put(value.bytes)); put("byteSize", value.bytes.size) }
         put("mediaType", value.mediaType)
         put("sourcePath", value.sourcePath)
         put("detail", value.detail)
     }
 
-    private fun image(value: JsonObject): ModelImage = ModelImage(
-        Base64.getDecoder().decode(value.text("bytes")), value.text("mediaType"), value.text("sourcePath"),
+    private fun image(value: JsonObject, blobs: ThreadBlobStore?): ModelImage = ModelImage(
+        imageBytes(value, blobs), value.text("mediaType"), value.text("sourcePath"),
         value.optionalText("detail") ?: "auto",
     )
 }
