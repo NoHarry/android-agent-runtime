@@ -49,10 +49,6 @@ public final class cc/noharry/agent/ToolCatalogSnapshot {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class cc/noharry/agent/kernel/core/loop/RuntimeCompletionGateKt {
-	public static final fun decideFinish (Ljava/lang/String;Lcc/noharry/agent/kernel/core/loop/RuntimeObligationLedger;Z)Lcc/noharry/agent/kernel/core/loop/FinishDecision;
-}
-
 public abstract interface class cc/noharry/agent/mcp/McpClientMessages {
 	public static final field Default Lcc/noharry/agent/mcp/McpClientMessages$Default;
 	public fun httpProblem (I)Ljava/lang/String;
@@ -1037,11 +1033,6 @@ public final class cc/noharry/agent/vfs/VfsListResult$NotFound : cc/noharry/agen
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class cc/noharry/agent/vfs/VfsManifestLoader {
-	public fun <init> ()V
-	public final fun parse (Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsWorkspaceManifest;
-}
-
 public final class cc/noharry/agent/vfs/VfsMemorySource : cc/noharry/agent/vfs/VfsSource {
 	public fun <init> ()V
 	public fun <init> (Ljava/util/Map;J)V
@@ -1088,16 +1079,6 @@ public final class cc/noharry/agent/vfs/VfsMountMode$Companion {
 	public final fun fromWire (Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsMountMode;
 }
 
-public final class cc/noharry/agent/vfs/VfsMountTable {
-	public fun <init> (Ljava/util/List;)V
-	public final fun mounts ()Ljava/util/List;
-	public final fun resolve (Ljava/lang/String;Z)Lcc/noharry/agent/vfs/VfsResolvedMount;
-	public static synthetic fun resolve$default (Lcc/noharry/agent/vfs/VfsMountTable;Ljava/lang/String;ZILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsResolvedMount;
-	public final fun resolveAll (Ljava/lang/String;Z)Ljava/util/List;
-	public static synthetic fun resolveAll$default (Lcc/noharry/agent/vfs/VfsMountTable;Ljava/lang/String;ZILjava/lang/Object;)Ljava/util/List;
-	public final fun resolveVisible (Ljava/lang/String;)Ljava/util/List;
-}
-
 public final class cc/noharry/agent/vfs/VfsPath {
 	public fun <init> (Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -1108,12 +1089,6 @@ public final class cc/noharry/agent/vfs/VfsPath {
 	public final fun getValue ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-}
-
-public final class cc/noharry/agent/vfs/VfsPathResolver {
-	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsPathResolver;
-	public final fun normalize (Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsPath;
-	public final fun resolveInside (Ljava/io/File;Ljava/lang/String;)Ljava/io/File;
 }
 
 public final class cc/noharry/agent/vfs/VfsReadAttributes {
@@ -1207,21 +1182,6 @@ public final class cc/noharry/agent/vfs/VfsReadResult$ReadDenied : cc/noharry/ag
 public final class cc/noharry/agent/vfs/VfsRecordsKt {
 	public static final field VFS_ENTRY_DIR Ljava/lang/String;
 	public static final field VFS_ENTRY_FILE Ljava/lang/String;
-}
-
-public final class cc/noharry/agent/vfs/VfsResolvedMount {
-	public fun <init> (Lcc/noharry/agent/vfs/VfsMount;Lcc/noharry/agent/vfs/VfsPath;Ljava/lang/String;)V
-	public final fun component1 ()Lcc/noharry/agent/vfs/VfsMount;
-	public final fun component2 ()Lcc/noharry/agent/vfs/VfsPath;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun copy (Lcc/noharry/agent/vfs/VfsMount;Lcc/noharry/agent/vfs/VfsPath;Ljava/lang/String;)Lcc/noharry/agent/vfs/VfsResolvedMount;
-	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsResolvedMount;Lcc/noharry/agent/vfs/VfsMount;Lcc/noharry/agent/vfs/VfsPath;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsResolvedMount;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getMount ()Lcc/noharry/agent/vfs/VfsMount;
-	public final fun getPath ()Lcc/noharry/agent/vfs/VfsPath;
-	public final fun getRelativePath ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
 }
 
 public final class cc/noharry/agent/vfs/VfsRoomResource {
@@ -1355,47 +1315,6 @@ public final class cc/noharry/agent/vfs/VfsSearchResult$Matches : cc/noharry/age
 public final class cc/noharry/agent/vfs/VfsSearchResult$NotFound : cc/noharry/agent/vfs/VfsSearchResult {
 	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsSearchResult$NotFound;
 	public fun equals (Ljava/lang/Object;)Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class cc/noharry/agent/vfs/VfsSnapshot {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;JLjava/util/List;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()J
-	public final fun component4 ()Ljava/util/List;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;JLjava/util/List;)Lcc/noharry/agent/vfs/VfsSnapshot;
-	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsSnapshot;Ljava/lang/String;Ljava/lang/String;JLjava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsSnapshot;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCapturedAtEpochMillis ()J
-	public final fun getManifestHash ()Ljava/lang/String;
-	public final fun getMounts ()Ljava/util/List;
-	public final fun getVfsContractVersion ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class cc/noharry/agent/vfs/VfsSnapshotFactory {
-	public static final field INSTANCE Lcc/noharry/agent/vfs/VfsSnapshotFactory;
-	public final fun snapshot (Lcc/noharry/agent/vfs/VfsWorkspaceManifest;Ljava/lang/String;J)Lcc/noharry/agent/vfs/VfsSnapshot;
-}
-
-public final class cc/noharry/agent/vfs/VfsSnapshotMount {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()I
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)Lcc/noharry/agent/vfs/VfsSnapshotMount;
-	public static synthetic fun copy$default (Lcc/noharry/agent/vfs/VfsSnapshotMount;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IILjava/lang/Object;)Lcc/noharry/agent/vfs/VfsSnapshotMount;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getId ()Ljava/lang/String;
-	public final fun getMode ()Ljava/lang/String;
-	public final fun getPriority ()I
-	public final fun getSource ()Ljava/lang/String;
-	public final fun getTarget ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

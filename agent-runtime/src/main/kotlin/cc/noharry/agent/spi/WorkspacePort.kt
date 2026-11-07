@@ -3,10 +3,9 @@ package cc.noharry.agent.spi
 import cc.noharry.agent.spi.model.ModelRef
 
 /**
- * Plugin-facing workspace capability. Concrete VFS adapters live in runtime;
- * Kernel core and plugins depend only on this contract and its string/API DTOs.
+ * Internal workspace capability used by the loop and its VFS adapters.
  */
-interface WorkspacePort {
+internal interface WorkspacePort {
     /** Executes a native workspace tool and returns JSON plus optional telemetry. */
     suspend fun execute(
         toolName: String,
@@ -15,8 +14,8 @@ interface WorkspacePort {
     ): WorkspaceExecutionResult
 }
 
-/** API-owned call context for [WorkspacePort]. Independent of core/VFS types. */
-data class WorkspaceCallContext(
+/** Runtime-owned call context for [WorkspacePort]. Independent of core/VFS types. */
+internal data class WorkspaceCallContext(
     val sessionId: String = "",
     val runId: String = "",
     val requestId: String = "",
@@ -25,13 +24,13 @@ data class WorkspaceCallContext(
 )
 
 /** Workspace tool execution result. [resultJson] is the model-visible payload. */
-data class WorkspaceExecutionResult(
+internal data class WorkspaceExecutionResult(
     val resultJson: String,
     val telemetry: WorkspaceExecutionTelemetry = WorkspaceExecutionTelemetry(),
 )
 
 /** Timing and cache telemetry for a workspace tool execution. */
-data class WorkspaceExecutionTelemetry(
+internal data class WorkspaceExecutionTelemetry(
     val resolveDurationMs: Long = 0,
     val materializeDurationMs: Long = 0,
     val scanDurationMs: Long = 0,
