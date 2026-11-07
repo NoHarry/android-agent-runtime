@@ -122,6 +122,16 @@ class SessionHistoryStoreTest {
     }
 
     @Test
+    fun aMessageThatWasOnlyImagesKeepsAWordWhenItsImagesGo() {
+        val store = SessionHistoryStore(maxBytes = 80)
+        store.start("photo", "session")
+        store.record("photo", listOf(ModelMessage("user", "", images = listOf(ModelImage(ByteArray(200), "image/png", "p")))))
+        store.start("next", "session")
+        store.record("next", listOf(user("next")))
+        assertEquals(listOf("[image omitted]", "next"), store.messages("session").map { it.content })
+    }
+
+    @Test
     fun theNewestRunStaysWholeEvenWhenItAloneIsPastTheGuard() {
         val store = SessionHistoryStore(maxBytes = 80)
         store.start("older", "session")

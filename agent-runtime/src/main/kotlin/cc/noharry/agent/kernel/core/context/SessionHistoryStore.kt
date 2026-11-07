@@ -192,7 +192,12 @@ private fun List<ModelMessage>.historyBytes(): Long = sumOf { message ->
         }
 }
 
-private fun List<ModelMessage>.withoutImages(): List<ModelMessage> = map { if (it.images.isEmpty()) it else it.copy(images = emptyList()) }
+/** A message that was only images keeps a word in their place: providers such as Anthropic refuse empty content. */
+private fun List<ModelMessage>.withoutImages(): List<ModelMessage> = map {
+    if (it.images.isEmpty()) it else it.copy(images = emptyList(), content = it.content.ifBlank { IMAGE_OMITTED })
+}
+
+private const val IMAGE_OMITTED = "[image omitted]"
 
 private fun String.utf8Size(): Long = toByteArray(Charsets.UTF_8).size.toLong()
 

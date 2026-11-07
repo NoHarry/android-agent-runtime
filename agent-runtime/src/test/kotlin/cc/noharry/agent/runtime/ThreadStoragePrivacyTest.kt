@@ -41,6 +41,14 @@ class ThreadStoragePrivacyTest {
         assertFalse(text.contains("opaque-"))
     }
 
+    @Test fun aDeeplyNestedDocumentIsFilteredWithoutExhaustingTheStack() {
+        val deep = "[".repeat(5_000) + "\"Bearer opaque-bearer\"" + "]".repeat(5_000)
+        val payload = buildJsonObject { put("text", deep) }.toString()
+        val redacted = redactToolPayload(payload, DefaultTraceRedactor)
+        assertFalse(redacted.contains("opaque-"))
+        Json.parseToJsonElement(redacted)
+    }
+
     @Test fun disabledPhoneAndLocationRulesStillRemoveCredentials() {
         val root = threadRoot()
         saveTool(root, """{"phone":"13800138000","text":"lat=31.2304 Bearer opaque-bearer","refresh_token":"opaque-refresh"}""",
