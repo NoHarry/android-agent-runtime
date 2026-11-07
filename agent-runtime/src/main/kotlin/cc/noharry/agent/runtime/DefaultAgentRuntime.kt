@@ -300,6 +300,7 @@ internal class DefaultAgentRuntime(
 
     /** Called after the conversation's turns have drained, including across runtimes sharing its storage. */
     internal suspend fun deleteThreadData(threadId: String, knownExecutionIds: Set<String>): Set<String> {
+        subagents?.drainSession(threadId)
         check(sessionEventLog?.deleteThread(threadId) != false) { "The configured event log does not support thread deletion" }
         val executions = runStateController.deleteSession(threadId, knownExecutionIds)
         sessionRecorder.deleteThread(threadId, executions)

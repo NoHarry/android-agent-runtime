@@ -13,8 +13,10 @@ import cc.noharry.agent.kernel.core.tools.TERMINAL_TOOLS
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
@@ -22,6 +24,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
@@ -61,6 +65,9 @@ class Subagents(
     private val children = linkedMapOf<String, Child>()
     private val activeRuns = hashSetOf<String>()
     private val pendingReports = mutableListOf<SubagentReport>()
+    private val drainingSessions = mutableSetOf<String>()
+    private val activeDeliveries = mutableMapOf<String, Int>()
+    private val deliveryDrains = mutableMapOf<String, CompletableDeferred<Unit>>()
     private var listener: ((SubagentReport) -> Unit)? = null
     @Volatile
     private var statusListener: ((SubagentStatus) -> Unit)? = null
@@ -70,18 +77,22 @@ class Subagents(
     /** Bumped on every settle or stall, so a waiting wait_agent re-checks. */
     private val changes = MutableStateFlow(0L)
 
-    /** Where results and stalls go once the run that would have collected them has ended; queued until set. */
+    /**
+     * Where results and stalls go once the run that would have collected them has ended; queued until set.
+     * To delete the conversation, start a separate coroutine and return from the callback; synchronous deletion is rejected.
+     */
     fun onReport(listener: ((SubagentReport) -> Unit)?) {
         val queued = synchronized(lock) {
             this.listener = listener
             if (listener == null) emptyList() else pendingReports.toList().also { pendingReports.clear() }
         }
-        queued.forEach { listener?.invoke(it) }
+        queued.forEach(::report)
     }
 
     /**
      * Every visible change of a child, for a host to show and log: started, each tool call and model call, stalled
      * or moving again, finished. Called off the caller's thread, outside any lock.
+     * To delete the conversation, start a separate coroutine and return from the callback; synchronous deletion is rejected.
      */
     fun onStatus(listener: ((SubagentStatus) -> Unit)?) {
         statusListener = listener
@@ -111,6 +122,37 @@ class Subagents(
             synchronized(lock) { child.handedOver = true }
             settle(child, SubagentState.CANCELLED, error = "The conversation was closed.")
             child.job?.cancel()
+        }
+    }
+
+    /** Deletion waits for child finalizers and discards reports belonging to the removed conversation. */
+    internal suspend fun drainSession(parentSessionId: String) = withContext(NonCancellable) {
+        val sessions = linkedSetOf(parentSessionId)
+        var deliveries: List<CompletableDeferred<Unit>> = emptyList()
+        val stopped = synchronized(lock) {
+            do {
+                val count = sessions.size
+                children.values.filter { it.spec.parentSessionId in sessions }.forEach { sessions += it.spec.sessionId }
+            } while (sessions.size != count)
+            drainingSessions.addAll(sessions)
+            deliveries = sessions.filter { (activeDeliveries[it] ?: 0) > 0 }
+                .map { deliveryDrains.getOrPut(it) { CompletableDeferred() } }
+            pendingReports.removeAll { it.parentSessionId in sessions }
+            children.values.filter { it.spec.parentSessionId in sessions }.onEach { it.handedOver = true }
+        }
+        try {
+            stopped.forEach { child ->
+                settle(child, SubagentState.CANCELLED, error = "The conversation was deleted.")
+                child.job?.cancel()
+            }
+            stopped.mapNotNull { it.job }.joinAll()
+            deliveries.forEach { it.await() }
+        } finally {
+            synchronized(lock) {
+                stopped.forEach { children.remove(it.spec.id); activeRuns.remove(it.ownerRunId) }
+                pendingReports.removeAll { it.parentSessionId in sessions }
+                drainingSessions.removeAll(sessions)
+            }
         }
     }
 
@@ -144,6 +186,7 @@ class Subagents(
             return failure("SUBAGENT_TYPE_UNKNOWN", "There is no agent type $agentType (types: $known); leave agent out for a general subagent.")
         }
         val child = synchronized(lock) {
+            if (call.sessionId in drainingSessions) return failure("SUBAGENT_SESSION_DELETED", "The conversation is being deleted.")
             val depth = (children.values.firstOrNull { it.spec.sessionId == call.sessionId }?.spec?.depth ?: 0) + 1
             if (depth > config.maxDepth) {
                 return failure("SUBAGENT_DEPTH_LIMIT", "A subagent cannot start subagents of its own; do the work yourself.")
@@ -168,12 +211,10 @@ class Subagents(
                 approvalPolicy = call.approvalPolicy,
             )
             activeRuns += call.runId
-            Child(spec, nowEpochMillis()).also { children[id] = it }
+            registerChild(spec)
         }
-        // Assigned before it starts: a conversation closed right after the spawn must find the job to stop it.
-        val job = scope.launch(start = CoroutineStart.LAZY) { runChild(child) }
-        child.job = job
-        job.start()
+        // Registered with the child under the same lock: deletion always sees the job it must cancel and join.
+        child.job?.start()
         startWatchdog()
         notifyStatus(child)
         return buildJsonObject {
@@ -182,6 +223,11 @@ class Subagents(
             put("label", child.spec.label)
             put("status", "running")
         }.toString()
+    }
+
+    private fun registerChild(spec: SubagentSpec): Child = Child(spec, nowEpochMillis()).also { child ->
+        children[spec.id] = child
+        child.job = scope.launch(start = CoroutineStart.LAZY) { runChild(child) }
     }
 
     private suspend fun waitFor(arguments: JsonObject, call: SubagentCall): String {
@@ -314,7 +360,12 @@ class Subagents(
 
     private fun notifyStatus(child: Child) {
         val listener = statusListener ?: return
-        listener(synchronized(lock) { child.status() })
+        val status = synchronized(lock) {
+            if (children[child.spec.id] !== child || child.spec.parentSessionId in drainingSessions) return
+            beginDelivery(child.spec.parentSessionId)
+            child.status()
+        }
+        deliver(child.spec.parentSessionId) { listener(status) }
     }
 
     private fun startWatchdog() {
@@ -364,8 +415,46 @@ class Subagents(
     }
 
     private fun report(report: SubagentReport) {
-        val target = synchronized(lock) { listener ?: run { pendingReports += report; null } }
-        target?.invoke(report)
+        val delivery = synchronized(lock) {
+            if (report.parentSessionId in drainingSessions) return
+            val accepted = report.copy(statuses = report.statuses.filter { children[it.id]?.spec?.parentSessionId == report.parentSessionId })
+                .takeIf { it.statuses.isNotEmpty() } ?: return
+            val target = listener ?: run { pendingReports += accepted; return }
+            beginDelivery(report.parentSessionId)
+            accepted to target
+        }
+        deliver(report.parentSessionId) { delivery.second(delivery.first) }
+    }
+
+    /** Caller holds [lock]; a deletion marks the session before registering its delivery barrier. */
+    private fun beginDelivery(sessionId: String) { activeDeliveries[sessionId] = (activeDeliveries[sessionId] ?: 0) + 1 }
+
+    private fun endDelivery(sessionId: String) = synchronized(lock) {
+        val remaining = activeDeliveries.getValue(sessionId) - 1
+        if (remaining == 0) { activeDeliveries.remove(sessionId); deliveryDrains.remove(sessionId)?.complete(Unit) }
+        else activeDeliveries[sessionId] = remaining
+    }
+
+    private fun deliver(sessionId: String, callback: () -> Unit) {
+        val previous = CALLBACK_SESSIONS.get().orEmpty()
+        val ancestors = synchronized(lock) {
+            generateSequence(sessionId) { id -> children.values.firstOrNull { it.spec.sessionId == id }?.spec?.parentSessionId }.toSet()
+        }
+        CALLBACK_SESSIONS.set(previous + ancestors)
+        try { callback() } finally {
+            if (previous.isEmpty()) CALLBACK_SESSIONS.remove() else CALLBACK_SESSIONS.set(previous)
+            endDelivery(sessionId)
+        }
+    }
+
+    internal companion object {
+        private val CALLBACK_SESSIONS = ThreadLocal<Set<String>>()
+
+        internal fun checkDeletionAllowed(threadId: String) {
+            check(CALLBACK_SESSIONS.get()?.contains(threadId) != true) {
+                "Cannot delete a conversation synchronously from its subagent callback. Schedule deletion after returning."
+            }
+        }
     }
 
     private inner class Child(val spec: SubagentSpec, val startedAt: Long) {

@@ -5,6 +5,9 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **Thread deletion drains background children.** Their jobs are cancelled and joined before storage is removed;
+  queued reports are discarded so a late child cannot report into a recreated conversation with the same id.
+
 - **Deleting a thread clears its complete runtime data.** After stopping its turns, deletion removes conversation
   snapshots and quarantined histories, execution mappings, event logs and attachments, SQLite rows, reliability
   artifacts, loop history and its saved plan. All runtimes sharing its storage clear their cached state. Shared
