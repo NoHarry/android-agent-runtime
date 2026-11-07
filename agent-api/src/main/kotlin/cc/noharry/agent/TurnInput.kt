@@ -77,7 +77,10 @@ data class Usage(
     val cacheWriteTokens: Int = 0,
 )
 
-/** Stable machine-readable code with a human-readable explanation. */
+/**
+ * Machine-readable [code] with a human-readable explanation. See [TurnErrorCodes] for conversation failures and
+ * [cc.noharry.agent.spi.reliability.RuntimeErrorCode] for provider/tool codes; custom providers may add their own.
+ */
 data class TurnError(val code: String, val message: String, val recoverable: Boolean = false)
 
 /** Complete snapshot of one turn. A waiting turn has a [pending] question. */
