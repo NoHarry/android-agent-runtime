@@ -106,7 +106,7 @@ class ConfirmationCloseLoopTest {
         }
     }
 
-    @Test fun anExpiredApprovalRefusesLateResponsesAndClosesTheTurn() = runBlocking {
+    @Test fun anExpiredApprovalRefusesLateResponsesAndTheTurnGoesOn() = runBlocking {
         var now = 1_000L
         approvalBuilder().nowEpochMillis { now }.build().use { runtime ->
             val thread = runtime.startThread()
@@ -120,7 +120,9 @@ class ConfirmationCloseLoopTest {
                 }
             }
             assertTurnEvents(events)
-            assertEquals(TurnErrorCodes.CONFIRMATION_EXPIRED, (events.last() as ThreadEvent.TurnFailed).error.code)
+            assertTrue(events.last() is ThreadEvent.TurnCompleted)
+            assertEquals(ItemStatus.DECLINED, events.filterIsInstance<ThreadEvent.ItemCompleted>().map { it.item }
+                .filterIsInstance<ThreadItem.ToolCall>().single { it.tool == "mcp__default__set_temperature" }.status)
             assertTrue(thread.pendingRequests().isEmpty())
         }
     }

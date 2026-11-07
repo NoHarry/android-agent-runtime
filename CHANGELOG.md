@@ -29,7 +29,9 @@ called out; a patch release does not break it.
   after approval or denial resumes their loop.
 
 - **Denied approvals continue the same turn.** Both explicit denial and `DENY_ALL` return a
-  `CONFIRMATION_DENIED` tool result to the model without executing the tool, so it can explain the outcome.
+  `CONFIRMATION_DENIED` tool result to the model without executing the tool, so it can explain the outcome. An
+  approval nobody answers in time does the same with `CONFIRMATION_EXPIRED`, so what the user said while it waited
+  reaches the model instead of being lost with the turn.
   Cancelling or interrupting a pending approval records `CONFIRMATION_CANCELLED` in provider history.
 
 - **Session storage backends support complete deletion.** SQLite removes the session's seven conversation tables

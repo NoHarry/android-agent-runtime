@@ -40,7 +40,9 @@ internal suspend fun continueThreadApproval(
     }
     if (paused != null) {
         if (decision == ApprovalState.APPROVED) return loops.resumeConfirmedToolUse(paused, emit)
+        // Unanswered is like declined: the call does not run and the model goes on, reading what was said meanwhile.
         if (decision == ApprovalState.DENIED) return loops.resumeDeniedToolUse(paused, emit)
+        if (decision == ApprovalState.EXPIRED) return loops.resumeDeniedToolUse(paused, emit, "CONFIRMATION_EXPIRED")
     }
     val code = when (decision) {
         ApprovalState.EXPIRED -> "CONFIRMATION_EXPIRED"

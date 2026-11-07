@@ -77,7 +77,7 @@ internal class ThreadToolProjection(
 private fun resultStatus(output: String): ItemStatus {
     val root = try { Json.parseToJsonElement(output) as? JsonObject } catch (_: IllegalArgumentException) { null }
     val code = (root?.get("code") as? JsonPrimitive)?.content
-    if (code in setOf("CONFIRMATION_DENIED", "POLICY_DENIED", "HOOK_DENIED")) return ItemStatus.DECLINED
+    if (code in setOf("CONFIRMATION_DENIED", "CONFIRMATION_EXPIRED", "POLICY_DENIED", "HOOK_DENIED")) return ItemStatus.DECLINED
     val ok = (root?.get("ok") as? JsonPrimitive)?.content
     return if (ok == "false") ItemStatus.FAILED else ItemStatus.COMPLETED
 }
