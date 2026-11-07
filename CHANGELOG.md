@@ -5,6 +5,10 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **Internal assembly and VFS helpers are not host API.** Workspace ports, hook registrations, VFS snapshot/mount
+  resolution helpers, and an accidentally generated completion-gate overload are excluded from the public surface.
+  Hosts continue to supply `VfsFileSystem` workspaces and register hooks through the builder.
+
 - **Thread option patches preserve saved approval policy.** Null values on resume retain saved defaults;
   `ThreadOptions.reset` clears selected model, workspace, scene or instruction overrides. New threads still use ASK.
 - **Independent budgets survive settings changes.** `LoopSettings.limits` defaults to null, so a settings call does

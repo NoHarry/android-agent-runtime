@@ -20,7 +20,7 @@ data class VfsPath(val value: String) {
  * The resolver only enforces Linux-like absolute path shape and canonical host
  * containment. Runtime-specific policy remains in the caller.
  */
-object VfsPathResolver {
+internal object VfsPathResolver {
     /** Returns a normalized absolute VFS path, or null when the path is invalid. */
     fun normalize(path: String): VfsPath? {
         if (!isShapeAllowed(path)) return null

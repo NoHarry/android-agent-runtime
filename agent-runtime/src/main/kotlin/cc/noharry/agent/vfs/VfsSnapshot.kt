@@ -3,7 +3,7 @@ package cc.noharry.agent.vfs
 import java.security.MessageDigest
 
 /** Replayable snapshot of a VFS manifest installation. */
-data class VfsSnapshot(
+internal data class VfsSnapshot(
     val vfsContractVersion: String,
     val manifestHash: String,
     val capturedAtEpochMillis: Long,
@@ -11,7 +11,7 @@ data class VfsSnapshot(
 )
 
 /** Replayable snapshot entry for one mount. */
-data class VfsSnapshotMount(
+internal data class VfsSnapshotMount(
     val id: String,
     val source: String,
     val target: String,
@@ -20,7 +20,7 @@ data class VfsSnapshotMount(
 )
 
 /** Creates VFS snapshots for replay and diagnostics. */
-object VfsSnapshotFactory {
+internal object VfsSnapshotFactory {
     /** Creates a snapshot from the manifest and the exact workspace.json text. */
     fun snapshot(
         manifest: VfsWorkspaceManifest,

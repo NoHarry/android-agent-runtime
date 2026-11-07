@@ -3,9 +3,6 @@ package cc.noharry.agent.spi
 import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import cc.noharry.agent.TurnResult
 
-/** Default per-hook timeout used by hook registrations. */
-const val DEFAULT_HOOK_TIMEOUT_MILLIS: Long = 5_000L
-
 /**
  * Host hook API for observing and controlling runtime tool use.
  */
@@ -63,18 +60,6 @@ data class HookContext(
 enum class HookFailurePolicy {
     FAIL_CLOSED,
     FAIL_OPEN,
-}
-
-/** Host hook registration with a matcher, per-hook timeout, and failure policy. */
-data class RuntimeHookRegistration(
-    val hook: RuntimeHook,
-    val matcher: ToolMatcher = ToolMatcher.All,
-    val timeoutMillis: Long = DEFAULT_HOOK_TIMEOUT_MILLIS,
-    val failurePolicy: HookFailurePolicy = HookFailurePolicy.FAIL_CLOSED,
-) {
-    init {
-        require(timeoutMillis > 0) { "timeoutMillis must be positive." }
-    }
 }
 
 /** Matcher used to decide whether a hook registration observes a tool call. */

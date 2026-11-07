@@ -17,7 +17,6 @@ internal data class FinishDecision(
     val safeCode: String? = null,
 )
 
-@JvmOverloads
 internal fun decideFinish(
     argumentsJson: String,
     ledger: RuntimeObligationLedger,

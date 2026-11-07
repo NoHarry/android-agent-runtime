@@ -47,7 +47,7 @@ enum class VfsMountMode(val wireName: String) {
 }
 
 /** Parser and validator for workspace.json manifests. */
-class VfsManifestLoader {
+internal class VfsManifestLoader {
     /** Parses workspace.json text into a validated manifest. */
     fun parse(jsonText: String): VfsWorkspaceManifest {
         val root = Json.parseToJsonElement(jsonText).jsonObject

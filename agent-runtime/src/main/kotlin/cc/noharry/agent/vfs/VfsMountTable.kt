@@ -5,7 +5,7 @@ package cc.noharry.agent.vfs
  *
  * Higher priority wins. For equal priority, the most specific target path wins.
  */
-class VfsMountTable(mounts: List<VfsMount>) {
+internal class VfsMountTable(mounts: List<VfsMount>) {
     private val orderedMounts = mounts.sortedWith(
         compareByDescending<VfsMount> { it.priority }
             .thenByDescending { it.target.value.length }
@@ -64,7 +64,7 @@ private fun relativePath(target: VfsPath, path: VfsPath): String =
     }
 
 /** Result of resolving a VFS path to a mount. */
-data class VfsResolvedMount(
+internal data class VfsResolvedMount(
     val mount: VfsMount,
     val path: VfsPath,
     val relativePath: String,
