@@ -1,4 +1,5 @@
 package cc.noharry.agent.runtime
+import cc.noharry.agent.ThreadEvent
 import cc.noharry.agent.spi.AgentEvent
 import cc.noharry.agent.spi.ToolCallContext
 import cc.noharry.agent.spi.ToolCallResult
@@ -262,31 +263,23 @@ class NativeToolLoopTest {
     }
 
     @Test
-    fun resumeRejectsPureNarrationFinishWhenRetryAlreadyExistsInHistory() = runBlocking {
-        val historyStore = InMemoryLoopHistoryStore()
-        val runId = "run-invalid-finish-resume"
-        val secondNarration = "Now let me update the todo list and finish with a comprehensive response."
-        historyStore.seedInvalidFinishRetry(runId)
-        val seenRequests = mutableListOf<ModelRequest>()
-        val loop = nativeLoopWithFinishResponse(
-            response = secondNarration,
-            seenRequests = seenRequests,
-            historyStore = historyStore,
-        )
-
-        val outcome = loop.resumeUserInput(
-            runId = runId,
-            sessionId = "session-1",
-            requestId = "request-1",
-            answer = "continue",
-            scene = null,
-            modelRef = null,
-        ) as NativeLoopOutcome.Terminal
-
-        assertEquals(RuntimeRunStatus.FAILED, outcome.result.status)
-        assertEquals(INVALID_FINISH_RESPONSE_CODE, outcome.result.errorCode)
-        assertEquals(INVALID_FINISH_RESPONSE_MESSAGE, outcome.result.response)
-        assertEquals(1, seenRequests.size)
+    fun approvalContinuationDoesNotResetAnAlreadyUsedNarrationRetry() = runBlocking {
+        val first = "All operations are complete. Let me now update the todo list and finish with a complete summary."
+        val second = "Now let me update the todo list and finish with a comprehensive response."
+        val model = ThreadScriptModel(listOf(
+            listOf(schemaRead("set_temperature"), ModelEvent.Completed),
+            finishEvents(first),
+            listOf(ModelEvent.ToolCall("action", qualifiedMcpTool("set_temperature"), "{}"), ModelEvent.Completed),
+            finishEvents(second),
+        ))
+        threadBuilder(model).tools(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
+            .hook(confirmUntilApproved()).build().use { runtime ->
+                val events = runtime.startThread().collectApproving("set temperature")
+                val error = (events.last() as ThreadEvent.TurnFailed).error
+                assertEquals(INVALID_FINISH_RESPONSE_CODE, error.code)
+                assertEquals(INVALID_FINISH_RESPONSE_MESSAGE, error.message)
+                assertEquals(4, model.requests.size)
+            }
     }
 
     @Test

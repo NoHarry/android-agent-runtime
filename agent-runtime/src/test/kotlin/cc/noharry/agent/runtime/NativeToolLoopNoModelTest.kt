@@ -27,16 +27,8 @@ class NativeToolLoopNoModelTest {
     }
 
     @Test
-    fun userInputResumeFailsClosedWhenModelMissing() = runBlocking {
-        val outcome = loopWithoutModel().resumeUserInput(
-            runId = "request-1",
-            sessionId = "session-1",
-            requestId = "request-1",
-            answer = "more detail",
-            scene = null,
-            modelRef = null,
-        ) as NativeLoopOutcome.Terminal
-        assertNoModelFailure(outcome)
+    fun publicRuntimeRequiresAModelBeforeAnyTurnCanStart() {
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) { AgentRuntimeBuilder.create().build() }
     }
 
     @Test

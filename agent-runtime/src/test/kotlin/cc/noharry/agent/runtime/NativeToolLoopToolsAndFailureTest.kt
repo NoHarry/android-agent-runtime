@@ -1,6 +1,8 @@
 @file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
+import cc.noharry.agent.ThreadOptions
+import cc.noharry.agent.TurnStatus
 import cc.noharry.agent.spi.AgentEvent
 import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
 import cc.noharry.agent.spi.ToolCallContext
@@ -273,94 +275,45 @@ class NativeToolLoopToolsAndFailureTest {
     }
 
     @Test
-    fun cancellationAfterModelToolCallSavesSyntheticCancelledResultForResume() = runBlocking {
-        val historyStore = InMemoryLoopHistoryStore()
-        val firstLoop = nativeLoop(
-            modelClient = object : ModelClient {
-                override val providerConcurrency: ProviderConcurrencyDeclaration =
-                    ProviderConcurrencyDeclaration.serialized()
-                override fun complete(request: ModelRequest): Flow<ModelEvent> = flow {
-                    emit(ModelEvent.ToolCall("cancel-stream", "set_temperature", """{"degreesCelsius":21}"""))
-                    throw CancellationException("stream cancelled")
-                }
-            },
-            historyStore = historyStore,
-            mcpRegistry = ToolProviderRegistry(listOf(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))),
-        )
-
-        val error = try {
-            firstLoop.run(agentRequest(), runId = "request-1")
-            null
-        } catch (error: CancellationException) {
-            error
+    fun cancellationAfterModelToolCallPersistsALegalResultForTheNextTurn() = runBlocking {
+        val root = threadRoot()
+        val model = object : ModelClient {
+            override val providerConcurrency = ProviderConcurrencyDeclaration.serialized()
+            override fun complete(request: ModelRequest): Flow<ModelEvent> = flow {
+                emit(ModelEvent.ToolCall("cancel-stream", "set_temperature", """{"degreesCelsius":21}"""))
+                throw CancellationException("stream cancelled")
+            }
         }
-        val savedHistory = requireNotNull(historyStore.read("request-1")).messages
-
-        assertTrue(error is CancellationException)
-        assertCancelledToolResultClosed(savedHistory, "cancel-stream", "set_temperature")
-
-        val resumeRequests = mutableListOf<ModelRequest>()
-        val resumedLoop = nativeLoop(
-            modelClient = finishModel("resumed", resumeRequests),
-            historyStore = historyStore,
-        )
-        val resumed = resumedLoop.resumeUserInput(
-            runId = "request-1",
-            sessionId = "session-1",
-            requestId = "request-1",
-            answer = "continue",
-            scene = null,
-            modelRef = null,
-        ) as NativeLoopOutcome.Terminal
-
-        assertEquals(RuntimeRunStatus.COMPLETED, resumed.result.status)
-        assertCancelledToolResultClosed(resumeRequests.single().messages, "cancel-stream", "set_temperature")
+        threadBuilder(model, root).tools(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
+            .build().use { runtime ->
+                val result = runtime.startThread(ThreadOptions(threadId = "session-1")).run("set temperature")
+                assertEquals(TurnStatus.INTERRUPTED, result.status)
+            }
+        val next = ThreadScriptModel(listOf(finishEvents("continued")))
+        threadBuilder(next, root).build().use { runtime ->
+            assertEquals(TurnStatus.COMPLETED, runtime.resumeThread("session-1").run("continue").status)
+            assertCancelledToolResultClosed(next.requests.single().messages, "cancel-stream", "set_temperature")
+        }
     }
 
     @Test
-    fun cancellationDuringBackendToolSavesSyntheticCancelledResultForResume() = runBlocking {
-        val historyStore = InMemoryLoopHistoryStore()
+    fun cancellationDuringBackendExecutionPersistsALegalResultForTheNextTurn() = runBlocking {
+        val root = threadRoot()
         val backend = CancellingMcpProvider()
-        val firstLoop = nativeLoop(
-            modelClient = FakeModelClient(
-                eventsByRound = listOf(
-                    listOf(setTemperatureSchemaCall(), ModelEvent.Completed),
-                    listOf(setTemperatureBackendCall(), ModelEvent.Completed),
-                ),
-            ),
-            historyStore = historyStore,
-            mcpRegistry = ToolProviderRegistry(listOf(backend)),
-            withWorkspace = true,
-        )
-
-        val error = try {
-            firstLoop.run(agentRequest(), runId = "request-1")
-            null
-        } catch (error: CancellationException) {
-            error
+        val model = FakeModelClient(eventsByRound = listOf(
+            listOf(setTemperatureSchemaCall(), ModelEvent.Completed),
+            listOf(setTemperatureBackendCall(), ModelEvent.Completed),
+        ))
+        threadBuilder(model, root).tools(backend).build().use { runtime ->
+            val result = runtime.startThread(ThreadOptions(threadId = "session-1")).run("set temperature")
+            assertEquals(TurnStatus.INTERRUPTED, result.status)
+            assertEquals(listOf("set_temperature"), backend.calledTools)
         }
-        val savedHistory = requireNotNull(historyStore.read("request-1")).messages
-
-        assertTrue(error is CancellationException)
-        assertEquals(listOf("set_temperature"), backend.calledTools)
-        assertCancelledToolResultClosed(savedHistory, "backend-1", qualifiedMcpTool("set_temperature"))
-
-        val resumeRequests = mutableListOf<ModelRequest>()
-        val resumedLoop = nativeLoop(
-            modelClient = finishModel("resumed", resumeRequests),
-            historyStore = historyStore,
-        )
-        val resumed = resumedLoop.resumeUserInput(
-            runId = "request-1",
-            sessionId = "session-1",
-            requestId = "request-1",
-            answer = "continue",
-            scene = null,
-            modelRef = null,
-        ) as NativeLoopOutcome.Terminal
-
-        assertEquals(RuntimeRunStatus.COMPLETED, resumed.result.status)
-        assertCancelledToolResultClosed(resumeRequests.single().messages, "backend-1", qualifiedMcpTool("set_temperature"))
+        val next = ThreadScriptModel(listOf(finishEvents("continued")))
+        threadBuilder(next, root).build().use { runtime ->
+            assertEquals(TurnStatus.COMPLETED, runtime.resumeThread("session-1").run("continue").status)
+            assertCancelledToolResultClosed(next.requests.single().messages, "backend-1", qualifiedMcpTool("set_temperature"))
+        }
     }
 
     @Test
