@@ -6,7 +6,9 @@ called out; a patch release does not break it.
 ## Unreleased (0.5.0)
 
 - **Model-history byte guards include multimodal and reasoning data.** Images, reasoning, thinking signatures,
-  assistant text and deferred-tool metadata count alongside message text when old runs are trimmed.
+  assistant text and deferred-tool metadata count alongside message text when old runs are trimmed. Past the guard,
+  earlier runs lose their images before whole runs are dropped, and the newest run always stays, so one turn with
+  large images does not leave the next turn without the conversation.
 
 - **Conversation snapshots are stored once per turn.** A small metadata file serves thread listing; each result has
   its own file, and visible snapshots and provider history share content-addressed image blobs. Disk-backed threads

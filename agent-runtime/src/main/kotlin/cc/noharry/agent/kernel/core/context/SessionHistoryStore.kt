@@ -155,12 +155,18 @@ internal class SessionHistoryStore @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Past [maxBytes], earlier runs lose their images first and then the oldest runs go, down to half of it. The newest
+     * run always stays whole, so one turn with large images does not leave the next turn without the conversation.
+     */
     private fun trimmed(runs: List<List<ModelMessage>>): List<List<ModelMessage>> {
-        var bytes = runs.sumOf { it.historyBytes() }
-        if (bytes <= maxBytes) return runs
+        if (runs.sumOf { it.historyBytes() } <= maxBytes) return runs
+        val kept = runs.mapIndexed { index, run -> if (index == runs.lastIndex) run else run.withoutImages() }
+        var bytes = kept.sumOf { it.historyBytes() }
+        if (bytes <= maxBytes) return kept
         var removed = 0
-        while (removed < runs.size && bytes > maxBytes / 2) { bytes -= runs[removed].historyBytes(); removed += 1 }
-        return runs.drop(removed)
+        while (removed < kept.lastIndex && bytes > maxBytes / 2) { bytes -= kept[removed].historyBytes(); removed += 1 }
+        return kept.drop(removed)
     }
 
     private class SessionRuns {
@@ -185,6 +191,8 @@ private fun List<ModelMessage>.historyBytes(): Long = sumOf { message ->
             image.bytes.size.toLong() + image.mediaType.utf8Size() + image.sourcePath.utf8Size() + image.detail.utf8Size()
         }
 }
+
+private fun List<ModelMessage>.withoutImages(): List<ModelMessage> = map { if (it.images.isEmpty()) it else it.copy(images = emptyList()) }
 
 private fun String.utf8Size(): Long = toByteArray(Charsets.UTF_8).size.toLong()
 

@@ -110,10 +110,27 @@ class SessionHistoryStoreTest {
         )
         messages.forEach { message ->
             val store = SessionHistoryStore(maxBytes = 80)
-            store.start("run", "session")
-            store.record("run", listOf(message))
-            assertTrue(store.messages("session").isEmpty())
+            store.start("heavy", "session")
+            store.record("heavy", listOf(message))
+            store.start("next", "session")
+            store.record("next", listOf(user("next")))
+            val kept = store.messages("session")
+            assertTrue(kept.none { it.images.isNotEmpty() })
+            if (message.images.isEmpty()) assertEquals(listOf(user("next")), kept)
+            else assertEquals(listOf(message.copy(images = emptyList()), user("next")), kept)
         }
+    }
+
+    @Test
+    fun theNewestRunStaysWholeEvenWhenItAloneIsPastTheGuard() {
+        val store = SessionHistoryStore(maxBytes = 80)
+        store.start("older", "session")
+        store.record("older", listOf(user("看看这张图")))
+        val photo = ModelMessage("user", "photo", images = listOf(ModelImage(ByteArray(500), "image/png", "photo")))
+        store.start("photo", "session")
+        store.record("photo", listOf(photo, assistant("是一只猫")))
+
+        assertEquals(listOf(photo, assistant("是一只猫")), store.messages("session"))
     }
 
     @Test
