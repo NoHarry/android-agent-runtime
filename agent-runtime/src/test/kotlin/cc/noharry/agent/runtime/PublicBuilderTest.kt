@@ -3,6 +3,7 @@
 package cc.noharry.agent.runtime
 
 import cc.noharry.agent.AgentRuntime
+import cc.noharry.agent.builder
 import cc.noharry.agent.ThreadEvent
 import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
 import cc.noharry.agent.spi.model.ModelClient

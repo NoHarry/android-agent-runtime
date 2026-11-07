@@ -14,6 +14,10 @@ called out; a patch release does not break it.
   memory/concurrency/tool-exposure tuning, and structured event-log payloads remain experimental.
 - **Java event-log factory.** Open a durable log with `SessionEventLogs.openFileBackedSessionEventLog(File)`.
   The Kotlin top-level function keeps its name; the old plugin-named JVM facade is removed.
+- **Runtime contracts belong to `agent-api`.** Libraries that accept `AgentRuntime` or its experimental diagnostics
+  no longer need the runtime implementation. Kotlin construction imports `cc.noharry.agent.builder` from
+  `agent-runtime`; Java uses `AgentRuntimeBuilder.create()`. Implementation-specific prompt and tool catalog
+  helpers move from `RuntimeDiagnostics.Companion` to `cc.noharry.agent.runtime.RuntimeInspection`.
 
 - **Breaking: Thread / Turn / Item replaces the run API.** Import the stable conversation contracts from
   `cc.noharry.agent`: start or resume an `AgentThread`, call `run` for a `TurnResult` or collect `runStreamed`.

@@ -24,6 +24,7 @@ class ReleaseHardeningTest {
 
         assertTrue(rules.contains("-keep class cc.noharry.agent.spi.** { *; }"))
         assertTrue(rules.contains("-keep class cc.noharry.agent.runtime.AgentRuntimeBuilder { *; }"))
+        assertTrue(rules.contains("-keep class cc.noharry.agent.runtime.RuntimeInspection { *; }"))
         assertTrue(rules.contains("-keep class cc.noharry.agent.runtime.RuntimeWorkspaceRef { *; }"))
         assertTrue(rules.contains("-keep class cc.noharry.agent.runtime.HostSkill { *; }"))
         assertTrue(rules.contains("-keep class cc.noharry.agent.runtime.NetworkToolConfirmationPolicy { *; }"))
@@ -265,6 +266,7 @@ private val CANDIDATE_PUBLIC_API_CLASS_NAMES = listOf(
     "cc.noharry.agent.runtime.NetworkToolConfirmationPolicy",
     "cc.noharry.agent.runtime.ProtocolRules",
     "cc.noharry.agent.runtime.RuntimeConcurrency",
+    "cc.noharry.agent.runtime.RuntimeInspection",
     "cc.noharry.agent.runtime.RuntimeMemoryPolicy",
     "cc.noharry.agent.runtime.RuntimeMemoryRetriever",
     "cc.noharry.agent.runtime.RuntimeWorkspaceRef",

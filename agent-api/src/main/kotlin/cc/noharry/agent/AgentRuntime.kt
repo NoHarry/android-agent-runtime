@@ -2,9 +2,11 @@
 
 package cc.noharry.agent
 
-import cc.noharry.agent.runtime.AgentRuntimeBuilder
-
-/** An embeddable agent. Configure a model, then start or resume a conversation. */
+/**
+ * An embeddable agent contract available from the `agent-api` artifact.
+ * The `agent-runtime` artifact supplies the `builder` companion extension for Kotlin hosts (import
+ * `cc.noharry.agent.builder`); Java hosts use `AgentRuntimeBuilder.create()` from that artifact.
+ */
 interface AgentRuntime : AutoCloseable {
     fun startThread(options: ThreadOptions = ThreadOptions()): AgentThread
     /**
@@ -21,7 +23,5 @@ interface AgentRuntime : AutoCloseable {
     val diagnostics: RuntimeDiagnostics
     override fun close()
 
-    companion object {
-        @JvmStatic fun builder(): AgentRuntimeBuilder = AgentRuntimeBuilder.create()
-    }
+    companion object
 }

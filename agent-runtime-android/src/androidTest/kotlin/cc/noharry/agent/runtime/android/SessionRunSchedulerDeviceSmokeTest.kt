@@ -4,6 +4,7 @@ package cc.noharry.agent.runtime.android
 
 import androidx.test.runner.AndroidJUnit4
 import cc.noharry.agent.AgentRuntime
+import cc.noharry.agent.builder
 import cc.noharry.agent.AgentThread
 import cc.noharry.agent.ThreadStatus
 import cc.noharry.agent.TurnStatus

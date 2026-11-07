@@ -3,6 +3,8 @@ package cc.noharry.agent.spi;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import cc.noharry.agent.AgentRuntime;
+import cc.noharry.agent.runtime.AgentRuntimeBuilder;
 import cc.noharry.agent.spi.model.ModelClient;
 import cc.noharry.agent.spi.model.ModelEvent;
 import cc.noharry.agent.spi.model.ModelRequest;
@@ -17,6 +19,14 @@ public class JavaHostDefaultsTest {
         RuntimeHook hook = new RuntimeHook() {};
 
         assertNotNull(hook);
+    }
+
+    @Test
+    public void aJavaHostBuildsThroughTheImplementationFactory() {
+        ModelClient model = request -> FlowKt.emptyFlow();
+        try (AgentRuntime runtime = AgentRuntimeBuilder.create().model(model).build()) {
+            assertNotNull(runtime.startThread(new cc.noharry.agent.ThreadOptions()));
+        }
     }
 
     @Test

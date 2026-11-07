@@ -1,6 +1,7 @@
 -keep class cc.noharry.agent.* { *; }
 -keep class cc.noharry.agent.spi.** { *; }
 -keep class cc.noharry.agent.runtime.AgentRuntimeBuilder { *; }
+-keep class cc.noharry.agent.runtime.RuntimeInspection { *; }
 -keep class cc.noharry.agent.runtime.RuntimeWorkspaceRef { *; }
 -keep class cc.noharry.agent.runtime.HostSkill { *; }
 -keep class cc.noharry.agent.runtime.NetworkToolConfirmationPolicy { *; }

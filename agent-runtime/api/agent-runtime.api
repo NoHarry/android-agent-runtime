@@ -1,59 +1,5 @@
-public abstract interface class cc/noharry/agent/AgentRuntime : java/lang/AutoCloseable {
-	public static final field Companion Lcc/noharry/agent/AgentRuntime$Companion;
-	public static fun builder ()Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
-	public abstract fun close ()V
-	public abstract fun deleteThread (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun getDiagnostics ()Lcc/noharry/agent/RuntimeDiagnostics;
-	public abstract fun listThreads (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun resumeThread (Ljava/lang/String;Lcc/noharry/agent/ThreadOptions;)Lcc/noharry/agent/AgentThread;
-	public static synthetic fun resumeThread$default (Lcc/noharry/agent/AgentRuntime;Ljava/lang/String;Lcc/noharry/agent/ThreadOptions;ILjava/lang/Object;)Lcc/noharry/agent/AgentThread;
-	public abstract fun startThread (Lcc/noharry/agent/ThreadOptions;)Lcc/noharry/agent/AgentThread;
-	public static synthetic fun startThread$default (Lcc/noharry/agent/AgentRuntime;Lcc/noharry/agent/ThreadOptions;ILjava/lang/Object;)Lcc/noharry/agent/AgentThread;
-}
-
-public final class cc/noharry/agent/AgentRuntime$Companion {
-	public final fun builder ()Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
-}
-
-public final class cc/noharry/agent/AgentRuntime$DefaultImpls {
-	public static synthetic fun resumeThread$default (Lcc/noharry/agent/AgentRuntime;Ljava/lang/String;Lcc/noharry/agent/ThreadOptions;ILjava/lang/Object;)Lcc/noharry/agent/AgentThread;
-	public static synthetic fun startThread$default (Lcc/noharry/agent/AgentRuntime;Lcc/noharry/agent/ThreadOptions;ILjava/lang/Object;)Lcc/noharry/agent/AgentThread;
-}
-
-public abstract interface class cc/noharry/agent/RuntimeDiagnostics {
-	public static final field Companion Lcc/noharry/agent/RuntimeDiagnostics$Companion;
-	public static final field DEFERRED_TOOLS_HEADER Ljava/lang/String;
-	public static final field MAX_HOST_SYSTEM_PROMPT_BYTES I
-	public static final field RUN_CONTEXT_HEADER Ljava/lang/String;
-	public static final field SESSION_MODEL_CALL_SOURCE_COMPACTION Ljava/lang/String;
-	public static final field SESSION_MODEL_CALL_SOURCE_ROUND Ljava/lang/String;
-	public static final field STATIC_PROMPT_SOFT_BUDGET_BYTES I
-	public abstract fun getRunState (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun getRuntimeEvidence (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun getRuntimeHandoff (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun getRuntimeResult (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun getRuntimeTraceEvents (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun getSessionEventLogHealth (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun nativeToolNames ()Ljava/util/Set;
-	public static fun qualifiedToolName (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-	public abstract fun querySessionEvents (Lcc/noharry/agent/spi/SessionEventQuery;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun replaySessionEvents (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun subscribeSessionEvents (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/AutoCloseable;
-	public static fun toolCatalog (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun validateHostSystemPrompt (Ljava/lang/String;)V
-}
-
-public final class cc/noharry/agent/RuntimeDiagnostics$Companion {
-	public static final field DEFERRED_TOOLS_HEADER Ljava/lang/String;
-	public static final field MAX_HOST_SYSTEM_PROMPT_BYTES I
-	public static final field RUN_CONTEXT_HEADER Ljava/lang/String;
-	public static final field SESSION_MODEL_CALL_SOURCE_COMPACTION Ljava/lang/String;
-	public static final field SESSION_MODEL_CALL_SOURCE_ROUND Ljava/lang/String;
-	public static final field STATIC_PROMPT_SOFT_BUDGET_BYTES I
-	public final fun nativeToolNames ()Ljava/util/Set;
-	public final fun qualifiedToolName (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-	public final fun toolCatalog (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun validateHostSystemPrompt (Ljava/lang/String;)V
+public final class cc/noharry/agent/AgentRuntimeFactories {
+	public static final fun builder (Lcc/noharry/agent/AgentRuntime$Companion;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 }
 
 public final class cc/noharry/agent/ToolCatalogDomain {
@@ -593,6 +539,20 @@ public final class cc/noharry/agent/runtime/RuntimeConcurrency {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class cc/noharry/agent/runtime/RuntimeInspection {
+	public static final field DEFERRED_TOOLS_HEADER Ljava/lang/String;
+	public static final field INSTANCE Lcc/noharry/agent/runtime/RuntimeInspection;
+	public static final field MAX_HOST_SYSTEM_PROMPT_BYTES I
+	public static final field RUN_CONTEXT_HEADER Ljava/lang/String;
+	public static final field SESSION_MODEL_CALL_SOURCE_COMPACTION Ljava/lang/String;
+	public static final field SESSION_MODEL_CALL_SOURCE_ROUND Ljava/lang/String;
+	public static final field STATIC_PROMPT_SOFT_BUDGET_BYTES I
+	public static final fun nativeToolNames ()Ljava/util/Set;
+	public static final fun qualifiedToolName (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public static final fun toolCatalog (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun validateHostSystemPrompt (Ljava/lang/String;)V
+}
+
 public final class cc/noharry/agent/runtime/RuntimeMemoryPolicy {
 	public fun <init> ()V
 	public fun <init> (IIFFIII)V
@@ -898,203 +858,6 @@ public final class cc/noharry/agent/runtime/eventlog/SessionEventLogs {
 	public static final fun openFileBackedSessionEventLog (Ljava/io/File;)Lcc/noharry/agent/spi/SessionEventLog;
 	public static final fun openFileBackedSessionEventLog (Ljava/io/File;Lkotlin/jvm/functions/Function0;)Lcc/noharry/agent/spi/SessionEventLog;
 	public static synthetic fun openFileBackedSessionEventLog$default (Ljava/io/File;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Lcc/noharry/agent/spi/SessionEventLog;
-}
-
-public final class cc/noharry/agent/spi/reliability/RuntimeCompletionOutcome : java/lang/Enum {
-	public static final field BLOCKED Lcc/noharry/agent/spi/reliability/RuntimeCompletionOutcome;
-	public static final field FAILED Lcc/noharry/agent/spi/reliability/RuntimeCompletionOutcome;
-	public static final field PARTIAL Lcc/noharry/agent/spi/reliability/RuntimeCompletionOutcome;
-	public static final field SUCCEEDED Lcc/noharry/agent/spi/reliability/RuntimeCompletionOutcome;
-	public static final field UNKNOWN Lcc/noharry/agent/spi/reliability/RuntimeCompletionOutcome;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/spi/reliability/RuntimeCompletionOutcome;
-	public static fun values ()[Lcc/noharry/agent/spi/reliability/RuntimeCompletionOutcome;
-}
-
-public final class cc/noharry/agent/spi/reliability/RuntimeCompletionSummary {
-	public static final field Companion Lcc/noharry/agent/spi/reliability/RuntimeCompletionSummary$Companion;
-	public fun <init> ()V
-	public fun <init> (Lcc/noharry/agent/spi/reliability/RuntimeCompletionOutcome;IIILjava/util/List;Ljava/lang/String;)V
-	public synthetic fun <init> (Lcc/noharry/agent/spi/reliability/RuntimeCompletionOutcome;IIILjava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lcc/noharry/agent/spi/reliability/RuntimeCompletionOutcome;
-	public final fun component2 ()I
-	public final fun component3 ()I
-	public final fun component4 ()I
-	public final fun component5 ()Ljava/util/List;
-	public final fun component6 ()Ljava/lang/String;
-	public final fun copy (Lcc/noharry/agent/spi/reliability/RuntimeCompletionOutcome;IIILjava/util/List;Ljava/lang/String;)Lcc/noharry/agent/spi/reliability/RuntimeCompletionSummary;
-	public static synthetic fun copy$default (Lcc/noharry/agent/spi/reliability/RuntimeCompletionSummary;Lcc/noharry/agent/spi/reliability/RuntimeCompletionOutcome;IIILjava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/spi/reliability/RuntimeCompletionSummary;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getOutcome ()Lcc/noharry/agent/spi/reliability/RuntimeCompletionOutcome;
-	public final fun getProjectionDigest ()Ljava/lang/String;
-	public final fun getRequiredSucceeded ()I
-	public final fun getRequiredTotal ()I
-	public final fun getRequiredUnresolved ()I
-	public final fun getUnresolvedCodes ()Ljava/util/List;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class cc/noharry/agent/spi/reliability/RuntimeCompletionSummary$Companion {
-	public final fun firstPartyPass (Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;Lcc/noharry/agent/spi/reliability/RuntimeCompletionSummary;)Z
-	public final fun unknown ()Lcc/noharry/agent/spi/reliability/RuntimeCompletionSummary;
-}
-
-public final class cc/noharry/agent/spi/reliability/RuntimeEvidence {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;Ljava/lang/String;JLjava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;Ljava/lang/String;JLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()J
-	public final fun component6 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;Ljava/lang/String;JLjava/lang/String;)Lcc/noharry/agent/spi/reliability/RuntimeEvidence;
-	public static synthetic fun copy$default (Lcc/noharry/agent/spi/reliability/RuntimeEvidence;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;Ljava/lang/String;JLjava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/spi/reliability/RuntimeEvidence;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCreatedAtEpochMillis ()J
-	public final fun getEvidenceId ()Ljava/lang/String;
-	public final fun getRunId ()Ljava/lang/String;
-	public final fun getSummary ()Ljava/lang/String;
-	public final fun getTraceEventName ()Ljava/lang/String;
-	public final fun getType ()Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class cc/noharry/agent/spi/reliability/RuntimeEvidenceType : java/lang/Enum {
-	public static final field BLOCKER_RECORDED Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;
-	public static final field HANDOFF_WRITTEN Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;
-	public static final field MCP_DEBUG_CALL Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;
-	public static final field RESULT_WRITTEN Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;
-	public static final field RUN_CREATED Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;
-	public static final field WORKPAD_UPDATED Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;
-	public static fun values ()[Lcc/noharry/agent/spi/reliability/RuntimeEvidenceType;
-}
-
-public final class cc/noharry/agent/spi/reliability/RuntimeHandoff {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;JLjava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;JLjava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component10 ()Ljava/util/List;
-	public final fun component11 ()Ljava/util/List;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/util/List;
-	public final fun component5 ()Ljava/util/List;
-	public final fun component6 ()Ljava/util/List;
-	public final fun component7 ()J
-	public final fun component8 ()Ljava/lang/String;
-	public final fun component9 ()Ljava/util/List;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;JLjava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;)Lcc/noharry/agent/spi/reliability/RuntimeHandoff;
-	public static synthetic fun copy$default (Lcc/noharry/agent/spi/reliability/RuntimeHandoff;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;JLjava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/spi/reliability/RuntimeHandoff;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getDecisions ()Ljava/util/List;
-	public final fun getDoNotRepeat ()Ljava/util/List;
-	public final fun getDone ()Ljava/util/List;
-	public final fun getEvidenceRefs ()Ljava/util/List;
-	public final fun getNextActions ()Ljava/util/List;
-	public final fun getRunId ()Ljava/lang/String;
-	public final fun getSessionId ()Ljava/lang/String;
-	public final fun getSummary ()Ljava/lang/String;
-	public final fun getTask ()Ljava/lang/String;
-	public final fun getTriedAndAbandoned ()Ljava/util/List;
-	public final fun getUpdatedAtEpochMillis ()J
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class cc/noharry/agent/spi/reliability/RuntimeResult {
-	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLcc/noharry/agent/spi/reliability/RuntimeCompletionSummary;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLcc/noharry/agent/spi/reliability/RuntimeCompletionSummary;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/util/List;
-	public final fun component5 ()Ljava/lang/String;
-	public final fun component6 ()Z
-	public final fun component7 ()Lcc/noharry/agent/spi/reliability/RuntimeCompletionSummary;
-	public final fun copy (Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLcc/noharry/agent/spi/reliability/RuntimeCompletionSummary;)Lcc/noharry/agent/spi/reliability/RuntimeResult;
-	public static synthetic fun copy$default (Lcc/noharry/agent/spi/reliability/RuntimeResult;Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLcc/noharry/agent/spi/reliability/RuntimeCompletionSummary;ILjava/lang/Object;)Lcc/noharry/agent/spi/reliability/RuntimeResult;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCompletion ()Lcc/noharry/agent/spi/reliability/RuntimeCompletionSummary;
-	public final fun getErrorCode ()Ljava/lang/String;
-	public final fun getEvidenceIds ()Ljava/util/List;
-	public final fun getRecoverable ()Z
-	public final fun getResponse ()Ljava/lang/String;
-	public final fun getRunId ()Ljava/lang/String;
-	public final fun getStatus ()Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class cc/noharry/agent/spi/reliability/RuntimeRunSnapshot {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;JLcc/noharry/agent/spi/reliability/SuggestedNextAction;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;JLcc/noharry/agent/spi/reliability/SuggestedNextAction;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public final fun component4 ()J
-	public final fun component5 ()Lcc/noharry/agent/spi/reliability/SuggestedNextAction;
-	public final fun component6 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;JLcc/noharry/agent/spi/reliability/SuggestedNextAction;Ljava/lang/String;)Lcc/noharry/agent/spi/reliability/RuntimeRunSnapshot;
-	public static synthetic fun copy$default (Lcc/noharry/agent/spi/reliability/RuntimeRunSnapshot;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;JLcc/noharry/agent/spi/reliability/SuggestedNextAction;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/spi/reliability/RuntimeRunSnapshot;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getPendingConfirmationId ()Ljava/lang/String;
-	public final fun getRunId ()Ljava/lang/String;
-	public final fun getSessionId ()Ljava/lang/String;
-	public final fun getStatus ()Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public final fun getSuggestedNextAction ()Lcc/noharry/agent/spi/reliability/SuggestedNextAction;
-	public final fun getUpdatedAtEpochMillis ()J
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class cc/noharry/agent/spi/reliability/RuntimeRunStatus : java/lang/Enum {
-	public static final field BLOCKED Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public static final field CANCELLED Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public static final field COMPLETED Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public static final field CREATED Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public static final field FAILED Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public static final field QUEUED Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public static final field RUNNING Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public static final field WAITING_CONFIRMATION Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public static final field WAITING_USER_INPUT Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-	public static fun values ()[Lcc/noharry/agent/spi/reliability/RuntimeRunStatus;
-}
-
-public final class cc/noharry/agent/spi/reliability/RuntimeTraceEvent {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/util/Map;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()J
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Ljava/util/Map;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/util/Map;)Lcc/noharry/agent/spi/reliability/RuntimeTraceEvent;
-	public static synthetic fun copy$default (Lcc/noharry/agent/spi/reliability/RuntimeTraceEvent;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lcc/noharry/agent/spi/reliability/RuntimeTraceEvent;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCreatedAtEpochMillis ()J
-	public final fun getDetails ()Ljava/util/Map;
-	public final fun getEventName ()Ljava/lang/String;
-	public final fun getEvidenceId ()Ljava/lang/String;
-	public final fun getRunId ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class cc/noharry/agent/spi/reliability/SuggestedNextAction : java/lang/Enum {
-	public static final field ASK_USER Lcc/noharry/agent/spi/reliability/SuggestedNextAction;
-	public static final field INSPECT_BLOCKER Lcc/noharry/agent/spi/reliability/SuggestedNextAction;
-	public static final field RESUME_CONFIRMATION Lcc/noharry/agent/spi/reliability/SuggestedNextAction;
-	public static final field START_NEW_AGENT_REQUEST Lcc/noharry/agent/spi/reliability/SuggestedNextAction;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/spi/reliability/SuggestedNextAction;
-	public static fun values ()[Lcc/noharry/agent/spi/reliability/SuggestedNextAction;
 }
 
 public abstract interface class cc/noharry/agent/transport/HttpEvent {
