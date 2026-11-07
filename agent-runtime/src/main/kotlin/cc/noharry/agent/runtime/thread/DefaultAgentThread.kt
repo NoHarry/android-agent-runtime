@@ -76,7 +76,7 @@ internal class DefaultAgentThread(
         if (completed.mailbox == null) replay(completed.result)
         else try {
             withContext(NonCancellable) {
-                try { runtime.engine.notifyTurnFinished(completed.result, id) } catch (_: CancellationException) { }
+                try { runtime.engine.notifyTurnFinished(completed.result, id, checkNotNull(completed.executionId)) } catch (_: CancellationException) { }
             }
             completed.mailbox.emit(completed.result.terminalEvent(), awaitDelivery = false)
         } finally { completed.mailbox.close() }
@@ -125,7 +125,7 @@ internal class DefaultAgentThread(
             try { job.start(); job.join() } catch (_: CancellationException) { turn.cancel() }
             return withContext(NonCancellable) {
                 job.join()
-                FinishedThreadTurn(finalizeTurn(turn), mailbox)
+                FinishedThreadTurn(finalizeTurn(turn), mailbox, turn.executionId)
             }
         } catch (failure: Throwable) {
             mailbox.close()
@@ -147,7 +147,10 @@ internal class DefaultAgentThread(
         val result = checkNotNull(projection.result)
         if (!isCurrent()) return result.failed(TurnError("THREAD_DELETED", "The thread was deleted."))
         return try {
-            withContext(Dispatchers.IO) { runtime.store.saveTurn(id, result, generation) }
+            withContext(Dispatchers.IO) {
+                runtime.store.saveTurn(id, result, generation)
+                runtime.store.attempts.complete(id, turn.id, turn.executionId)
+            }
             if (isCurrent()) result else result.failed(TurnError("THREAD_DELETED", "The thread was deleted."))
         } catch (_: Exception) {
             result.failed(TurnError("STORAGE_FAILED", "The turn could not be saved."))
@@ -158,12 +161,13 @@ internal class DefaultAgentThread(
         val projection = checkNotNull(turn.projection)
         try {
             projection.begin()
+            prepareAttempt(turn)
             val record = checkNotNull(runtime.store.load(id, generation)) { "Thread was deleted" }.copy(options = turn.options)
             if (input.answering != null && input.answering != record.pendingQuestion?.id) {
                 throw ThreadInputException("QUESTION_NOT_FOUND", "The question is not pending in this thread.")
             }
             val resolved = resolveThreadAttachments(input) { runtime.engine.readThreadAttachment(id, it) }
-            val request = threadRequest(record, resolved, options, turn.id)
+            val request = threadRequest(record, resolved, options, turn.id, turn.executionId)
             if (request.inputImages.isNotEmpty() && (!runtime.imageInputEnabled || !runtime.supportsImages(request.modelRef))) {
                 projection.fail(TurnError("IMAGE_INPUT_UNSUPPORTED", "The selected model does not accept image input."))
                 return
@@ -182,6 +186,24 @@ internal class DefaultAgentThread(
         } finally { turn.approval?.cancel() }
     }
 
+    private suspend fun prepareAttempt(turn: ActiveThreadTurn) {
+        try {
+            withContext(Dispatchers.IO) {
+                runtime.store.attempts.active(id).forEach { old ->
+                    if (runtime.store.turn(id, old.turnId, generation) == null) {
+                        runtime.engine.interruptAbandonedAttempt(old.executionId)
+                    }
+                    runtime.store.attempts.complete(id, old.turnId, old.executionId)
+                }
+                runtime.store.attempts.begin(id, turn.id, turn.executionId)
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            throw ThreadInputException("STORAGE_FAILED", "The turn execution could not be recorded.")
+        }
+    }
+
     private suspend fun approve(turn: ActiveThreadTurn, pending: PendingConfirmation, options: TurnOptions): ApprovalState {
         val projection = checkNotNull(turn.projection)
         val policy = options.approvalPolicy ?: turn.options.approvalPolicy ?: ApprovalPolicy.ASK
@@ -196,7 +218,7 @@ internal class DefaultAgentThread(
             projection.toolDecision(pending.idempotencyKey, policy)
             return automatic
         }
-        val approval = ThreadApproval(pending, runtime.nowEpochMillis() + runtime.confirmationTimeoutMillis, runtime.nowEpochMillis)
+        val approval = ThreadApproval(pending.copy(runId = turn.id), runtime.nowEpochMillis() + runtime.confirmationTimeoutMillis, runtime.nowEpochMillis)
         turn.approval = approval
         try {
             projection.beginApproval(approval)
@@ -217,7 +239,7 @@ internal class DefaultAgentThread(
         val turn = active ?: return if (answering == null) SteerResult.NOT_RUNNING else SteerResult.QUESTION_NOT_FOUND
         val question = answering?.let { target -> turn.items.filterIsInstance<Question>().firstOrNull { it.async && it.id == target } }
         if (answering != null && question == null) return SteerResult.QUESTION_NOT_FOUND
-        val result = turn.postInput(PostUserInputRequest(turn.id, options.requestId ?: UUID.randomUUID().toString(), text, id,
+        val result = turn.postInput(PostUserInputRequest(turn.executionId, options.requestId ?: UUID.randomUUID().toString(), text, id,
             question?.id?.removePrefix("${turn.id}:question:")))
         return when (result) {
             PostUserInputResult.Accepted, PostUserInputResult.Duplicate -> SteerResult.ACCEPTED
@@ -265,7 +287,9 @@ internal class DefaultAgentThread(
     }
 }
 
-private data class FinishedThreadTurn(val result: TurnResult, val mailbox: ThreadEventMailbox? = null)
+private data class FinishedThreadTurn(
+    val result: TurnResult, val mailbox: ThreadEventMailbox? = null, val executionId: String? = null,
+)
 
 private fun TurnResult.failed(error: TurnError): TurnResult = copy(
     status = TurnStatus.FAILED, finalResponse = "", pending = null, error = error,

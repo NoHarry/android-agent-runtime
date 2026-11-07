@@ -28,7 +28,7 @@ internal class DefaultThreadRuntime(
 ) : AgentRuntime {
     private val closed = AtomicBoolean()
     private val threads = ConcurrentHashMap<String, DefaultAgentThread>()
-    override val diagnostics: RuntimeDiagnostics = DefaultRuntimeDiagnostics(engine)
+    override val diagnostics: RuntimeDiagnostics = DefaultRuntimeDiagnostics(engine, store.attempts)
     internal val admission = store.coordination.admission
 
     init { admission.register(this, concurrency) }

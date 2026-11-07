@@ -32,6 +32,7 @@ internal class ThreadExecutionSlot {
 internal class ActiveThreadTurn(val id: String, val options: ThreadOptions, val owner: DefaultThreadRuntime, val generation: Long) {
     private val steeringMutex = Mutex()
     private val receivedInputs = linkedMapOf<String, PostUserInputRequest>()
+    val executionId: String = java.util.UUID.randomUUID().toString()
     var job: Job? = null
     var projection: ThreadEventProjection? = null
     @Volatile var approval: ThreadApproval? = null

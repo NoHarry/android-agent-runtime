@@ -295,16 +295,26 @@ internal class DefaultAgentRuntime(
         activationStore.clearSession(threadId)
     }
 
-    internal suspend fun notifyTurnFinished(result: cc.noharry.agent.TurnResult, sessionId: String) {
-        hookChain.onTurnFinished(result, cc.noharry.agent.spi.HookContext(sessionId, result.turnId, result.turnId))
+    /** A persisted attempt without a saved conversation result cannot be resumed after process loss. */
+    internal fun interruptAbandonedAttempt(executionId: String) {
+        val status = runStateController.snapshot(executionId)?.status ?: return
+        if (status == RuntimeRunStatus.COMPLETED || status == RuntimeRunStatus.FAILED || status == RuntimeRunStatus.CANCELLED) return
+        runStateController.applyRuntimeResult(RuntimeResult(
+            executionId, RuntimeRunStatus.CANCELLED, "Execution was interrupted before its turn result was saved.",
+            errorCode = "INTERRUPTED",
+        ))
+    }
+
+    internal suspend fun notifyTurnFinished(result: cc.noharry.agent.TurnResult, sessionId: String, executionId: String) {
+        hookChain.onTurnFinished(result, cc.noharry.agent.spi.HookContext(sessionId, executionId, result.turnId))
     }
 
     internal fun runThread(
         request: AgentRequest,
         approve: suspend (PendingConfirmation) -> cc.noharry.agent.ApprovalState,
     ): Flow<AgentEvent> = flow {
-        check(turnApprovals.putIfAbsent(request.requestId, approve) == null) { "Turn is already running" }
-        try { run(request).collect { emit(it) } } finally { turnApprovals.remove(request.requestId, approve) }
+        check(turnApprovals.putIfAbsent(request.executionId, approve) == null) { "Turn is already running" }
+        try { run(request).collect { emit(it) } } finally { turnApprovals.remove(request.executionId, approve) }
     }
 
     override suspend fun resumeConfirmation(
@@ -472,7 +482,7 @@ internal class DefaultAgentRuntime(
     }
 
     private suspend fun FlowCollector<AgentEvent>.collectOrdinaryRun(request: AgentRequest) {
-        val runId = request.requestId
+        val runId = request.executionId
         var lease: SessionRunLease? = null
         try {
             val admitted = admitOrdinaryRun(request, runId) ?: return
@@ -644,25 +654,25 @@ internal class DefaultAgentRuntime(
         val paused = outcome.pendingToolUse
         val pending = PendingConfirmation(
             pendingId = java.util.UUID.randomUUID().toString(), sessionId = request.sessionId,
-            runId = request.requestId, expiresAtEpochMillis = nowEpochMillis() + DEFAULT_CONFIRMATION_TIMEOUT_MILLIS,
+            runId = request.executionId, expiresAtEpochMillis = nowEpochMillis() + DEFAULT_CONFIRMATION_TIMEOUT_MILLIS,
             idempotencyKey = paused?.toolCallId.orEmpty(), prompt = outcome.prompt,
             toolName = paused?.toolUse?.toolName, argumentsJson = paused?.toolUse?.argumentsJson,
         )
         // This turn stays in its original stream, so inputs can queue while the host decides.
-        steeringQueue.resume(request.requestId)
+        steeringQueue.resume(request.executionId)
         val decision = approve(pending)
         if (decision == cc.noharry.agent.ApprovalState.APPROVED && paused != null) {
-            steeringQueue.resume(request.requestId)
+            steeringQueue.resume(request.executionId)
             return nativeLoopFactory.resumeConfirmedToolUse(paused) { emitHost(it) }
         }
         val code = if (decision == cc.noharry.agent.ApprovalState.EXPIRED) "CONFIRMATION_EXPIRED" else "CONFIRMATION_DENIED"
         paused?.let { nativeLoopFactory.recordUnconfirmed(it, code) }
         if (paused != null) {
-            emitHost(AgentEvent.NativeToolCallStarted(request.requestId, paused.toolUse.toolName, paused.toolUse.argumentsJson, paused.toolCallId))
-            emitHost(AgentEvent.NativeToolCallFinished(request.requestId, paused.toolUse.toolName, "{\"ok\":false,\"code\":\"$code\"}", paused.toolCallId))
+            emitHost(AgentEvent.NativeToolCallStarted(request.executionId, paused.toolUse.toolName, paused.toolUse.argumentsJson, paused.toolCallId))
+            emitHost(AgentEvent.NativeToolCallFinished(request.executionId, paused.toolUse.toolName, "{\"ok\":false,\"code\":\"$code\"}", paused.toolCallId))
         }
         return NativeLoopOutcome.Terminal(
-            RuntimeResult(request.requestId, RuntimeRunStatus.FAILED, "Tool approval was ${decision.name.lowercase()}.", errorCode = code),
+            RuntimeResult(request.executionId, RuntimeRunStatus.FAILED, "Tool approval was ${decision.name.lowercase()}.", errorCode = code),
             outcome.summary,
         )
     }

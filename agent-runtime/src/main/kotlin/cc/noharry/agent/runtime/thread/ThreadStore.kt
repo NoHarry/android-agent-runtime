@@ -25,6 +25,7 @@ internal class ThreadStore(
     private val root = root?.canonicalFile
     internal val coordination = this.root?.path?.let { roots.getOrPut(it) { ThreadCoordination() } } ?: ThreadCoordination()
     private val lock = coordination.lock
+    internal val attempts = ThreadAttemptStore(this.root, lock)
     private val codec = ThreadRecordCodec(redactor)
     private val memory = linkedMapOf<String, StoredThread>()
     private val liveTurns = linkedMapOf<String, LinkedHashMap<String, TurnResult>>()
@@ -108,6 +109,7 @@ internal class ThreadStore(
     }
 
     fun delete(threadId: String) = synchronized(lock) {
+        attempts.delete(threadId)
         removeFile(threadId, THREAD_SUFFIX)
         removeFile(threadId, HISTORY_SUFFIX)
         coordination.stores.forEach { it.clearCachedThread(threadId) }
@@ -175,7 +177,7 @@ internal class ThreadStore(
     }
 }
 
-private fun atomicWrite(target: File, contents: String) {
+internal fun atomicWrite(target: File, contents: String) {
     val directory = requireNotNull(target.parentFile)
     check(directory.isDirectory || directory.mkdirs()) { "Cannot create thread storage directory" }
     val temporary = File(directory, ".${target.name}.${UUID.randomUUID()}.tmp")
