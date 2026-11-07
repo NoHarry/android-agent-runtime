@@ -27,6 +27,20 @@ class ThreadStoragePrivacyTest {
         assertFalse(root.walkTopDown().filter(File::isFile).joinToString { it.readText() }.contains("opaque-"))
     }
 
+    @Test fun aJsonDocumentInsideAStringStaysValidJson() {
+        val root = threadRoot()
+        val inner = """{"access_token":"opaque-token","n":1,"items":["Bearer opaque-bearer"]}"""
+        saveTool(root, buildJsonObject {
+            put("content", buildJsonArray { add(buildJsonObject { put("type", "text"); put("text", inner) }) })
+        }.toString())
+        val output = ThreadStore(root).items("privacy").filterIsInstance<ThreadItem.ToolCall>().single().output.orEmpty()
+        val text = Json.parseToJsonElement(output).jsonObject.getValue("content").jsonArray.single()
+            .jsonObject.getValue("text").jsonPrimitive.content
+        val nested = Json.parseToJsonElement(text).jsonObject
+        assertEquals(1, nested.getValue("n").jsonPrimitive.int)
+        assertFalse(text.contains("opaque-"))
+    }
+
     @Test fun disabledPhoneAndLocationRulesStillRemoveCredentials() {
         val root = threadRoot()
         saveTool(root, """{"phone":"13800138000","text":"lat=31.2304 Bearer opaque-bearer","refresh_token":"opaque-refresh"}""",

@@ -59,7 +59,8 @@ called out; a patch release does not break it.
 
 - **Conversation storage preserves display text and valid tool JSON.** User input and final answers are stored
   verbatim. Tool payloads retain JSON numeric/boolean/null types while sensitive fields and Bearer credentials are
-  removed; phone and location filtering follows the configured redactor. Provider model history intentionally
+  removed; a JSON document carried inside a string (as MCP text content often is) is filtered the same way and stays
+  valid. Phone and location filtering follows the configured redactor. Provider model history intentionally
   preserves original messages, reasoning and images, including secrets, for accurate replay.
 - **Configured event-log locations survive `storage(...)`.** Android continues using its existing `event-log`
   directory. A storage directory must be used by only one process; multiple runtimes in that process coordinate.
