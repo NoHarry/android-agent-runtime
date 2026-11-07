@@ -3,7 +3,11 @@
 package cc.noharry.agent.runtime
 import cc.noharry.agent.spi.AgentEvent
 import cc.noharry.agent.spi.AgentRequest
-import cc.noharry.agent.spi.CancelPendingConfirmationRequest
+import cc.noharry.agent.Approval
+import cc.noharry.agent.RespondResult
+import cc.noharry.agent.ThreadEvent
+import cc.noharry.agent.ThreadOptions
+import cc.noharry.agent.TurnOptions
 import cc.noharry.agent.spi.CompletionImpact
 import cc.noharry.agent.spi.HookContext
 import cc.noharry.agent.spi.HookDecision
@@ -204,15 +208,14 @@ class NativeToolLoopCompletionObligationTest {
                     ),
                 ),
             )
-            .buildEngine()
-        val pending = runtime.run(AgentRequest("request-1", "session-1", "remember home")).toList()
-            .filterIsInstance<AgentEvent.ConfirmationRequired>()
-            .single()
-            .pending
-        runtime.cancelPendingConfirmation(
-            CancelPendingConfirmationRequest(pending.pendingId, "cancel-1", "host cancelled"),
-        )
-        val result = runtime.getRuntimeResult("request-1")!!
+            .build()
+        val result = runtime.use {
+            val thread = it.startThread(ThreadOptions(threadId = "session-1"))
+            thread.runStreamed("remember home", TurnOptions(turnId = "request-1")).collect { event ->
+                if (event is ThreadEvent.ItemStarted && event.item is Approval) thread.interrupt()
+            }
+            checkNotNull(it.diagnostics.getRuntimeResult("session-1", "request-1"))
+        }
         assertEquals(RuntimeRunStatus.CANCELLED, result.status)
         assertNotEquals(RuntimeCompletionOutcome.SUCCEEDED, result.completion.outcome)
         assertFalse(RuntimeCompletionSummary.firstPartyPass(result.status, result.completion))
@@ -220,7 +223,7 @@ class NativeToolLoopCompletionObligationTest {
     }
 
     @Test
-    fun rebuildResumeKeepsUnresolvedObserverObligation() = runBlocking {
+    fun approvalContinuationKeepsUnresolvedObserverObligation() = runBlocking {
         val runtime = AgentRuntimeBuilder.create()
             .workspaceRoot(Files.createTempDirectory("obligation-ws-").toFile())
             .turnObserver(RecordingObserver())
@@ -229,22 +232,22 @@ class NativeToolLoopCompletionObligationTest {
             .modelClient(
                 FakeModelClient(schemaThenBackendRounds(finish = true)),
             )
-            .buildEngine()
-        val pending = runtime.run(AgentRequest("request-1", "session-1", "remember this")).toList()
-            .filterIsInstance<cc.noharry.agent.spi.AgentEvent.ConfirmationRequired>()
-            .single()
-        runtime.resumeConfirmation(approve(pending.pending.pendingId))
-        val result = requireNotNull(runtime.getRuntimeResult("request-1"))
+            .build()
+        val result = runtime.use {
+            it.startThread(ThreadOptions(threadId = "session-1"))
+                .collectApproving("remember this", TurnOptions(turnId = "request-1"))
+            checkNotNull(it.diagnostics.getRuntimeResult("session-1", "request-1"))
+        }
         assertFalse(RuntimeCompletionSummary.firstPartyPass(result.status, result.completion))
         assertTrue(result.completion.requiredUnresolved >= 1)
         assertNotEquals(RuntimeCompletionOutcome.SUCCEEDED, result.completion.outcome)
     }
 
     @Test
-    fun processRestartRebuildResumeIsUnsupportedWhileObligationRemainsUnresolved() = runBlocking {
+    fun restartingCannotReexecuteAnInterruptedApprovalWithUnresolvedObligations() = runBlocking {
         val root = Files.createTempDirectory("obligation-rebuild-").toFile()
         val first = AgentRuntimeBuilder.create()
-            .reliabilityStorageRoot(root)
+            .reliabilityStorageRoot(root).storage(java.io.File(root, "threads"))
             .workspaceRoot(Files.createTempDirectory("obligation-restart-ws-").toFile())
             .turnObserver(RecordingObserver())
             .toolProvider(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
@@ -252,13 +255,16 @@ class NativeToolLoopCompletionObligationTest {
             .modelClient(
                 FakeModelClient(schemaThenBackendRounds()),
             )
-            .buildEngine()
-        val pending = first.run(AgentRequest("request-1", "session-1", "remember this")).toList()
-            .filterIsInstance<cc.noharry.agent.spi.AgentEvent.ConfirmationRequired>()
-            .single()
+            .build()
+        first.use { runtime ->
+            val thread = runtime.startThread(ThreadOptions(threadId = "session-1"))
+            thread.runStreamed("remember this", TurnOptions(turnId = "request-1")).collect { event ->
+                if (event is ThreadEvent.ItemStarted && event.item is Approval) thread.interrupt()
+            }
+        }
         val seen = mutableListOf<ModelRequest>()
         val restored = AgentRuntimeBuilder.create()
-            .reliabilityStorageRoot(root)
+            .reliabilityStorageRoot(root).storage(java.io.File(root, "threads"))
             .modelClient(
                 FakeModelClient(
                     eventsByRound = listOf(
@@ -267,13 +273,16 @@ class NativeToolLoopCompletionObligationTest {
                     seenRequests = seen,
                 ),
             )
-            .buildEngine()
-        val resume = restored.resumeConfirmation(approve(pending.pending.pendingId))
-        assertTrue(
-            resume is cc.noharry.agent.spi.ConfirmationResumeResult.Rejected ||
-                resume is cc.noharry.agent.spi.ConfirmationResumeResult.NotFound,
-        )
-        assertTrue(seen.isEmpty())
+            .build()
+        restored.use { runtime ->
+            val thread = runtime.resumeThread("session-1")
+            assertTrue(thread.pendingRequests().isEmpty())
+            assertEquals(RespondResult.NOT_FOUND, thread.items().filterIsInstance<Approval>().single().approve())
+            val interrupted = checkNotNull(runtime.diagnostics.getRuntimeResult("session-1", "request-1"))
+            assertTrue(interrupted.completion.requiredUnresolved >= 1)
+            assertFalse(RuntimeCompletionSummary.firstPartyPass(interrupted.status, interrupted.completion))
+            assertTrue(seen.isEmpty())
+        }
     }
 
     @Test
