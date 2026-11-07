@@ -92,8 +92,8 @@ internal class NativeToolLoop(
         sessionRecorder,
         toolExecutionLimiter = toolExecutionLimiter,
         failureBreaker = ToolCallFailureBreaker(
-            loopSettings.limits.failuresPerCall,
-            loopSettings.limits.failuresPerTool,
+            loopSettings.resolvedLimits.failuresPerCall,
+            loopSettings.resolvedLimits.failuresPerTool,
             loopSettings.serviceAnswer,
         ),
         obligationLedger = obligationLedger,
@@ -108,7 +108,7 @@ internal class NativeToolLoop(
         nowEpochMillis,
         sessionRecorder,
         steeringQueue,
-        ModelImageRequestView(imageInputEnabled = loopBudget.imageInputEnabled, keepNewest = loopSettings.limits.newestImages),
+        ModelImageRequestView(imageInputEnabled = loopBudget.imageInputEnabled, keepNewest = loopSettings.resolvedLimits.newestImages),
         textNeedsFinish = textNeedsFinish,
         userReachable = userReachable,
         narrationCheck = loopSettings.narration,
@@ -337,7 +337,7 @@ internal class NativeToolLoop(
         steeringQueue.open(toolContext, sessionRecorder)
         var activeModelRef = modelRef
         var probeRoundIndex = 0
-        val repeatedCalls = RepeatToolCallReminder(loopSettings.limits.repeatReminders)
+        val repeatedCalls = RepeatToolCallReminder(loopSettings.resolvedLimits.repeatReminders)
         // A finish accepted while user input was pending; it is the fallback if the continuation cannot run.
         var withheldFinish: RoundOutcome.Finished? = null
         try {

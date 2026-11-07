@@ -418,8 +418,8 @@ class AgentRuntimeBuilder {
     internal fun loopSettings(settings: LoopSettings): AgentRuntimeBuilder = settings(settings)
 
     fun settings(settings: LoopSettings): AgentRuntimeBuilder = apply {
-        limits(settings.limits)
-        loopSettings = settings
+        settings.limits?.let(::limits)
+        loopSettings = settings.withLimits(settings.limits ?: loopSettings.resolvedLimits)
         imageInput(settings.imageInputEnabled)
         deferredBackendTools(settings.backendTools == BackendTools.SEARCH)
         nativeDeferredTools(settings.backendTools == BackendTools.NATIVE_DEFERRED)

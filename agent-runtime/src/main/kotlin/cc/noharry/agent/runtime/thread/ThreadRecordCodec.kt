@@ -60,7 +60,7 @@ internal class ThreadRecordCodec(
         options.scene?.let { put("scene", it) }
         options.workspace?.let { put("workspace", it) }
         options.instructions?.let { put("instructions", it) }
-        put("approvalPolicy", options.approvalPolicy.name)
+        put("approvalPolicy", (options.approvalPolicy ?: ApprovalPolicy.ASK).name)
         options.model?.let { model -> put("model", buildJsonObject {
             put("providerId", model.providerId); put("modelId", model.modelId)
             model.variant?.let { put("variant", it) }

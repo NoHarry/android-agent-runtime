@@ -24,7 +24,8 @@ data class LoopSettings @JvmOverloads constructor(
     val memory: RuntimeMemoryRetriever = RuntimeMemoryRetriever(),
     val serviceAnswer: ServiceAnswerCheck = RuntimeServiceAnswerCheck,
     val contextTimeoutMillis: Long = RuntimeContextHooks.CONTEXT_AGGREGATE_TIMEOUT_MS,
-    val limits: LoopLimits = LoopLimits(),
+    /** Optional budget override. Null keeps the builder's independently configured limits. */
+    val limits: LoopLimits? = null,
     val imageInputEnabled: Boolean = true,
     val backendTools: BackendTools = BackendTools.DIRECT,
     val runContextAsSystem: Boolean = false,
@@ -35,6 +36,8 @@ data class LoopSettings @JvmOverloads constructor(
     val hookTimeoutMillis: Long = 5_000,
     val concurrency: RuntimeConcurrency = RuntimeConcurrency(),
 ) {
+    internal val resolvedLimits: LoopLimits = limits ?: LoopLimits()
+
     init {
         require(contextTimeoutMillis in 1..MAX_CONTEXT_TIMEOUT_MILLIS) { "contextTimeoutMillis must be 1 to $MAX_CONTEXT_TIMEOUT_MILLIS." }
     }
