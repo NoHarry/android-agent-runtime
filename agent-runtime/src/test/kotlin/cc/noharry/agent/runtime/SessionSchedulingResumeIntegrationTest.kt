@@ -1,244 +1,173 @@
 @file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.spi.AgentRequest
-import cc.noharry.agent.spi.CancelPendingConfirmationRequest
-import cc.noharry.agent.spi.ConfirmationChoice
-import cc.noharry.agent.spi.ConfirmationDecision
-import cc.noharry.agent.spi.ConfirmationResumeResult
+
+import cc.noharry.agent.*
+import cc.noharry.agent.runtime.thread.DefaultThreadRuntime
+import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
 import cc.noharry.agent.spi.SessionRunConflictPolicy
-import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import cc.noharry.agent.spi.model.*
 import cc.noharry.agent.spi.reliability.RuntimeRunPhase
 import cc.noharry.agent.spi.reliability.RuntimeRunStatus
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.launch
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Test
 
 class SessionSchedulingResumeIntegrationTest {
-    @Test
-    fun waitingReleasesExecutionAndKeepsSameSessionQueued() = runSchedulingTest {
-        val runtime = confirmationRuntime()
-        try {
-            runtime.run(request(RUN_A1, SESSION_A)).toList()
-            assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, runtime.getRunState(RUN_A1)?.status)
-            assertEquals(0, runtime.sessionSchedulerSnapshotForTest().activeExecutionCount)
-            assertEquals(RUN_A1, runtime.sessionSchedulerSnapshotForTest().owners[SESSION_A])
-
-            runtime.run(request(RUN_B1, SESSION_B)).toList()
-            assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, runtime.getRunState(RUN_B1)?.status)
-            assertEquals(setOf(SESSION_A, SESSION_B), runtime.sessionSchedulerSnapshotForTest().owners.keys)
-            assertEquals(0, runtime.sessionSchedulerSnapshotForTest().activeExecutionCount)
-
-            val a2 = launch {
-                runtime.run(request(RUN_A2, SESSION_A, SessionRunConflictPolicy.QUEUE_NEW)).toList()
-            }
-            awaitQueued(runtime, RUN_A2)
-            assertEquals(RUN_A1, runtime.sessionSchedulerSnapshotForTest().owners[SESSION_A])
-
-            runtime.resumeConfirmation(
-                ConfirmationDecision("$RUN_A1:confirmation", "resume-1", ConfirmationChoice.APPROVE),
-            )
-            a2.join()
-            assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRunState(RUN_A1)?.status)
-            assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, runtime.getRunState(RUN_A2)?.status)
-            assertIdleOwnersExcept(runtime, SESSION_A to RUN_A2, SESSION_B to RUN_B1)
-        } finally {
-            runtime.close()
+    @Test fun approvalRetainsTheSameOwnerAndQueuesTheNextTurnOfThatThread() = runSchedulingTest {
+        threadApprovalRuntime().use { runtime ->
+            val a = runtime.startThread(ThreadOptions(threadId = SESSION_A))
+            val b = runtime.startThread(ThreadOptions(threadId = SESSION_B))
+            val a1 = async { a.run("first", TurnOptions(turnId = RUN_A1)) }
+            val pa = a.awaitApproval(RUN_A1)
+            val b1 = async { b.run("other", TurnOptions(turnId = RUN_B1)) }
+            b.awaitApproval(RUN_B1)
+            val original = runtime.engine.sessionSchedulerSnapshotForTest().owners
+            assertEquals(2, runtime.engine.sessionSchedulerSnapshotForTest().activeExecutionCount)
+            val a2 = async { a.run("second", TurnOptions(turnId = RUN_A2)) }
+            runtime.awaitQueued(1)
+            assertEquals(original, runtime.engine.sessionSchedulerSnapshotForTest().owners)
+            pa.approve()
+            assertEquals(TurnStatus.COMPLETED, a1.await().status)
+            a.awaitApproval(RUN_A2)
+            val advanced = runtime.engine.sessionSchedulerSnapshotForTest().owners
+            assertNotEquals(original[SESSION_A], advanced[SESSION_A])
+            assertEquals(original[SESSION_B], advanced[SESSION_B])
+            a.interrupt(); b.interrupt()
+            a2.await(); b1.await()
+            assertIdle(runtime.engine)
         }
     }
 
-    @Test
-    fun resumeUsesExactLeaseAndDoesNotCreateSecondOwner() = runSchedulingTest {
-        val runtime = confirmationRuntime()
-        try {
-            runtime.run(request(RUN_A1, SESSION_A)).toList()
-            assertEquals(RUN_A1, runtime.sessionSchedulerSnapshotForTest().owners[SESSION_A])
-            val accepted = runtime.resumeConfirmation(
-                ConfirmationDecision("$RUN_A1:confirmation", "resume-1", ConfirmationChoice.APPROVE),
-            )
-            assertEquals(ConfirmationResumeResult.Accepted, accepted)
-            assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRunState(RUN_A1)?.status)
-            assertIdle(runtime)
-            val duplicate = runtime.resumeConfirmation(
-                ConfirmationDecision("$RUN_A1:confirmation", "resume-1", ConfirmationChoice.APPROVE),
-            )
-            assertEquals(ConfirmationResumeResult.AlreadyConsumed, duplicate)
-            assertIdle(runtime)
-        } finally {
-            runtime.close()
-        }
-    }
-
-    @Test
-    fun confirmationResumePersistsRunningBeforeResumedLoopWork() = runSchedulingTest {
-        val gate = CompletableDeferred<Unit>()
-        val entered = CompletableDeferred<Unit>()
-        val runtime = planConfirmationRuntime(GatedMcpProvider(gate, entered))
-        try {
-            runtime.run(request(RUN_A1, SESSION_A)).toList()
-            assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, runtime.getRunState(RUN_A1)?.status)
-
-            val resume = launch {
-                runtime.resumeConfirmation(
-                    ConfirmationDecision("$RUN_A1:confirmation", "resume-1", ConfirmationChoice.APPROVE),
-                )
-            }
-            entered.await()
-            assertEquals(RuntimeRunStatus.RUNNING, runtime.getRunState(RUN_A1)?.status)
-            assertEquals(RuntimeRunPhase.MODEL_RUNNING, runtime.getRunEnvelope(RUN_A1)?.phase)
-            assertEquals(1, runtime.sessionSchedulerSnapshotForTest().activeExecutionCount)
-            assertEquals(RUN_A1, runtime.sessionSchedulerSnapshotForTest().owners[SESSION_A])
-
-            gate.complete(Unit)
-            resume.join()
-            assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRunState(RUN_A1)?.status)
-            assertIdle(runtime)
-        } finally {
-            runtime.close()
-        }
-    }
-
-    @Test
-    fun confirmationResumeVsCancelAndReplaceDoesNotUseStaleWaiting() = runSchedulingTest {
-        val gate = CompletableDeferred<Unit>()
-        val entered = CompletableDeferred<Unit>()
-        val runtime = planConfirmationRuntime(GatedMcpProvider(gate, entered))
-        try {
-            runtime.run(request(RUN_A1, SESSION_A)).toList()
-            val resume = launch {
-                runtime.resumeConfirmation(
-                    ConfirmationDecision("$RUN_A1:confirmation", "resume-1", ConfirmationChoice.APPROVE),
-                )
-            }
-            entered.await()
-            awaitState(runtime, RUN_A1, RuntimeRunStatus.RUNNING)
-
-            val replaced = launch {
-                runtime.run(
-                    request(RUN_A5, SESSION_A, SessionRunConflictPolicy.CANCEL_AND_REPLACE),
-                ).toList()
-            }
-            awaitQueued(runtime, RUN_A5)
-            assertEquals(RuntimeRunStatus.RUNNING, runtime.getRunState(RUN_A1)?.status)
-            assertTrue(runtime.getRuntimeResult(RUN_A1)?.errorCode != RuntimeErrorCode.RUN_REPLACED.wireCode)
-            assertFalse(replaced.isCompleted)
-            gate.complete(Unit)
-            resume.join()
-            replaced.join()
-            assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRunState(RUN_A1)?.status)
-            assertTrue(runtime.getRuntimeResult(RUN_A1)?.errorCode != RuntimeErrorCode.RUN_REPLACED.wireCode)
-        } finally {
-            runtime.close()
-        }
-    }
-
-    @Test
-    fun duplicateConcurrentResumeFailClosedWithoutSecondExecution() = runSchedulingTest {
+    @Test fun approvalUsesTheExistingExecutionAndRunningStateBeforeToolWork() = runSchedulingTest {
         val gate = CompletableDeferred<Unit>()
         val entered = CompletableDeferred<Unit>()
         val provider = GatedMcpProvider(gate, entered)
-        val runtime = planConfirmationRuntime(provider)
-        try {
-            runtime.run(request(RUN_A1, SESSION_A)).toList()
-            val first = CompletableDeferred<ConfirmationResumeResult>()
-            val second = CompletableDeferred<ConfirmationResumeResult>()
-            launch {
-                first.complete(
-                    runtime.resumeConfirmation(
-                        ConfirmationDecision("$RUN_A1:confirmation", "resume-1", ConfirmationChoice.APPROVE),
-                    ),
-                )
-            }
+        threadApprovalRuntime(provider).use { runtime ->
+            val thread = runtime.startThread()
+            val running = async { thread.run("action", TurnOptions(turnId = RUN_A1)) }
+            val pending = thread.awaitApproval(RUN_A1)
+            val execution = checkNotNull(runtime.diagnostics.getRunState(thread.id, RUN_A1)).runId
+            assertEquals(RespondResult.ACCEPTED, pending.approve())
             entered.await()
-            launch {
-                second.complete(
-                    runtime.resumeConfirmation(
-                        ConfirmationDecision("$RUN_A1:confirmation", "resume-2", ConfirmationChoice.APPROVE),
-                    ),
-                )
-            }
-            val late = second.await()
-            assertTrue(late is ConfirmationResumeResult.Rejected || late is ConfirmationResumeResult.AlreadyConsumed)
+            assertEquals(RuntimeRunStatus.RUNNING, runtime.engine.getRunState(execution)?.status)
+            assertEquals(RuntimeRunPhase.MODEL_RUNNING, runtime.engine.getRunEnvelope(execution)?.phase)
+            assertEquals(execution, runtime.engine.sessionSchedulerSnapshotForTest().owners[thread.id])
+            assertEquals(1, runtime.engine.sessionSchedulerSnapshotForTest().activeExecutionCount)
+            assertEquals(RespondResult.ALREADY_ANSWERED, pending.approve())
             assertEquals(1, provider.callCount)
-            assertEquals(RuntimeRunStatus.RUNNING, runtime.getRunState(RUN_A1)?.status)
             gate.complete(Unit)
-            assertEquals(ConfirmationResumeResult.Accepted, first.await())
-            assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRunState(RUN_A1)?.status)
-            assertEquals(1, provider.callCount)
-        } finally {
-            runtime.close()
+            assertEquals(TurnStatus.COMPLETED, running.await().status)
+            assertIdle(runtime.engine)
         }
     }
 
-    @Test
-    fun resumeGrantBeforePersistLosesToCancelWithoutRevivingRunning() = runSchedulingTest {
+    @Test fun concurrentApprovalResponsesCannotStartASecondExecution() = runSchedulingTest {
         val gate = CompletableDeferred<Unit>()
         val entered = CompletableDeferred<Unit>()
         val provider = GatedMcpProvider(gate, entered)
-        val runtime = planConfirmationRuntime(provider)
-        val attached = CompletableDeferred<Unit>()
-        val releasePersist = CompletableDeferred<Unit>()
-        try {
-            runtime.run(request(RUN_A1, SESSION_A)).toList()
-            assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, runtime.getRunState(RUN_A1)?.status)
-            runtime.sessionRunSchedulerForTest().afterAttachJobForTest = {
-                attached.complete(Unit)
-                releasePersist.await()
+        threadApprovalRuntime(provider).use { runtime ->
+            val thread = runtime.startThread()
+            val running = async { thread.run("action") }
+            val pending = thread.awaitApproval()
+            val replies = listOf(async(Dispatchers.Default) { pending.approve() }, async(Dispatchers.Default) { pending.approve() }).awaitAll()
+            assertEquals(setOf(RespondResult.ACCEPTED, RespondResult.ALREADY_ANSWERED), replies.toSet())
+            entered.await()
+            assertEquals(1, provider.callCount)
+            gate.complete(Unit)
+            assertEquals(TurnStatus.COMPLETED, running.await().status)
+            assertIdle(runtime.engine)
+        }
+    }
+
+    @Test fun interruptAfterApprovalBeforeExecutionCannotReviveTheTurn() = runSchedulingTest {
+        val provider = GatedMcpProvider(CompletableDeferred(Unit), CompletableDeferred())
+        threadApprovalRuntime(provider).use { runtime ->
+            val thread = runtime.startThread()
+            val events = mutableListOf<ThreadEvent>()
+            thread.runStreamed("action", TurnOptions(turnId = RUN_A1)).collect { event ->
+                events += event
+                if (event is ThreadEvent.ItemStarted && event.item is Approval) (event.item as Approval).approve()
+                if (event is ThreadEvent.ItemCompleted && event.item is Approval) thread.interrupt()
             }
-            val resume = CompletableDeferred<ConfirmationResumeResult>()
-            launch(Dispatchers.Default) {
-                resume.complete(
-                    runtime.resumeConfirmation(
-                        ConfirmationDecision("$RUN_A1:confirmation", "resume-1", ConfirmationChoice.APPROVE),
-                    ),
-                )
-            }
-            attached.await()
-            val cancelled = runtime.cancelPendingConfirmation(
-                CancelPendingConfirmationRequest("$RUN_A1:confirmation", "cancel-race"),
-            )
-            assertTrue(cancelled is cc.noharry.agent.spi.CancelPendingResult.Cancelled)
-            assertEquals(RuntimeRunStatus.CANCELLED, runtime.getRunState(RUN_A1)?.status)
-            releasePersist.complete(Unit)
-            val resumeResult = resume.await()
-            assertTrue(
-                resumeResult is ConfirmationResumeResult.Rejected ||
-                    resumeResult is ConfirmationResumeResult.AlreadyConsumed,
-            )
+            assertTurnEvents(events)
+            assertEquals(TurnStatus.INTERRUPTED, (events.last() as ThreadEvent.TurnCompleted).result.status)
             assertEquals(0, provider.callCount)
-            assertEquals(RuntimeRunStatus.CANCELLED, runtime.getRunState(RUN_A1)?.status)
-            assertTrue(runtime.getRunState(RUN_A1)?.status != RuntimeRunStatus.RUNNING)
-            assertIdle(runtime)
-        } finally {
-            runtime.sessionRunSchedulerForTest().afterAttachJobForTest = null
-            gate.complete(Unit)
-            runtime.close()
+            assertEquals(RuntimeRunStatus.CANCELLED, runtime.diagnostics.getRunState(thread.id, RUN_A1)?.status)
+            assertIdle(runtime.engine)
         }
     }
 
-    @Test
-    fun userInputThenConfirmationReleasesExecutionPermit() = runSchedulingTest {
-        val runtime = AgentRuntimeBuilder.create()
-            .workspaceRoot(java.nio.file.Files.createTempDirectory("sched-resume-").toFile())
-            .toolProvider(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
-            .policyRule(confirmUnlessApprovedPolicy())
-            .modelClient(askThenConfirmModel())
-            .sessionConcurrency(maxActiveSessions = 1)
-            .buildEngine() as DefaultAgentRuntime
-        try {
-            runtime.run(request(RUN_A1, SESSION_A)).toList()
-            assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, runtime.getRunState(RUN_A1)?.status)
-            assertEquals(0, runtime.sessionSchedulerSnapshotForTest().activeExecutionCount)
-            assertEquals(RUN_A1, runtime.sessionSchedulerSnapshotForTest().owners[SESSION_A])
-            assertTrue(runtime.sessionSchedulerSnapshotForTest().waitingOwnerRunIds.contains(RUN_A1))
-        } finally {
-            runtime.close()
+    @Test fun cancelAndReplaceInterruptsTheApprovedExecutionBeforeStartingItsReplacement() = runSchedulingTest {
+        val gate = CompletableDeferred<Unit>()
+        val entered = CompletableDeferred<Unit>()
+        val provider = GatedMcpProvider(gate, entered)
+        threadApprovalRuntime(provider).use { runtime ->
+            val thread = runtime.startThread()
+            val original = async { thread.run("original") }
+            thread.awaitApproval().approve()
+            entered.await()
+            val replacement = thread.collectApproving("replacement",
+                TurnOptions(onConflict = SessionRunConflictPolicy.CANCEL_AND_REPLACE)) { gate.complete(Unit) }
+            assertEquals(TurnStatus.INTERRUPTED, original.await().status)
+            assertEquals(TurnStatus.COMPLETED, (replacement.last() as ThreadEvent.TurnCompleted).result.status)
+            assertEquals(2, provider.callCount)
+            assertIdle(runtime.engine)
         }
+    }
+
+    @Test fun aBlockingQuestionReleasesExecutionBeforeItsAnswerCanReachApproval() = runSchedulingTest {
+        val model = ThreadScriptModel(listOf(
+            listOf(ModelEvent.ToolCall("ask", "ask", """{"question":"Which temperature?"}"""), ModelEvent.Completed),
+            listOf(schemaRead("set_temperature"), ModelEvent.Completed),
+            listOf(setTemperatureBackendCall(), ModelEvent.Completed), finishEvents("done"),
+        ))
+        threadBuilder(model).tools(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
+            .hook(confirmUntilApproved()).sessionConcurrency(maxActiveSessions = 1).build().use { runtime ->
+                val thread = runtime.startThread()
+                val first = thread.run("set temperature")
+                assertEquals(TurnStatus.WAITING_FOR_ANSWER, first.status)
+                assertIdle((runtime as DefaultThreadRuntime).engine)
+                val events = mutableListOf<ThreadEvent>()
+                thread.runStreamed(TurnInput(listOf(InputPart.Text("18")), answering = first.pending!!.id)).collect { event ->
+                    events += event
+                    if (event is ThreadEvent.ItemStarted && event.item is Approval) (event.item as Approval).approve()
+                }
+                assertTurnEvents(events)
+                val result = (events.last() as ThreadEvent.TurnCompleted).result
+                assertNotEquals(first.turnId, result.turnId)
+                assertEquals(TurnStatus.COMPLETED, result.status)
+                assertEquals(1, events.filterIsInstance<ThreadEvent.ItemStarted>().count { it.item is Approval })
+                assertIdle(runtime.engine)
+            }
+    }
+}
+
+internal suspend fun AgentThread.awaitApproval(turnId: String? = null): Approval = withTimeout(5000) {
+    while (true) {
+        pendingRequests().filterIsInstance<Approval>().firstOrNull { turnId == null || it.turnId == turnId }?.let { return@withTimeout it }
+        yield()
+    }
+    error("Unreachable")
+}
+
+internal fun threadApprovalRuntime(
+    provider: cc.noharry.agent.spi.ToolProvider = LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))),
+): DefaultThreadRuntime = threadBuilder(ApprovalPerTurnModel()).tools(provider).hook(confirmUntilApproved())
+    .sessionConcurrency(maxActiveSessions = 2).build() as DefaultThreadRuntime
+
+private class ApprovalPerTurnModel : ModelClient {
+    override val providerConcurrency = ProviderConcurrencyDeclaration.threadSafe()
+    override fun complete(request: ModelRequest): Flow<ModelEvent> = flow {
+        val current = request.messages.drop(request.messages.indexOfLast { it.role == "user" } + 1)
+        val event = when {
+            current.none { it.role == "tool" && it.toolName == "read_file" } -> schemaRead("set_temperature")
+            current.none { it.role == "tool" && it.toolName == qualifiedMcpTool("set_temperature") } -> setTemperatureBackendCall()
+            else -> ModelEvent.ToolCall("finish", "finish", """{"response":"done"}""")
+        }
+        emit(event); emit(ModelEvent.Completed)
     }
 }

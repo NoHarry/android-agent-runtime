@@ -1,6 +1,10 @@
 @file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
+import cc.noharry.agent.ThreadEvent
+import cc.noharry.agent.TurnOptions
+import cc.noharry.agent.TurnStatus
+import cc.noharry.agent.RespondResult
 import cc.noharry.agent.spi.AgentEvent
 import cc.noharry.agent.spi.RuntimeEvidenceConfig
 import cc.noharry.agent.spi.SessionEventType
@@ -16,6 +20,7 @@ import cc.noharry.agent.vfs.VfsFileSystem
 import java.nio.file.Files
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
@@ -141,42 +146,24 @@ class SessionSchedulingIntegrationTest {
     }
 
     @Test
-    fun missingResumeQueueAndCancelReplacePolicies() = runSchedulingTest {
-        val runtime = confirmationRuntime()
-        try {
-            runtime.run(request(RUN_A1, SESSION_A)).toList()
-
-            val missing = runtime.run(request(RUN_A2, SESSION_A)).toList()
-            val missingBlocker = missing.filterIsInstance<AgentEvent.RuntimeBlocked>().single().blocker
-            assertEquals(RuntimeErrorCode.ADMISSION_POLICY_REQUIRED.wireCode, missingBlocker.code)
-            assertEquals(RUN_A1, missingBlocker.runId)
-            assertNull(runtime.getRunState(RUN_A2))
-            assertTrue(missing.none { it is AgentEvent.Started })
-
-            val resume = runtime.run(
-                request(RUN_A3, SESSION_A, SessionRunConflictPolicy.RESUME_CURRENT),
-            ).toList()
-            val resumeBlocker = resume.filterIsInstance<AgentEvent.RuntimeBlocked>().single().blocker
-            assertEquals(RuntimeErrorCode.PENDING_CONFIRMATION_EXISTS.wireCode, resumeBlocker.code)
-            assertNull(runtime.getRunState(RUN_A3))
-
-            val queued = launch {
-                runtime.run(request(RUN_A4, SESSION_A, SessionRunConflictPolicy.QUEUE_NEW)).toList()
-            }
-            awaitQueued(runtime, RUN_A4)
+    fun threadConflictPoliciesRejectQueueAndReplaceWithoutCreatingAnotherOwner() = runSchedulingTest {
+        threadApprovalRuntime().use { runtime ->
+            val thread = runtime.startThread()
+            val active = async { thread.run("original", TurnOptions(turnId = RUN_A1)) }
+            val pending = thread.awaitApproval(RUN_A1)
+            val busy = thread.run("busy", TurnOptions(turnId = RUN_A2, onConflict = SessionRunConflictPolicy.RESUME_CURRENT))
+            assertEquals("THREAD_BUSY", busy.error?.code)
+            assertNull(runtime.diagnostics.getRunState(thread.id, RUN_A2))
+            val queued = async { thread.run("queued", TurnOptions(turnId = RUN_A3)) }
+            runtime.awaitQueued(1)
             queued.cancelAndJoin()
-            assertEquals(RuntimeRunStatus.CANCELLED, runtime.getRunState(RUN_A4)?.status)
-
-            val replaced = runtime.run(
-                request(RUN_A5, SESSION_A, SessionRunConflictPolicy.CANCEL_AND_REPLACE),
-            ).toList()
-            assertTrue(replaced.any { it is AgentEvent.Started })
-            assertEquals(RuntimeRunStatus.CANCELLED, runtime.getRunState(RUN_A1)?.status)
-            assertEquals(RuntimeErrorCode.RUN_REPLACED.wireCode, runtime.getRuntimeResult(RUN_A1)?.errorCode)
-            assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, runtime.getRunState(RUN_A5)?.status)
-            assertIdleOwnersExcept(runtime, SESSION_A to RUN_A5)
-        } finally {
-            runtime.close()
+            runtime.awaitQueued(0)
+            val replacement = thread.collectApproving("replacement", TurnOptions(turnId = RUN_A5,
+                onConflict = SessionRunConflictPolicy.CANCEL_AND_REPLACE))
+            assertEquals(TurnStatus.INTERRUPTED, active.await().status)
+            assertEquals(RespondResult.NOT_FOUND, pending.approve())
+            assertEquals(TurnStatus.COMPLETED, (replacement.last() as ThreadEvent.TurnCompleted).result.status)
+            assertIdle(runtime.engine)
         }
     }
 
