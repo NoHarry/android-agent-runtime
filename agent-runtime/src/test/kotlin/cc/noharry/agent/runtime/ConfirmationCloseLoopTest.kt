@@ -1,195 +1,127 @@
 @file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.runtime
-import cc.noharry.agent.spi.AgentEvent
-import cc.noharry.agent.spi.AgentRequest
-import cc.noharry.agent.spi.AgentRuntime
-import cc.noharry.agent.spi.CancelPendingConfirmationRequest
-import cc.noharry.agent.spi.CancelPendingResult
-import cc.noharry.agent.spi.ConfirmationChoice
-import cc.noharry.agent.spi.ConfirmationDecision
-import cc.noharry.agent.spi.ConfirmationResumeResult
-import cc.noharry.agent.spi.reliability.RuntimeRunStatus
-import cc.noharry.agent.spi.reliability.SuggestedNextAction
-import cc.noharry.agent.kernel.core.state.InMemoryConfirmationStore
-import cc.noharry.agent.kernel.core.state.RunStateController
-import kotlinx.coroutines.flow.toList
+
+import cc.noharry.agent.*
+import cc.noharry.agent.spi.model.ModelEvent
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Test
 
 class ConfirmationCloseLoopTest {
-    @Test
-    fun runEmitsPendingConfirmationWhenConfigured() = runBlocking {
-        val runtime = AgentRuntimeBuilder.create().confirmationOnRun().buildEngine()
-
-        val events = runtime.run(agentRequest()).toList()
-        val confirmationEvent = events.filterIsInstance<AgentEvent.ConfirmationRequired>()
-            .single()
-
-        assertEquals("session-1", confirmationEvent.pending.sessionId)
-        assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, runtime.getRunState("request-1")?.status)
-        assertEquals(confirmationEvent.pending.pendingId, runtime.getRunState("request-1")?.pendingConfirmationId)
-        assertEquals(confirmationEvent.pending, runtime.getPendingConfirmation(confirmationEvent.pending.pendingId))
+    @Test fun pendingApprovalBelongsToTheActiveTurnAndIsVisibleFromAnotherHandle() = runBlocking {
+        approvalBuilder().build().use { runtime ->
+            val thread = runtime.startThread(ThreadOptions(threadId = "session-1"))
+            thread.runStreamed("set temperature", TurnOptions(turnId = "request-1")).collect { event ->
+                if (event is ThreadEvent.ItemStarted && event.item is Approval) {
+                    val pending = event.item as Approval
+                    assertEquals("request-1", pending.turnId)
+                    assertEquals(ThreadStatus.WAITING_FOR_APPROVAL, thread.status())
+                    assertEquals(pending, runtime.resumeThread(thread.id).pendingRequests().single())
+                    pending.approve()
+                }
+            }
+            assertTrue(thread.pendingRequests().isEmpty())
+        }
     }
 
-    @Test
-    fun confirmationStoreAllocatesUniquePendingIdsWithinRun() {
-        val store = InMemoryConfirmationStore(nowEpochMillis = { 1_000L })
-
-        val first = store.create("request-1", "session-1", expiresInMillis = 10_000)
-        val firstResume = store.resume(
-            ConfirmationDecision(first.pendingId, "resume-1", ConfirmationChoice.APPROVE),
-        )
-        val second = store.create("request-1", "session-1", expiresInMillis = 10_000)
-        val duplicateFirst = store.resume(
-            ConfirmationDecision(first.pendingId, "resume-duplicate", ConfirmationChoice.APPROVE),
-        )
-
-        assertEquals("request-1:confirmation", first.pendingId)
-        assertEquals("request-1:confirmation:2", second.pendingId)
-        assertEquals(ConfirmationResumeResult.Accepted, firstResume.apiResult)
-        assertEquals(ConfirmationResumeResult.AlreadyConsumed, duplicateFirst.apiResult)
-        assertNull(store.getPending(first.pendingId))
-        assertEquals(second, store.getPending(second.pendingId))
+    @Test fun successiveApprovalIdsAreUniqueAndTheCurrentRequestCannotConsumeThePreviousOne() = runBlocking {
+        val model = ThreadScriptModel(listOf(
+            listOf(schemaRead("set_temperature"), ModelEvent.Completed),
+            listOf(ModelEvent.ToolCall("first", qualifiedMcpTool("set_temperature"), "{}"), ModelEvent.Completed),
+            listOf(ModelEvent.ToolCall("second", qualifiedMcpTool("set_temperature"), "{}"), ModelEvent.Completed),
+            finishEvents("done"),
+        ))
+        threadBuilder(model).tools(LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature"))))
+            .hook(confirmUntilApproved()).build().use { runtime ->
+                val thread = runtime.startThread()
+                val approvals = mutableListOf<Approval>()
+                thread.runStreamed("set it twice").collect { event ->
+                    if (event is ThreadEvent.ItemStarted && event.item is Approval) {
+                        val pending = event.item as Approval
+                        approvals.firstOrNull()?.let { assertEquals(RespondResult.ALREADY_ANSWERED, it.approve()) }
+                        approvals += pending
+                        assertEquals(pending, thread.pendingRequests().single())
+                        assertEquals(RespondResult.ACCEPTED, pending.approve())
+                    }
+                }
+                assertEquals(2, approvals.size)
+                assertEquals(2, approvals.map { it.id }.toSet().size)
+            }
     }
 
-    @Test
-    fun waitingConfirmationSnapshotCarriesCurrentPendingId() {
-        val controller = RunStateController(nowEpochMillis = { 1_000L })
-        val started = controller.startRun(agentRequest(), runId = "request-1")
-
-        controller.markWaitingConfirmation(
-            started = started,
-            prompt = "Approve example.org?",
-            pendingConfirmationId = "request-1:confirmation:2",
-        )
-
-        val snapshot = controller.snapshot("request-1")
-        assertEquals(RuntimeRunStatus.WAITING_CONFIRMATION, snapshot?.status)
-        assertEquals(SuggestedNextAction.RESUME_CONFIRMATION, snapshot?.suggestedNextAction)
-        assertEquals("request-1:confirmation:2", snapshot?.pendingConfirmationId)
+    @Test fun approvingCompletesTheOriginalTurnAndOnlyTheFirstResponseWins() = runBlocking {
+        approvalBuilder().build().use { runtime ->
+            val thread = runtime.startThread()
+            val events = mutableListOf<ThreadEvent>()
+            thread.runStreamed("set temperature").collect { event ->
+                events += event
+                if (event is ThreadEvent.ItemStarted && event.item is Approval) {
+                    val pending = event.item as Approval
+                    assertEquals(RespondResult.ACCEPTED, pending.approve())
+                    assertEquals(RespondResult.ALREADY_ANSWERED, pending.approve())
+                }
+            }
+            assertTurnEvents(events)
+            assertEquals(TurnStatus.COMPLETED, (events.last() as ThreadEvent.TurnCompleted).result.status)
+            assertEquals(ThreadStatus.IDLE, thread.status())
+            assertTrue(thread.pendingRequests().isEmpty())
+        }
     }
 
-    @Test
-    fun approveConfirmationCompletesRunAndIsIdempotent() = runBlocking {
-        val runtime = runtimeWithPendingConfirmation()
-        val pending = pendingConfirmation(runtime)
-
-        val accepted = runtime.resumeConfirmation(
-            ConfirmationDecision(
-                pendingId = pending.pendingId,
-                requestId = "resume-1",
-                choice = ConfirmationChoice.APPROVE,
-            ),
-        )
-        val duplicate = runtime.resumeConfirmation(
-            ConfirmationDecision(
-                pendingId = pending.pendingId,
-                requestId = "resume-1",
-                choice = ConfirmationChoice.APPROVE,
-            ),
-        )
-
-        assertEquals(ConfirmationResumeResult.Accepted, accepted)
-        assertEquals(ConfirmationResumeResult.AlreadyConsumed, duplicate)
-        assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRunState("request-1")?.status)
-        assertEquals(RuntimeRunStatus.COMPLETED, runtime.getRuntimeResult("request-1")?.status)
-        assertNull(runtime.getPendingConfirmation(pending.pendingId))
+    @Test fun denialDoesNotExecuteTheToolAndLetsTheModelExplain() = runBlocking {
+        val provider = LoopMcpProvider(exposedTools = listOf(mcpTool("set_temperature")))
+        threadBuilder(backendThenFinishModel(mutableListOf())).tools(provider).hook(confirmUntilApproved()).build().use { runtime ->
+            val thread = runtime.startThread()
+            val events = mutableListOf<ThreadEvent>()
+            thread.runStreamed("set temperature").collect { event ->
+                events += event
+                if (event is ThreadEvent.ItemStarted && event.item is Approval) {
+                    assertEquals(RespondResult.ACCEPTED, (event.item as Approval).deny())
+                }
+            }
+            assertTurnEvents(events)
+            assertEquals("recovered", (events.last() as ThreadEvent.TurnCompleted).result.finalResponse)
+            assertTrue(provider.calledTools.isEmpty())
+            assertTrue(thread.pendingRequests().isEmpty())
+        }
     }
 
-    @Test
-    fun denyConfirmationCancelsRunWithoutApproval() = runBlocking {
-        val runtime = runtimeWithPendingConfirmation()
-        val pending = pendingConfirmation(runtime)
-
-        val denied = runtime.resumeConfirmation(
-            ConfirmationDecision(
-                pendingId = pending.pendingId,
-                requestId = "resume-1",
-                choice = ConfirmationChoice.DENY,
-            ),
-        )
-
-        assertTrue(denied is ConfirmationResumeResult.Rejected)
-        assertEquals(RuntimeRunStatus.CANCELLED, runtime.getRunState("request-1")?.status)
-        assertEquals(RuntimeRunStatus.CANCELLED, runtime.getRuntimeResult("request-1")?.status)
+    @Test fun interruptWithdrawsApprovalAndAStaleHandleCannotExecuteTheTool() = runBlocking {
+        approvalBuilder().build().use { runtime ->
+            val thread = runtime.startThread()
+            var stale: Approval? = null
+            val events = mutableListOf<ThreadEvent>()
+            thread.runStreamed("set temperature").collect { event ->
+                events += event
+                if (event is ThreadEvent.ItemStarted && event.item is Approval) {
+                    stale = event.item as Approval
+                    thread.interrupt()
+                }
+            }
+            assertTurnEvents(events)
+            assertEquals(TurnStatus.INTERRUPTED, (events.last() as ThreadEvent.TurnCompleted).result.status)
+            assertEquals(RespondResult.NOT_FOUND, checkNotNull(stale).approve())
+            assertTrue(thread.pendingRequests().isEmpty())
+        }
     }
 
-    @Test
-    fun cancelPendingConfirmationCancelsRun() = runBlocking {
-        val runtime = runtimeWithPendingConfirmation()
-        val pending = pendingConfirmation(runtime)
-
-        val cancelled = runtime.cancelPendingConfirmation(
-            CancelPendingConfirmationRequest(
-                pendingId = pending.pendingId,
-                requestId = "cancel-1",
-                reason = "host cancelled",
-            ),
-        )
-
-        assertTrue(cancelled is CancelPendingResult.Cancelled)
-        assertEquals(RuntimeRunStatus.CANCELLED, runtime.getRunState("request-1")?.status)
-        assertNull(runtime.getPendingConfirmation(pending.pendingId))
-    }
-
-    @Test
-    fun resumeExpiredConfirmationReturnsExpired() = runBlocking {
+    @Test fun anExpiredApprovalRefusesLateResponsesAndClosesTheTurn() = runBlocking {
         var now = 1_000L
-        val runtime = AgentRuntimeBuilder.create()
-            .nowEpochMillis { now }
-            .confirmationOnRun(expiresInMillis = 5)
-            .buildEngine()
-        runtime.run(agentRequest()).toList()
-        val pending = pendingConfirmation(runtime)
-
-        now = 1_006L
-        val expired = runtime.resumeConfirmation(
-            ConfirmationDecision(
-                pendingId = pending.pendingId,
-                requestId = "resume-1",
-                choice = ConfirmationChoice.APPROVE,
-            ),
-        )
-
-        assertEquals(ConfirmationResumeResult.Expired, expired)
-        assertEquals(RuntimeRunStatus.CANCELLED, runtime.getRunState("request-1")?.status)
-        assertNull(runtime.getPendingConfirmation(pending.pendingId))
+        approvalBuilder().nowEpochMillis { now }.build().use { runtime ->
+            val thread = runtime.startThread()
+            val events = mutableListOf<ThreadEvent>()
+            thread.runStreamed("set temperature").collect { event ->
+                events += event
+                if (event is ThreadEvent.ItemStarted && event.item is Approval) {
+                    val pending = event.item as Approval
+                    now = checkNotNull(pending.expiresAt) + 1
+                    assertEquals(RespondResult.EXPIRED, pending.approve())
+                }
+            }
+            assertTurnEvents(events)
+            assertEquals(TurnErrorCodes.CONFIRMATION_EXPIRED, (events.last() as ThreadEvent.TurnFailed).error.code)
+            assertTrue(thread.pendingRequests().isEmpty())
+        }
     }
-
-    @Test
-    fun missingConfirmationReturnsNotFound() = runBlocking {
-        val runtime = AgentRuntimeBuilder.create().buildEngine()
-
-        val result = runtime.resumeConfirmation(
-            ConfirmationDecision(
-                pendingId = "missing",
-                requestId = "resume-1",
-                choice = ConfirmationChoice.APPROVE,
-            ),
-        )
-
-        assertEquals(ConfirmationResumeResult.NotFound, result)
-    }
-
-    private suspend fun runtimeWithPendingConfirmation(): AgentRuntime {
-        val runtime = AgentRuntimeBuilder.create().confirmationOnRun().buildEngine()
-        runtime.run(agentRequest()).toList()
-        return runtime
-    }
-
-    private suspend fun pendingConfirmation(runtime: AgentRuntime) =
-        runtime.getPendingConfirmation("request-1:confirmation").also {
-            assertNotNull(it)
-        } ?: error("Expected pending confirmation.")
-
-    private fun agentRequest(): AgentRequest = AgentRequest(
-        requestId = "request-1",
-        sessionId = "session-1",
-        input = "trigger confirmation",
-    )
 }
