@@ -12,9 +12,9 @@ class ToolCallFailureBreakerTest {
     @Test
     fun aHostDecidesWhichFailedResultsAreAServicesAnswer() {
         val raw = """{"result":{"isError":true,"structuredContent":{"status":{"name":"NO_ROUTE"}}}}"""
-        // The runtime's own check passes the service's answer as written; without it the failure is the runtime's.
-        assertEquals(raw, cc.noharry.agent.spi.ToolCallResult(false, raw).toBackendToolResult())
-        val failed = cc.noharry.agent.spi.ToolCallResult(false, raw).toBackendToolResult(cc.noharry.agent.spi.ServiceAnswerCheck.NONE)
+        // The MCP status check passes the service's answer as written; by default the failure is the runtime's.
+        assertEquals(raw, cc.noharry.agent.spi.ToolCallResult(false, raw).toBackendToolResult(cc.noharry.agent.runtime.McpStatusServiceAnswerCheck))
+        val failed = cc.noharry.agent.spi.ToolCallResult(false, raw).toBackendToolResult()
         assertEquals("BACKEND_CALL_FAILED", backendToolCallResult(failed).code)
         // A host's own shape: {"ok":false,"answer": …} is the service speaking, and reaches the model as written; one that
         // does not report the problem is never taken for an answer, so it is not read as a success afterwards.
@@ -44,9 +44,9 @@ class ToolCallFailureBreakerTest {
 
     @Test
     fun typedBusinessRefusalsStayLosslessAndDoNotDisableRecoveryQueries() {
-        val breaker = ToolCallFailureBreaker()
+        val breaker = ToolCallFailureBreaker(serviceAnswer = cc.noharry.agent.runtime.McpStatusServiceAnswerCheck)
         val raw = """{"jsonrpc":"2.0","error":null,"result":{"isError":true,"structuredContent":{"status":{"name":"INVALID_ARGUMENT","details":{"reason":"too_many_items"}},"upstreamCode":10001,"data":{}}}}"""
-        val delivered = cc.noharry.agent.spi.ToolCallResult(false, raw).toBackendToolResult()
+        val delivered = cc.noharry.agent.spi.ToolCallResult(false, raw).toBackendToolResult(cc.noharry.agent.runtime.McpStatusServiceAnswerCheck)
         val parsed = backendToolCallResult(delivered)
         assertEquals(raw, delivered)
         assertEquals(false, parsed.ok)
@@ -58,7 +58,7 @@ class ToolCallFailureBreakerTest {
 
     @Test
     fun businessResponseResetsTransportFailuresWithoutBecomingSuccess() {
-        val breaker = ToolCallFailureBreaker()
+        val breaker = ToolCallFailureBreaker(serviceAnswer = cc.noharry.agent.runtime.McpStatusServiceAnswerCheck)
         val business = backendToolCallResult(
             """{"isError":true,"structuredContent":{"status":{"name":"CONFLICT"},"data":{}}}""",
         )

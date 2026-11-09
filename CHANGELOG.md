@@ -5,6 +5,10 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **No failed tool result is a service's answer by default.** `LoopSettings.serviceAnswer` defaults to
+  `ServiceAnswerCheck.NONE`; it took MCP results with a `structuredContent.status.name` before. A host whose services
+  answer that way sets `LoopSettings(serviceAnswer = McpStatusServiceAnswerCheck)`.
+
 - **Model-history byte guards include multimodal and reasoning data.** Images, reasoning, thinking signatures,
   assistant text and deferred-tool metadata count alongside message text when old runs are trimmed. Past the guard,
   earlier runs lose their images before whole runs are dropped, and the newest run always stays, so one turn with

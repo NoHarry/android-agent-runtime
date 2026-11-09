@@ -8,7 +8,6 @@ import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.spi.NarrationCheck
 import cc.noharry.agent.spi.ServiceAnswerCheck
 import cc.noharry.agent.kernel.core.context.RuntimeContextHooks
-import cc.noharry.agent.kernel.core.tools.RuntimeServiceAnswerCheck
 import cc.noharry.agent.runtime.RuntimeMemoryRetriever
 
 /**
@@ -22,7 +21,7 @@ import cc.noharry.agent.runtime.RuntimeMemoryRetriever
 data class LoopSettings @JvmOverloads constructor(
     val narration: NarrationCheck = RuntimeNarrationCheck,
     val memory: RuntimeMemoryRetriever = RuntimeMemoryRetriever(),
-    val serviceAnswer: ServiceAnswerCheck = RuntimeServiceAnswerCheck,
+    val serviceAnswer: ServiceAnswerCheck = ServiceAnswerCheck.NONE,
     val contextTimeoutMillis: Long = RuntimeContextHooks.CONTEXT_AGGREGATE_TIMEOUT_MS,
     /** Optional budget override. Null keeps the builder's independently configured limits. */
     val limits: LoopLimits? = null,

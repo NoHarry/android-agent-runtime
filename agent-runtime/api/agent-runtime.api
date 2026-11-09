@@ -483,6 +483,11 @@ public final class cc/noharry/agent/runtime/LoopSettingsKt {
 	public static final field MAX_CONTEXT_TIMEOUT_MILLIS J
 }
 
+public final class cc/noharry/agent/runtime/McpStatusServiceAnswerCheck : cc/noharry/agent/spi/ServiceAnswerCheck {
+	public static final field INSTANCE Lcc/noharry/agent/runtime/McpStatusServiceAnswerCheck;
+	public fun isServiceAnswer (Ljava/lang/String;)Z
+}
+
 public final class cc/noharry/agent/runtime/MemoryTopic {
 	public static final field Companion Lcc/noharry/agent/runtime/MemoryTopic$Companion;
 	public fun <init> (Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;)V

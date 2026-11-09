@@ -1,7 +1,6 @@
 package cc.noharry.agent.kernel.core.loop
 import cc.noharry.agent.spi.ServiceAnswerCheck
 import cc.noharry.agent.spi.ToolUseResult
-import cc.noharry.agent.kernel.core.tools.RuntimeServiceAnswerCheck
 import cc.noharry.agent.kernel.core.tools.answers
 /**
  * Run-scoped circuit breaker for repeated backend tool-call failures.
@@ -24,7 +23,7 @@ internal class ToolCallFailureBreaker @JvmOverloads constructor(
     private val maxConsecutiveFailures: Int = DEFAULT_MAX_CONSECUTIVE_TOOL_CALL_FAILURES,
     private val maxConsecutiveToolFailures: Int = DEFAULT_MAX_CONSECUTIVE_TOOL_FAILURES_PER_TOOL,
     /** Which failed results are a service's answer, which resets the count ([ServiceAnswerCheck]). */
-    private val serviceAnswer: ServiceAnswerCheck = RuntimeServiceAnswerCheck,
+    private val serviceAnswer: ServiceAnswerCheck = ServiceAnswerCheck.NONE,
 ) {
     init {
         require(maxConsecutiveFailures > 0) { "maxConsecutiveFailures must be positive." }

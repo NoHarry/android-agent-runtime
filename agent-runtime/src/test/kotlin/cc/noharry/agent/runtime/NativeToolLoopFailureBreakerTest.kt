@@ -35,7 +35,8 @@ class NativeToolLoopFailureBreakerTest {
                 listOf(finishCall(), ModelEvent.Completed),
             )
         val runtime = AgentRuntimeBuilder.create().workspaceRoot(Files.createTempDirectory("business-refusal-").toFile())
-            .toolProvider(backend).modelClient(FakeModelClient(eventsByRound = rounds, seenRequests = requests)).buildEngine()
+            .toolProvider(backend).modelClient(FakeModelClient(eventsByRound = rounds, seenRequests = requests))
+            .settings(LoopSettings(serviceAnswer = McpStatusServiceAnswerCheck)).buildEngine()
         val result = runtime.run(agentRequest()).toList().filterIsInstance<AgentEvent.ResultAvailable>().single().result
         assertEquals(RuntimeRunStatus.COMPLETED, result.status)
         assertEquals(6, backend.calls)

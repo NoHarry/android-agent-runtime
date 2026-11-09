@@ -2,13 +2,12 @@ package cc.noharry.agent.kernel.core.loop
 
 import cc.noharry.agent.spi.ServiceAnswerCheck
 import cc.noharry.agent.spi.ToolCallResult
-import cc.noharry.agent.kernel.core.tools.RuntimeServiceAnswerCheck
 import cc.noharry.agent.kernel.core.tools.answers
 import cc.noharry.agent.kernel.core.tools.backendToolCallResult
 import cc.noharry.agent.kernel.core.tools.structuredFailure
 
 /** A failure the provider already explains (`{"ok":false,"code":…}`) reaches the model as it is, not as an escaped string. */
-internal fun ToolCallResult.toBackendToolResult(serviceAnswer: ServiceAnswerCheck = RuntimeServiceAnswerCheck): String =
+internal fun ToolCallResult.toBackendToolResult(serviceAnswer: ServiceAnswerCheck = ServiceAnswerCheck.NONE): String =
     backendOutcome(serviceAnswer).json
 
 /** What reaches the model ([json]), and whether it is a result the service gave as its answer to a problem. */

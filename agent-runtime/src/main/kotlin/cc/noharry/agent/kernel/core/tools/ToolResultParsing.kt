@@ -72,11 +72,6 @@ internal fun structuredFailure(resultJson: String, retryable: Boolean): String? 
     return if ("retryable" in root) resultJson else JsonObject(root + ("retryable" to JsonPrimitive(retryable))).toString()
 }
 
-/** The runtime's own [ServiceAnswerCheck]: an MCP result with a `structuredContent.status.name`. */
-internal object RuntimeServiceAnswerCheck : ServiceAnswerCheck {
-    override fun isServiceAnswer(resultJson: String): Boolean = isMcpBusinessResult(resultJson)
-}
-
 /** [ServiceAnswerCheck.isServiceAnswer], a check that throws taken as no. */
 @Suppress("TooGenericExceptionCaught") // A host's check may throw anything; the call is then no service's answer.
 internal fun ServiceAnswerCheck.answers(resultJson: String): Boolean =

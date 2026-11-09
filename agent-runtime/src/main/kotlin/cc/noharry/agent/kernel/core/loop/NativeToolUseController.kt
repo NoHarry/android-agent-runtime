@@ -7,7 +7,6 @@ import cc.noharry.agent.spi.model.*
 import cc.noharry.agent.spi.reliability.RuntimeErrorCode
 import cc.noharry.agent.kernel.core.state.normalizeTransportResult
 import cc.noharry.agent.kernel.core.tools.*
-import cc.noharry.agent.kernel.core.tools.RuntimeServiceAnswerCheck
 import cc.noharry.agent.kernel.core.tools.answers
 import cc.noharry.agent.kernel.core.trace.*
 import java.util.concurrent.TimeUnit
@@ -26,7 +25,7 @@ internal class NativeToolUseController(
     private val toolExecutionLimiter: ToolExecutionLimiter = ToolExecutionLimiter(),
     private val failureBreaker: ToolCallFailureBreaker = ToolCallFailureBreaker(),
     private val obligationLedger: RuntimeObligationLedger = RuntimeObligationLedger(),
-    private val serviceAnswer: ServiceAnswerCheck = RuntimeServiceAnswerCheck,
+    private val serviceAnswer: ServiceAnswerCheck = ServiceAnswerCheck.NONE,
 ) {
     private val toolResultImages = ToolResultImageStash()
 
