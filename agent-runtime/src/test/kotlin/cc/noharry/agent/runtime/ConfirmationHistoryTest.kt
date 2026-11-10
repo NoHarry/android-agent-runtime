@@ -124,16 +124,18 @@ class ConfirmationHistoryTest {
             }
     }
 
-    @Test fun aFailedApprovedCallEndsTheTurnAndTheNextTurnSeesIt() = runBlocking<Unit> {
-        val script = Script(listOf(unlock, answer))
-        runtime(script, Door("""{"ok":false,"code":"DOOR_JAMMED"}""")).use { runtime ->
+    @Test fun anApprovedCallThatFailsIsAnsweredForInTheSameTurnAndTheNextTurnSeesIt() = runBlocking<Unit> {
+        val script = Script(listOf(unlock, answer, answer))
+        val door = Door("""{"ok":false,"code":"DOOR_JAMMED"}""")
+        runtime(script, door).use { runtime ->
             val thread = runtime.startThread(ThreadOptions(threadId = "s1"))
             val events = thread.collectTurn("r1", "开主驾车门") { it.approve() }
-            assertEquals("DOOR_JAMMED", (events.last() as ThreadEvent.TurnFailed).error.code)
+            assertEquals(TurnStatus.COMPLETED, (events.last() as ThreadEvent.TurnCompleted).result.status)
+            // The model read the failure before it answered, and the one approval ran the call once.
+            assertTrue(script.seen[1].messages.any { it.role == "tool" && it.content.contains("DOOR_JAMMED") })
+            assertEquals(1, door.calls.size)
             thread.run("门开了吗")
-            val next = script.seen[1].messages
-            assertTrue(next.any { it.role == "tool" && it.content.contains("DOOR_JAMMED") })
-            assertTrue(next.any { it.role == "user" && it.content.contains("ended without an answer") })
+            assertTrue(script.seen[2].messages.any { it.role == "tool" && it.content.contains("DOOR_JAMMED") })
         }
     }
 

@@ -837,15 +837,8 @@ internal class NativeToolLoop(
         val messages = restoredHistory(pending).toMutableList()
         messages += pending.toCallMessage()
         messages += pending.toToolCallEvent().toToolResultMessage(executed.resultJson, executed.images)
-        if (deniedCode == null && !executed.parsed.ok) {
-            // The user approved this call, not further attempts: the run stops, and the session sees the call and its result.
-            persistHistory(pending.context.runId, restoredHistory(pending), pending.budgetSnapshot)
-            sessionHistory?.record(pending.context.runId, messages + failedRunNotice(executed.parsed.code ?: "TOOL_FAILED"))
-            val outcome = failed(pending.context.runId, executed.parsed)
-                .copy(completion = obligationLedger.summarize(RuntimeCompletionOutcome.FAILED))
-                .toTerminalOutcome(publicEvents.snapshot())
-            return emitTerminalProbeEvents(outcome)
-        }
+        // An approved call that fails goes on like any failed call: the model reads the failure and answers for it. The
+        // approval was for that call alone; another attempt that needs one asks again.
         persistHistory(pending.context.runId, messages, pending.budgetSnapshot)
         return when (
             val outcome = continueLoop(

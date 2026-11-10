@@ -340,14 +340,10 @@ class RuntimeHookPolicyTest {
     }
 
     @Test
-    fun confirmedBackendMcpFailuresStopResumeBeforeAnotherModelRound() = runBlocking {
-        val failures = listOf(
-            """{"ok":true,"isError":true}""" to MCP_TOOL_IS_ERROR_CODE,
-            """{"ok":true,"result":{"isError":true}}""" to MCP_TOOL_IS_ERROR_CODE,
-            "not-json" to MCP_RESULT_INVALID_JSON_CODE,
-        )
+    fun aConfirmedBackendCallThatFailsGoesBackToTheModel() = runBlocking {
+        val failures = listOf("""{"ok":true,"isError":true}""", """{"ok":true,"result":{"isError":true}}""", "not-json")
 
-        failures.forEach { (resultJson, expectedCode) ->
+        failures.forEach { resultJson ->
             val requests = mutableListOf<ModelRequest>()
             val backend = LoopMcpProvider(
                 resultJson = resultJson,
@@ -361,9 +357,9 @@ class RuntimeHookPolicyTest {
                 .build()
 
             val events = runtime.use { it.startThread().collectApproving(agentRequest().input) }
-            val failure = (events.last() as ThreadEvent.TurnFailed).error
-            assertEquals(expectedCode, failure.code)
-            assertEquals(2, requests.size)
+            // The model reads the failure and answers for it; the call ran once, on the one approval.
+            assertEquals(TurnStatus.COMPLETED, (events.last() as ThreadEvent.TurnCompleted).result.status)
+            assertTrue(requests.last().messages.any { it.role == "tool" && it.toolName?.endsWith("set_temperature") == true })
             assertEquals(listOf("set_temperature"), backend.calledTools)
         }
     }

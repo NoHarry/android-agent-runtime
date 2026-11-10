@@ -11,6 +11,10 @@ called out; a patch release does not break it.
   policies; `session/load` replays a stored conversation. The client's file system, terminals and MCP servers are not
   used. `samples/acp-jvm` is an agent a client starts as a subprocess.
 
+- **An approved call that fails goes back to the model.** A tool call the user approved and that then failed used to
+  end the turn as failed, with the tool's error as the turn's; the model now reads the failure like any other and
+  answers for it in the same turn. The approval still covers that one call: another attempt that needs one asks again.
+
 - **No failed tool result is a service's answer by default.** `LoopSettings.serviceAnswer` defaults to
   `ServiceAnswerCheck.NONE`; it took MCP results with a `structuredContent.status.name` before. A host whose services
   answer that way sets `LoopSettings(serviceAnswer = McpStatusServiceAnswerCheck)`.
