@@ -1,6 +1,6 @@
 # Plugin packages a person downloads
 
-Status: design for review, 2026-11-09. Nothing here is built. It follows `app-server-split.md` section 6: the plugin
+Status: approved 2026-11-09 (section 7); being built in the Bothy repository, branch `codex/api-redesign`. It follows `app-server-split.md` section 6: the plugin
 kernel exists; this is step A (declarative packages), with the places step B (sandboxed scripts) will use left open.
 
 A package is a plugin that carries no native code: skills, rules, addresses of MCP servers, templates. A person
@@ -131,11 +131,9 @@ one can tell it to misuse tools the person already has. The limits:
   package from an address a client gives it.
 - Native code in a package: not loaded.
 
-## 7. For the owner to decide
+## 7. Decided by the owner (2026-11-09)
 
-1. Whether a package signed by an unknown publisher may be installed at all (this design: yes, behind a second
-   warning), or only packages from `trustedPublishers`.
-2. Whether a package's skill may ever be preloaded into the system prompt (this design: only from a trusted publisher).
-3. The file extension and the id rule (`.agentplugin`, reverse-domain).
-4. Whether packages may point at MCP servers on the device or the local network (this design: yes, named explicitly
-   and shown as such).
+1. A package signed by a publisher the host does not know may be installed, behind a second warning.
+2. A package's skill may be preloaded into the system prompt only when its publisher is trusted.
+3. The file extension is `.agentplugin` and ids are reverse-domain names.
+4. A package may point at MCP servers on the device or the local network, named explicitly and shown as such.
