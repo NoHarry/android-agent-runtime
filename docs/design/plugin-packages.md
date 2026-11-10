@@ -242,7 +242,7 @@ Through the engine's bridge (`tools.call(name, arguments)`), under names kept fo
 
 | Call | Does | Limited by |
 |---|---|---|
-| `host.http` `{method, url, headers, body}` | One HTTPS request, answer as `{status, headers, body}` | Only hosts in `network` (the device itself over HTTP when named, as for MCP servers); no redirects followed; request and answer capped (64 KiB sent, 256 KiB read); 15 s |
+| `host.http` `{method, url, headers, body}` | One HTTPS request, answer as `{status, headers, body}` | Only hosts in `network` (the device itself over HTTP when named, as for MCP servers); no redirects followed; request and answer capped (64 KiB sent, 256 KiB read); what is left of the call's time |
 | `host.tool` `{name, arguments}` | Calls one of the host's tools | Only tools in `hostTools`, and only tools that say they read (`effectKind` read-only): a script cannot act through the host's tools in this step |
 | `host.log` `{message}` | A line in the app's log, marked as the package's | Length capped |
 
@@ -252,7 +252,10 @@ Through the engine's bridge (`tools.call(name, arguments)`), under names kept fo
 - The engine runs a script again from the start after each host call, replaying earlier answers in order, so a script
   must be deterministic between calls (no branching on the time or on random numbers). One that is not stops with an
   error, as `exec_js` does today.
-- Limits per call of a tool: 10 s in all, 16 MiB of memory, 20 host calls, 64 KiB returned.
+- Limits per call of a tool: its time in all, host calls included; 16 MiB of memory; 20 host calls; 64 KiB returned.
+  The time is the tool's to ask for (`"timeoutSeconds"` in the manifest, 1 to 120, 10 when left out) up to the host's
+  ceiling (`AppServerConfig.maxScriptToolSeconds`, 30 by default): a tool that asks for more runs with the ceiling. The
+  other limits protect the host and are not a package's to set.
 
 ### Asking first
 
@@ -286,8 +289,10 @@ from the text above:
   (`web_search`, `web_fetch`, files) are not tool providers and cannot be called from a script, so
   `"hostTools": ["web_search"]` does not work; that would take a change to the runtime's interfaces. A name in
   `hostTools` is the whole name (`mcp__home__get_home_status`), or the tool's own when one server has it.
-- **One time limit, not two.** The 10 s of a call include its host calls, so a request gets what is left of them and
-  the separate 15 s never applies.
+- **One time limit, and the tool asks for it** (939ca43f). A call's time includes its host calls, so a request gets
+  what is left of it; a separate limit per request could never apply and is gone. On the tablet a tool asking 3 s
+  whose script never ends stopped 3.0 s after its approval, and one asking 120 s stopped at the host's 30.0 s, each
+  failure naming the seconds in effect; a client is shown both numbers (`PackageTool`).
 - `host.log` keeps its lines in the sandbox and writes them when the call ends; they are lost when the call ends on
   time or memory.
 - Added: a name that reads as on the internet must resolve to public addresses; where an answer repeats a secret's
