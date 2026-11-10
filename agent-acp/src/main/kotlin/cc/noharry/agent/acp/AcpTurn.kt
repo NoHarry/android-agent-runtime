@@ -1,3 +1,5 @@
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
+
 package cc.noharry.agent.acp
 
 import cc.noharry.agent.Approval
@@ -27,13 +29,15 @@ internal class AcpTurn(
     private val streamed = mutableMapOf<String, Int>()
     private val announced = mutableSetOf<String>()
     private val said = mutableSetOf<String>()
+    private val asked = mutableSetOf<String>()
     private var lastTool: ThreadItem.ToolCall? = null
 
     suspend fun on(event: ThreadEvent) {
         when (event) {
             is ThreadEvent.ItemStarted -> started(event.item)
             is ThreadEvent.ItemDelta -> delta(event.itemId, event.text)
-            is ThreadEvent.ItemUpdated -> (event.item as? ThreadItem.ToolCall)?.let { tool(it) }
+            // Output so far comes with the completed call, not again with every update.
+            is ThreadEvent.ItemUpdated -> (event.item as? ThreadItem.ToolCall)?.let { tool(it.copy(output = null)) }
             is ThreadEvent.ItemCompleted -> completed(event.item, replay = false)
             else -> Unit
         }
@@ -48,6 +52,8 @@ internal class AcpTurn(
             is ThreadItem.Reasoning -> text(THOUGHT, item.id, item.text)
             is ThreadItem.ToolCall -> tool(item)
             is Approval -> askPermission(item)
+            // A question asked while the turn goes on shows when it is asked, not when it has lapsed.
+            is Question -> if (item.async && asked.add(item.id)) chunk(MESSAGE, item.id, question(item))
             else -> Unit
         }
     }
@@ -67,7 +73,7 @@ internal class AcpTurn(
             is ThreadItem.WebSearch -> finishedTool(item.id, "${messages.search}: ${item.query}", "search")
             is ThreadItem.FileChange -> finishedTool(item.id, "${item.path} (+${item.added} -${item.removed})", "edit")
             // The model usually says a blocking question as its message too; say it only when it did not.
-            is Question -> if (item.async || item.text.trim() !in said) chunk(MESSAGE, item.id, question(item))
+            is Question -> if (asked.add(item.id) && (item.async || item.text.trim() !in said)) chunk(MESSAGE, item.id, question(item))
             else -> Unit
         }
     }
@@ -124,18 +130,22 @@ internal class AcpTurn(
                 add(option(REJECT_ONCE, messages.reject, "reject_once"))
             })
         }
-        scope.launch {
-            val outcome = try {
-                connection.request("session/request_permission", params)["outcome"] as? JsonObject
-            } catch (_: AcpError) {
-                null
-            }
-            // A cancelled outcome comes with session/cancel, which interrupts the turn; an error leaves it to expire.
+        scope.launch { decide(approval, params) }
+    }
+
+    /** A cancelled outcome comes with session/cancel, which interrupts the turn; a failure leaves it to expire. */
+    @Suppress("TooGenericExceptionCaught") // Nothing here may end the connection's other sessions.
+    private suspend fun decide(approval: Approval, params: JsonObject) {
+        try {
+            val outcome = connection.request("session/request_permission", params)["outcome"] as? JsonObject
             when (outcome?.takeIf { it.text("outcome") == "selected" }?.text("optionId")) {
                 ALLOW_ONCE -> approval.approve(ApprovalScope.ONCE)
                 ALLOW_ALWAYS -> approval.approve(ApprovalScope.THREAD)
                 REJECT_ONCE -> approval.deny()
             }
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
         }
     }
 

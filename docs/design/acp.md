@@ -76,7 +76,8 @@ agent.serve(StreamAcpTransport(i, o))   // 任意一对流，比如 Android 的 
 
 ## 6. 后续
 
-- 用 Zed 实测 `samples/acp-jvm`，按实际表现调整标题、kind 和权限选项。
+- 用 Zed 实测 `samples/acp-jvm`，按实际表现调整标题、kind 和权限选项。在这之前，`AcpAgent` 和它的配置标为 experimental。
+- 批准默认 60 秒过期，对编辑器里的弹窗偏短；要么让宿主能配，要么 ACP 会话用更长的时限。
 - Android 上的 socket 传输示例，加上 stdio 到 socket 的桥。
 - 会话配置项；`session/list`、`session/resume`、`session/close`（规范里有，这一版没做）。
 - 插话：等规范有对应方法，或者用扩展方法。

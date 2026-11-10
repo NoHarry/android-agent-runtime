@@ -67,7 +67,18 @@ internal class AcpConnection(private val transport: AcpTransport) {
         waiting.values.forEach { it.completeExceptionally(AcpError(INTERNAL_ERROR, "The connection closed")) }
     }
 
-    private suspend fun write(message: JsonObject) = writing.withLock { transport.send(message.toString()) }
+    private suspend fun write(message: JsonObject) = writing.withLock { transport.sendOrDrop(message.toString()) }
+}
+
+/** A message that cannot be written is dropped: the client is gone, and the read side ends the connection. */
+@Suppress("TooGenericExceptionCaught") // A host's transport may fail with anything.
+private suspend fun AcpTransport.sendOrDrop(message: String) {
+    try {
+        send(message)
+    } catch (cancelled: kotlinx.coroutines.CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
+    }
 }
 
 private fun CompletableDeferred<JsonObject>.settle(message: JsonObject) {

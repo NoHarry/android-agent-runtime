@@ -1,3 +1,5 @@
+@file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
+
 package cc.noharry.agent.acp
 
 import cc.noharry.agent.AgentRuntime
@@ -7,6 +9,7 @@ import cc.noharry.agent.ThreadEvent
 import cc.noharry.agent.ThreadOptions
 import cc.noharry.agent.TurnError
 import cc.noharry.agent.TurnStatus
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -28,15 +31,19 @@ import kotlinx.serialization.json.put
  * What the agent tells a client about itself and how its sessions start. [threadOptions] gives a new session's
  * thread its defaults from the client's working directory (the model, a workspace, instructions).
  */
+@ExperimentalAgentRuntimeApi
 data class AcpAgentConfig(
     val name: String = "agent",
     val title: String? = null,
     val version: String = "0",
     val threadOptions: (cwd: String) -> ThreadOptions = { ThreadOptions() },
+    /** Whether clients may send images; off for a model that takes none. */
+    val imagePrompts: Boolean = true,
     val messages: AcpAgentMessages = AcpAgentMessages(),
 )
 
 /** The words a client shows for the agent's choices: English unless the host words them in its own language. */
+@ExperimentalAgentRuntimeApi
 data class AcpAgentMessages(
     val allowOnce: String = "Allow",
     val allowAlways: String = "Always allow",
@@ -55,7 +62,10 @@ data class AcpAgentMessages(
  *
  * The client's file system, terminals and MCP servers are not used: the agent works with the runtime's own workspace
  * and tools. Audio prompts are refused.
+ *
+ * Experimental until it has been used with the clients it is for; its configuration may change in a minor release.
  */
+@ExperimentalAgentRuntimeApi
 class AcpAgent(private val runtime: AgentRuntime, private val config: AcpAgentConfig = AcpAgentConfig()) {
     /** Serves one connection until the client closes it; turns still running then are interrupted. */
     suspend fun serve(transport: AcpTransport): Unit = coroutineScope {
@@ -68,6 +78,7 @@ class AcpAgent(private val runtime: AgentRuntime, private val config: AcpAgentCo
         } finally {
             session.connection.closed()
             coroutineContext.job.cancelChildren()
+            runCatching { transport.close() }
         }
     }
 
@@ -83,6 +94,10 @@ internal class AcpServing(
     private val scope: CoroutineScope,
 ) {
     private val threads = ConcurrentHashMap<String, AgentThread>()
+    /** Prompts accepted and not answered yet, by session, and the sessions whose next turn is to be cancelled. */
+    private val prompts = mutableMapOf<String, Int>()
+    private val cancels = mutableSetOf<String>()
+    private val promptLock = Any()
 
     suspend fun accept(line: String) {
         val message = try { Json.parseToJsonElement(line) as? JsonObject } catch (_: IllegalArgumentException) { null }
@@ -90,12 +105,25 @@ internal class AcpServing(
         val method = message.text("method") ?: return connection.resolve(message)
         val params = message["params"] as? JsonObject ?: JsonObject(emptyMap())
         val id = message["id"].orNull()
-        // Each request runs on its own: a prompt lasts a whole turn while cancels and permission answers come in.
-        scope.launch { if (id == null) notified(method, params) else answer(id, method, params) }
+        // Notifications are handled in the order they came; each request runs on its own, since a prompt lasts a whole
+        // turn while cancels and permission answers come in.
+        if (id == null) return notified(method, params)
+        if (method == "session/prompt") params.text("sessionId")?.let { session -> synchronized(promptLock) { prompts[session] = (prompts[session] ?: 0) + 1 } }
+        scope.launch { answer(id, method, params) }
     }
 
+    @Suppress("TooGenericExceptionCaught") // A notification has nobody to report to, and must not end the connection.
     private suspend fun notified(method: String, params: JsonObject) {
-        if (method == "session/cancel") params.text("sessionId")?.let { threads[it]?.interrupt() }
+        if (method != "session/cancel") return
+        val id = params.text("sessionId") ?: return
+        // A prompt accepted but not started yet is cancelled when its turn starts.
+        synchronized(promptLock) { if ((prompts[id] ?: 0) > 0) cancels += id }
+        try {
+            threads[id]?.interrupt()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+        }
     }
 
     private suspend fun answer(id: JsonElement, method: String, params: JsonObject) {
@@ -124,7 +152,7 @@ internal class AcpServing(
         put("protocolVersion", PROTOCOL_VERSION)
         put("agentCapabilities", buildJsonObject {
             put("loadSession", true)
-            put("promptCapabilities", buildJsonObject { put("image", true); put("audio", false); put("embeddedContext", true) })
+            put("promptCapabilities", buildJsonObject { put("image", config.imagePrompts); put("audio", false); put("embeddedContext", true) })
         })
         put("agentInfo", buildJsonObject {
             put("name", config.name); config.title?.let { put("title", it) }; put("version", config.version)
@@ -154,12 +182,24 @@ internal class AcpServing(
 
     private suspend fun prompt(params: JsonObject): JsonObject {
         val id = params.requireText("sessionId")
+        try {
+            return runPrompt(id, params)
+        } finally {
+            synchronized(promptLock) {
+                val left = (prompts[id] ?: 1) - 1
+                if (left > 0) prompts[id] = left else { prompts -= id; cancels -= id }
+            }
+        }
+    }
+
+    private suspend fun runPrompt(id: String, params: JsonObject): JsonObject {
         val thread = threads[id] ?: throw AcpError(INVALID_PARAMS, "Unknown session $id: create or load it first")
         val input = promptInput(params["prompt"] as? JsonArray ?: throw AcpError(INVALID_PARAMS, "prompt is required"))
         val turn = AcpTurn(connection, id, config.messages, scope)
         var status = TurnStatus.FAILED
         var error: TurnError? = null
         thread.runStreamed(input).collect { event ->
+            if (event is ThreadEvent.TurnStarted && synchronized(promptLock) { cancels.remove(id) }) thread.interrupt()
             turn.on(event)
             if (event is ThreadEvent.TurnCompleted) { status = event.result.status; error = event.result.error }
             if (event is ThreadEvent.TurnFailed) error = event.error
