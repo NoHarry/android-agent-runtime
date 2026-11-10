@@ -215,15 +215,18 @@ internal object DirectA2aJsonCodec {
         "input-required", "input_required" -> A2aTask.Status.INPUT_REQUIRED
         "completed" -> A2aTask.Status.COMPLETED
         "canceled", "cancelled" -> A2aTask.Status.CANCELLED
-        "failed", "rejected" -> A2aTask.Status.FAILED
+        "failed" -> A2aTask.Status.FAILED
+        "rejected" -> A2aTask.Status.REJECTED
         else -> A2aTask.Status.UNKNOWN
     }
 
     private fun isTask(root: JsonObject): Boolean =
         root["status"] != null && root.string("id") != null
 
-    private fun A2aTask.Status.isTerminal(): Boolean =
-        this == A2aTask.Status.COMPLETED || this == A2aTask.Status.CANCELLED || this == A2aTask.Status.FAILED
+    private fun A2aTask.Status.isTerminal(): Boolean = when (this) {
+        A2aTask.Status.COMPLETED, A2aTask.Status.CANCELLED, A2aTask.Status.FAILED, A2aTask.Status.REJECTED -> true
+        A2aTask.Status.SUBMITTED, A2aTask.Status.WORKING, A2aTask.Status.INPUT_REQUIRED, A2aTask.Status.UNKNOWN -> false
+    }
 
     private fun JsonObject.string(name: String): String? = this[name]?.jsonPrimitive?.contentOrNull
 

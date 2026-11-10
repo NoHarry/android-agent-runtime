@@ -5,6 +5,12 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **A remote A2A task that refuses is `REJECTED`, not `FAILED`.** `A2aTask.Status` gains `REJECTED` (a new
+  constant: a host's exhaustive `when` over the statuses needs a branch), terminal like `FAILED`; the direct client and
+  `agent-a2a-client-official` report a task in the `rejected` state with it, where both reported `FAILED`. On the
+  serving side, `A2aOutput.Result` says what its states mean: `COMPLETED`, the task ended with an answer, which may
+  say that part of it was not done; `REJECTED`, the agent found it cannot proceed.
+
 - **Agent Client Protocol.** The new optional module `agent-acp` serves a runtime's threads to ACP clients (editors
   such as Zed): `AcpAgent(runtime).serveStdio()`, or `serve(StreamAcpTransport(input, output))` over any stream pair.
   Sessions are threads, prompts are turns, approvals are permission requests and the session modes are the approval
