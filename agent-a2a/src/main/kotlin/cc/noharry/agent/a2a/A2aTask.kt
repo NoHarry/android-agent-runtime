@@ -24,6 +24,8 @@ public data class A2aTask(
         CANCELLED,
         /** Work failed. */
         FAILED,
+        /** The remote agent found it cannot proceed and did not do the task. */
+        REJECTED,
         /** Remote state was not recognized. */
         UNKNOWN,
     }

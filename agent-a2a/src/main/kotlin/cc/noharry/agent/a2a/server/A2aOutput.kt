@@ -16,7 +16,10 @@ sealed interface A2aOutput {
     /** Nonterminal question projection. Reply with the same taskId/contextId and metadata.questionId. */
     data class Question(val questionId: String, val text: String, val options: List<String>, val state: String) : A2aOutput
 
-    /** Display-only final text (channel=display, kind=response). Completed requires confirmed business success. */
+    /**
+     * Display-only final text (channel=display, kind=response). [State.COMPLETED]: the task ended with an answer, which
+     * may say that part of it was not done. [State.REJECTED]: the agent found it cannot proceed with the task.
+     */
     data class Result(val text: String, val state: State = State.COMPLETED) : A2aOutput
 
     /** Response states. Input-required ends this stream; reply as a new message in the same context. */

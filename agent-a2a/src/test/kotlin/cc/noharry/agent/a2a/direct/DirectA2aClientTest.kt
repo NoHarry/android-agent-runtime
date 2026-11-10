@@ -137,6 +137,20 @@ class DirectA2aClientTest {
     }
 
     @Test
+    fun rejectedTaskIsTerminalAndApartFromFailed() = runBlocking {
+        server.dispatcher = sseDispatcher { id -> "data: ${rpcEnvelope(id, taskJson("rejected"))}\n\n" }
+        client().use { client ->
+            val events = client.streamMessage(remote(), messageRequest()).toList()
+            assertEquals(A2aTask.Status.REJECTED, (events[0] as A2aStreamEvent.Task).value.status)
+            assertEquals(A2aStreamEvent.Completed, events[1])
+        }
+        server.dispatcher = rpcDispatcher { taskJson("failed") }
+        client().use { client ->
+            assertEquals(A2aTask.Status.FAILED, (client.getTask(remote(), "t1") as A2aResult.Success).value.status)
+        }
+    }
+
+    @Test
     fun rpcErrorMapsToStableRedactedError() = runBlocking {
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {

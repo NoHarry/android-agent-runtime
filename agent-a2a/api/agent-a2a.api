@@ -485,6 +485,7 @@ public final class cc/noharry/agent/a2a/A2aTask$Status : java/lang/Enum {
 	public static final field COMPLETED Lcc/noharry/agent/a2a/A2aTask$Status;
 	public static final field FAILED Lcc/noharry/agent/a2a/A2aTask$Status;
 	public static final field INPUT_REQUIRED Lcc/noharry/agent/a2a/A2aTask$Status;
+	public static final field REJECTED Lcc/noharry/agent/a2a/A2aTask$Status;
 	public static final field SUBMITTED Lcc/noharry/agent/a2a/A2aTask$Status;
 	public static final field UNKNOWN Lcc/noharry/agent/a2a/A2aTask$Status;
 	public static final field WORKING Lcc/noharry/agent/a2a/A2aTask$Status;

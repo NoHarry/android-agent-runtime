@@ -322,23 +322,9 @@ internal class DefaultOfficialSdkBridge(
     private fun mapTask(task: Task): A2aTask = A2aTask(
         id = task.id(),
         contextId = task.contextId(),
-        status = mapState(task.status().state()),
+        status = officialTaskStatus(task.status().state()),
         statusMessage = task.status().message()?.let(::mapMessage),
     )
-
-    private fun mapState(state: TaskState): A2aTask.Status = when (state) {
-        TaskState.TASK_STATE_SUBMITTED -> A2aTask.Status.SUBMITTED
-        TaskState.TASK_STATE_WORKING -> A2aTask.Status.WORKING
-        TaskState.TASK_STATE_INPUT_REQUIRED,
-        TaskState.TASK_STATE_AUTH_REQUIRED,
-        -> A2aTask.Status.INPUT_REQUIRED
-        TaskState.TASK_STATE_COMPLETED -> A2aTask.Status.COMPLETED
-        TaskState.TASK_STATE_CANCELED -> A2aTask.Status.CANCELLED
-        TaskState.TASK_STATE_FAILED,
-        TaskState.TASK_STATE_REJECTED,
-        -> A2aTask.Status.FAILED
-        TaskState.UNRECOGNIZED -> A2aTask.Status.UNKNOWN
-    }
 
     private fun mapEvent(event: ClientEvent): MappedEvent = when (event) {
         is MessageEvent -> MappedEvent(A2aStreamEvent.Message(mapMessage(event.message)), terminal = true)
@@ -383,4 +369,19 @@ internal class DefaultOfficialSdkBridge(
         const val HTTP_UNAUTHORIZED = 401
         const val HTTP_FORBIDDEN = 403
     }
+}
+
+/** The facade's status for an official SDK task [state]. */
+@OptIn(ExperimentalA2aClientApi::class)
+internal fun officialTaskStatus(state: TaskState): A2aTask.Status = when (state) {
+    TaskState.TASK_STATE_SUBMITTED -> A2aTask.Status.SUBMITTED
+    TaskState.TASK_STATE_WORKING -> A2aTask.Status.WORKING
+    TaskState.TASK_STATE_INPUT_REQUIRED,
+    TaskState.TASK_STATE_AUTH_REQUIRED,
+    -> A2aTask.Status.INPUT_REQUIRED
+    TaskState.TASK_STATE_COMPLETED -> A2aTask.Status.COMPLETED
+    TaskState.TASK_STATE_CANCELED -> A2aTask.Status.CANCELLED
+    TaskState.TASK_STATE_FAILED -> A2aTask.Status.FAILED
+    TaskState.TASK_STATE_REJECTED -> A2aTask.Status.REJECTED
+    TaskState.UNRECOGNIZED -> A2aTask.Status.UNKNOWN
 }
