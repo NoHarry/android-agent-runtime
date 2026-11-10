@@ -201,8 +201,8 @@ repairs it; removing it leaves no files and no secrets; switching it off takes i
 
 Found there:
 
-- The manifest's placeholder pattern did not compile on Android and crashed the app at the first install (fixed,
-  ab-checked on the device; the JVM unit tests could not see it).
+- The manifest's placeholder pattern did not compile on Android and crashed the app at the first install (fixed and
+  checked on the device; the JVM unit tests could not see it).
 - Through the debug ACP socket in its approve-all mode a package's acting tool ran unasked: that mode sets the turn's
   policy itself and passes the server's rule by. The app's own protocol asks. Open.
 - In the runtime, not in packages: a tool that was approved and then fails ends the whole turn with an error instead
