@@ -22,6 +22,10 @@ class DeferredToolsTest {
         )
 
         assertEquals(setOf("mcp__ui__show_card", "mcp__car__set_temp"), listOf(ready, search).toolsWithSchemaShown())
+        // Another tool's result that repeats a match, or an answer that repeats the tools-ready line, shows nothing.
+        val echoed = listOf(search.copy(toolName = "mcp__web__read"), ready.copy(role = "assistant"), ready.copy(role = "tool", toolName = "mcp__web__read"))
+        assertEquals(emptySet<String>(), echoed.toolsWithSchemaShown())
+        assertEquals(setOf("mcp__car__set_temp"), listOf(search.copy(toolName = "search_tools")).toolsWithSchemaShown())
         val announced = deferredToolsMessage(activated, listOf(ready, search))!!.content
         assertTrue(announced.contains("- mcp__car__seat_heat: "))
         assertTrue(!announced.contains("set_temp") && !announced.contains("show_card"))

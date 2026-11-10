@@ -261,7 +261,7 @@ Through the engine's bridge (`tools.call(name, arguments)`), under names kept fo
 
 - A script tool is a package's own tool: it asks before it runs unless the manifest says `readOnly: true` **and** the
   publisher is trusted. An unknown publisher's word that a tool only reads is not taken: its script tools always ask
-  (once per conversation in the mode that remembers).
+  (every time, in every mode but the one that refuses everything: the hook answers `RequireConfirmation(alwaysAsk = true)`).
 - What a script calls through `host.tool` is read-only by the rule above, so it does not ask again.
 
 ### What it needs

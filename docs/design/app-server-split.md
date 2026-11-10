@@ -261,6 +261,11 @@ across the removal of the `TTS:` marker; secrets are encrypted before plugins ar
 hold 0.5.0; scripts calling the runtime's own tools, limits on how often a package's tools run, and compiled code in
 packages come after 0.5.0.
 
+Decided on 2026-11-10 as well, for the app server: a call of a tool that does not say it only reads asks first,
+whoever brought the tool (the host, a configured MCP server, the server's own file and script tools), and the approval
+mode then answers it, so "deny all" refuses every such call; the approval mode a person chose is kept across restarts,
+the host's setting being where a new installation starts; memory is a switch a bare host leaves off.
+
 The order: push what is local here after a review; clean defaults, the heavy optional modules behind plugins, and
 what listens on 8766; `AppServerConfig` for a simple host, a scripted model and the host guide; the "always ask"
 answer and ACP; the rest of the core onto the kernel; the three things seen in passing (an A2A task ending `failed`

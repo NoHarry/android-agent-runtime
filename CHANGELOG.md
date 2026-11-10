@@ -17,7 +17,7 @@ called out; a patch release does not break it.
   `INACTIVE_BACKEND_TOOL` ("find it with search_tools") although earlier turns still showed its schema, and while it was
   away the same words sent the model to a search that could not find it. The conversation now keeps the tool in its
   place: while its provider is off, unreachable or removed, a call is refused with the new
-  `RuntimeErrorCode.TOOL_UNAVAILABLE`, whose message says that searching or calling again will not help and to tell
+  `RuntimeErrorCode.TOOL_UNAVAILABLE` (a new constant: a host's exhaustive `when` over the codes needs a branch), whose message says that searching or calling again will not help and to tell
   the person; the first call of a turn that has the provider again runs. With `BackendTools.SEARCH` a turn also carries
   the tools whose schema the conversation's earlier turns show, so a conversation resumed from storage after a restart
   calls them without searching (behaviour change: a tool a memory hint brought is carried there once shown). With
@@ -31,8 +31,9 @@ called out; a patch release does not break it.
   alone and is never remembered: `ApprovalScope.THREAD` counts as ONCE, and `Approval.alwaysAsk` tells a client to offer
   no "always allow". A subagent has nobody to ask, so such a call in a child is refused whatever policy it inherited. The
   ACP agent sends a permission request for it in every mode, approve-all included, with allow once and reject only.
-  When several hooks ask about one call, it asks every time if one of them says so. Breaks binaries only: the data class
-  gains a third component; two-argument construction still compiles from Kotlin and Java.
+  When several hooks ask about one call, it asks every time if one of them says so. The data class gains a third
+  component: two-argument construction still compiles from Kotlin and Java, while compiled callers of `copy` and Java
+  source calling `copy(reason, prompt)` break.
 
 - **An approved call that fails goes back to the model.** A tool call the user approved and that then failed used to
   end the turn as failed, with the tool's error as the turn's; the model now reads the failure like any other and

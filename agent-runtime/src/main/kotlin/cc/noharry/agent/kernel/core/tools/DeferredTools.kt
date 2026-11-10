@@ -87,17 +87,22 @@ internal fun invalidCallToolResult(): String = buildJsonObject {
 internal fun deferredToolsMessage(activated: List<ToolActivationRecord>, conversation: List<ModelMessage>): ModelMessage? =
     deferredToolsMessage(activated, conversation.toolsWithSchemaShown())
 
-/** Tool names whose schema a message shows: a tools-ready line, or a search_tools match offered through call_tool. */
+/**
+ * Tool names whose schema a message shows: a tools-ready line, or a search_tools match offered through call_tool. Only
+ * the runtime's own messages count (its tools-ready message, the result of its search tool, which older history may
+ * hold without the tool's name): a result that names another tool and repeats those words shows nothing.
+ */
 internal fun List<ModelMessage>.toolsWithSchemaShown(): Set<String> = buildSet {
     for (message in this@toolsWithSchemaShown) {
-        if (message.content.startsWith(DEFERRED_TOOLS_HEADER)) {
+        if (message.role == "user" && message.content.startsWith(DEFERRED_TOOLS_HEADER)) {
             message.content.lineSequence().filter { it.startsWith("- ") }.forEach { add(it.removePrefix("- ").substringBefore(": ")) }
-        } else if (message.role == "tool" && message.content.contains(""""via":"call_tool"""")) {
+        } else if (message.role == "tool" && (message.toolName ?: SEARCH_TOOLS_NAME) == SEARCH_TOOLS_NAME && message.content.contains(""""via":"call_tool"""")) {
             SHOWN_MATCH_NAME.findAll(message.content).forEach { add(it.groupValues[1]) }
         }
     }
 }
 
+private const val SEARCH_TOOLS_NAME = "search_tools"
 private val SHOWN_MATCH_NAME = Regex(""""name":"([^"]+)","originalName"""")
 
 /**
