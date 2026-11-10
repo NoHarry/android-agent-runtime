@@ -30,6 +30,7 @@ internal class AcpTurn(
     private val announced = mutableSetOf<String>()
     private val said = mutableSetOf<String>()
     private val asked = mutableSetOf<String>()
+    private val toolStates = mutableMapOf<String, Pair<cc.noharry.agent.ItemStatus, Boolean>>()
     private var lastTool: ThreadItem.ToolCall? = null
 
     suspend fun on(event: ThreadEvent) {
@@ -70,7 +71,8 @@ internal class AcpTurn(
             is ThreadItem.Reasoning -> text(THOUGHT, item.id, item.text)
             is ThreadItem.UserMessage -> if (replay || item.steer) chunk(USER, item.id, item.text())
             is ThreadItem.ToolCall -> tool(item)
-            is ThreadItem.WebSearch -> finishedTool(item.id, "${messages.search}: ${item.query}", "search")
+            // A provider's own search reports some steps without a query; those say nothing to show.
+            is ThreadItem.WebSearch -> if (item.query.isNotBlank()) finishedTool(item.id, "${messages.search}: ${item.query}", "search")
             is ThreadItem.FileChange -> finishedTool(item.id, "${item.path} (+${item.added} -${item.removed})", "edit")
             // The model usually says a blocking question as its message too; say it only when it did not.
             is Question -> if (asked.add(item.id) && (item.async || item.text.trim() !in said)) chunk(MESSAGE, item.id, question(item))
@@ -104,6 +106,10 @@ internal class AcpTurn(
         }
         lastTool = call
         val first = announced.add(call.id)
+        // An update that changes nothing the client shows (a network note, output so far) is not worth a message.
+        val shown = call.status to (call.output != null)
+        if (!first && toolStates[call.id] == shown) return
+        toolStates[call.id] = shown
         update(JsonObject(mapOf("sessionUpdate" to kotlinx.serialization.json.JsonPrimitive(if (first) "tool_call" else "tool_call_update")) +
             toolCallFields(call, announce = first)))
     }
