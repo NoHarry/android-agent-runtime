@@ -23,6 +23,7 @@ rules.md               optional: lines added to the system rules while the plugi
 templates/…            optional: card and page templates (html, json)
 icon.png               optional
 scripts/…              reserved for step B
+code/…                 reserved for step C (section 6)
 ```
 
 `plugin.json`:
@@ -85,6 +86,7 @@ while the plugin runs. Asking for more in an update asks the person again.
 | `network: [hosts]` | Its MCP servers (and, in step B, its scripts) reach these hosts, over HTTPS | An MCP server whose address is not on the list is not mounted. Loopback and private addresses need the host named explicitly and are shown as "this device" or "your network" |
 | `secrets: [names]` | Values the person types once (a key, an account), kept encrypted with the package, placed into its headers or addresses as `${name}` | A package reads only its own secrets; they are deleted with it and never reach the model |
 | `hostTools: [names]` (step B) | Its scripts call these tools of the host | Reserved |
+| `nativeCode: true` (step C) | It carries compiled code that runs as the host's own | Reserved; cannot be limited, see section 6 |
 
 What a declarative package cannot do, with nothing to ask for: run code, read files, reach the host's other tools
 except by what its text tells the model.
@@ -129,7 +131,45 @@ one can tell it to misuse tools the person already has. The limits:
 - Scripts (step B): `scripts/` and `hostTools` are reserved so format 1 packages stay valid.
 - The catalog: where packages are listed, reviewed and updated from is a product of its own. The library installs a
   package from an address a client gives it.
-- Native code in a package: not loaded.
+- Compiled code (step C), reserved as below.
+
+### Compiled code in a package, later
+
+Bothy is distributed by its own channel, so loading compiled code from a download is allowed; it is the third kind of
+package, after declarative ones and scripts, and the only one this design cannot confine.
+
+| Kind | Carries | Who may publish | What limits it |
+|---|---|---|---|
+| A, declarative | Skills, rules, MCP server addresses, templates | Anyone (an unknown publisher behind a second warning) | The permissions of section 3, enforced |
+| B, scripts | Tools in JavaScript, in the sandbox | Anyone | The same, enforced by the sandbox's bridge |
+| C, compiled code | Kotlin compiled to DEX | Only a publisher the host trusts (`trustedPublishers`) | Nothing: it runs in the host's process with all the host may do |
+
+What is reserved in format 1 so that C needs no new format:
+
+- `code/` in the package: `code/classes.dex`, and `"code": { "entry": "<class name>", "api": "<plugin API version>" }`
+  in the manifest. The entry class implements `AppServerPlugin`; the kernel treats it as any other plugin.
+- The permission `"nativeCode": true`. A server that does not load code refuses a package that asks for it, so a
+  format 1 server never half-installs one.
+
+What C will have to settle before it is built, none of it decided here:
+
+- **A frozen binary interface.** The package compiles against a small API jar (`agent-api` and the plugin interface)
+  and links to the host's classes at run time. Those classes must be kept from the host's shrinker and renamer, and
+  their signatures must not change within an API version. `agent-api` already has an API comparison in CI; the plugin
+  interface would need the same, and to leave "experimental" first.
+- **The host's Kotlin, not the package's.** A package runs on the host's standard library and coroutines. The API
+  version in the manifest names what the package was built against, and the server refuses one it cannot serve.
+- **No confinement.** Class loaders separate names, not trust: compiled code can read the app's private files and
+  reach the network whatever its manifest says. That is why only a trusted publisher's package may carry code, and why
+  the install screen says so in those words.
+- **Unloading is not guaranteed.** One reference left (a thread, a listener, a cache) keeps the old code alive, so an
+  update may leave two versions in memory until the process restarts. The kernel stops the old plugin's additions;
+  it does not promise its classes are gone.
+- **What it cannot carry.** No manifest components, permissions or resources: a feature that needs a system
+  capability (the microphone, accessibility, notifications) stays a plugin built into the host. Loading from memory
+  needs Android 8; on Android 7 the code is loaded from a read-only file in private storage.
+
+Good first candidates are plugins of pure logic: a model service's adapter, tools that call web interfaces.
 
 ## 7. Decided by the owner (2026-11-09)
 
