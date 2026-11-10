@@ -241,7 +241,35 @@ What the kernel does not yet cover:
 - The catalog of plugins (index, review, updates) is a product of its own; the library offers installing a package
   from an address.
 
-## 7. Open questions
+## 7. Decided by the owner on 2026-11-10, and the order of work to 0.5.0
+
+Uploads to Maven Central are limited each month, in versions and in files, so 0.5.0 is released once, complete, with
+as few published artifacts as serve it. That settles two things the earlier sections left open.
+
+- **The whole core moves onto the plugin kernel before 0.5.0**, not across later versions: the server's own features
+  (plans, A2A, memory, images, pages, screen operation, device tools) become plugins, and the singletons that hold
+  state (`AppHost`, `RuntimeSession` and the rest, section 6) become services of the kernel. A later release only to
+  finish the split would spend uploads on nothing a host asked for.
+- **Plugins are modules in the source and few artifacts in a release.** A plugin stays its own Gradle module, so the
+  layering check keeps the core from importing it; what is published is to be settled before the first plugin is
+  uploaded, with one artifact for the first-party plugins of pure logic as the starting proposal (a host lists the
+  ones it wants; its shrinker drops the rest), and separate artifacts only where a plugin brings a manifest entry, a
+  permission or a native library a host must be able to leave out.
+
+Also decided: the approved-call change of 6c40996 stays; an "always ask" answer for a hook is added to the runtime
+before 0.5.0, and the ACP agent stops passing the server's asking rule by; old conversations are not kept readable
+across the removal of the `TTS:` marker; secrets are encrypted before plugins are offered to people, which does not
+hold 0.5.0; scripts calling the runtime's own tools, limits on how often a package's tools run, and compiled code in
+packages come after 0.5.0.
+
+The order: push what is local here after a review; clean defaults, the heavy optional modules behind plugins, and
+what listens on 8766; `AppServerConfig` for a simple host, a scripted model and the host guide; the "always ask"
+answer and ACP; the rest of the core onto the kernel; the three things seen in passing (an A2A task ending `failed`
+with a good reply, `deepseek/balance` refusing a key that chat accepts, `finish` with `blocked` ending as
+`REPLAY_FAILED`); the dry run of a third party, which is the gate; then the release, on the owner's word. After it:
+Bothy pushed, a screen for plugins, encrypted secrets, a catalog.
+
+## 8. Open questions
 
 - What listens on 8766 in a bare host.
 - Whether `agent-device-capabilities`, `agent-android-use` and `agent-exec-js` become `compileOnly` behind their
