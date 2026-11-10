@@ -1,6 +1,7 @@
 package cc.noharry.agent.androiduse
 
 import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.RuntimeEffectKind
 import cc.noharry.agent.spi.ToolCallContext
 import cc.noharry.agent.spi.ToolCallResult
 import cc.noharry.agent.spi.ToolPrefetchRequest
@@ -315,6 +316,16 @@ class AndroidUseToolProviderTest {
         ))
         assertTrue(primary.none { "search_tools" in it.description })
         assertTrue(primary[1].description.startsWith("Android Use: open an app (launch_app) or go home (key); otherwise one UI action"))
+    }
+
+    @OptIn(ExperimentalAgentRuntimeApi::class)
+    @Test
+    fun observingOnlyReadsAndActingActs() = runTest {
+        // A tool added without a kind fails here, whatever the host's options.
+        val expected = mapOf(ANDROID_OBSERVE to RuntimeEffectKind.READ_ONLY.name, ANDROID_ACTION to RuntimeEffectKind.MUTATING.name)
+
+        assertEquals(expected, provider().listTools().associate { it.name to it.effectKind })
+        assertEquals(expected, provider(AndroidUseOptions(fallbackOnly = false)).listTools().associate { it.name to it.effectKind })
     }
 
     @Test

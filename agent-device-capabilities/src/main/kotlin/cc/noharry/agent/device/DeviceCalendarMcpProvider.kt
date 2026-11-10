@@ -20,7 +20,7 @@ class DeviceCalendarMcpProvider internal constructor(
 ) : McpClientProvider, ToolCatalogCacheIdentity {
     override val serverId: String = CALENDAR_SERVER_ID
     override val displayName: String = "Device Calendar"
-    override val catalogCacheIdentity: String = "$CALENDAR_SERVER_ID:v2"
+    override val catalogCacheIdentity: String = "$CALENDAR_SERVER_ID:v3"
     @OptIn(ExperimentalAgentRuntimeApi::class)
     override val providerConcurrency: ProviderConcurrencyDeclaration =
         ProviderConcurrencyDeclaration.serialized()
@@ -168,6 +168,7 @@ private fun calendarSearchTool(): ToolDescriptor =
         title = "Search calendar events",
         description = "Search device calendar events by title.",
         inputSchemaJson = """{"type":"object","properties":{"query":{"type":"string"},"maxResults":{"type":"integer"}}}""",
+        effectKind = EFFECT_READ_ONLY,
     )
 
 private fun calendarCreateTool(): ToolDescriptor =
@@ -176,6 +177,7 @@ private fun calendarCreateTool(): ToolDescriptor =
         title = "Create calendar event",
         description = "Create a device calendar event, in the device's default calendar unless calendarId names one.",
         inputSchemaJson = """{"type":"object","required":["title","beginMillis","endMillis"],"properties":{"calendarId":{"type":"integer"},"title":{"type":"string"},"beginMillis":{"type":"integer","description":"Start, epoch milliseconds"},"endMillis":{"type":"integer","description":"End, epoch milliseconds"}}}""",
+        effectKind = EFFECT_MUTATING,
     )
 
 private fun failed(code: String, message: String, retryable: Boolean = false): ToolCallResult =

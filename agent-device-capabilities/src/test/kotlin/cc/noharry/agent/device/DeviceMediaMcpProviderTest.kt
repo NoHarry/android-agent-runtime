@@ -1,5 +1,7 @@
 package cc.noharry.agent.device
 
+import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
+import cc.noharry.agent.spi.RuntimeEffectKind
 import cc.noharry.agent.spi.ToolCallContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -17,6 +19,24 @@ class DeviceMediaMcpProviderTest {
         val tools = DeviceMediaMcpProvider(FakeMediaGateway()).listTools().map { it.name }
 
         assertEquals(listOf("media.status", "media.control", "media.volume", "media.play_from_search"), tools)
+    }
+
+    @OptIn(ExperimentalAgentRuntimeApi::class)
+    @Test
+    fun eachToolSaysWhetherItOnlyReads() = runBlocking {
+        val kinds = DeviceMediaMcpProvider(FakeMediaGateway()).listTools().associate { it.name to it.effectKind }
+
+        // A tool added without a kind fails here. Only the status reads; media.volume acts, since up, down and set
+        // change the volume although get only reads it.
+        assertEquals(
+            mapOf(
+                "media.status" to RuntimeEffectKind.READ_ONLY.name,
+                "media.control" to RuntimeEffectKind.MUTATING.name,
+                "media.volume" to RuntimeEffectKind.MUTATING.name,
+                "media.play_from_search" to RuntimeEffectKind.MUTATING.name,
+            ),
+            kinds,
+        )
     }
 
     @Test

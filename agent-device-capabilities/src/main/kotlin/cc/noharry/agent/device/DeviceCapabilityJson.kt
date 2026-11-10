@@ -31,3 +31,8 @@ internal const val DEVICE_PERMISSION_DENIED = "DEVICE_PERMISSION_DENIED"
 internal const val DEVICE_CAPABILITY_UNAVAILABLE = "DEVICE_CAPABILITY_UNAVAILABLE"
 internal const val DEVICE_ARGUMENT_INVALID = "DEVICE_ARGUMENT_INVALID"
 internal const val DEVICE_CALL_FAILED = "DEVICE_CALL_FAILED"
+
+// A tool's effectKind (RuntimeEffectKind's names). Only reading: it may run beside other reads, and a host that asks
+// before acting tools does not ask for it. Anything that can change the device, even for some arguments only, acts.
+internal const val EFFECT_READ_ONLY = "READ_ONLY"
+internal const val EFFECT_MUTATING = "MUTATING"

@@ -2,6 +2,7 @@ package cc.noharry.agent.device
 
 import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.RuntimeEffectKind
 import cc.noharry.agent.spi.ToolCallContext
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -24,6 +25,15 @@ class DeviceNotificationMcpProviderTest {
         val tools = DeviceNotificationMcpProvider(FakeNotificationGateway()).listTools().map { it.name }
 
         assertEquals(listOf("notification.create"), tools)
+    }
+
+    @OptIn(ExperimentalAgentRuntimeApi::class)
+    @Test
+    fun eachToolSaysWhetherItOnlyReads() = runBlocking {
+        val kinds = DeviceNotificationMcpProvider(FakeNotificationGateway()).listTools().associate { it.name to it.effectKind }
+
+        // A tool added without a kind fails here: posting a notification changes the device.
+        assertEquals(mapOf("notification.create" to RuntimeEffectKind.MUTATING.name), kinds)
     }
 
     @Test

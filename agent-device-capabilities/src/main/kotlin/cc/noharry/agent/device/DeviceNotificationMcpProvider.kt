@@ -24,7 +24,7 @@ class DeviceNotificationMcpProvider internal constructor(
 ) : McpClientProvider, ToolCatalogCacheIdentity {
     override val serverId: String = NOTIFICATION_SERVER_ID
     override val displayName: String = "Device Notifications"
-    override val catalogCacheIdentity: String = "$NOTIFICATION_SERVER_ID:v2"
+    override val catalogCacheIdentity: String = "$NOTIFICATION_SERVER_ID:v3"
     @OptIn(ExperimentalAgentRuntimeApi::class)
     override val providerConcurrency: ProviderConcurrencyDeclaration =
         ProviderConcurrencyDeclaration.serialized()
@@ -104,6 +104,7 @@ private fun notificationCreateTool(): ToolDescriptor =
         title = "Create notification",
         description = "Post a device notification through NotificationManager.",
         inputSchemaJson = """{"type":"object","required":["title"],"properties":{"title":{"type":"string"},"body":{"type":"string"}}}""",
+        effectKind = EFFECT_MUTATING,
     )
 
 private fun failed(code: String, message: String, retryable: Boolean = false): ToolCallResult =

@@ -2,6 +2,7 @@ package cc.noharry.agent.device
 
 import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
+import cc.noharry.agent.spi.RuntimeEffectKind
 import cc.noharry.agent.spi.ToolCallContext
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -24,6 +25,21 @@ class DeviceCalendarMcpProviderTest {
         val tools = DeviceCalendarMcpProvider(FakeCalendarGateway()).listTools().map { it.name }
 
         assertEquals(listOf("calendar.search_events", "calendar.create_event"), tools)
+    }
+
+    @OptIn(ExperimentalAgentRuntimeApi::class)
+    @Test
+    fun eachToolSaysWhetherItOnlyReads() = runBlocking {
+        val kinds = DeviceCalendarMcpProvider(FakeCalendarGateway()).listTools().associate { it.name to it.effectKind }
+
+        // A tool added without a kind fails here: searching only reads, creating an event changes the calendar.
+        assertEquals(
+            mapOf(
+                "calendar.search_events" to RuntimeEffectKind.READ_ONLY.name,
+                "calendar.create_event" to RuntimeEffectKind.MUTATING.name,
+            ),
+            kinds,
+        )
     }
 
     @Test

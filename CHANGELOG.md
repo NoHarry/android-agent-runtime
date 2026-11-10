@@ -11,6 +11,16 @@ called out; a patch release does not break it.
   policies; `session/load` replays a stored conversation. The client's file system, terminals and MCP servers are not
   used. `samples/acp-jvm` is an agent a client starts as a subprocess.
 
+- **The device tools say which of them only read.** No tool of `agent-device-capabilities` declared an `effectKind`,
+  so all were `UNKNOWN`: a host that asks before any tool that does not say it only reads asked even to read the media
+  status or search the calendar, and those calls never ran beside other reads. `media.status` and
+  `calendar.search_events` are now `READ_ONLY`: they join a round's parallel batch of read-only calls (each device
+  provider still takes one call at a time) and such a host no longer asks about them. `calendar.create_event`,
+  `notification.create`, `media.control`, `media.play_from_search` and `media.volume` (whose `up`, `down` and `set`
+  change the volume) are `MUTATING`, so such a host still asks; with their `ADVISORY` completion impact the runtime
+  runs them as before. `agent-android-use` already declared its tools (`android_observe` read-only, `android_action`
+  mutating) and is unchanged.
+
 - **A tool whose provider comes back works again in the same conversation.** With session tool activations
   (`sessionToolActivations`, `sessionActivationInheritance`), a turn whose providers did not include a tool the
   conversation had found dropped it for good: once the provider was back, calls were refused with

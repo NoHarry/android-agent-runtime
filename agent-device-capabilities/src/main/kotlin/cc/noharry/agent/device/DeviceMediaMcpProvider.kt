@@ -41,7 +41,7 @@ class DeviceMediaMcpProvider internal constructor(
 ) : McpClientProvider, ToolCatalogCacheIdentity {
     override val serverId: String = MEDIA_SERVER_ID
     override val displayName: String = "Device Media"
-    override val catalogCacheIdentity: String get() = "$MEDIA_SERVER_ID:v7:${if (chineseInUse()) "zh" else "other"}"
+    override val catalogCacheIdentity: String get() = "$MEDIA_SERVER_ID:v8:${if (chineseInUse()) "zh" else "other"}"
     @OptIn(ExperimentalAgentRuntimeApi::class)
     override val providerConcurrency: ProviderConcurrencyDeclaration =
         ProviderConcurrencyDeclaration.serialized()
@@ -317,6 +317,7 @@ private fun mediaStatusTool(): ToolDescriptor = ToolDescriptor(
         "says whether anything sounds at all, which a video app's session may not admit to." +
         chineseWords("现在在放什么歌、音乐、播客、视频。"),
     inputSchemaJson = """{"type":"object","properties":{}}""",
+    effectKind = EFFECT_READ_ONLY,
 )
 
 private fun mediaControlTool(): ToolDescriptor = ToolDescriptor(
@@ -333,6 +334,7 @@ private fun mediaControlTool(): ToolDescriptor = ToolDescriptor(
         """"app":{"type":"string","description":"The app to control, by its name or package name"},""" +
         """"positionMs":{"type":"integer","minimum":0,"description":"seek: where to, in milliseconds"},""" +
         """"customAction":{"type":"string","description":"custom: the action's name as media.status lists it"}}}""",
+    effectKind = EFFECT_MUTATING,
 )
 
 private fun mediaVolumeTool(): ToolDescriptor = ToolDescriptor(
@@ -342,6 +344,8 @@ private fun mediaVolumeTool(): ToolDescriptor = ToolDescriptor(
     inputSchemaJson = """{"type":"object","required":["action"],"properties":{""" +
         """"action":{"type":"string","enum":["get","up","down","set"]},""" +
         """"percent":{"type":"integer","minimum":0,"maximum":100,"description":"set: the volume, 0–100"}}}""",
+    // get only reads, but up, down and set change the volume.
+    effectKind = EFFECT_MUTATING,
 )
 
 private fun mediaPlayFromSearchTool(): ToolDescriptor = ToolDescriptor(
@@ -353,6 +357,7 @@ private fun mediaPlayFromSearchTool(): ToolDescriptor = ToolDescriptor(
     inputSchemaJson = """{"type":"object","required":["query"],"properties":{""" +
         """"query":{"type":"string","description":"What to play: a song, an artist, or both"},""" +
         """"app":{"type":"string","description":"The app to ask; without it one that allows it"}}}""",
+    effectKind = EFFECT_MUTATING,
 )
 
 private const val MEDIA_SERVER_ID = "device_media"
