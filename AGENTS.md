@@ -16,7 +16,7 @@ An embeddable agent runtime for Android and the JVM. Gradle project at the repos
 | `samples/` | `quickstart-jvm`, `acp-jvm`, `quickstart-android`, `minimal`, `extensions` (offline; its test runs in CI) (not published) |
 | `buildSrc/` | `SourceRulesTask` |
 | `tools/` | Python helpers and fixtures; `agent-runtime` tests read `tools/fixtures` |
-| `docs/design/` | Designs for upcoming work; read the one that matches your task before changing the public API (`public-api-redesign.md`: the Thread / Turn / Item API replacing the current one in 0.5.0; section 9.3 approved on 2026-11-06; start from `public-api-redesign-handoff.md`, then `public-api-redesign-review.md` (fixes required before releasing 0.5.0); `app-server-split.md`: moving the app server here from the Bothy repository, its host API in two tiers) |
+| `docs/design/` | Designs for upcoming work; read the one that matches your task before changing the public API (`public-api-redesign.md`: the Thread / Turn / Item API replacing the current one in 0.5.0; section 9.3 approved on 2026-11-06; start from `public-api-redesign-handoff.md`, then `public-api-redesign-review.md` (fixes required before releasing 0.5.0); `app-server-split.md`: moving the app server here from the Bothy repository, its plugin kernel; `plugin-packages.md`: plugins a person downloads, for review before it is built) |
 
 ## Rules
 
