@@ -3,6 +3,10 @@
 package cc.noharry.agent.runtime
 
 import cc.noharry.agent.*
+import cc.noharry.agent.spi.HookContext
+import cc.noharry.agent.spi.HookDecision
+import cc.noharry.agent.spi.RuntimeHook
+import cc.noharry.agent.spi.ToolUse
 import cc.noharry.agent.spi.model.ModelEvent
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
@@ -19,7 +23,12 @@ class SubagentApprovalPolicyTest {
         for (policy in ApprovalPolicy.entries) childApproval(policy, shared = false)
     }
 
-    private suspend fun childApproval(policy: ApprovalPolicy, shared: Boolean) {
+    /** A child has nobody to ask: a call that always asks for the person is refused, even when the parent approves all. */
+    @Test fun aCallThatAlwaysAsksIsRefusedInAChildWhateverItsPolicy() = runBlocking {
+        for (policy in ApprovalPolicy.entries) for (shared in listOf(true, false)) childApproval(policy, shared, alwaysAsk = true)
+    }
+
+    private suspend fun childApproval(policy: ApprovalPolicy, shared: Boolean, alwaysAsk: Boolean = false) {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         val captured = CompletableDeferred<SubagentSpec>()
         val finished = CompletableDeferred<List<ThreadEvent>>()
@@ -28,7 +37,7 @@ class SubagentApprovalPolicyTest {
         lateinit var subagents: Subagents
         subagents = Subagents(launcher = { spec ->
             captured.complete(spec)
-            runChild(spec, if (shared) subagents else null, provider, model, finished)
+            runChild(spec, if (shared) subagents else null, provider, model, finished, alwaysAsk)
         }, scope = scope)
         try {
             runParent(subagents, policy)
@@ -36,9 +45,12 @@ class SubagentApprovalPolicyTest {
             assertEquals(policy, captured.await().approvalPolicy)
             assertTurnEvents(events)
             assertEquals(TurnStatus.COMPLETED, (events.last() as ThreadEvent.TurnCompleted).result.status)
-            val approvals = events.filterIsInstance<ThreadEvent.ItemStarted>().count { it.item is Approval }
-            assertEquals(if (shared) 0 else 1, approvals)
-            assertEquals(if (policy == ApprovalPolicy.APPROVE_ALL) listOf("set_temperature") else emptyList<String>(), provider.calledTools)
+            val approvals = events.filterIsInstance<ThreadEvent.ItemCompleted>().map { it.item }.filterIsInstance<Approval>()
+            // A custom launcher's child asks; the coordinator answers in its place.
+            assertEquals(if (shared) 0 else 1, approvals.size)
+            if (alwaysAsk) assertTrue(approvals.all { it.alwaysAsk && it.state == ApprovalState.DENIED })
+            val runs = policy == ApprovalPolicy.APPROVE_ALL && !alwaysAsk
+            assertEquals(if (runs) listOf("set_temperature") else emptyList<String>(), provider.calledTools)
             if (shared) {
                 assertTrue(events.none { it is ThreadEvent.ItemStarted && it.item is Question })
                 val unavailable = model.requests.last().messages.count { it.role == "tool" && "INTERACTION_UNAVAILABLE" in it.content }
@@ -64,9 +76,10 @@ class SubagentApprovalPolicyTest {
         provider: LoopMcpProvider,
         model: ThreadScriptModel,
         finished: CompletableDeferred<List<ThreadEvent>>,
+        alwaysAsk: Boolean,
     ): Flow<ThreadEvent> = flow {
         try {
-            threadBuilder(model).tools(provider).hook(confirmUntilApproved())
+            threadBuilder(model).tools(provider).hook(if (alwaysAsk) confirmEveryTime() else confirmUntilApproved())
                 .apply { shared?.let(::subagents) }.build().use { runtime ->
                     val events = mutableListOf<ThreadEvent>()
                     // The shared registry supplies defaults; a custom launcher intentionally exercises the fallback.
@@ -88,4 +101,10 @@ class SubagentApprovalPolicyTest {
         }
         add(finishEvents("child finished"))
     }
+}
+
+private fun confirmEveryTime(): RuntimeHook = object : RuntimeHook {
+    override suspend fun onPreToolUse(call: ToolUse, context: HookContext): HookDecision =
+        if (originalMcpToolName(call.toolName) != "set_temperature" || context.approvedConfirmation) HookDecision.Allow()
+        else HookDecision.RequireConfirmation("Needs the person", "Set it?", alwaysAsk = true)
 }

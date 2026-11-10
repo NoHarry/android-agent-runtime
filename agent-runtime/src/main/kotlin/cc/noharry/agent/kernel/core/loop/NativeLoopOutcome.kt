@@ -40,4 +40,6 @@ internal data class PendingNativeToolUse(
     val thinkingSignature: String? = null,
     /** What the model told the user before this call, when this call is the round's first. */
     val assistantText: String = "",
+    /** A hook wants the person's own answer for this call; no policy or earlier yes gives it. */
+    val alwaysAsk: Boolean = false,
 )

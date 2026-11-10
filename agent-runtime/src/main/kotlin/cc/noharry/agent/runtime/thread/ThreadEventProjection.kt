@@ -251,6 +251,7 @@ internal class ApprovalSnapshot(private val original: Approval, override val sta
     override val arguments get() = original.arguments
     override val domain get() = original.domain
     override val reason get() = original.reason
+    override val alwaysAsk get() = original.alwaysAsk
     override suspend fun approve(scope: ApprovalScope) = original.approve(scope)
     override suspend fun deny(reason: String?) = original.deny(reason)
 }

@@ -336,10 +336,13 @@ class Subagents(
         }
     }
 
-    /** A custom launcher may still emit a gate, but this child has no user channel to answer it. */
+    /**
+     * A custom launcher may still emit a gate, but this child has no user channel to answer it: the inherited policy
+     * does, and a call that always asks for the person is refused.
+     */
     private suspend fun respondToChildApproval(child: Child, event: ThreadEvent) {
         val approval = (event as? ThreadEvent.ItemStarted)?.item as? Approval ?: return
-        if (child.spec.approvalPolicy == ApprovalPolicy.APPROVE_ALL) approval.approve()
+        if (child.spec.approvalPolicy == ApprovalPolicy.APPROVE_ALL && !approval.alwaysAsk) approval.approve()
         else approval.deny("A subagent cannot request approval from the user.")
     }
 
@@ -552,7 +555,11 @@ data class SubagentSpec(
     val allowDeviceControl: Boolean,
     /** The [SubagentType] the model named, or null for a general subagent. */
     val agentType: String? = null,
-    /** The spawning turn's effective policy, including its turn override. Launchers should apply it to the child. */
+    /**
+     * The spawning turn's effective policy, including its turn override. Launchers should apply it to the child. A child
+     * cannot ask the person, so a gate this policy does not answer is refused, as is every call a hook marks to always
+     * ask ([cc.noharry.agent.spi.HookDecision.RequireConfirmation.alwaysAsk]).
+     */
     val approvalPolicy: ApprovalPolicy = ApprovalPolicy.ASK,
 )
 

@@ -201,6 +201,7 @@ internal suspend fun HookChainPort.authorizeToolUse(
                 context = context,
                 backendToolName = backendToolName,
                 toolCallId = event.id,
+                alwaysAsk = decision.alwaysAsk,
             ),
         )
     }

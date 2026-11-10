@@ -58,7 +58,8 @@ data class AcpAgentMessages(
 /**
  * Serves [runtime]'s threads over the Agent Client Protocol (protocol version 1), so an editor or any other ACP client
  * can drive them: a session is a thread, a prompt is a turn, the turn's items go out as `session/update`, an approval
- * is a `session/request_permission`, and the session modes are the approval policies.
+ * is a `session/request_permission`, and the session modes are the approval policies. A call a hook marks to always
+ * ask is a permission request in every mode, approve-all included, without the "always" option.
  *
  * The client's file system, terminals and MCP servers are not used: the agent works with the runtime's own workspace
  * and tools. Audio prompts are refused.

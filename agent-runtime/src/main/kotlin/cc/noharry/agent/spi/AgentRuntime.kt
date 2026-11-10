@@ -326,6 +326,8 @@ internal data class PendingConfirmation(
     val toolName: String? = null,
     /** The arguments that run on approval, after hook rewrites; null when no tool call waits. */
     val argumentsJson: String? = null,
+    /** Only the person can answer, every time; see [cc.noharry.agent.spi.HookDecision.RequireConfirmation.alwaysAsk]. */
+    val alwaysAsk: Boolean = false,
 )
 
 /** In-flight steering request. */

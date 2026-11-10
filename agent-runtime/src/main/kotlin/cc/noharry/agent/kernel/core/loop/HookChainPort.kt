@@ -31,6 +31,8 @@ internal sealed interface PreToolUseOutcome {
         val toolUse: ToolUse,
         val reason: String,
         val prompt: String,
+        /** The person answers this call themselves; see [cc.noharry.agent.spi.HookDecision.RequireConfirmation.alwaysAsk]. */
+        val alwaysAsk: Boolean = false,
     ) : PreToolUseOutcome
 
     data class BlockedAndContinue(

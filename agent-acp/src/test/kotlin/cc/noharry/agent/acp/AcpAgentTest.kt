@@ -78,6 +78,33 @@ class AcpAgentTest {
         assertEquals(listOf("buy milk"), notes)
     }
 
+    @Test fun aCallThatAlwaysAsksIsAPermissionRequestEvenInApproveAllWithoutAlways() = acp(alwaysAsk = true) { client, notes ->
+        val session = client.newSession()
+        client.call("session/set_mode", buildJsonObject { put("sessionId", session); put("modeId", "approve_all") })
+        client.onPermission = { "allow_once" }
+        assertEquals("end_turn", client.prompt(session, "Remember to buy milk").text("stopReason"))
+        val asked = client.permissions.single()
+        assertEquals(listOf("allow_once", "reject_once"), asked.getValue("options").jsonArray.map { it.jsonObject.text("kind") })
+        assertEquals(listOf("buy milk"), notes)
+        assertEquals("Saved.", client.said())
+    }
+
+    @Test fun aRejectedCallThatAlwaysAsksDoesNotRunInAnyMode() = acp(alwaysAsk = true) { client, notes ->
+        val session = client.newSession()
+        client.onPermission = { "reject_once" }
+        for (mode in listOf("ask", "remember", "approve_all")) {
+            client.call("session/set_mode", buildJsonObject { put("sessionId", session); put("modeId", mode) })
+            assertEquals("end_turn", client.prompt(session, "Remember to buy milk").text("stopReason"))
+        }
+        assertEquals(3, client.permissions.size)
+        assertTrue(notes.isEmpty())
+        // Deny all refuses it without asking.
+        client.call("session/set_mode", buildJsonObject { put("sessionId", session); put("modeId", "deny_all") })
+        assertEquals("end_turn", client.prompt(session, "Remember to buy milk").text("stopReason"))
+        assertEquals(3, client.permissions.size)
+        assertTrue(notes.isEmpty())
+    }
+
     @Test fun cancellingWhileThePermissionWaitsEndsThePromptAsCancelled() = acp { client, notes ->
         val session = client.newSession()
         client.onPermission = {
@@ -149,19 +176,20 @@ private class NotesModel : ModelClient {
     }
 }
 
-private class ConfirmSaving : RuntimeHook {
+private class ConfirmSaving(private val alwaysAsk: Boolean) : RuntimeHook {
     override suspend fun onPreToolUse(call: ToolUse, context: HookContext): HookDecision =
-        if (context.approvedConfirmation) HookDecision.Allow() else HookDecision.RequireConfirmation("saving", "Save this note?")
+        if (context.approvedConfirmation) HookDecision.Allow()
+        else HookDecision.RequireConfirmation("saving", "Save this note?", alwaysAsk = alwaysAsk)
 }
 
-private fun acp(storage: File? = null, body: suspend (AcpTestClient, List<String>) -> Unit) = runBlocking {
+private fun acp(storage: File? = null, alwaysAsk: Boolean = false, body: suspend (AcpTestClient, List<String>) -> Unit) = runBlocking {
     val notes = mutableListOf<String>()
     val tools = functionTools("notes") {
         tool("save", "Saves a note.", inputSchema = """{"type":"object","properties":{"text":{"type":"string"}},"required":["text"]}""") { args ->
             notes += args.getValue("text").jsonPrimitive.content; "saved"
         }
     }
-    val builder = AgentRuntimeBuilder.create().model(NotesModel()).tools(tools).hook(ConfirmSaving(), ToolMatcher.toolName("mcp__notes__save"))
+    val builder = AgentRuntimeBuilder.create().model(NotesModel()).tools(tools).hook(ConfirmSaving(alwaysAsk), ToolMatcher.toolName("mcp__notes__save"))
     storage?.let { builder.storage(it) }
     val runtime = builder.build()
     val scope = CoroutineScope(Dispatchers.Default)

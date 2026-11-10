@@ -115,6 +115,12 @@ abstract class Approval : PendingRequest {
     abstract val arguments: String
     abstract val domain: String
     abstract val reason: String
+    /**
+     * True when the person must answer this call themselves every time
+     * ([cc.noharry.agent.spi.HookDecision.RequireConfirmation.alwaysAsk]): no policy answered it and the choice is not
+     * remembered, so a client offers no "always allow"; [ApprovalScope.THREAD] counts as [ApprovalScope.ONCE].
+     */
+    open val alwaysAsk: Boolean get() = false
     abstract suspend fun approve(scope: ApprovalScope = ApprovalScope.ONCE): RespondResult
     abstract suspend fun deny(reason: String? = null): RespondResult
 }

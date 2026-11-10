@@ -55,11 +55,16 @@ data class TurnOptions(
     val approvalPolicy: ApprovalPolicy? = null,
 )
 
-/** Applies when a tool's policy or hook requires approval; never overrides a policy denial. */
+/**
+ * Applies when a tool's policy or hook requires approval; never overrides a policy denial. A call a hook marks to ask
+ * every time ([cc.noharry.agent.spi.HookDecision.RequireConfirmation.alwaysAsk]) asks under ASK, REMEMBER and
+ * APPROVE_ALL alike; DENY_ALL refuses it.
+ */
 enum class ApprovalPolicy { ASK, REMEMBER, APPROVE_ALL, DENY_ALL }
 /**
  * THREAD saves the approved area for subsequent turns using REMEMBER. An explicit ASK policy still asks on every
- * approval gate, and DENY_ALL still denies it; the turn's policy takes precedence over stored approvals.
+ * approval gate, and DENY_ALL still denies it; the turn's policy takes precedence over stored approvals. For a call
+ * that asks every time ([Approval.alwaysAsk]) THREAD counts as ONCE: nothing is saved.
  */
 enum class ApprovalScope { ONCE, THREAD }
 enum class ThreadStatus { IDLE, RUNNING, WAITING_FOR_APPROVAL, WAITING_FOR_ANSWER }

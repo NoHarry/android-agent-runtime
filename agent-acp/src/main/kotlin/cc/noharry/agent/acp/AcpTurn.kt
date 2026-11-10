@@ -121,7 +121,10 @@ internal class AcpTurn(
     private fun question(item: Question): String =
         (listOf(item.text) + item.choices.mapIndexed { index, choice -> "${index + 1}. $choice" }).joinToString("\n")
 
-    /** Asks the client; the turn waits inside the runtime until the answer, its expiry or a cancel. */
+    /**
+     * Asks the client; the turn waits inside the runtime until the answer, its expiry or a cancel. A call that always
+     * asks comes here in every mode, approve-all included, and offers no "always": its yes cannot be remembered.
+     */
     private fun askPermission(approval: Approval) {
         val call = lastTool?.takeIf { it.tool == approval.tool && it.status == ItemStatus.IN_PROGRESS }
         val params = buildJsonObject {
@@ -132,7 +135,7 @@ internal class AcpTurn(
             })
             put("options", buildJsonArray {
                 add(option(ALLOW_ONCE, messages.allowOnce, "allow_once"))
-                add(option(ALLOW_ALWAYS, messages.allowAlways, "allow_always"))
+                if (!approval.alwaysAsk) add(option(ALLOW_ALWAYS, messages.allowAlways, "allow_always"))
                 add(option(REJECT_ONCE, messages.reject, "reject_once"))
             })
         }

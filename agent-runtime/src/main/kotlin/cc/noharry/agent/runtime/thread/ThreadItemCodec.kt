@@ -69,7 +69,7 @@ internal class ThreadItemCodec(
             "notice" -> ThreadItem.Notice(id, turn, value.enum("noticeKind", NoticeKind.WORKSPACE_CHANGED), value.text("message"), status, value.obj("details").noticeDetails())
             "error" -> ThreadItem.Error(id, turn, value.text("code"), value.text("message"), value.flag("recoverable"), status)
             "question" -> Question(id, turn, value.text("text"), value.array("choices").map { (it as JsonPrimitive).content }, value.flag("async"), value.optionalLong("expiresAt"), status)
-            "approval" -> StoredApproval(id, turn, value.text("tool"), value.text("arguments"), value.text("domain"), value.text("reason"), value.optionalLong("expiresAt"), status, value.enum("state", ApprovalState.CANCELLED))
+            "approval" -> StoredApproval(id, turn, value.text("tool"), value.text("arguments"), value.text("domain"), value.text("reason"), value.optionalLong("expiresAt"), status, value.enum("state", ApprovalState.CANCELLED), value.flag("alwaysAsk"))
             else -> error("Unknown thread item kind")
         }
     }
@@ -104,6 +104,7 @@ internal class ThreadItemCodec(
         put("kind", "approval"); put("tool", item.tool); put("arguments", redactToolPayload(item.arguments, redactor))
         put("domain", item.domain); put("reason", redact(item.reason)); put("state", item.state.name)
         item.expiresAt?.let { put("expiresAt", it) }
+        if (item.alwaysAsk) put("alwaysAsk", true)
     }
 
     private fun input(part: InputPart): JsonObject = buildJsonObject {
@@ -149,6 +150,7 @@ internal data class StoredApproval(
     override val expiresAt: Long?,
     override val status: ItemStatus,
     override val state: ApprovalState,
+    override val alwaysAsk: Boolean = false,
 ) : Approval() {
     override suspend fun approve(scope: ApprovalScope): RespondResult = response()
     override suspend fun deny(reason: String?): RespondResult = response()

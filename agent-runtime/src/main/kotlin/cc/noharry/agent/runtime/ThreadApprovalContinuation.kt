@@ -32,6 +32,7 @@ internal suspend fun continueThreadApproval(
         runId = request.executionId, expiresAtEpochMillis = now + 60_000L,
         idempotencyKey = paused?.toolCallId.orEmpty(), prompt = outcome.prompt,
         toolName = paused?.toolUse?.toolName, argumentsJson = paused?.toolUse?.argumentsJson,
+        alwaysAsk = paused?.alwaysAsk == true,
     )
     steering.resume(request.executionId)
     val decision = try { approve(pending) } catch (cancelled: CancellationException) {

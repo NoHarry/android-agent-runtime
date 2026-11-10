@@ -11,6 +11,15 @@ called out; a patch release does not break it.
   policies; `session/load` replays a stored conversation. The client's file system, terminals and MCP servers are not
   used. `samples/acp-jvm` is an agent a client starts as a subprocess.
 
+- **A hook can have the person answer every time.** `HookDecision.RequireConfirmation(reason, prompt, alwaysAsk = true)`
+  asks under ASK, REMEMBER and APPROVE_ALL alike; DENY_ALL refuses it without asking, as before. No remembered area
+  answers it, and a yes the person gave to another call earlier in the turn does not carry to it. A yes covers that call
+  alone and is never remembered: `ApprovalScope.THREAD` counts as ONCE, and `Approval.alwaysAsk` tells a client to offer
+  no "always allow". A subagent has nobody to ask, so such a call in a child is refused whatever policy it inherited. The
+  ACP agent sends a permission request for it in every mode, approve-all included, with allow once and reject only.
+  When several hooks ask about one call, it asks every time if one of them says so. Breaks binaries only: the data class
+  gains a third component; two-argument construction still compiles from Kotlin and Java.
+
 - **An approved call that fails goes back to the model.** A tool call the user approved and that then failed used to
   end the turn as failed, with the tool's error as the turn's; the model now reads the failure like any other and
   answers for it in the same turn. The approval still covers that one call: another attempt that needs one asks again.

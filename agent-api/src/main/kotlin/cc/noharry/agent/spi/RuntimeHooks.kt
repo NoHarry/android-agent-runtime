@@ -91,9 +91,21 @@ sealed interface HookDecision {
         val reason: String,
     ) : HookDecision
 
-    data class RequireConfirmation(
+    /**
+     * Asks before the call runs. The thread's approval policy may answer for the person: APPROVE_ALL approves, REMEMBER
+     * approves an area approved before, and a web host approved earlier in the turn is not asked again.
+     *
+     * With [alwaysAsk] the person answers this call themselves, every time: APPROVE_ALL and REMEMBER do not approve it,
+     * nor does a remembered area or a yes given to another call earlier in the turn; DENY_ALL still refuses it without
+     * asking. A yes covers this call only and is never remembered ([cc.noharry.agent.ApprovalScope.THREAD] counts as
+     * ONCE), and the approval tells a client so ([cc.noharry.agent.Approval.alwaysAsk]). A subagent has nobody to ask:
+     * such a call in a subagent is refused, whatever policy it inherited. When several hooks ask about one call, it
+     * asks every time if one of them says so.
+     */
+    data class RequireConfirmation @JvmOverloads constructor(
         val reason: String,
         val prompt: String,
+        val alwaysAsk: Boolean = false,
     ) : HookDecision
 
     data class BlockAndContinue(

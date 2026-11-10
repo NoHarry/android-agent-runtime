@@ -214,11 +214,12 @@ internal class DefaultAgentThread(
         val projection = checkNotNull(turn.projection)
         val policy = turn.approvalState.policy
         val domain = approvalDomain(pending.toolName.orEmpty(), pending.argumentsJson.orEmpty())
-        val automatic = automaticApproval(policy, domain, { runtime.store.rememberedDomains(id) }, turn.approvedThisTurn)
+        val automatic = automaticApproval(policy, domain, { runtime.store.rememberedDomains(id) }, turn.approvedThisTurn, pending.alwaysAsk)
         if (automatic != null) {
             automatic.source?.let { projection.toolDecision(pending.idempotencyKey, it) }
             return automatic.state
         }
+        // A subagent has nobody to ask.
         if (runtime.engine.childApprovalPolicy(id) != null) return ApprovalState.DENIED
         val approval = ThreadApproval(pending.copy(runId = turn.id), runtime.nowEpochMillis() + runtime.confirmationTimeoutMillis, runtime.nowEpochMillis)
         turn.approval = approval
@@ -230,12 +231,14 @@ internal class DefaultAgentThread(
             }
             projection.beginApproval(approval)
             val decision = approval.await()
-            if (domain != null && decision == ApprovalState.APPROVED && (turn.approvalState.policy == ApprovalPolicy.REMEMBER || approval.scope == ApprovalScope.THREAD)) {
-                withContext(Dispatchers.IO) { runtime.store.rememberDomain(id, domain, generation) }
+            // A yes to a call that always asks covers that call alone.
+            val remembers = domain != null && decision == ApprovalState.APPROVED && !approval.alwaysAsk
+            if (remembers && (turn.approvalState.policy == ApprovalPolicy.REMEMBER || approval.scope == ApprovalScope.THREAD)) {
+                withContext(Dispatchers.IO) { runtime.store.rememberDomain(id, checkNotNull(domain), generation) }
             }
             // Only the person's own yes carries over; one a policy gave ends with the policy.
             val byPerson = (approval.approvedBy ?: ApprovalSource.USER) == ApprovalSource.USER
-            if (decision == ApprovalState.APPROVED && byPerson && isTurnRememberedArea(domain)) turn.approvedThisTurn += checkNotNull(domain)
+            if (remembers && byPerson && isTurnRememberedArea(domain)) turn.approvedThisTurn += checkNotNull(domain)
             if (decision == ApprovalState.APPROVED) projection.toolDecision(pending.idempotencyKey, approval.approvedBy ?: ApprovalSource.USER)
             projection.resolveApproval(approval.snapshot())
             return decision

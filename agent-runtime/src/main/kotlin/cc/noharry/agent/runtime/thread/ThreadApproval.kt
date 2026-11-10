@@ -20,6 +20,7 @@ internal class ThreadApproval(
     override val arguments = pending.argumentsJson ?: "{}"
     override val domain = approvalDomain(tool, arguments) ?: "web_fetch:invalid"
     override val reason = pending.prompt
+    override val alwaysAsk = pending.alwaysAsk
     private val decision = CompletableDeferred<ApprovalState>()
     @Volatile override var state: ApprovalState = ApprovalState.PENDING
         private set
@@ -42,7 +43,7 @@ internal class ThreadApproval(
             ApprovalState.EXPIRED -> RespondResult.EXPIRED
             ApprovalState.CANCELLED -> RespondResult.NOT_FOUND
             ApprovalState.PENDING -> {
-                this.scope = scope
+                this.scope = if (alwaysAsk) ApprovalScope.ONCE else scope
                 approvedBy = source.takeIf { value == ApprovalState.APPROVED }
                 complete(value)
                 RespondResult.ACCEPTED
@@ -51,7 +52,9 @@ internal class ThreadApproval(
         }
     }
 
+    /** What [policy] decides while the person has not answered; only DENY_ALL decides a call that always asks. */
     fun applyPolicy(policy: ApprovalPolicy, remembered: Boolean) {
+        if (alwaysAsk && policy != ApprovalPolicy.DENY_ALL) return
         when (policy) {
             ApprovalPolicy.APPROVE_ALL -> respond(ApprovalState.APPROVED, ApprovalScope.ONCE, ApprovalSource.AUTOMATIC)
             ApprovalPolicy.DENY_ALL -> respond(ApprovalState.DENIED, ApprovalScope.ONCE)
@@ -68,7 +71,7 @@ internal class ThreadApproval(
 
     fun cancel() = synchronized(this) { complete(ApprovalState.CANCELLED) }
 
-    fun snapshot(): Approval = StoredApproval(id, turnId, tool, arguments, domain, reason, expiresAt, status, state)
+    fun snapshot(): Approval = StoredApproval(id, turnId, tool, arguments, domain, reason, expiresAt, status, state, alwaysAsk)
 
     private fun complete(value: ApprovalState) {
         if (state != ApprovalState.PENDING) return
@@ -83,15 +86,18 @@ internal data class AutomaticApproval(val state: ApprovalState, val source: Appr
 /**
  * What [policy] decides without asking the person, or null to ask. Besides the thread's remembered areas, a web host
  * the person approved earlier in the same turn is not asked again, as before turns waited for approvals themselves.
+ * A call that [alwaysAsk]s is only ever refused without asking (DENY_ALL).
  */
 internal fun automaticApproval(
     policy: ApprovalPolicy,
     domain: String?,
     remembered: () -> Set<String>,
     approvedThisTurn: Set<String>,
+    alwaysAsk: Boolean = false,
 ): AutomaticApproval? = when {
-    policy == ApprovalPolicy.APPROVE_ALL -> AutomaticApproval(ApprovalState.APPROVED, ApprovalSource.AUTOMATIC)
     policy == ApprovalPolicy.DENY_ALL -> AutomaticApproval(ApprovalState.DENIED, null)
+    alwaysAsk -> null
+    policy == ApprovalPolicy.APPROVE_ALL -> AutomaticApproval(ApprovalState.APPROVED, ApprovalSource.AUTOMATIC)
     domain == null -> null
     policy == ApprovalPolicy.REMEMBER && domain in remembered() -> AutomaticApproval(ApprovalState.APPROVED, ApprovalSource.REMEMBERED)
     domain.startsWith(WEB_FETCH_AREA) && domain in approvedThisTurn -> AutomaticApproval(ApprovalState.APPROVED, ApprovalSource.USER)

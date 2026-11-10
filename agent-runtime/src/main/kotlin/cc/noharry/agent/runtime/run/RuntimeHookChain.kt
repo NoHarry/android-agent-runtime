@@ -41,6 +41,7 @@ internal class RuntimeHookChain(
             is PreToolUseOutcome.RequiresConfirmation -> HookDecision.RequireConfirmation(
                 reason = outcome.reason,
                 prompt = outcome.prompt,
+                alwaysAsk = outcome.alwaysAsk,
             )
             is PreToolUseOutcome.BlockedAndContinue -> HookDecision.BlockAndContinue(
                 reason = outcome.reason,
@@ -116,6 +117,7 @@ internal class RuntimeHookChain(
                 toolUse = currentCall,
                 reason = confirmation.reason,
                 prompt = confirmation.prompt,
+                alwaysAsk = confirmation.alwaysAsk,
             )
         }
     }
@@ -206,6 +208,7 @@ private fun List<HookDecision.RequireConfirmation>.aggregatedConfirmation(): Hoo
                 .ifBlank { "Multiple confirmations required." },
             prompt = map { it.prompt }.nonBlankDistinct().joinToString(CONFIRMATION_PROMPT_SEPARATOR)
                 .ifBlank { "Approve this action?" },
+            alwaysAsk = any { it.alwaysAsk },
         )
     }
 
