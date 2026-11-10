@@ -73,6 +73,7 @@ agent.serve(StreamAcpTransport(i, o))   // 任意一对流，比如 Android 的 
 
 - `AcpAgentTest`：在内存连接上，用真实运行时加脚本模型走完整流程：初始化、批准后工具执行、拒绝、模式即策略、等权限时取消、提问后回答、加载会话重放历史、各种错误码。
 - `samples/acp-jvm`：能被编辑器直接启动的 stdio agent。**还没有用真实的编辑器连过**，这是剩下的验证。
+- 设备（2026-11-10，平板 HA2H3Y7F）：Bothy 的调试包在 `localabstract:<name>-acp` 上开了一个 ACP 入口（只有本 App 和 adb shell 能连），用平板上配置的 DeepSeek（`deepseek-flash`）和一个脚本客户端走过：普通一轮、网页抓取加批准（允许一次、总是允许、拒绝）、`approve_all` 模式、等批准时取消、`update_todo` 变成计划、提问后下一条 prompt 回答、`session/load` 重放历史后模型记得前文。
 
 ## 6. 后续
 
