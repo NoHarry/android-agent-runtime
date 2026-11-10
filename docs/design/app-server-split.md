@@ -145,7 +145,62 @@ Marked per method, as Codex does: a client that does not state `experimentalApi`
 experimental methods and does not receive the experimental notifications. The stable part is exported as a listing and
 compared in CI.
 
-## 5. Open questions
+## 5. Plugins (owner's direction, 2026-11-09)
+
+After looking at dsh the owner chose its principle without its framework: everything but the core is a plugin a host
+can leave out, decided when the app is built; which of the plugins in a build are on is saved on the device and read
+when the process starts. No plugin code is loaded at run time (MCP servers, skills and A2A peers are the extensions
+that need no new build). This replaces tier 2 of section 4 as it was first written: instead of large host interfaces
+(`RunAddOns` with 16 methods), one plugin interface, and the server's own features as first-party plugins, each a
+published module.
+
+`AppServerPlugin` (was `AppServerFeature`), every part but `id` optional:
+
+| Member | What it adds |
+|---|---|
+| `id` | Its name among the host's plugins, unique in `AppServerConfig.plugins` |
+| `install`, `appInFront`, `presenterReady` | What it does with the process and the app's screens |
+| `routes`, `publish` | Requests and state sections of its own |
+| `offers` | Server features it brings, named to clients in the handshake |
+| `providerAdapters` | What it knows of model services beyond chat |
+| `toolProviders(context, mounted)` | Tools for a run, which may call the run's backend tools |
+| `wrapTools(provider)` | A wrapper around each backend tool provider |
+| `prepareInput(sessionId, text, previous)` | The input a run gets in place of what the person sent; called for every turn |
+
+What a plugin needs of the server beyond a host's API is marked `@AppServerPluginApi` (an opt-in of its own, set by
+compiler option in a plugin's module); `@InternalAppServerApi` stays for tests only.
+
+Two pilots, in the Bothy repository (`codex/api-redesign`, commits c88a7eb7 and 0b011f50), both passing its
+validation and a run on the tablet:
+
+| Plugin | Modules | Lines moved | What it needed opened |
+|---|---|---|---|
+| DeepSeek | `agent-app-deepseek`, `agent-app-deepseek-protocol` (its requests and views, for a front end that shows them) | about 800 | Two helpers made public (`httpFailure`, `ProviderConfig.keyFor`); four more for its tests |
+| Cards and offers | `agent-app-cards` | about 1,170 | The four new plugin points above (`offers`, `toolProviders`, `wrapTools`, `prepareInput`); nine declarations marked `@AppServerPluginApi` (`modelText`, `PreviousExchange`, schema validation, the card tool server's name, answerable statuses, a generated picture's file, a web lookup) |
+
+The app server and its protocol import neither plugin; Bothy's layering check enforces it. `BuiltInFeatures.cards`,
+`RunAddOns.cards` and `AppServerConfig.providerAdapters` are gone: a host lists `CardsPlugin { hooks }` and
+`DeepSeekPlugin`.
+
+Left from the pilots:
+
+- The cards module still opts in to `@InternalAppServerApi`, for its own test-only names and for `AppHost`
+  (`AppHost.words`). `AppHost` needs a plugin-facing face.
+- Card and offer views are still in `agent-app-protocol` (`ServerState.offers`, `WidgetCard`); a plugin's protocol
+  half can move out as DeepSeek's did.
+- The core still names the card tool server (`CARD_TOOL_SERVER`) in two lists of the server's own tool servers, and
+  the subagent and page prompts ask whether cards are offered.
+- DeepSeek facts remain in the core as code: pricing aliases (`usage/ModelUsage.kt`), a context window
+  (`model/ContextWindowConfig.kt`), cache-token field names (`usage/TokenUsage.kt`). They should become catalog data.
+- Saving which plugins are on, and reading it at start, is not built; today the host's list is the set.
+- On the tablet `deepseek/balance` answered `MODEL_BALANCE_KEY_REJECTED` for the profile in use while chat on the same
+  profile works. The moved code is unchanged, so this is taken to predate the move; not confirmed.
+
+How the rest splits, by how many files outside each package use it: pages (3), screen operation (5), memory (6),
+images (7) are next; plans (18) and A2A (21) use each other and stay in the core module for 0.5.0, registered through
+the same interface inside it.
+
+## 6. Open questions
 
 - What listens on 8766 in a bare host.
 - Whether `agent-device-capabilities`, `agent-android-use` and `agent-exec-js` become `compileOnly` behind their
