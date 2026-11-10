@@ -205,9 +205,73 @@ Found there:
   checked on the device; the JVM unit tests could not see it).
 - Through the debug ACP socket in its approve-all mode a package's acting tool ran unasked: that mode sets the turn's
   policy itself and passes the server's rule by. The app's own protocol asks. Open.
-- In the runtime, not in packages: a tool that was approved and then fails ends the whole turn with an error instead
-  of giving the failure to the model (seen with a package's tool and with `web_fetch`, through ACP). Open, to be
-  looked at before 0.5.0.
+- In the runtime, not in packages: a tool that was approved and then failed ended the whole turn with an error. It
+  was a rule of the loop, with two tests keeping it ("the user approved this call, not further attempts"). Changed
+  2026-11-10 (6c40996): the model reads the failure and answers for it; an approval still covers one call, and another
+  attempt that needs one asks again. Checked on the tablet.
 
 Not yet tried: installing from an address (only bytes were given), a trusted publisher's package and preloading,
 templates, what a subagent or a plan run does with a tool that asks.
+
+## 9. Step B: tools written as scripts
+
+Status: design, 2026-11-10; to be built next. A package may carry tools of its own, written in JavaScript and run in
+the sandbox the runtime already ships (`agent-exec-js`: QuickJS through Zipline, `ZiplineExecEngine`). A script has no
+access to the device: everything it does outside pure computation goes through a few host functions, each checked
+against what the package asked for.
+
+### In the package
+
+```json
+"permissions": { "network": ["api.example.com"], "secrets": [{ "name": "apiKey", "label": "API key" }], "hostTools": ["web_search"] },
+"tools": [
+  { "name": "fare", "description": "The fare between two stations.", "script": "scripts/fare.js",
+    "inputSchema": { "type": "object", "properties": { "from": { "type": "string" }, "to": { "type": "string" } }, "required": ["from", "to"] },
+    "readOnly": true }
+]
+```
+
+- `scripts/<name>.js` is allowed once the manifest names it as a tool's `script`; a script no tool names is refused.
+- The script defines `function run(input)` and returns a value that can be written as JSON; a thrown error is the
+  tool's failure. `input` is the call's arguments, already checked against `inputSchema`.
+- The model sees the package's script tools as one tool server named for the package, like its MCP servers.
+
+### What a script can call
+
+Through the engine's bridge (`tools.call(name, arguments)`), under names kept for the host:
+
+| Call | Does | Limited by |
+|---|---|---|
+| `host.http` `{method, url, headers, body}` | One HTTPS request, answer as `{status, headers, body}` | Only hosts in `network` (the device itself over HTTP when named, as for MCP servers); no redirects followed; request and answer capped (64 KiB sent, 256 KiB read); 15 s |
+| `host.tool` `{name, arguments}` | Calls one of the host's tools | Only tools in `hostTools`, and only tools that say they read (`effectKind` read-only): a script cannot act through the host's tools in this step |
+| `host.log` `{message}` | A line in the app's log, marked as the package's | Length capped |
+
+- **Secrets never enter the script.** A header value or a whole query value may hold `${name}`; the host fills it in
+  when it sends the request, as it does for MCP servers. The script sees the placeholder.
+- No files, no timers, no other network, no other tools.
+- The engine runs a script again from the start after each host call, replaying earlier answers in order, so a script
+  must be deterministic between calls (no branching on the time or on random numbers). One that is not stops with an
+  error, as `exec_js` does today.
+- Limits per call of a tool: 10 s in all, 16 MiB of memory, 20 host calls, 64 KiB returned.
+
+### Asking first
+
+- A script tool is a package's own tool: it asks before it runs unless the manifest says `readOnly: true` **and** the
+  publisher is trusted. An unknown publisher's word that a tool only reads is not taken: its script tools always ask
+  (once per conversation in the mode that remembers).
+- What a script calls through `host.tool` is read-only by the rule above, so it does not ask again.
+
+### What it needs
+
+- Format 1 gains `tools` and lets `scripts/` and `hostTools` through for a package that uses them this way; `code/`
+  and `nativeCode` stay refused.
+- `PackagePlugin` adds a tool provider for the package's script tools, through the kernel's `tools` addition, with the
+  gate packages' MCP tools already use.
+- No change to the runtime is expected: the app server already depends on `agent-exec-js` and gives the engine its
+  own bridge.
+
+### Proposed, open to the owner
+
+1. Host tools a script may call are read-only ones only, in this step.
+2. A script tool's `readOnly` is honoured only for a trusted publisher.
+3. The limits above.
