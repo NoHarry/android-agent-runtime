@@ -177,3 +177,37 @@ Good first candidates are plugins of pure logic: a model service's adapter, tool
 2. A package's skill may be preloaded into the system prompt only when its publisher is trusted.
 3. The file extension is `.agentplugin` and ids are reverse-domain names.
 4. A package may point at MCP servers on the device or the local network, named explicitly and shown as such.
+
+## 8. As built, and what a run on the tablet found (2026-11-10)
+
+Built in the Bothy repository (`codex/api-redesign`, commits ce5f0297 to 7cf56931, in `agent-app-server` under
+`packages/`, with the tool in `tools/agent-plugin/`). Where it differs from the text above:
+
+- A package's skill is named `<id>:<skill>`: the runtime reads a skill's name as one path segment.
+- Secrets are kept as the app's other keys are, as plain text in its private no-backup storage, not encrypted.
+- A secret goes into a header value, or stands for a whole query value; never into the host or path of an address.
+- HTTP is allowed to the device itself only; hosts match exactly; rules over the cap are refused, and all plugins'
+  rules share 3 KiB of the system prompt.
+- A package with `code/`, `code`, `nativeCode`, `scripts/` or `hostTools` is refused when it is checked.
+- An install may also give the package's bytes directly, and an unsigned package needs the same acknowledgement as an
+  unknown publisher's.
+
+Checked on the tablet with DeepSeek and a test MCP service on the device: an unknown publisher needs the
+acknowledgement; a missing secret, a changed file, code in the package, an older version, another key and an unsigned
+update are each refused with their reason; the secret reaches the service in its header; a tool marked read-only runs
+unasked and one that acts asks first, in ask-every-time and in allow-all; an update keeps the secret; the package is
+there after a restart; a file changed on the device shows it damaged and not running, and installing the same version
+repairs it; removing it leaves no files and no secrets; switching it off takes its tool from the next turn.
+
+Found there:
+
+- The manifest's placeholder pattern did not compile on Android and crashed the app at the first install (fixed,
+  ab-checked on the device; the JVM unit tests could not see it).
+- Through the debug ACP socket in its approve-all mode a package's acting tool ran unasked: that mode sets the turn's
+  policy itself and passes the server's rule by. The app's own protocol asks. Open.
+- In the runtime, not in packages: a tool that was approved and then fails ends the whole turn with an error instead
+  of giving the failure to the model (seen with a package's tool and with `web_fetch`, through ACP). Open, to be
+  looked at before 0.5.0.
+
+Not yet tried: installing from an address (only bytes were given), a trusted publisher's package and preloading,
+templates, what a subagent or a plan run does with a tool that asks.
