@@ -1,7 +1,7 @@
 # Plugin packages a person downloads
 
-Status: approved 2026-11-09 (section 7); being built in the Bothy repository, branch `codex/api-redesign`. It follows `app-server-split.md` section 6: the plugin
-kernel exists; this is step A (declarative packages), with the places step B (sandboxed scripts) will use left open.
+Status: approved 2026-11-09 (section 7) and built in the Bothy repository, branch `codex/api-redesign`: declarative
+packages (section 8) and tools written as scripts (section 9). Compiled code in a package is reserved (section 6).
 
 A package is a plugin that carries no native code: skills, rules, addresses of MCP servers, templates. A person
 installs one inside the app from an address or a file; it starts at once and can be turned off or removed like any

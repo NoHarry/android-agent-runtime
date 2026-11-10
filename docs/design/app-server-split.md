@@ -235,8 +235,7 @@ What the kernel does not yet cover:
   addresses, card and page templates. One generic plugin turns an installed package into `PluginContext` additions, so
   the core sees no difference from a built-in plugin.
 - B. Sandboxed scripts in a package: tools written in JavaScript, run in the QuickJS sandbox the runtime already ships
-  (`agent-exec-js`, through Zipline), reaching only the host interfaces the package asked for. Not yet tried as a
-  plugin runtime.
+  (`agent-exec-js`, through Zipline), reaching only the host interfaces the package asked for.
 - Native code is not loaded from a download. Features that need a system capability stay plugins built into the host.
 - The catalog of plugins (index, review, updates) is a product of its own; the library offers installing a package
   from an address.

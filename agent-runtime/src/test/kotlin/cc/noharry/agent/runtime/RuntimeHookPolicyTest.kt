@@ -360,6 +360,8 @@ class RuntimeHookPolicyTest {
             // The model reads the failure and answers for it; the call ran once, on the one approval.
             assertEquals(TurnStatus.COMPLETED, (events.last() as ThreadEvent.TurnCompleted).result.status)
             assertTrue(requests.last().messages.any { it.role == "tool" && it.toolName?.endsWith("set_temperature") == true })
+            // Search, the call, then the round that reads its failure.
+            assertEquals(3, requests.size)
             assertEquals(listOf("set_temperature"), backend.calledTools)
         }
     }
