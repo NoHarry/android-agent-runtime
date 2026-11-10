@@ -5,6 +5,12 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **Agent Client Protocol.** The new optional module `agent-acp` serves a runtime's threads to ACP clients (editors
+  such as Zed): `AcpAgent(runtime).serveStdio()`, or `serve(StreamAcpTransport(input, output))` over any stream pair.
+  Sessions are threads, prompts are turns, approvals are permission requests and the session modes are the approval
+  policies; `session/load` replays a stored conversation. The client's file system, terminals and MCP servers are not
+  used. `samples/acp-jvm` is an agent a client starts as a subprocess.
+
 - **No failed tool result is a service's answer by default.** `LoopSettings.serviceAnswer` defaults to
   `ServiceAnswerCheck.NONE`; it took MCP results with a `structuredContent.status.name` before. A host whose services
   answer that way sets `LoopSettings(serviceAnswer = McpStatusServiceAnswerCheck)`.

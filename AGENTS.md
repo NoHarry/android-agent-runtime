@@ -10,9 +10,10 @@ An embeddable agent runtime for Android and the JVM. Gradle project at the repos
 | `agent-runtime` | The runtime facade and internal agent loop (JVM): model clients, MCP (`cc.noharry.agent.mcp`), the workspace VFS (`cc.noharry.agent.vfs`), `functionTools`, sessions, hooks |
 | `agent-runtime-android` | Android layer: SQLite sessions, app-private event log, `AndroidAgentRuntime.builder`, SAF mounts (`cc.noharry.agent.vfs.saf`) |
 | `agent-a2a` | Optional module (JVM): A2A client, direct transport and server |
+| `agent-acp` | Optional module (JVM): the Agent Client Protocol (ACP) over the thread API; design in `docs/design/acp.md` |
 | `agent-exec-js`, `agent-device-capabilities`, `agent-android-use`, `agent-a2a-client-official` | Optional modules (Android) |
 | `agent-bom` | Version alignment |
-| `samples/` | `quickstart-jvm`, `quickstart-android`, `minimal`, `extensions` (offline; its test runs in CI) (not published) |
+| `samples/` | `quickstart-jvm`, `acp-jvm`, `quickstart-android`, `minimal`, `extensions` (offline; its test runs in CI) (not published) |
 | `buildSrc/` | `SourceRulesTask` |
 | `tools/` | Python helpers and fixtures; `agent-runtime` tests read `tools/fixtures` |
 | `docs/design/` | Designs for upcoming work; read the one that matches your task before changing the public API (`public-api-redesign.md`: the Thread / Turn / Item API replacing the current one in 0.5.0; section 9.3 approved on 2026-11-06; start from `public-api-redesign-handoff.md`, then `public-api-redesign-review.md` (fixes required before releasing 0.5.0)) |

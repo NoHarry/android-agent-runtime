@@ -35,10 +35,12 @@ include(":agent-device-capabilities")
 include(":agent-android-use")
 include(":agent-a2a")
 include(":agent-a2a-client-official")
+include(":agent-acp")
 // One version for all of them.
 include(":agent-bom")
 // Samples (not published).
 include(":samples:quickstart-jvm")
+include(":samples:acp-jvm")
 include(":samples:minimal")
 include(":samples:extensions")
 include(":samples:quickstart-android")

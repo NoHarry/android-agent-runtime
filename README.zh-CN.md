@@ -97,6 +97,7 @@ val runtime = AgentRuntime.builder()
 | `agent-android-use` | 可选：通过无障碍服务看屏幕、操作屏幕 |
 | `agent-a2a` | 可选（纯 JVM）：通过直连的 JSON-RPC/SSE 传输把任务交给远程 A2A agent，并把 agent 本身开放成本地 A2A 端点 |
 | `agent-a2a-client-official` | 可选：同一个客户端，改用官方 A2A Java SDK 做传输 |
+| `agent-acp` | 可选（纯 JVM）：通过 Agent Client Protocol（ACP）把 agent 的会话开放给编辑器等 ACP 客户端，走 stdio 或任意一对流 |
 | `agent-bom` | 对齐以上所有模块的版本 |
 
 Android App 依赖 `agent-runtime-android`；服务端、桌面工具或测试依赖 `agent-runtime`。可选模块最多依赖 `agent-api`。agent 循环已收进 runtime 内部，`samples/minimal` 展示只配置模型的最小宿主。
