@@ -45,6 +45,7 @@ internal class ToolActivationStore(
         synchronized(activations) {
             val normalizedMetadata = metadata.withDefaults(nowEpochMillis())
             val priorMetadata = activations.activated[tool.qualifiedName]?.metadata
+            activations.unavailable -= tool.qualifiedName
             activations.catalogTools[tool.qualifiedName] = CatalogToolRecord(
                 qualifiedName = tool.qualifiedName,
                 serverId = tool.serverId,
@@ -65,17 +66,18 @@ internal class ToolActivationStore(
         }
     }
 
+    /** The tools this run can call, in the order they were found; tools it carries but cannot reach are left out. */
     fun activated(runId: String): List<ToolActivationRecord> {
         val activations = run(runId)
         return synchronized(activations) {
-            activations.activated.values.toList()
+            activations.available().toList()
         }
     }
 
     fun activationCountFrom(runId: String, source: String): Int {
         val activations = runs[runKey(runId)] ?: return 0
         return synchronized(activations) {
-            activations.activated.values.count { it.metadata.source == source }
+            activations.available().count { it.metadata.source == source }
         }
     }
 
@@ -85,6 +87,9 @@ internal class ToolActivationStore(
     ): BackendToolClassification {
         val activations = runs[runKey(runId)] ?: return BackendToolClassification.UnsupportedNativeFallback
         synchronized(activations) {
+            if (requestedModelToolName in activations.unavailable) {
+                return BackendToolClassification.Unavailable(requestedModelToolName)
+            }
             if (activations.catalogTools.isEmpty()) {
                 return BackendToolClassification.UnsupportedNativeFallback
             }
@@ -181,16 +186,43 @@ internal class ToolActivationStore(
     }
 
     /**
-     * Drops tools this run inherited that the current catalog no longer has (a server switched off since the run that
-     * found them). The rest keep their place, so the tool list stays a prefix of the earlier one.
+     * Sets aside the tools this run inherited that the current catalog does not have (their provider is switched off,
+     * cannot be reached or was removed): this run cannot call them and refuses them as unavailable, and they keep their
+     * place for the session's later runs, so a run that has the provider again has them where they were.
      */
-    fun dropInheritedOutside(runId: String, catalogNames: Set<String>) {
+    fun markUnavailableOutside(runId: String, catalogNames: Set<String>) {
         val activations = runs[runKey(runId)] ?: return
-        if (catalogNames.isEmpty()) return
         synchronized(activations) {
-            activations.activated.values.removeIf {
-                it.metadata.source == SESSION_INHERITED_ACTIVATION_SOURCE && it.toolName !in catalogNames
-            }
+            activations.activated.values
+                .filter { it.metadata.source == SESSION_INHERITED_ACTIVATION_SOURCE && it.toolName !in catalogNames }
+                .mapTo(activations.unavailable) { it.toolName }
+        }
+    }
+
+    /** [names], tools the conversation knows, have no provider in this run: calls to them are refused as unavailable. */
+    fun markUnavailable(runId: String, names: Collection<String>) {
+        if (names.isEmpty()) return
+        val activations = run(runId)
+        synchronized(activations) { activations.unavailable += names }
+    }
+
+    /**
+     * The tools whose schema the conversation's earlier runs show ([shown]) that this run does not carry: those [catalog]
+     * lacks are unavailable in this run. A run that inherits its session's tools carries the others again, as after a
+     * process restart, which empties the session's cache; inherited, they are not announced again.
+     */
+    fun restoreShown(runId: String, shown: Collection<String>, catalog: List<McpToolRef>) {
+        val activations = run(runId)
+        val byName = catalog.associateBy { it.qualifiedName }
+        val restored = synchronized(activations) {
+            val missing = shown.filter { it !in activations.activated && it !in activations.unavailable }
+            activations.unavailable += missing.filter { it !in byName }
+            if (activations.sessionRunStart == null) return
+            missing.mapNotNull(byName::get)
+        }
+        for (tool in restored) {
+            val schema = tool.descriptor.inputSchemaJson.takeIf { it.isNotBlank() } ?: continue
+            activate(runId, tool, schema, ToolActivationMetadata(source = SESSION_INHERITED_ACTIVATION_SOURCE))
         }
     }
 
@@ -259,13 +291,21 @@ internal sealed interface BackendToolClassification {
 
     data class Unknown(val requestedName: String) : BackendToolClassification
 
+    /** A tool the conversation knows whose provider this run does not have. */
+    data class Unavailable(val toolName: String) : BackendToolClassification
+
     data object UnsupportedNativeFallback : BackendToolClassification
 }
 
 private class RunActivations {
     val catalogTools: MutableMap<String, CatalogToolRecord> = linkedMapOf()
+    /** Every tool the run carries, those in [unavailable] included, so that the session keeps them in place. */
     val activated: MutableMap<String, ToolActivationRecord> = linkedMapOf()
+    /** Tools the run carries or the conversation was shown whose provider the run does not have. */
+    val unavailable: MutableSet<String> = hashSetOf()
     var sessionRunStart: SessionRunStart? = null
+
+    fun available(): Sequence<ToolActivationRecord> = activated.values.asSequence().filter { it.toolName !in unavailable }
 }
 
 private data class CatalogToolRecord(

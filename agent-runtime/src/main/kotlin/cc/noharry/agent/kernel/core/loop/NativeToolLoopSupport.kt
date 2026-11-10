@@ -35,6 +35,16 @@ internal fun unsupportedToolResult(toolName: String): String =
 internal fun inactiveBackendToolResult(toolName: String, schemaPath: String): String =
     """{"ok":false,"code":"${RuntimeErrorCode.INACTIVE_BACKEND_TOOL.wireCode}","tool":"${escapeJson(toolName)}","schemaPath":"${escapeJson(schemaPath)}","message":"Find this backend tool with search_tools before calling it."}"""
 
+/** A tool the conversation knows whose provider this run does not have: the model is told to tell the person. */
+internal fun unavailableBackendToolResult(toolName: String): String = buildJsonObject {
+    put("ok", false)
+    put("code", RuntimeErrorCode.TOOL_UNAVAILABLE.wireCode)
+    put("tool", toolName)
+    put("message", "This tool is not available now: the tool server or plugin that provides it is switched off, cannot " +
+        "be reached, or was removed. Searching for it or calling it again will not help until it is back; tell the person.")
+    put("retryable", false)
+}.toString()
+
 internal fun unknownBackendToolResult(toolName: String): String =
     """{"ok":false,"code":"${RuntimeErrorCode.UNKNOWN_BACKEND_TOOL.wireCode}","tool":"${escapeJson(toolName)}","message":"Tool is not in the current MCP catalog."}"""
 

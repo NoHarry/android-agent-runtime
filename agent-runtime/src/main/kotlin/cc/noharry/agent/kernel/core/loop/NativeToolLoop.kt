@@ -164,8 +164,12 @@ internal class NativeToolLoop(
             activateMemoryHintTools(toolContext, summaryBuilder, selection)
         }
         prepareRuntimeTools(request.input, toolContext, mcpRegistry, activationStore, sessionRecorder)
-        if (backendToolExposure == BackendToolExposure.NATIVE_DEFERRED) activationStore.keepLoadedToolsDeclared(
-            runId, sessionHistory?.earlierRuns(runId).orEmpty().flatten(), mcpRegistry, toolContext)
+        val earlier = sessionHistory?.earlierRuns(runId).orEmpty().flatten()
+        when (backendToolExposure) {
+            BackendToolExposure.NATIVE_DEFERRED -> activationStore.keepLoadedToolsDeclared(runId, earlier, mcpRegistry, toolContext)
+            BackendToolExposure.CALL_TOOL -> activationStore.keepShownToolsCallable(runId, earlier, mcpRegistry, toolContext)
+            BackendToolExposure.DIRECT -> Unit
+        }
         announceDeferredTools(runId, messages, toolContext)
         val hookContext = toolContext.toHookContext()
         hookChain.onRunStarted(hookContext)

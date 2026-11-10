@@ -103,7 +103,8 @@ private val SHOWN_MATCH_NAME = Regex(""""name":"([^"]+)","originalName"""")
 /**
  * For [BackendToolExposure.NATIVE_DEFERRED]: every tool a tool_addition in [conversation] loaded must stay declared, or
  * the provider rejects the whole request ("tool_addition references unknown tool"). Tools a run no longer carries
- * (memory hints are not inherited, the session cap drops old ones) are declared again from the catalog.
+ * (memory hints are not inherited, the session cap drops old ones) are declared again from the catalog; those the
+ * catalog does not have are refused as unavailable if called.
  */
 @OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 internal suspend fun ToolActivationStore.keepLoadedToolsDeclared(
@@ -114,10 +115,28 @@ internal suspend fun ToolActivationStore.keepLoadedToolsDeclared(
 ) {
     val missing = conversation.flatMapTo(hashSetOf()) { it.toolAdditions } - activated(runId).mapTo(hashSetOf()) { it.toolName }
     if (missing.isEmpty()) return
-    for (tool in registry.allTools(context).filter { it.qualifiedName in missing }) {
+    val present = registry.allTools(context).filter { it.qualifiedName in missing }
+    for (tool in present) {
         val schema = tool.descriptor.inputSchemaJson.takeIf { it.isNotBlank() } ?: continue
         activate(runId, tool, schema, ToolActivationMetadata(source = SESSION_INHERITED_ACTIVATION_SOURCE))
     }
+    markUnavailable(runId, missing - present.mapTo(hashSetOf()) { it.qualifiedName })
+}
+
+/**
+ * For [BackendToolExposure.CALL_TOOL]: the tools whose schema [conversation] shows that this run's providers do not have
+ * are refused as unavailable, not as tools to search for. In a run that inherits its session's tools, the others stay
+ * callable whether or not the session's cache still has them (it does not after a process restart).
+ */
+@OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
+internal suspend fun ToolActivationStore.keepShownToolsCallable(
+    runId: String,
+    conversation: List<ModelMessage>,
+    registry: ToolProviderRegistry,
+    context: MaterializerContext,
+) {
+    val shown = conversation.toolsWithSchemaShown()
+    if (shown.isNotEmpty()) restoreShown(runId, shown, registry.allTools(context))
 }
 
 /** For [BackendToolExposure.NATIVE_DEFERRED]: one system update loading the tools [conversation] has not loaded yet. */

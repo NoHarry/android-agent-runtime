@@ -146,18 +146,59 @@ class ToolActivationStoreTest {
     }
 
     @Test
-    fun inheritedToolsMissingFromTheCatalogAreDropped() {
+    fun inheritedToolsMissingFromTheCatalogAreUnavailableAndComeBackInPlace() {
         val store = ToolActivationStore()
         store.inheritSessionActivations("run-a", "session-a")
         store.activate("run-a", toolRef("set_temperature"), """{"type":"object"}""")
         store.activate("run-a", toolRef("play_music"), """{"type":"object"}""")
         store.snapshotSessionActivations("run-a", "session-a")
+
+        // set_temperature's provider is off for run-b: it cannot be called there, and is refused as unavailable.
+        store.inheritSessionActivations("run-b", "session-a")
+        store.recordCatalog("run-b", listOf(toolRef("play_music")))
+        store.markUnavailableOutside("run-b", setOf(qualifiedMcpTool("play_music")))
+        assertEquals(listOf(qualifiedMcpTool("play_music")), store.activated("run-b").map { it.toolName })
+        assertEquals(BackendToolClassification.Unavailable(qualifiedMcpTool("set_temperature")),
+            store.classify("run-b", qualifiedMcpTool("set_temperature")))
+        store.snapshotSessionActivations("run-b", "session-a")
+
+        // The provider is back for run-c: the tool is there again, where it was.
+        store.inheritSessionActivations("run-c", "session-a")
+        store.markUnavailableOutside("run-c", setOf("set_temperature", "play_music").mapTo(hashSetOf(), ::qualifiedMcpTool))
+        assertEquals(listOf("set_temperature", "play_music").map(::qualifiedMcpTool), store.activated("run-c").map { it.toolName })
+    }
+
+    @Test
+    fun withNoProviderAtAllEveryInheritedToolIsUnavailable() {
+        val store = ToolActivationStore()
+        store.inheritSessionActivations("run-a", "session-a")
+        store.activate("run-a", toolRef("set_temperature"), """{"type":"object"}""")
+        store.snapshotSessionActivations("run-a", "session-a")
         store.inheritSessionActivations("run-b", "session-a")
 
-        store.dropInheritedOutside("run-b", setOf(qualifiedMcpTool("play_music")))
-        assertEquals(listOf(qualifiedMcpTool("play_music")), store.activated("run-b").map { it.toolName })
-        store.dropInheritedOutside("run-b", emptySet())
-        assertEquals(1, store.activated("run-b").size)
+        store.markUnavailableOutside("run-b", emptySet())
+
+        assertTrue(store.activated("run-b").isEmpty())
+        assertEquals(BackendToolClassification.Unavailable(qualifiedMcpTool("set_temperature")),
+            store.classify("run-b", qualifiedMcpTool("set_temperature")))
+    }
+
+    @Test
+    fun shownToolsAreCarriedAgainOnlyInARunThatInheritsButAreUnavailableInAnyRun() {
+        val store = ToolActivationStore()
+        val shown = listOf("set_temperature", "play_music").map(::qualifiedMcpTool)
+        // A fresh cache, as after a restart: the conversation still shows both, one provider is there.
+        store.inheritSessionActivations("run-a", "session-a")
+        store.restoreShown("run-a", shown, listOf(toolRef("play_music")))
+        assertEquals(listOf(qualifiedMcpTool("play_music")), store.activated("run-a").map { it.toolName })
+        assertEquals(SESSION_INHERITED_ACTIVATION_SOURCE, store.activated("run-a").single().metadata.source)
+        assertEquals(BackendToolClassification.Unavailable(qualifiedMcpTool("set_temperature")),
+            store.classify("run-a", qualifiedMcpTool("set_temperature")))
+
+        store.restoreShown("run-b", shown, listOf(toolRef("play_music")))
+        assertTrue(store.activated("run-b").isEmpty())
+        assertEquals(BackendToolClassification.Unavailable(qualifiedMcpTool("set_temperature")),
+            store.classify("run-b", qualifiedMcpTool("set_temperature")))
     }
 
     @Test

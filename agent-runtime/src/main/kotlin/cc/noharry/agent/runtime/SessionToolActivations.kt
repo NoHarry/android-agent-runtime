@@ -11,6 +11,11 @@ import cc.noharry.agent.kernel.core.tools.ToolActivationStore
  * searching and the tool list (and the provider's prompt cache over it) carries over. Tools found by memory hints
  * are not carried.
  *
+ * A run whose tool providers do not include a carried tool's (switched off, unreachable, removed) refuses calls to it
+ * with `TOOL_UNAVAILABLE` and keeps it for the session: a later run that has the provider again can call it, in its old
+ * place in the tool list. With [BackendTools.SEARCH], a run also carries the tools whose schema the conversation's
+ * earlier runs show, so a conversation restored from storage after a process restart keeps them too.
+ *
  * @param maxToolsPerSession most tools a session carries; past it the oldest go, down to half of it.
  */
 @ExperimentalAgentRuntimeApi

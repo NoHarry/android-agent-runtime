@@ -895,6 +895,7 @@ private suspend fun handleUnsupportedTool(
             schemaPath = classification.schemaPath,
         )
         is BackendToolClassification.Unknown -> unknownBackendToolResult(classification.requestedName)
+        is BackendToolClassification.Unavailable -> unavailableBackendToolResult(classification.toolName)
         BackendToolClassification.UnsupportedNativeFallback -> unsupportedToolResult(event.name)
     }
     publicEvents.recordFinished(event.id, event.name, result)

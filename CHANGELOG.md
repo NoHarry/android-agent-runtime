@@ -11,6 +11,20 @@ called out; a patch release does not break it.
   policies; `session/load` replays a stored conversation. The client's file system, terminals and MCP servers are not
   used. `samples/acp-jvm` is an agent a client starts as a subprocess.
 
+- **A tool whose provider comes back works again in the same conversation.** With session tool activations
+  (`sessionToolActivations`, `sessionActivationInheritance`), a turn whose providers did not include a tool the
+  conversation had found dropped it for good: once the provider was back, calls were refused with
+  `INACTIVE_BACKEND_TOOL` ("find it with search_tools") although earlier turns still showed its schema, and while it was
+  away the same words sent the model to a search that could not find it. The conversation now keeps the tool in its
+  place: while its provider is off, unreachable or removed, a call is refused with the new
+  `RuntimeErrorCode.TOOL_UNAVAILABLE`, whose message says that searching or calling again will not help and to tell
+  the person; the first call of a turn that has the provider again runs. With `BackendTools.SEARCH` a turn also carries
+  the tools whose schema the conversation's earlier turns show, so a conversation resumed from storage after a restart
+  calls them without searching (behaviour change: a tool a memory hint brought is carried there once shown). With
+  `NATIVE_DEFERRED`, a tool loaded earlier whose provider is missing is refused the same way. A turn without any tool
+  provider refuses carried tools as unavailable, where it sent the call on and failed with
+  `CAPABILITY_BACKEND_NOT_CONFIGURED`. With `BackendTools.DIRECT`, a restart still needs a search, as before.
+
 - **A hook can have the person answer every time.** `HookDecision.RequireConfirmation(reason, prompt, alwaysAsk = true)`
   asks under ASK, REMEMBER and APPROVE_ALL alike; DENY_ALL refuses it without asking, as before. No remembered area
   answers it, and a yes the person gave to another call earlier in the turn does not carry to it. A yes covers that call

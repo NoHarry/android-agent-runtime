@@ -2488,6 +2488,7 @@ public final class cc/noharry/agent/spi/reliability/RuntimeErrorCode : java/lang
 	public static final field SCHEMA_MATERIALIZE_TIMEOUT Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field SCHEMA_VALIDATION_FAILED Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field SESSION_QUEUE_FULL Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
+	public static final field TOOL_UNAVAILABLE Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field UNKNOWN_BACKEND_TOOL Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field UNSUPPORTED_NATIVE_TOOL Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field WAITING_USER_INPUT Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
