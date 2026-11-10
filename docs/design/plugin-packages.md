@@ -215,7 +215,7 @@ templates, what a subagent or a plan run does with a tool that asks.
 
 ## 9. Step B: tools written as scripts
 
-Status: design, 2026-11-10; to be built next. A package may carry tools of its own, written in JavaScript and run in
+Status: built 2026-11-10 (below, "As built"). A package may carry tools of its own, written in JavaScript and run in
 the sandbox the runtime already ships (`agent-exec-js`: QuickJS through Zipline, `ZiplineExecEngine`). A script has no
 access to the device: everything it does outside pure computation goes through a few host functions, each checked
 against what the package asked for.
@@ -275,3 +275,37 @@ Through the engine's bridge (`tools.call(name, arguments)`), under names kept fo
 1. Host tools a script may call are read-only ones only, in this step.
 2. A script tool's `readOnly` is honoured only for a trusted publisher.
 3. The limits above.
+
+### As built, and what a run on the tablet found (2026-11-10)
+
+In the Bothy repository (`codex/api-redesign`, commits 414fa136 to 62b5785a; `packages/Script*.kt`). Where it differs
+from the text above:
+
+- **`host.tool` reaches less than the example suggests.** It reaches the tools of the run's backend tool providers
+  that say they only read, in practice a configured MCP server's tools marked read-only. The runtime's own tools
+  (`web_search`, `web_fetch`, files) are not tool providers and cannot be called from a script, so
+  `"hostTools": ["web_search"]` does not work; that would take a change to the runtime's interfaces. A name in
+  `hostTools` is the whole name (`mcp__home__get_home_status`), or the tool's own when one server has it.
+- **One time limit, not two.** The 10 s of a call include its host calls, so a request gets what is left of them and
+  the separate 15 s never applies.
+- `host.log` keeps its lines in the sandbox and writes them when the call ends; they are lost when the call ends on
+  time or memory.
+- Added: a name that reads as on the internet must resolve to public addresses; where an answer repeats a secret's
+  value the placeholder is put back; `inputSchema` is a checked subset of JSON Schema (no `pattern`, `$ref`, `oneOf`),
+  so no pattern of a package's runs on the host; at most 20 tools a package, 128 KiB a script, tool names of at most 24
+  characters; `run` returns at once (no promise).
+- The kernel's `tools` addition gained `askBeforeActions`, and the gate packages' MCP tools use covers script tools.
+
+The real engine runs in the unit tests on the JVM. On the tablet, with DeepSeek: the three example tools ran (the
+weather over HTTPS with decimal numbers intact, the home's state through `host.tool` from the Playground's MCP server,
+the echo with the secret shown as its placeholder in header and query); each asked first, the publisher being unknown;
+the log lines appeared and the secret did not. A package written to misbehave was refused each thing it tried: a tool
+that acts, a tool it had not named, a secret in a body (sent as the placeholder) or in a path, plain HTTP, an address on
+the device it had not named, a `file:` address, the engine's bridge called directly; a loop without end stopped at
+10 s and an allocation without end at the memory limit, the app staying up.
+
+Not yet tried: a trusted publisher's script tools running unasked, a subagent or a plan run calling one, a turn
+cancelled while a script runs, two packages' scripts at once.
+
+Open: the debug ACP socket's approve-all mode passes the asking rule by (as for packages' MCP tools); nothing limits
+how often a package's tools are called; a package may send what it reads through `host.tool` to any host it named.
