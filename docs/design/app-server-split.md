@@ -200,7 +200,48 @@ How the rest splits, by how many files outside each package use it: pages (3), s
 images (7) are next; plans (18) and A2A (21) use each other and stay in the core module for 0.5.0, registered through
 the same interface inside it.
 
-## 6. Open questions
+## 6. The plugin kernel and downloadable plugins (owner's direction, 2026-11-09)
+
+The owner then chose to go further than section 5: build the kernel first so plugins load and unload while the server
+runs, then let a person download plugins inside the app. Bothy is distributed by its own channel, not an app store.
+
+**The kernel** is built (Bothy repository, `codex/api-redesign`, commit 7601b34c; `server/AppServerPlugin.kt`,
+`server/PluginHost.kt`, `PluginHostTest`). It replaces the eight optional methods of section 5:
+
+- A plugin is `id`, optional `needs` (ids of plugins it needs) and `required`, and one `apply(ctx)`.
+- Everything it adds it says to its `PluginContext`: `routes`, `offer`, `providerAdapter`, `tools`, `wrapTools`,
+  `prepareInput`, `publish`, `onAppInFront`, `onPresenterReady`, `provide`/`service`, a `scope` cancelled when it stops,
+  and `onStop` for what the server does not know of. Stopping takes all of it back.
+- `PluginHost` runs a plugin when it is on and what it needs runs, stops dependents first, and keeps the switches on
+  the device (on by default). The rest of the server reads one snapshot, `AppHost.additions`, replaced whole on a change.
+- Clients: `plugins/list`, `plugins/set`, and the notification `server/features` after a change.
+
+Checked on the tablet: turning cards and DeepSeek off while Bothy ran removed `cards` from the features, the card tool
+from the next turn and the `deepseek/*` requests at once; the choice survived a restart; turning them on brought all
+of it back; a required plugin refused.
+
+What the kernel does not yet cover:
+
+- The core is not a plugin: 31 singletons hold state (`AppHost` 110 references in 44 files, `RuntimeSession` 94 in 19,
+  the rest small). Each feature taken out of the core becomes switchable; the core's own features (plans, A2A, memory,
+  images, pages, screen operation) are not yet.
+- Bothy's voice, on-device model, Playground and settings plugins are marked `required`: their code is reached
+  directly from elsewhere in Bothy, so they cannot stop yet.
+- A plugin's state sections are cleared only where it says so in `onStop`.
+
+**Downloadable plugins**, in this order after the kernel:
+
+- A. Declarative packages: a manifest (name, version, signature, what it asks for), skills, rules, MCP server
+  addresses, card and page templates. One generic plugin turns an installed package into `PluginContext` additions, so
+  the core sees no difference from a built-in plugin.
+- B. Sandboxed scripts in a package: tools written in JavaScript, run in the QuickJS sandbox the runtime already ships
+  (`agent-exec-js`, through Zipline), reaching only the host interfaces the package asked for. Not yet tried as a
+  plugin runtime.
+- Native code is not loaded from a download. Features that need a system capability stay plugins built into the host.
+- The catalog of plugins (index, review, updates) is a product of its own; the library offers installing a package
+  from an address.
+
+## 7. Open questions
 
 - What listens on 8766 in a bare host.
 - Whether `agent-device-capabilities`, `agent-android-use` and `agent-exec-js` become `compileOnly` behind their
