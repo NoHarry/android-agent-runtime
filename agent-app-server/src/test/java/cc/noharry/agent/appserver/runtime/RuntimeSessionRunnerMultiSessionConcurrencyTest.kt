@@ -98,9 +98,9 @@ internal fun stopAllRaceAdmitsNoneUntilDrainCompleteCase() {
             assertTrue(harness.runner.activeRunCount <= extras.size)
             assertTrue(harness.runner.activeRunCount <= DEBUG_MAX_ACTIVE_SESSION_RUNS)
             extras.forEach { extra ->
-                val closed = extra.runtimeCloses.get()
                 val active = harness.runner.activeRunSnapshots().any { it.runId == extra.runId && it.isActive }
-                assertTrue(closed == 1 || active)
+                // A refused start closes what it prepared after it answers, as the loser of a double start does.
+                assertTrue(active || awaitUntil { extra.runtimeCloses.get() == 1 })
                 if (active) extra.release.complete(Unit)
             }
         }
