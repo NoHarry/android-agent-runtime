@@ -3,6 +3,7 @@ import cc.noharry.agent.appserver.model.modelPrice
 import cc.noharry.agent.appserver.protocol.ModelPrice
 import cc.noharry.agent.appserver.protocol.PriceBook
 import cc.noharry.agent.appserver.protocol.ModelUsage
+import java.time.LocalDate
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -39,14 +40,15 @@ internal fun matchModelsDevPrice(catalog: JsonObject, model: String): ModelPrice
 }
 
 /**
- * [this] book with each of [models] (and each model it prices) priced as the server takes it: a price typed in stays,
- * else the host's or its service's ([modelPrice]), else the one the last sync found.
+ * [this] book with each of [models] (and each model it prices) priced as the server takes it on [day]: a price typed in
+ * stays, else the host's or its service's ([modelPrice], for the profile at the base URL it last ran at, [ranAt]), else
+ * the one the last sync found.
  */
-internal fun PriceBook.withKnownPrices(models: Collection<String>): PriceBook {
+internal fun PriceBook.withKnownPrices(models: Collection<String>, ranAt: Map<String, String> = emptyMap(), day: LocalDate = LocalDate.now()): PriceBook {
     val priced = prices.toMutableMap()
     (models + prices.keys).toSet().forEach { model ->
         if (priced[model]?.manual == true) return@forEach
-        modelPrice(model)?.let { priced[model] = it }
+        modelPrice(model, ranAt[model], day)?.let { priced[model] = it }
     }
     return copy(prices = priced)
 }

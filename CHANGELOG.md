@@ -30,15 +30,36 @@ called out; a patch release does not break it.
   compatible service, with conservative defaults (a 128K window, pictures on, no base URL or model until given one).
   A host's `AppServerConfig.modelFacts` and `modelPrices` win over a service's; `ProviderAdapter` is the contract
   (`services`, `facts`, `price`, `listModels`, `classify`, `balance`, `check`), and `services/list`,
-  `services/balance`, `services/check` and `services/checked` the requests. `ModelPrice` has a `currency` and `asOf`;
-  `ModelUsage.cost(price)` is in the price's currency and `PriceBook.costUsd(model, usage)` converts yuan.
+  `services/balance`, `services/check` and `services/checked` the requests. `ModelPrice` has a `currency` (USD or CNY;
+  another in a host's `modelPrices` is a configuration error), `asOf`, `region` (Moonshot, Zhipu, Model Studio, MiniMax
+  and SiliconFlow have China and international lists, picked by the endpoint a model ran at) and `effectiveFrom` (a
+  change a service announced applies from its day); `ModelUsage.cost(price)` is in the price's currency and
+  `PriceBook.costUsd(model, usage)` converts yuan. The price book keeps only typed and models.dev prices. `ModelFacts`
+  has `requestOutputTokens`, sent as a request's output limit (Volcengine Ark's answers stop at 4,096 tokens without
+  one), which a person may set per model (`ModelSettingsView.outputOverride`). A discovered plugin whose needs the app
+  does not meet is left out, and one that fails to start stays off, with its `PluginView.problem`.
+
+- **The app server's profiles have no built-in service (behaviour change).** A profile with no base URL or model no
+  longer takes OpenAI's (`https://api.openai.com/v1`, `gpt-4o-mini`) or Anthropic's (`https://api.anthropic.com/v1`,
+  `claude-3-5-haiku-latest`): without `agent-app-models` it has none until given one, and is not ready to run. With
+  it, a profile whose id is a service's (`openai`, `anthropic`, `deepseek`, …) takes that service's default endpoint,
+  unless the host named one, and there its default model (`ModelService.defaultModel`), and shares the key of profiles
+  on DeepSeek's host. A host that relied on the old defaults sets the base URL and model.
+
+- **A saved key goes only where its profile points.** Requests about a connection (`services/balance`,
+  `services/check`, `services/checked`, the model list, saving the connection) send a key typed in them where they
+  say, and a saved key only to its saved profile's host, or to an address a check made with that key typed found, over
+  https (or plain http to local addresses); elsewhere nothing is sent and the answer is `MODEL_KEY_TYPE_AGAIN`
+  (`ServiceCheckView.savedKeyRefused` for a check). `ProviderAdapter.balance`, `check`, `checked` and `listModels` take a
+  `ConnectionKey`, read only for the address it goes to.
 
 - **A model service's failures say what they were.** `RuntimeErrorCode` gains `PROVIDER_QUOTA_EXCEEDED`,
   `PROVIDER_CONTEXT_WINDOW_EXCEEDED` and `PROVIDER_TIMEOUT` (new constants: a host's exhaustive `when` over the codes
   needs a branch for each). The app server gives them, and `PROVIDER_AUTH_FAILED`, `PROVIDER_RATE_LIMITED` and
   `PROVIDER_SERVER_ERROR`, to a failed model call as the wire protocols' statuses and error codes say, or as the
   service's own error pages say where `agent-app-models` knows it; a quota, context window or key failure is not tried
-  again. The runtime's own clients report HTTP failures as before.
+  again, except a 429 on a host no adapter knows, which is tried again as the runtime decides. The runtime's own
+  clients report HTTP failures as before.
 
 - **A tool provider that throws anything fails only its call.** A `ToolProvider.callTool` that throws an `Error`
   (`UnsatisfiedLinkError`, `NoClassDefFoundError`, `ExceptionInInitializerError`) or a checked exception fails that

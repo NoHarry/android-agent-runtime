@@ -21,6 +21,7 @@ import cc.noharry.agent.appserver.model.appWebSearch
 import cc.noharry.agent.appserver.model.hasWebLookup
 import cc.noharry.agent.appserver.model.nativeUpdates
 import cc.noharry.agent.appserver.model.loadContextWindow
+import cc.noharry.agent.appserver.model.requestOutputTokens
 import cc.noharry.agent.appserver.model.RetryPolicy
 import cc.noharry.agent.appserver.model.serviceAt
 import cc.noharry.agent.appserver.model.loadModelImageInput
@@ -192,7 +193,7 @@ internal fun buildRuntime(
             delegate = if (useSimulatedModel) {
                 AppHost.simulatedModel?.invoke() ?: FixtureModelClient()
             } else {
-                config.client(profile, streamEnabled, diagnostics)
+                config.client(profile, streamEnabled, diagnostics, requestOutputTokens(context, config.editState(profile)))
             },
             // Only a stream sends its first event early; a whole reply can take longer than the watchdog.
             // The on-device server may still be loading the model when the first call goes out.

@@ -16,6 +16,11 @@ data class ProviderProfile(
     val streamEnabled: Boolean? = null,
     val serverSideSearch: Boolean = true,
     val searchCapability: String = "",
+    /**
+     * Whether [endpoint] was given (by the host's presets or the person); one that was not is its wire's default, which
+     * a service's own default endpoint replaces for a profile that names a service and no base URL.
+     */
+    val endpointGiven: Boolean = true,
 ) {
     val displayLabel: String = label.ifBlank { provider.label }
 

@@ -8,7 +8,10 @@ import kotlinx.serialization.Serializable
 /**
  * One of the host's plugins: whether it is turned on, and whether it runs (one turned on waits while a plugin it
  * [needs] is off). A [required] one cannot be turned off. One a person installed ([PluginSource.PACKAGE]) has its
- * package ([pkg]): who published it, what it asks for, whether it is damaged.
+ * package ([pkg]): who published it, what it asks for, whether it is damaged. [problem] says why one does not run: one a
+ * library declares that needs a plugin the app does not have ([PackageProblem.NEEDS_MISSING], those ids in its detail)
+ * is left out and cannot be turned on; one that failed to start ([PackageProblem.START_FAILED], why in its detail)
+ * stays off until it is turned on again.
  */
 @Serializable
 data class PluginView(
@@ -20,6 +23,7 @@ data class PluginView(
     val source: PluginSource = PluginSource.BUILT_IN,
     @SerialName("package")
     val pkg: PackageView? = null,
+    val problem: PackageRefusal? = null,
 )
 
 /** Where a plugin came from: built into the host's app, or a package a person installed. */
@@ -279,6 +283,8 @@ enum class PackageProblem {
     BAD_SECRET,
     /** It did not start; what was installed before is back. */
     START_FAILED,
+    /** A plugin a library declares needs plugins the app does not have (named in the detail): it is left out. */
+    NEEDS_MISSING,
     /** Not an installed package (a plugin built into the host is not removed). */
     NOT_A_PACKAGE_PLUGIN,
     /**

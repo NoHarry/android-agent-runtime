@@ -145,6 +145,9 @@ enum class FindingCode : FindingKind {
 
     MODEL_HTTP_ERROR,
 
+    /** A saved key is not sent to this host (its value): it goes only where its profile points; the person types it. */
+    MODEL_KEY_TYPE_AGAIN,
+
     MODEL_MISSING_API_KEY,
 
     MODEL_MISSING_BASE_URL,

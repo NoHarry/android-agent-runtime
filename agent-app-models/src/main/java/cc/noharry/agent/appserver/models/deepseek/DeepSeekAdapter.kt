@@ -1,6 +1,7 @@
 package cc.noharry.agent.appserver.models.deepseek
 
 import android.content.Context
+import cc.noharry.agent.appserver.model.ConnectionKey
 import cc.noharry.agent.appserver.model.ModelService
 import cc.noharry.agent.appserver.model.ProviderAdapter
 import cc.noharry.agent.appserver.model.ProviderConfig
@@ -12,6 +13,7 @@ import cc.noharry.agent.appserver.protocol.ModelPrice
 import cc.noharry.agent.appserver.protocol.ProviderEndpoint
 import cc.noharry.agent.appserver.protocol.ServiceCheckPart
 import cc.noharry.agent.appserver.protocol.ServiceCheckView
+import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -33,16 +35,15 @@ object DeepSeekAdapter : ProviderAdapter {
      * name a relay uses) at its own model of that kind: every flash model at deepseek-flash, any other at the listed model
      * of the same last word (pro) whose name shares the longest start with it. Null for any other name.
      */
-    override fun price(model: String): ModelPrice? {
-        val service = services.single()
-        service.model(model)?.price?.let { return it }
+    override fun price(service: ModelService, model: String, region: String?, day: LocalDate): ModelPrice? {
+        service.model(model)?.let { return it.priceIn(region, day) }
         val key = model.lowercase()
         if (!key.startsWith(SERVICE_ID) || '/' in key) return null
         val tier = if (key.split('-', '.').contains(FLASH)) FLASH else key.substringAfterLast('-')
-        val best = service.models.filter { it.price != null && it.id.split('-').contains(tier) }
+        val best = service.models.filter { it.priceIn(region, day) != null && it.id.split('-').contains(tier) }
             .maxWithOrNull(compareBy({ it.id.commonPrefixWith(key).length }, { -it.id.length }))
             ?: return null
-        return best.price?.copy(pricedAs = best.id)
+        return best.priceIn(region, day)?.copy(pricedAs = best.id)
     }
 
     override fun lookup(context: Context, config: ProviderConfig, profile: ProviderProfile): WebLookup? = config.deepSeekToolsOf(context, profile)
@@ -55,19 +56,19 @@ object DeepSeekAdapter : ProviderAdapter {
         profile.usesDeepSeekNativeUpdates() || profile.endpoint == ProviderEndpoint.MESSAGES &&
             DeepSeekProbes.current(context, profile, config.effectiveApiKey(profile))?.passthrough?.passed == true
 
-    override suspend fun balance(context: Context, service: ModelService, apiKey: String, relayUrl: String?): BalanceView {
+    override suspend fun balance(context: Context, service: ModelService, apiKey: ConnectionKey, relayUrl: String?): BalanceView {
         val balance = if (relayUrl == null) {
-            fetchDeepSeekBalance(apiKey)
+            fetchDeepSeekBalance(apiKey.sendTo(DEEPSEEK_BALANCE_URL))
         } else {
-            fetchDeepSeekBalance(apiKey, withContext(Dispatchers.IO) { deepSeekRelayClient(context) }, relayUrl)
+            fetchDeepSeekBalance(apiKey.sendTo(relayUrl), withContext(Dispatchers.IO) { deepSeekRelayClient(context) }, relayUrl)
         }
         return balance.getOrThrow().view()
     }
 
-    override fun checked(context: Context, service: ModelService, profile: ProviderProfile, apiKey: String): ServiceCheckView =
+    override fun checked(context: Context, service: ModelService, profile: ProviderProfile, apiKey: ConnectionKey): ServiceCheckView =
         DeepSeekProbes.saved(context, profile.id).view(profile, apiKey)
 
-    override suspend fun check(context: Context, service: ModelService, profile: ProviderProfile, apiKey: String): ServiceCheckView =
+    override suspend fun check(context: Context, service: ModelService, profile: ProviderProfile, apiKey: ConnectionKey): ServiceCheckView =
         DeepSeekProbes.check(context, profile, apiKey).view(profile, apiKey)
 
     override fun shareKeys(profiles: List<ProviderProfile>): List<ProviderProfile> = profiles.withSharedDeepSeekApiKeys()
@@ -91,12 +92,12 @@ internal fun List<ProviderProfile>.withSharedDeepSeekApiKeys(): List<ProviderPro
  * [this] check (null: none made) as the screens see it for [profile] with [apiKey] as now filled in: its parts only when
  * it was made for that endpoint, address and key.
  */
-internal fun DeepSeekProbe?.view(profile: ProviderProfile, apiKey: String): ServiceCheckView {
+internal fun DeepSeekProbe?.view(profile: ProviderProfile, apiKey: ConnectionKey): ServiceCheckView {
     val current = this?.takeIf { it.fingerprint == deepSeekProbeFingerprint(profile.endpoint, profile.baseUrl, apiKey) }
     return ServiceCheckView(
         checked = this != null,
         current = current != null,
-        hasKey = apiKey.isNotBlank(),
+        hasKey = !apiKey.isBlank,
         balance = current?.balance?.part(),
         lookup = current?.tools?.part(),
         nativeUpdates = current?.passthrough?.part(),

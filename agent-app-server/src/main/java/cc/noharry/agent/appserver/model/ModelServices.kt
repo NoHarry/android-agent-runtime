@@ -8,19 +8,23 @@ import cc.noharry.agent.appserver.protocol.ProviderEndpoint
 import cc.noharry.agent.appserver.protocol.ServiceEndpointView
 import cc.noharry.agent.appserver.protocol.ServiceView
 import cc.noharry.agent.appserver.runtime.AppHost
+import cc.noharry.agent.model.ModelVariantRegistry
 import cc.noharry.agent.spi.reliability.RuntimeErrorCode
+import java.time.LocalDate
 
 /**
  * A model service an adapter knows ([ProviderAdapter.services]): who it is ([id], [label]); how a profile reaches it
  * ([endpoints], the first its default: a profile whose base URL is on one of their hosts, or on one of [hosts], is on
- * it; a host of [hosts] that starts with a dot takes every host ending with it); where a person gets a key ([keyHint], plain text); its models ([models], each with what is known of it and its
- * price); and, as data, what the server's generic clients need to know of it: where it lists its models ([modelsUrl],
- * an OpenAI-compatible list asked with a bearer key wherever the profile's endpoint is; null lists at `<base URL>/models`
- * with the profile's wire, and [listsModels] false offers [models] alone), a prefix its list puts before ids
- * that requests leave out ([listedIdPrefix]), the usage fields it reports cached input in ([usageFields]), how its
- * failures read ([errors]) and how often a failed call is tried again ([retry]). [balance] and [relayCheck] say that its
- * adapter answers [ProviderAdapter.balance] and [ProviderAdapter.check]. [source] and [asOf] say where its facts and
- * prices were read and on which day.
+ * it; a host of [hosts] that starts with a dot takes every host ending with it); where a person gets a key ([keyHint],
+ * plain text); its models ([models], each with what is known of it and its prices) and the one a profile that names
+ * none takes ([defaultModel]); and, as data, what the server's generic clients need to know of it: where it lists its
+ * models ([modelsUrl], an OpenAI-compatible list asked with a bearer key wherever the profile's endpoint is; null lists
+ * at `<base URL>/models` with the profile's wire, and [listsModels] false offers [models] alone), a prefix its list puts
+ * before ids that requests leave out ([listedIdPrefix]), the usage fields it reports cached input in ([usageFields]),
+ * how its failures read ([errors]) and how often a failed call is tried again ([retry]). [hostRegions] names the region
+ * of hosts of [hosts] (a host, or a suffix starting with a dot), for a service whose prices differ by region.
+ * [balance] and [relayCheck] say that its adapter answers [ProviderAdapter.balance] and [ProviderAdapter.check].
+ * [source] and [asOf] say where its facts and prices were read and on which day.
  */
 @AppServerPluginApi
 class ModelService(
@@ -40,26 +44,45 @@ class ModelService(
     val relayCheck: Boolean = false,
     val source: String = "",
     val asOf: String = "",
+    val defaultModel: String? = null,
+    val hostRegions: Map<String, String> = emptyMap(),
 ) {
     init {
         require(id.isNotBlank() && label.isNotBlank()) { "A model service needs an id and a label." }
         require(endpoints.isNotEmpty()) { "Model service $id names no endpoint." }
+        require(defaultModel == null || models.any { it.id == defaultModel }) { "Model service $id's default model $defaultModel is not among its models." }
     }
 
     /** Every host a profile on it may be on: its endpoints' and [hosts]. */
     val allHosts: Set<String> = hosts.map { it.lowercase() }.toSet() + endpoints.mapNotNull { it.baseUrl.urlHost() }
+
+    /** The region of its first endpoint: the list a model is priced from where the region is not known (a relay). */
+    val defaultRegion: String get() = endpoints.first().region
 
     /** Whether a profile at [baseUrl] is on this service: its host is one of [allHosts], or ends with one that starts with a dot. */
     fun serves(baseUrl: String): Boolean = baseUrl.urlHost()?.let { host ->
         host in allHosts || allHosts.any { it.startsWith('.') && host.endsWith(it) }
     } == true
 
+    /**
+     * The region a profile at [baseUrl] is in: its endpoint's on the same host, else [hostRegions]'; null when neither
+     * says (a host of [hosts] whose region is not known, or one not on this service).
+     */
+    fun regionOf(baseUrl: String): String? {
+        val host = baseUrl.urlHost() ?: return null
+        endpoints.firstOrNull { it.baseUrl.urlHost() == host }?.let { return it.region }
+        return hostRegions.entries.firstOrNull { (named, _) -> host == named.lowercase() || named.startsWith('.') && host.endsWith(named.lowercase()) }?.value
+    }
+
     /** [id]'s entry in [models] (its id or an alias, ignoring case); null when it lists no such model. */
     fun model(id: String): ServiceModel? = models.firstOrNull { it.id == id } ?: models.firstOrNull { it.isNamed(id) }
 
     /** Where a profile of [provider]'s wire reaches it, preferring [endpoint]; null when it speaks none of that wire. */
     fun endpointFor(provider: ModelProvider, endpoint: ProviderEndpoint? = null): ServiceEndpoint? =
-        endpoints.firstOrNull { it.endpoint == endpoint } ?: endpoints.firstOrNull { it.endpoint.provider == provider }
+        endpoints.firstOrNull { it.endpoint == endpoint } ?: defaultEndpointFor(provider)
+
+    /** Its default endpoint for [provider]'s wire: the first of [endpoints] that speaks it; null when none does. */
+    fun defaultEndpointFor(provider: ModelProvider): ServiceEndpoint? = endpoints.firstOrNull { it.endpoint.provider == provider }
 
     /** The service as a client sees it ([cc.noharry.agent.appserver.protocol.ServiceRequests.LIST]). */
     fun view(): ServiceView = ServiceView(
@@ -70,6 +93,7 @@ class ModelService(
         models = models.map { it.id },
         balance = balance,
         relayCheck = relayCheck,
+        defaultModel = defaultModel.orEmpty(),
     )
 
     override fun toString(): String = "ModelService($id)"
@@ -84,12 +108,36 @@ class ServiceEndpoint(val endpoint: ProviderEndpoint, val baseUrl: String, val r
 
 /**
  * A model a service offers: its [id] as requests name it, what is known of it ([facts]), its [price] if known, and other
- * ids the service takes for the same model ([aliases]).
+ * ids the service takes for the same model ([aliases]). [prices] holds more of its prices: one per region where the
+ * service's lists differ by region ([ModelPrice.region]), and those it announced for a later day
+ * ([ModelPrice.effectiveFrom]); [priceIn] picks the one that applies.
  */
 @AppServerPluginApi
-class ServiceModel(val id: String, val facts: ModelFacts = ModelFacts(), val price: ModelPrice? = null, val aliases: Set<String> = emptySet()) {
+class ServiceModel(
+    val id: String,
+    val facts: ModelFacts = ModelFacts(),
+    val price: ModelPrice? = null,
+    val aliases: Set<String> = emptySet(),
+    val prices: List<ModelPrice> = emptyList(),
+) {
+    init {
+        (listOfNotNull(price) + prices).forEach { entry ->
+            require(entry.effectiveFrom == null || runCatching { LocalDate.parse(entry.effectiveFrom) }.isSuccess) { "$id: a price's effectiveFrom is not a date." }
+        }
+    }
+
     /** Whether [id] names this model: its own id or an alias, ignoring case. */
     fun isNamed(id: String): Boolean = this.id.equals(id, ignoreCase = true) || aliases.any { it.equals(id, ignoreCase = true) }
+
+    /**
+     * Its price for a profile in [region] (null: a region the service's data does not know) on [day]: of its prices for
+     * every region or for that one, the latest whose [ModelPrice.effectiveFrom] has come. Null when none applies, as for
+     * a region whose list the data does not have.
+     */
+    fun priceIn(region: String?, day: LocalDate): ModelPrice? = (listOfNotNull(price) + prices)
+        .filter { it.region.isNullOrEmpty() || it.region == region }
+        .filter { entry -> entry.effectiveFrom?.let { !LocalDate.parse(it).isAfter(day) } ?: true }
+        .maxWithOrNull(compareBy({ it.effectiveFrom.orEmpty() }, { !it.region.isNullOrEmpty() }))
 }
 
 /**
@@ -169,14 +217,33 @@ fun modelFacts(baseUrl: String, model: String): ModelFacts {
 }
 
 /**
- * [model]'s price: the host's, else the first an adapter has for its name, else for its name without a relay's prefix
- * (each name asked of every adapter before the next); null when none has one.
+ * [model]'s price on [day]: the host's; else, for a profile at [baseUrl] on a service an adapter knows, that service's
+ * for the profile's region ([ModelService.regionOf]: none where the data has no list for it); else the first an adapter
+ * has for its name, else for its name without a relay's prefix (each name asked of every service before the next), from
+ * the list of the service's first region. Null when none has one.
  */
 @AppServerPluginApi
-fun modelPrice(model: String): ModelPrice? {
+fun modelPrice(model: String, baseUrl: String? = null, day: LocalDate = LocalDate.now()): ModelPrice? {
     val bare = model.bareModelId()
-    return AppHost.modelPrices[model] ?: AppHost.modelPrices[bare]
-        ?: listOf(model, bare).firstNotNullOfOrNull { name -> AppHost.providerAdapters.firstNotNullOfOrNull { it.price(name) } }
+    AppHost.modelPrices[model]?.let { return it }
+    AppHost.modelPrices[bare]?.let { return it }
+    baseUrl?.let(::serviceAt)?.let { (adapter, service) ->
+        val region = service.regionOf(baseUrl)
+        return adapter.price(service, model, region, day) ?: adapter.price(service, bare, region, day)
+    }
+    return listOf(model, bare).firstNotNullOfOrNull { name ->
+        knownServices().firstNotNullOfOrNull { (adapter, service) -> adapter.price(service, name, service.defaultRegion, day) }
+    }
+}
+
+/**
+ * [this] with only the reasoning efforts the runtime's variant menu can send for [model] on [provider]'s wire
+ * ([ModelVariantRegistry.variants]): one the data lists that the menu does not offer (`xhigh` where the wire has no
+ * such variant) is not shown as one to choose.
+ */
+internal fun ModelFacts.selectableEfforts(provider: ModelProvider, model: String): ModelFacts {
+    val offered = ModelVariantRegistry.variants(provider.wireName, model).map { it.id }.toSet()
+    return copy(reasoningEfforts = reasoningEfforts.filter { it in offered })
 }
 
 /** The usage fields of every service an adapter knows, for reading a call's usage. */

@@ -4,9 +4,12 @@ import cc.noharry.agent.appserver.InternalAppServerApi
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import cc.noharry.agent.appserver.AppServerPluginApi
 import cc.noharry.agent.appserver.model.ProviderAdapter
 import cc.noharry.agent.appserver.protocol.ConfirmationMode
+import cc.noharry.agent.appserver.protocol.PackageProblem
+import cc.noharry.agent.appserver.protocol.PackageRefusal
 import cc.noharry.agent.appserver.protocol.PluginView
 import cc.noharry.agent.appserver.protocol.client.ServerState
 import cc.noharry.agent.appserver.protocol.jsonrpc.JsonRpcNotification
@@ -152,10 +155,19 @@ class PluginHost(
     private val main: kotlin.coroutines.CoroutineContext = Dispatchers.Main.immediate,
     /** Where a plugin's deliveries go ([PluginContext.deliver]): the server's conversation; tests keep their own. */
     private val conversation: (Context, Delivery) -> Unit = { context, delivery -> RuntimeSession.deliver(context, delivery) },
+    /**
+     * Plugins the app's libraries declare ([PluginDiscovery]), after [plugins]. Unlike the host's own, one that needs a
+     * plugin the app does not have is left out, and one that fails to start is noted ([PluginView.problem]) and logged,
+     * not thrown: the host did not ask for them.
+     */
+    discovered: List<AppServerPlugin> = emptyList(),
 ) {
-    private val plugins = plugins.toMutableList()
+    private val leftOut = LinkedHashMap<AppServerPlugin, PackageRefusal>()
+    private val discoveredIds: Set<String>
+    private val plugins: MutableList<AppServerPlugin>
     private val running = LinkedHashMap<String, RunningPlugin>()
     private val failed = HashSet<String>()
+    private val problems = HashMap<String, PackageRefusal>()
     private var state: PublishedState? = null
 
     /** Told after the running plugins changed. */
@@ -166,9 +178,24 @@ class PluginHost(
         private set
 
     init {
-        val ids = plugins.map { it.id }
-        require(ids.size == ids.toSet().size) { "Two plugins share an id: $ids" }
-        plugins.forEach { plugin -> require(ids.containsAll(plugin.needs)) { "${plugin.id} needs a plugin the host does not list: ${plugin.needs - ids.toSet()}" } }
+        val listed = plugins.map { it.id }
+        require(listed.size == listed.toSet().size) { "Two plugins share an id: $listed" }
+        var kept = discovered.filter { it.id !in listed }
+        while (true) {
+            val known = listed.toSet() + kept.map { it.id }
+            val unmet = kept.filterNot { known.containsAll(it.needs) }
+            if (unmet.isEmpty()) break
+            unmet.forEach { plugin ->
+                val missing = (plugin.needs - known).sorted()
+                Log.w(TAG, "The library plugin ${plugin.id} needs $missing, which the app does not have; it is left out.")
+                leftOut[plugin] = PackageRefusal(PackageProblem.NEEDS_MISSING, missing.joinToString())
+            }
+            kept = kept - unmet.toSet()
+        }
+        this.plugins = (plugins + kept).toMutableList()
+        discoveredIds = kept.mapTo(hashSetOf()) { it.id }
+        val ids = this.plugins.map { it.id }.toSet()
+        plugins.forEach { plugin -> require(ids.containsAll(plugin.needs)) { "${plugin.id} needs a plugin the host does not list: ${plugin.needs - ids}" } }
     }
 
     /** Starts every plugin that is on, those others need first. */
@@ -181,9 +208,9 @@ class PluginHost(
     }
 
     internal fun views(): List<PluginView> = plugins.map { plugin ->
-        val view = PluginView(plugin.id, isOn(plugin), plugin.id in running, plugin.required, plugin.needs.sorted())
+        val view = PluginView(plugin.id, isOn(plugin), plugin.id in running, plugin.required, plugin.needs.sorted(), problem = problems[plugin.id])
         (plugin as? DescribedPlugin)?.describe(view) ?: view
-    }
+    } + leftOut.map { (plugin, problem) -> PluginView(plugin.id, enabled = false, running = false, needs = plugin.needs.sorted(), problem = problem) }
 
     /** The plugin registered as [id], or null. */
     internal fun plugin(id: String): AppServerPlugin? = plugins.firstOrNull { it.id == id }
@@ -265,6 +292,7 @@ class PluginHost(
 
     /** Turns [id] on or off, keeps the choice, and starts or stops what follows from it. */
     fun setEnabled(id: String, enabled: Boolean): List<PluginView> {
+        leftOut.entries.firstOrNull { it.key.id == id }?.let { throw IllegalArgumentException("$id is left out: it needs ${it.value.detail}, which the app does not have") }
         val plugin = plugin(id) ?: throw IllegalArgumentException("no plugin $id")
         require(enabled || !plugin.required) { "$id cannot be turned off" }
         store.set(id, enabled)
@@ -301,8 +329,13 @@ class PluginHost(
         } catch (failure: Throwable) {
             stop(plugin.id)
             failed += plugin.id
-            throw failure
+            problems[plugin.id] = PackageRefusal(PackageProblem.START_FAILED, failure.message ?: failure.javaClass.simpleName)
+            // A library's plugin the host did not ask for does not take the server down with it.
+            if (plugin.id !in discoveredIds || failure !is Exception) throw failure
+            Log.w(TAG, "The library plugin ${plugin.id} did not start; it stays off until it is turned on again.", failure)
+            return
         }
+        problems -= plugin.id
         state?.let(context::startPublishing)
     }
 
@@ -343,6 +376,8 @@ class PluginHost(
         onChange(additions)
     }
 }
+
+private const val TAG = "AppServer"
 
 /** A plugin that says more of itself than the host's list does (where it came from, its version). */
 internal interface DescribedPlugin {

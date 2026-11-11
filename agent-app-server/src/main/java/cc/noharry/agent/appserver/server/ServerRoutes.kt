@@ -1,5 +1,6 @@
 package cc.noharry.agent.appserver.server
 
+import cc.noharry.agent.appserver.FoundException
 import cc.noharry.agent.appserver.protocol.CapabilityRequests
 import cc.noharry.agent.appserver.protocol.ClientRequests
 import cc.noharry.agent.appserver.protocol.DataClearResult
@@ -29,9 +30,11 @@ import cc.noharry.agent.appserver.protocol.ThreadStartResult
 import cc.noharry.agent.appserver.protocol.TrajectoryRaw
 import cc.noharry.agent.appserver.protocol.UserQuestion
 import cc.noharry.agent.appserver.protocol.client.ServerState
+import cc.noharry.agent.appserver.protocol.logText
 import cc.noharry.agent.appserver.protocol.jsonrpc.JsonRpcErrorCodes
 import cc.noharry.agent.appserver.protocol.jsonrpc.JsonRpcException
 import cc.noharry.agent.appserver.protocol.jsonrpc.JsonRpcRequest
+import cc.noharry.agent.appserver.protocol.jsonrpc.ProtocolJson
 import cc.noharry.agent.appserver.protocol.jsonrpc.RequestMethod
 import cc.noharry.agent.appserver.protocol.jsonrpc.paramsOf
 import cc.noharry.agent.appserver.protocol.jsonrpc.resultOf
@@ -54,6 +57,12 @@ internal interface SettingsBackend {
     fun deleteProvider(profileId: String)
 
     suspend fun fetchModels(params: ProviderFetchParams): List<String>
+
+    /**
+     * Why saving [params] is refused, null when it is not: a blank key keeps the saved one only while the base URL stays
+     * on the host (scheme, host and port) the saved profile points at; elsewhere the person types the key again.
+     */
+    fun savedKeyMoves(params: ProviderSaveParams): Finding? = null
 
     fun saveProviderModels(params: ProviderModelsParams)
 
@@ -220,14 +229,19 @@ internal class ServerRoutes(
         on(SettingsRequests.MODEL_SELECT) { done { settings.selectModel(it) } }
         on(SettingsRequests.RUN_SET) { done { settings.setRun(it) } }
         on(SettingsRequests.CONFIG_RELOAD) { done { settings.reloadConfig() } }
-        on(SettingsRequests.PROVIDER_SAVE) { done { settings.saveProvider(it) } }
+        on(SettingsRequests.PROVIDER_SAVE) { params ->
+            settings.savedKeyMoves(params)?.let { refused -> throw JsonRpcException(JsonRpcErrorCodes.REJECTED, refused.logText(), findingData(refused)) }
+            done { settings.saveProvider(params) }
+        }
         on(SettingsRequests.PROVIDER_CREATE) { ProviderCreateResult(settings.createProvider(it)) }
         on(SettingsRequests.PROVIDER_DELETE) { done { settings.deleteProvider(it.id) } }
         on(SettingsRequests.PROVIDER_FETCH_MODELS) { params ->
             val models = try {
                 settings.fetchModels(params)
             } catch (failed: java.io.IOException) {
-                throw JsonRpcException(JsonRpcErrorCodes.REJECTED, failed.message ?: "model list not loaded")
+                // A failure the server named (a saved key that may not go to this address) comes with its finding.
+                val found = generateSequence<Throwable>(failed) { it.cause }.filterIsInstance<FoundException>().firstOrNull()
+                throw JsonRpcException(JsonRpcErrorCodes.REJECTED, failed.message ?: "model list not loaded", found?.finding?.let(::findingData))
             }
             ModelListResult(models)
         }
@@ -281,3 +295,6 @@ internal class RouteMap : RouteTable {
         routes[method.name] = { request -> resultOf(method, block(request.paramsOf(method))) }
     }
 }
+
+/** [finding] as a refusal's data, for a client to word. */
+private fun findingData(finding: Finding): JsonElement = ProtocolJson.encodeToJsonElement(Finding.serializer(), finding)

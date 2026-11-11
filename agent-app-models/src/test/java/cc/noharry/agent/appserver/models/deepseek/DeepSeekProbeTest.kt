@@ -1,4 +1,6 @@
 package cc.noharry.agent.appserver.models.deepseek
+
+import cc.noharry.agent.appserver.model.ConnectionKey
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import cc.noharry.agent.appserver.model.ProviderConfig
@@ -76,7 +78,7 @@ class DeepSeekProbeTest {
             }
         }
 
-        val probe = probeDeepSeek(ProviderEndpoint.MESSAGES, "http://127.0.0.1:18080/v1", " local ", "deepseek-v4-flash", relay)
+        val probe = probeDeepSeek(ProviderEndpoint.MESSAGES, "http://127.0.0.1:18080/v1", ConnectionKey.typed(" local "), "deepseek-v4-flash", relay)
 
         assertEquals("http://127.0.0.1:18080/v1/user/balance", probe.balance.url)
         assertEquals(
@@ -110,7 +112,7 @@ class DeepSeekProbeTest {
             }
         }
 
-        val probe = probeDeepSeek(ProviderEndpoint.MESSAGES, "https://newapi.example.com/v1", "sk-gw", "deepseek-v4-flash", gateway)
+        val probe = probeDeepSeek(ProviderEndpoint.MESSAGES, "https://newapi.example.com/v1", ConnectionKey.typed("sk-gw"), "deepseek-v4-flash", gateway)
 
         assertFalse(probe.balance.passed)
         assertEquals(finding(FindingCode.MODEL_PROBE_NOT_BALANCE), probe.balance.note)
@@ -128,7 +130,7 @@ class DeepSeekProbeTest {
             if (body.contains("tool_addition")) 200 to """{"type":"message","content":[{"type":"text","text":"Hi"}]}""" else deepSeeksRefusal(body)
         }
 
-        val probe = probeDeepSeek(ProviderEndpoint.MESSAGES, "https://gw.example.com/anthropic", "k", "m", halfway)
+        val probe = probeDeepSeek(ProviderEndpoint.MESSAGES, "https://gw.example.com/anthropic", ConnectionKey.typed("k"), "m", halfway)
 
         assertFalse(probe.passthrough!!.passed)
         assertEquals(finding(FindingCode.MODEL_PROBE_DROPPED, "tool_addition"), probe.passthrough!!.note)
@@ -140,9 +142,9 @@ class DeepSeekProbeTest {
             if (path.endsWith("/messages")) 400 to """{"error":{"message":"unsupported content type tool_addition"}}""" else 404 to ""
         }
 
-        val probe = probeDeepSeek(ProviderEndpoint.MESSAGES, "https://gw.example.com/anthropic", "k", "m", strict)
-        val chat = probeDeepSeek(ProviderEndpoint.CHAT_COMPLETIONS, "https://gw.example.com/v1", "k", "m", strict)
-        val noModel = probeDeepSeek(ProviderEndpoint.MESSAGES, "https://gw.example.com/anthropic", "k", "", strict)
+        val probe = probeDeepSeek(ProviderEndpoint.MESSAGES, "https://gw.example.com/anthropic", ConnectionKey.typed("k"), "m", strict)
+        val chat = probeDeepSeek(ProviderEndpoint.CHAT_COMPLETIONS, "https://gw.example.com/v1", ConnectionKey.typed("k"), "m", strict)
+        val noModel = probeDeepSeek(ProviderEndpoint.MESSAGES, "https://gw.example.com/anthropic", ConnectionKey.typed("k"), "", strict)
 
         assertFalse(probe.passthrough!!.passed)
         assertEquals(finding(FindingCode.MODEL_HTTP_ERROR, 400, "unsupported content type tool_addition"), probe.passthrough!!.note)

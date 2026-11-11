@@ -11,6 +11,7 @@ import cc.noharry.agent.appserver.runtime.AppHost
 import cc.noharry.agent.appserver.server.RouteModule
 import cc.noharry.agent.runtime.WebFetchFallback
 import cc.noharry.agent.runtime.WebSearchProvider
+import java.time.LocalDate
 
 /**
  * What the server knows of model services beyond the wire protocols it speaks, from a plugin that brings it
@@ -30,14 +31,18 @@ interface ProviderAdapter {
     /** What is known of [model] at [service]; by default its entry in the service's list, null when it has none. */
     fun facts(service: ModelService, model: String): ModelFacts? = service.model(model)?.facts
 
-    /** [model]'s price, wherever it ran; by default its entry in one of [services]' lists, null when none has it. */
-    fun price(model: String): ModelPrice? = services.firstNotNullOfOrNull { it.model(model)?.price }
+    /**
+     * [model]'s price at [service] for a profile in [region] (null: one the data does not know) on [day]; by default its
+     * entry's ([ServiceModel.priceIn]), null when the service lists no such model or has no price for that region.
+     */
+    fun price(service: ModelService, model: String, region: String?, day: LocalDate): ModelPrice? = service.model(model)?.priceIn(region, day)
 
     /**
-     * The models [service] offers through [profile] with [apiKey], fetched by the adapter; null (the default) has the
-     * server list them from the service's models endpoint ([ModelService.modelsUrl]).
+     * The models [service] offers through [profile] with [apiKey] (sent only where it may go, [ConnectionKey.sendTo]),
+     * fetched by the adapter; null (the default) has the server list them from the service's models endpoint
+     * ([ModelService.modelsUrl]).
      */
-    suspend fun listModels(context: Context, service: ModelService, profile: ProviderProfile, apiKey: String): List<String>? = null
+    suspend fun listModels(context: Context, service: ModelService, profile: ProviderProfile, apiKey: ConnectionKey): List<String>? = null
 
     /** What a failed call to [service] was; by default as its [ModelService.errors] say, null for the server's own reading. */
     fun classify(service: ModelService, failure: ModelFailure): ModelFailureKind? = failure.kindBy(service.errors)
@@ -53,19 +58,25 @@ interface ProviderAdapter {
 
     /**
      * [service]'s balance for [apiKey], at the service itself or, with [relayUrl], at a relay's address a [check] found it
-     * behind; null when the service has no balance query ([ModelService.balance] false). A failure the screens can name
-     * is a [cc.noharry.agent.appserver.FoundException].
+     * behind; null when the service has no balance query ([ModelService.balance] false). The key is read for the
+     * address it goes to ([ConnectionKey.sendTo]), which refuses one a saved key may not go to. A failure the screens can
+     * name is a [cc.noharry.agent.appserver.FoundException].
      */
-    suspend fun balance(context: Context, service: ModelService, apiKey: String, relayUrl: String?): BalanceView? = null
+    suspend fun balance(context: Context, service: ModelService, apiKey: ConnectionKey, relayUrl: String?): BalanceView? = null
 
     /**
      * The check of what of [service]'s own API [profile] (a relay, say) reaches that was last made for it, measured
-     * against [profile] and [apiKey] as they are now; null when the service has no such check ([ModelService.relayCheck]).
+     * against [profile] and [apiKey] as they are now ([ConnectionKey.fingerprint]); null when the service has no such
+     * check ([ModelService.relayCheck]).
      */
-    fun checked(context: Context, service: ModelService, profile: ProviderProfile, apiKey: String): ServiceCheckView? = null
+    fun checked(context: Context, service: ModelService, profile: ProviderProfile, apiKey: ConnectionKey): ServiceCheckView? = null
 
-    /** Checks what of [service]'s own API [profile] reaches with [apiKey], and keeps the result for it; null without a check. */
-    suspend fun check(context: Context, service: ModelService, profile: ProviderProfile, apiKey: String): ServiceCheckView? = null
+    /**
+     * Checks what of [service]'s own API [profile] reaches with [apiKey], and keeps the result for it; null without a
+     * check. The server asks it only when the key may go to the profile's base URL; the addresses that passed with a key
+     * typed in the request are where that key, once saved, may go later.
+     */
+    suspend fun check(context: Context, service: ModelService, profile: ProviderProfile, apiKey: ConnectionKey): ServiceCheckView? = null
 
     /** Requests of its own, for its settings. */
     fun routes(app: Context): List<RouteModule> = emptyList()
@@ -98,16 +109,22 @@ internal fun List<ProviderProfile>.withSharedKeys(): List<ProviderProfile> =
 
 /**
  * [this] with what a profile with no base URL leaves to its service: a profile whose id is a known service's
- * ([ModelService.id]) takes the base URL of that service's endpoint for its wire (its own endpoint kind if the service
- * speaks it) and, without a model, the first of the service's models.
+ * ([ModelService.id]) takes the base URL of that service's endpoint for its endpoint kind when one was given, else of the
+ * service's default endpoint for its wire ([ModelService.defaultEndpointFor]); and, without a model, on that default
+ * endpoint, the service's [ModelService.defaultModel]. What the host or the person gave is never replaced.
  */
 internal fun List<ProviderProfile>.withServiceDefaults(): List<ProviderProfile> = map { profile ->
     if (profile.baseUrl.isNotBlank() || AppHost.models.owns(profile.id)) return@map profile
     val service = serviceNamed(profile.id)?.second ?: return@map profile
-    val endpoint = service.endpointFor(profile.provider, profile.endpoint) ?: return@map profile
+    val default = service.defaultEndpointFor(profile.provider)
+    val endpoint = (if (profile.endpointGiven) service.endpointFor(profile.provider, profile.endpoint) else default) ?: return@map profile
+    // A search capability the old endpoint defaulted to follows the endpoint; one that was given stays.
+    val search = profile.searchCapability.takeUnless { it == defaultSearchCapability(profile.provider, profile.endpoint) }
+        ?: defaultSearchCapability(profile.provider, endpoint.endpoint)
     profile.copy(
         baseUrl = endpoint.baseUrl,
         endpoint = endpoint.endpoint,
-        model = profile.model.ifBlank { service.models.firstOrNull()?.id.orEmpty() },
+        searchCapability = search,
+        model = profile.model.ifBlank { service.defaultModel?.takeIf { endpoint == default }.orEmpty() },
     )
 }

@@ -75,6 +75,7 @@ private val BALANCE_CLIENT = OkHttpClient.Builder()
     .callTimeout(15, TimeUnit.SECONDS)
     .build()
 
-private const val DEEPSEEK_BALANCE_URL = "https://api.deepseek.com/user/balance"
+/** DeepSeek's own balance query. */
+internal const val DEEPSEEK_BALANCE_URL = "https://api.deepseek.com/user/balance"
 private const val UNAUTHORIZED = 401
 private const val MAX_ERROR_CHARS = 120

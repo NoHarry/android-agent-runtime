@@ -37,6 +37,13 @@ cc.noharry.agent.appserver.mcp.loadMcpServers | plugin | fun loadMcpServers(cont
 cc.noharry.agent.appserver.mcp.mcpResourceClient | plugin | suspend fun mcpResourceClient(context: Context, serverId: String): McpRpcClient?
 cc.noharry.agent.appserver.mcp.readMcpResourceAll | plugin | suspend fun readMcpResourceAll(context: Context, serverId: String, uri: String): List<JsonObject>?
 cc.noharry.agent.appserver.mcp.readMcpTool | plugin | suspend fun readMcpTool(context: Context, serverId: String, tool: String, arguments: JsonObject): JsonObject?
+cc.noharry.agent.appserver.model.ConnectionKey | plugin | class ConnectionKey internal constructor( private val value: String, val typed: Boolean, private val destinations: (String) -> Boolean, )
+cc.noharry.agent.appserver.model.ConnectionKey.Companion | plugin | companion object
+cc.noharry.agent.appserver.model.ConnectionKey.Companion.typed | plugin | fun typed(value: String): ConnectionKey
+cc.noharry.agent.appserver.model.ConnectionKey.allows | plugin | fun allows(url: String): Boolean
+cc.noharry.agent.appserver.model.ConnectionKey.fingerprint | plugin | fun fingerprint(vararg parts: String): String
+cc.noharry.agent.appserver.model.ConnectionKey.isBlank | plugin | val isBlank: Boolean get()
+cc.noharry.agent.appserver.model.ConnectionKey.sendTo | plugin | fun sendTo(url: String): String
 cc.noharry.agent.appserver.model.DEFAULT_LOCAL_API_KEY | plugin | const val DEFAULT_LOCAL_API_KEY
 cc.noharry.agent.appserver.model.ErrorRule | plugin | class ErrorRule(val kind: ModelFailureKind, val status: Int? = null, val pattern: String? = null)
 cc.noharry.agent.appserver.model.ErrorRule.matches | plugin | fun matches(failure: ModelFailure): Boolean
@@ -44,6 +51,7 @@ cc.noharry.agent.appserver.model.FetchFallback | plugin | object FetchFallback
 cc.noharry.agent.appserver.model.FetchFallback.enabled | plugin | fun enabled(context: Context): Boolean
 cc.noharry.agent.appserver.model.FetchFallback.set | plugin | fun set(context: Context, enabled: Boolean)
 cc.noharry.agent.appserver.model.ModelCatalogClient | plugin | class ModelCatalogClient( private val transport: HttpTransport, )
+cc.noharry.agent.appserver.model.ModelCatalogClient.fetch | plugin | suspend fun fetch( provider: ModelProvider, apiKey: ConnectionKey, baseUrl: String, modelsUrl: String? = null, idPrefix: String = "", ): List<String>
 cc.noharry.agent.appserver.model.ModelCatalogClient.fetch | plugin | suspend fun fetch( provider: ModelProvider, apiKey: String, baseUrl: String, modelsUrl: String? = null, idPrefix: String = "", ): List<String>
 cc.noharry.agent.appserver.model.ModelFailure | plugin | class ModelFailure(val status: Int?, val body: String, val code: RuntimeErrorCode, val timedOut: Boolean = false)
 cc.noharry.agent.appserver.model.ModelFailureKind | plugin | enum class ModelFailureKind(val code: RuntimeErrorCode, val recoverable: Boolean)
@@ -54,24 +62,27 @@ cc.noharry.agent.appserver.model.ModelFailureKind.RATE_LIMIT | plugin | RATE_LIM
 cc.noharry.agent.appserver.model.ModelFailureKind.SERVER | plugin | SERVER
 cc.noharry.agent.appserver.model.ModelFailureKind.TIMEOUT | plugin | TIMEOUT
 cc.noharry.agent.appserver.model.ModelPreset | host | class ModelPreset( val baseUrl: String, val model: String, val apiKey: String = "", val endpoint: ProviderEndpoint = ProviderEndpoint.CHAT_COMPLETIONS, val label: String = model, )
-cc.noharry.agent.appserver.model.ModelService | plugin | class ModelService( val id: String, val label: String, val endpoints: List<ServiceEndpoint>, val hosts: Set<String> = emptySet(), val keyHint: String = "", val models: List<ServiceModel> = emptyList(), val modelsUrl: String? = null, val listsModels: Boolean = true, val listedIdPrefix: String = "", val usageFields: UsageFields? = null, val errors: List<ErrorRule> = emptyList(), val retry: RetryPolicy? = null, val balance: Boolean = false, val relayCheck: Boolean = false, val source: String = "", val asOf: String = "", )
+cc.noharry.agent.appserver.model.ModelService | plugin | class ModelService( val id: String, val label: String, val endpoints: List<ServiceEndpoint>, val hosts: Set<String> = emptySet(), val keyHint: String = "", val models: List<ServiceModel> = emptyList(), val modelsUrl: String? = null, val listsModels: Boolean = true, val listedIdPrefix: String = "", val usageFields: UsageFields? = null, val errors: List<ErrorRule> = emptyList(), val retry: RetryPolicy? = null, val balance: Boolean = false, val relayCheck: Boolean = false, val source: String = "", val asOf: String = "", val defaultModel: String? = null, val hostRegions: Map<String, String> = emptyMap(), )
 cc.noharry.agent.appserver.model.ModelService.allHosts | plugin | val allHosts: Set<String>
+cc.noharry.agent.appserver.model.ModelService.defaultEndpointFor | plugin | fun defaultEndpointFor(provider: ModelProvider): ServiceEndpoint?
+cc.noharry.agent.appserver.model.ModelService.defaultRegion | plugin | val defaultRegion: String get()
 cc.noharry.agent.appserver.model.ModelService.endpointFor | plugin | fun endpointFor(provider: ModelProvider, endpoint: ProviderEndpoint? = null): ServiceEndpoint?
 cc.noharry.agent.appserver.model.ModelService.model | plugin | fun model(id: String): ServiceModel?
+cc.noharry.agent.appserver.model.ModelService.regionOf | plugin | fun regionOf(baseUrl: String): String?
 cc.noharry.agent.appserver.model.ModelService.serves | plugin | fun serves(baseUrl: String): Boolean
 cc.noharry.agent.appserver.model.ModelService.view | plugin | fun view(): ServiceView
 cc.noharry.agent.appserver.model.ON_DEVICE_FIRST_EVENT_TIMEOUT_MS | plugin | const val ON_DEVICE_FIRST_EVENT_TIMEOUT_MS
 cc.noharry.agent.appserver.model.ProviderAdapter | host | interface ProviderAdapter
-cc.noharry.agent.appserver.model.ProviderAdapter.balance | host | suspend fun balance(context: Context, service: ModelService, apiKey: String, relayUrl: String?): BalanceView?
-cc.noharry.agent.appserver.model.ProviderAdapter.check | host | suspend fun check(context: Context, service: ModelService, profile: ProviderProfile, apiKey: String): ServiceCheckView?
-cc.noharry.agent.appserver.model.ProviderAdapter.checked | host | fun checked(context: Context, service: ModelService, profile: ProviderProfile, apiKey: String): ServiceCheckView?
+cc.noharry.agent.appserver.model.ProviderAdapter.balance | host | suspend fun balance(context: Context, service: ModelService, apiKey: ConnectionKey, relayUrl: String?): BalanceView?
+cc.noharry.agent.appserver.model.ProviderAdapter.check | host | suspend fun check(context: Context, service: ModelService, profile: ProviderProfile, apiKey: ConnectionKey): ServiceCheckView?
+cc.noharry.agent.appserver.model.ProviderAdapter.checked | host | fun checked(context: Context, service: ModelService, profile: ProviderProfile, apiKey: ConnectionKey): ServiceCheckView?
 cc.noharry.agent.appserver.model.ProviderAdapter.classify | host | fun classify(service: ModelService, failure: ModelFailure): ModelFailureKind?
 cc.noharry.agent.appserver.model.ProviderAdapter.facts | host | fun facts(service: ModelService, model: String): ModelFacts?
 cc.noharry.agent.appserver.model.ProviderAdapter.hasLookup | host | fun hasLookup(context: Context, config: ProviderConfig, profile: ProviderProfile): Boolean
-cc.noharry.agent.appserver.model.ProviderAdapter.listModels | host | suspend fun listModels(context: Context, service: ModelService, profile: ProviderProfile, apiKey: String): List<String>?
+cc.noharry.agent.appserver.model.ProviderAdapter.listModels | host | suspend fun listModels(context: Context, service: ModelService, profile: ProviderProfile, apiKey: ConnectionKey): List<String>?
 cc.noharry.agent.appserver.model.ProviderAdapter.lookup | host | fun lookup(context: Context, config: ProviderConfig, profile: ProviderProfile): WebLookup?
 cc.noharry.agent.appserver.model.ProviderAdapter.nativeUpdates | host | fun nativeUpdates(context: Context, config: ProviderConfig, profile: ProviderProfile): Boolean
-cc.noharry.agent.appserver.model.ProviderAdapter.price | host | fun price(model: String): ModelPrice?
+cc.noharry.agent.appserver.model.ProviderAdapter.price | host | fun price(service: ModelService, model: String, region: String?, day: LocalDate): ModelPrice?
 cc.noharry.agent.appserver.model.ProviderAdapter.routes | host | fun routes(app: Context): List<RouteModule>
 cc.noharry.agent.appserver.model.ProviderAdapter.serviceOf | host | fun serviceOf(baseUrl: String): ModelService?
 cc.noharry.agent.appserver.model.ProviderAdapter.services | host | val services: List<ModelService> get()
@@ -81,7 +92,7 @@ cc.noharry.agent.appserver.model.ProviderConfig.Companion | host | companion obj
 cc.noharry.agent.appserver.model.ProviderConfig.Companion.load | host | fun load(context: Context): ProviderConfig
 cc.noharry.agent.appserver.model.ProviderConfig.Companion.saveProviderOverride | host | fun saveProviderOverride( context: Context, provider: ModelProvider, apiKey: String, model: String, baseUrl: String, )
 cc.noharry.agent.appserver.model.ProviderConfig.activeProfile | host | val activeProfile: ProviderProfile
-cc.noharry.agent.appserver.model.ProviderConfig.client | host | fun client( profile: ProviderProfile, stream: Boolean, diagnostics: AppDiagnostics? = null, ): ModelClient
+cc.noharry.agent.appserver.model.ProviderConfig.client | host | fun client( profile: ProviderProfile, stream: Boolean, diagnostics: AppDiagnostics? = null, outputTokens: Long? = modelFacts(profile.baseUrl, profile.model).requestOutputTokens, ): ModelClient
 cc.noharry.agent.appserver.model.ProviderConfig.client | host | fun client( provider: ModelProvider, stream: Boolean, diagnostics: AppDiagnostics? = null, ): ModelClient
 cc.noharry.agent.appserver.model.ProviderConfig.editState | host | fun editState(profile: ProviderProfile): ProviderEditState
 cc.noharry.agent.appserver.model.ProviderConfig.editState | host | fun editState(provider: ModelProvider): ProviderEditState
@@ -99,7 +110,7 @@ cc.noharry.agent.appserver.model.ProviderConfig.provider | host | val provider: 
 cc.noharry.agent.appserver.model.ProviderConfig.streamEnabled | host | val streamEnabled: Boolean
 cc.noharry.agent.appserver.model.ProviderConfig.summary | host | fun summary(profile: ProviderProfile): String
 cc.noharry.agent.appserver.model.ProviderConfig.summary | host | fun summary(provider: ModelProvider): String
-cc.noharry.agent.appserver.model.ProviderProfile | host | data class ProviderProfile( val id: String, val label: String, val provider: ModelProvider, val apiKey: String, val model: String, val baseUrl: String, val endpoint: ProviderEndpoint = ProviderEndpoint.defaultFor(provider), val variant: String = "", val streamEnabled: Boolean? = null, val serverSideSearch: Boolean = true, val searchCapability: String = "", )
+cc.noharry.agent.appserver.model.ProviderProfile | host | data class ProviderProfile( val id: String, val label: String, val provider: ModelProvider, val apiKey: String, val model: String, val baseUrl: String, val endpoint: ProviderEndpoint = ProviderEndpoint.defaultFor(provider), val variant: String = "", val streamEnabled: Boolean? = null, val serverSideSearch: Boolean = true, val searchCapability: String = "", val endpointGiven: Boolean = true, )
 cc.noharry.agent.appserver.model.ProviderProfile.displayLabel | host | val displayLabel: String
 cc.noharry.agent.appserver.model.RetryPolicy | plugin | class RetryPolicy(val attempts: Int, val initialBackoffMillis: Long, val maxBackoffMillis: Long)
 cc.noharry.agent.appserver.model.ScriptedModel | host | class ScriptedModel(script: Script.() -> Unit) : ModelClient
@@ -118,18 +129,20 @@ cc.noharry.agent.appserver.model.SearchBackend.set | plugin | fun set(context: C
 cc.noharry.agent.appserver.model.SearchBackend.usesApi | plugin | fun usesApi(context: Context, profileId: String): Boolean
 cc.noharry.agent.appserver.model.SearchBackend.usesApi | plugin | val usesApi: StateFlow<Map<String, Boolean>>
 cc.noharry.agent.appserver.model.ServiceEndpoint | plugin | class ServiceEndpoint(val endpoint: ProviderEndpoint, val baseUrl: String, val region: String = "")
-cc.noharry.agent.appserver.model.ServiceModel | plugin | class ServiceModel(val id: String, val facts: ModelFacts = ModelFacts(), val price: ModelPrice? = null, val aliases: Set<String> = emptySet())
+cc.noharry.agent.appserver.model.ServiceModel | plugin | class ServiceModel( val id: String, val facts: ModelFacts = ModelFacts(), val price: ModelPrice? = null, val aliases: Set<String> = emptySet(), val prices: List<ModelPrice> = emptyList(), )
 cc.noharry.agent.appserver.model.ServiceModel.isNamed | plugin | fun isNamed(id: String): Boolean
+cc.noharry.agent.appserver.model.ServiceModel.priceIn | plugin | fun priceIn(region: String?, day: LocalDate): ModelPrice?
 cc.noharry.agent.appserver.model.UsageFields | plugin | class UsageFields(val cacheHit: String, val cacheMiss: String? = null)
 cc.noharry.agent.appserver.model.WebLookup | host | interface WebLookup : WebSearchProvider, WebFetchFallback
 cc.noharry.agent.appserver.model.buildConfigValues | plugin | fun buildConfigValues(): Map<String, String>
 cc.noharry.agent.appserver.model.isLocalBaseUrl | plugin | fun String.isLocalBaseUrl(): Boolean
 cc.noharry.agent.appserver.model.kindBy | plugin | fun ModelFailure.kindBy(rules: List<ErrorRule>): ModelFailureKind?
 cc.noharry.agent.appserver.model.modelFacts | plugin | fun modelFacts(baseUrl: String, model: String): ModelFacts
-cc.noharry.agent.appserver.model.modelPrice | plugin | fun modelPrice(model: String): ModelPrice?
+cc.noharry.agent.appserver.model.modelPrice | plugin | fun modelPrice(model: String, baseUrl: String? = null, day: LocalDate = LocalDate.now()): ModelPrice?
 cc.noharry.agent.appserver.model.orDefault | plugin | fun String?.orDefault(default: String): String
 cc.noharry.agent.appserver.model.preferenceKey | plugin | fun String.preferenceKey(): String
 cc.noharry.agent.appserver.model.saveContextWindow | plugin | fun saveContextWindow(context: Context, profile: ProviderEditState, tokens: Long?)
+cc.noharry.agent.appserver.model.saveOutputTokens | plugin | fun saveOutputTokens(context: Context, profile: ProviderEditState, tokens: Long?)
 cc.noharry.agent.appserver.model.toStreamOverride | plugin | fun String?.toStreamOverride(): Boolean?
 cc.noharry.agent.appserver.model.webLookup | plugin | fun ProviderConfig.webLookup(context: Context, profile: ProviderProfile): WebLookup?
 cc.noharry.agent.appserver.model.withMadeUpCallsSearched | plugin | fun Flow<ModelEvent>.withMadeUpCallsSearched(request: ModelRequest): Flow<ModelEvent>
@@ -336,7 +349,7 @@ cc.noharry.agent.appserver.server.PluginContext.wrapTools | plugin | fun wrapToo
 cc.noharry.agent.appserver.server.PluginDiscovery | host | object PluginDiscovery
 cc.noharry.agent.appserver.server.PluginDiscovery.MANIFEST_VALUE | host | const val MANIFEST_VALUE: String
 cc.noharry.agent.appserver.server.PluginDiscovery.find | test | fun find(app: Context, config: AppServerConfig): List<AppServerPlugin>
-cc.noharry.agent.appserver.server.PluginHost | test | class PluginHost( private val app: Application, plugins: List<AppServerPlugin>, private val store: PluginSwitches = PreferenceSwitches(app), private val main: kotlin.coroutines.CoroutineContext = Dispatchers.Main.immediate, private val conversation: (Context, Delivery) -> Unit = { context, delivery -> RuntimeSession.deliver(context, delivery) }, )
+cc.noharry.agent.appserver.server.PluginHost | test | class PluginHost( private val app: Application, plugins: List<AppServerPlugin>, private val store: PluginSwitches = PreferenceSwitches(app), private val main: kotlin.coroutines.CoroutineContext = Dispatchers.Main.immediate, private val conversation: (Context, Delivery) -> Unit = { context, delivery -> RuntimeSession.deliver(context, delivery) }, discovered: List<AppServerPlugin> = emptyList(), )
 cc.noharry.agent.appserver.server.PluginHost.additions | test | var additions: PluginAdditions
 cc.noharry.agent.appserver.server.PluginHost.publishInto | test | fun publishInto(published: PublishedState)
 cc.noharry.agent.appserver.server.PluginHost.setEnabled | test | fun setEnabled(id: String, enabled: Boolean): List<PluginView>
@@ -433,6 +446,6 @@ cc.noharry.agent.appserver.usage.UsageStore | plugin | object UsageStore
 cc.noharry.agent.appserver.usage.UsageStore.init | plugin | fun init(context: Context)
 cc.noharry.agent.appserver.usage.UsageStore.prices | plugin | val prices: StateFlow<PriceBook>
 cc.noharry.agent.appserver.usage.UsageStore.read | plugin | suspend fun read(): Pair<UsageDays, PriceBook>
-cc.noharry.agent.appserver.usage.UsageStore.record | plugin | fun record(model: String, usage: ModelUsage)
+cc.noharry.agent.appserver.usage.UsageStore.record | plugin | fun record(model: String, usage: ModelUsage, baseUrl: String? = null)
 cc.noharry.agent.appserver.usage.UsageStore.usage | plugin | val usage: StateFlow<UsageDays>
 cc.noharry.agent.appserver.usage.toModelUsage | plugin | fun TokenDelta.toModelUsage()

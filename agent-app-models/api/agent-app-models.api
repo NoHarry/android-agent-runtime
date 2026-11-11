@@ -10,17 +10,17 @@ public final class cc/noharry/agent/appserver/models/ModelsPlugin : cc/noharry/a
 public final class cc/noharry/agent/appserver/models/deepseek/DeepSeekAdapter : cc/noharry/agent/appserver/model/ProviderAdapter {
 	public static final field INSTANCE Lcc/noharry/agent/appserver/models/deepseek/DeepSeekAdapter;
 	public static final field SERVICE_ID Ljava/lang/String;
-	public fun balance (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun check (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun checked (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ServiceCheckView;
+	public fun balance (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ConnectionKey;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun check (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Lcc/noharry/agent/appserver/model/ConnectionKey;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun checked (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Lcc/noharry/agent/appserver/model/ConnectionKey;)Lcc/noharry/agent/appserver/protocol/ServiceCheckView;
 	public fun classify (Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ModelFailure;)Lcc/noharry/agent/appserver/model/ModelFailureKind;
 	public fun facts (Lcc/noharry/agent/appserver/model/ModelService;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ModelFacts;
 	public fun getServices ()Ljava/util/List;
 	public fun hasLookup (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderConfig;Lcc/noharry/agent/appserver/model/ProviderProfile;)Z
-	public fun listModels (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun listModels (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Lcc/noharry/agent/appserver/model/ConnectionKey;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun lookup (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderConfig;Lcc/noharry/agent/appserver/model/ProviderProfile;)Lcc/noharry/agent/appserver/model/WebLookup;
 	public fun nativeUpdates (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderConfig;Lcc/noharry/agent/appserver/model/ProviderProfile;)Z
-	public fun price (Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ModelPrice;
+	public fun price (Lcc/noharry/agent/appserver/model/ModelService;Ljava/lang/String;Ljava/lang/String;Ljava/time/LocalDate;)Lcc/noharry/agent/appserver/protocol/ModelPrice;
 	public fun routes (Landroid/content/Context;)Ljava/util/List;
 	public fun serviceOf (Ljava/lang/String;)Lcc/noharry/agent/appserver/model/ModelService;
 	public fun shareKeys (Ljava/util/List;)Ljava/util/List;
@@ -106,6 +106,7 @@ public final class cc/noharry/agent/appserver/models/deepseek/DeepSeekProbeKt {
 
 public final class cc/noharry/agent/appserver/models/deepseek/DeepSeekProbes {
 	public static final field INSTANCE Lcc/noharry/agent/appserver/models/deepseek/DeepSeekProbes;
+	public final fun check (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderProfile;Lcc/noharry/agent/appserver/model/ConnectionKey;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun check (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun current (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;)Lcc/noharry/agent/appserver/models/deepseek/DeepSeekProbe;
 	public final fun launch (Lkotlin/jvm/functions/Function1;)V

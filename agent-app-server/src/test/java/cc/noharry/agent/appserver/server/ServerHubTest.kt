@@ -78,6 +78,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -211,6 +213,22 @@ class ServerHubTest {
         }
     }
 
+
+    @Test
+    fun aSavedKeyThatWouldMoveToAnotherHostIsRefusedWithItsFinding() = runBlocking {
+        backend.publish(start)
+        val client = connect()
+        val save = ProviderSaveParams(ModelProvider.OPENAI, "", "m", "https://evil.test/v1", ProviderEndpoint.CHAT_COMPLETIONS)
+        val refused = runCatching { client.request(SettingsRequests.PROVIDER_SAVE, save) }.exceptionOrNull() as JsonRpcException
+        assertEquals(JsonRpcErrorCodes.REJECTED, refused.code)
+        assertEquals(FindingCode.MODEL_KEY_TYPE_AGAIN.name, refused.data?.jsonObject?.get("code")?.jsonPrimitive?.content)
+        client.request(SettingsRequests.PROVIDER_SAVE, save.copy(apiKey = "sk-typed"))
+        assertEquals(listOf("save https://evil.test/v1"), settings.calls.filter { it.startsWith("save") })
+        val list = runCatching {
+            client.request(SettingsRequests.PROVIDER_FETCH_MODELS, ProviderFetchParams("p", ModelProvider.OPENAI, ProviderEndpoint.CHAT_COMPLETIONS, "", "", "https://evil.test/v1"))
+        }.exceptionOrNull() as JsonRpcException
+        assertEquals(FindingCode.MODEL_KEY_TYPE_AGAIN.name, list.data?.jsonObject?.get("code")?.jsonPrimitive?.content)
+    }
 
     @Test
     fun theHandshakeNamesTheFeaturesTheHostTurnedOn() = runBlocking {
@@ -435,10 +453,18 @@ class ServerHubTest {
 
         override fun setRun(params: RunSettingsParams) = Unit
         override fun reloadConfig() = Unit
-        override fun saveProvider(params: ProviderSaveParams) = Unit
+        override fun saveProvider(params: ProviderSaveParams) { calls += "save ${params.baseUrl}" }
+
+        override fun savedKeyMoves(params: ProviderSaveParams): Finding? =
+            Finding(FindingCode.MODEL_KEY_TYPE_AGAIN.name, listOf("evil.test")).takeIf { params.apiKey.isBlank() && "evil.test" in params.baseUrl }
         override fun createProvider(params: ProviderCreateParams) = "new"
         override fun deleteProvider(profileId: String) = Unit
-        override suspend fun fetchModels(params: ProviderFetchParams): List<String> = throw java.io.IOException("unreachable")
+        override suspend fun fetchModels(params: ProviderFetchParams): List<String> =
+            if ("evil.test" in params.baseUrl) {
+                throw java.io.IOException("refused", cc.noharry.agent.appserver.FoundException(Finding(FindingCode.MODEL_KEY_TYPE_AGAIN.name, listOf("evil.test"))))
+            } else {
+                throw java.io.IOException("unreachable")
+            }
         override fun saveProviderModels(params: ProviderModelsParams) = Unit
         override fun setMcpEnabled(id: String, enabled: Boolean) = Unit
 

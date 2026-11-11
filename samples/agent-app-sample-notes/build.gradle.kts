@@ -1,3 +1,5 @@
+import java.util.zip.ZipFile
+
 plugins {
     id("com.android.application")
 }
@@ -74,6 +76,8 @@ dependencies {
  * The plugins the release's merged manifest declares for the server to find ([PluginDiscovery]) are in the release R8
  * made, under their own names, with what they are made by kept: a release that lost one would run without it, saying
  * nothing. Read from the merged manifest, R8's mapping file and the seeds R8 writes beside it (what its rules kept).
+ * The models plugin's data file (`services.json`, a Java resource) is in the release's APK as well: without it the
+ * plugin does not start.
  */
 abstract class DiscoveredPluginsCheck : DefaultTask() {
     @get:InputFile
@@ -83,6 +87,10 @@ abstract class DiscoveredPluginsCheck : DefaultTask() {
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val mapping: RegularFileProperty
+
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val apks: DirectoryProperty
 
     @get:OutputFile
     abstract val report: RegularFileProperty
@@ -101,7 +109,18 @@ abstract class DiscoveredPluginsCheck : DefaultTask() {
                 "R8 kept $name without the way it is made (its INSTANCE, or a constructor that takes nothing)."
             }
         }
-        report.get().asFile.writeText(declared.joinToString("\n"))
+        val apk = apks.get().asFile.listFiles().orEmpty().singleOrNull { it.extension == "apk" }
+            ?: error("The notes release has no single APK in ${apks.get().asFile}.")
+        ZipFile(apk).use { zip ->
+            val data = zip.getEntry(MODELS_DATA) ?: error("The notes release's APK has no $MODELS_DATA: the models plugin would not start.")
+            val text = zip.getInputStream(data).use { it.readBytes().toString(Charsets.UTF_8) }
+            check("\"services\"" in text) { "The notes release's $MODELS_DATA is not the models plugin's data." }
+        }
+        report.get().asFile.writeText((declared + MODELS_DATA).joinToString("\n"))
+    }
+
+    private companion object {
+        const val MODELS_DATA = "cc/noharry/agent/appserver/models/services.json"
     }
 }
 
@@ -110,6 +129,7 @@ androidComponents {
         val check = tasks.register<DiscoveredPluginsCheck>("checkReleaseDiscoveredPlugins") {
             manifest.set(variant.artifacts.get(com.android.build.api.artifact.SingleArtifact.MERGED_MANIFEST))
             mapping.set(variant.artifacts.get(com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_FILE))
+            apks.set(variant.artifacts.get(com.android.build.api.artifact.SingleArtifact.APK))
             report.set(layout.buildDirectory.file("discovered-plugins/release.txt"))
         }
         rootProject.tasks.named("ciCheck") { dependsOn(check) }

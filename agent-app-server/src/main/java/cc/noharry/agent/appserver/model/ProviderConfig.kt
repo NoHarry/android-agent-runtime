@@ -3,6 +3,7 @@ import android.content.Context
 import cc.noharry.agent.appserver.R
 import cc.noharry.agent.appserver.evidence.AppDiagnostics
 import cc.noharry.agent.appserver.protocol.Finding
+import cc.noharry.agent.appserver.protocol.ModelFacts
 import cc.noharry.agent.appserver.protocol.FindingCode
 import cc.noharry.agent.appserver.protocol.ModelProvider
 import cc.noharry.agent.appserver.protocol.ProviderEditState
@@ -36,16 +37,23 @@ data class ProviderConfig(
 
     /**
      * The client a run on [profile] talks to its model with: the host's own for its models, else the wire protocol's,
-     * whose failures carry the stable code of what they were ([ProviderAdapter.classify]).
+     * whose failures carry the stable code of what they were ([ProviderAdapter.classify]) and whose requests ask for
+     * [outputTokens] (the person's setting for the model, else its facts' [ModelFacts.requestOutputTokens]; null leaves
+     * the wire client's default).
      */
     fun client(
         profile: ProviderProfile,
         stream: Boolean,
         diagnostics: AppDiagnostics? = null,
+        outputTokens: Long? = modelFacts(profile.baseUrl, profile.model).requestOutputTokens,
     ): ModelClient =
-        if (AppHost.models.owns(profile.id)) AppHost.models.client(profile, stream, diagnostics) else wireClient(profile, stream, diagnostics).classifiedAt(profile.baseUrl)
+        if (AppHost.models.owns(profile.id)) {
+            AppHost.models.client(profile, stream, diagnostics)
+        } else {
+            wireClient(profile, stream, diagnostics, outputTokens?.coerceAtMost(Int.MAX_VALUE.toLong())?.toInt()).classifiedAt(profile.baseUrl)
+        }
 
-    private fun wireClient(profile: ProviderProfile, stream: Boolean, diagnostics: AppDiagnostics?): ModelClient =
+    private fun wireClient(profile: ProviderProfile, stream: Boolean, diagnostics: AppDiagnostics?, outputTokens: Int?): ModelClient =
         when (profile.provider) {
             ModelProvider.ANTHROPIC -> AnthropicModelClient(
                 apiKeyProvider = { effectiveApiKey(profile) },
@@ -55,6 +63,7 @@ data class ProviderConfig(
                 serverSideSearch = profile.serverSideSearch,
                 searchCapability = ServerSideSearchCapability.fromWireName(profile.searchCapability),
                 transport = diagnostics?.transport(profile.provider) ?: OkHttpHttpTransport(),
+                maxOutputTokens = outputTokens,
             )
             ModelProvider.OPENAI -> OpenAiModelClient(
                 apiKeyProvider = { effectiveApiKey(profile) },
@@ -65,6 +74,7 @@ data class ProviderConfig(
                 serverSideSearch = profile.serverSideSearch,
                 searchCapability = ServerSideSearchCapability.fromWireName(profile.searchCapability),
                 transport = diagnostics?.transport(profile.provider) ?: OkHttpHttpTransport(),
+                maxOutputTokens = outputTokens,
             )
         }
 
@@ -185,8 +195,9 @@ data class ProviderConfig(
             val baseValues = buildValues + fileValues + savedValues + AppHost.models.savedValues(context)
             val profiles = providerProfiles(baseValues)
                 .withSavedProfiles(savedProfileState.overrides)
-                .withSharedKeys()
+                // The service's base URL first, so a profile named after a service shares the keys of profiles on its host.
                 .withServiceDefaults()
+                .withSharedKeys()
                 .let { AppHost.models.withProfiles(context, it) }
             val selection = resolveProviderSelection(
                 values = baseValues,

@@ -132,9 +132,17 @@ internal fun ProviderConfig.deepSeekToolsUrl(context: Context, profile: Provider
 @cc.noharry.agent.appserver.AppServerPluginApi
 fun ProviderProfile.isDeepSeek(): Boolean = baseUrl.isDeepSeekUrl()
 
-/** Whether [this] base URL is on DeepSeek's own host. */
+/**
+ * Whether [this] base URL is DeepSeek's own API: https, its host exactly (any case), the default port, no user info. A
+ * profile there shares DeepSeek's key and searches with it, so a look-alike (http, another port) is not.
+ */
 @cc.noharry.agent.appserver.AppServerPluginApi
-fun String.isDeepSeekUrl(): Boolean = runCatching { java.net.URI(trim()).host }.getOrNull() == DEEPSEEK_HOST
+fun String.isDeepSeekUrl(): Boolean = runCatching {
+    val uri = java.net.URI(trim())
+    uri.scheme.equals("https", ignoreCase = true) && uri.host?.lowercase() == DEEPSEEK_HOST && (uri.port == -1 || uri.port == HTTPS_PORT) && uri.rawUserInfo == null
+}.getOrDefault(false)
+
+private const val HTTPS_PORT = 443
 
 /** DeepSeek's own API host; a profile there has the balance query and the Search and Fetch APIs. */
 internal const val DEEPSEEK_HOST = "api.deepseek.com"

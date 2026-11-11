@@ -3,6 +3,7 @@ package cc.noharry.agent.appserver.server
 import android.app.Application
 import android.os.Bundle
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -34,6 +35,20 @@ class PluginDiscoveryTest {
         assertEquals(emptyList<AppServerPlugin>(), PluginDiscovery.declared(null, javaClass.classLoader!!))
     }
 
+    @Test
+    fun aClassThatIsNotAPluginIsNotInitializedAndOneWhoseIdCannotBeReadIsLeftOut() {
+        val metaData = Bundle().apply {
+            putString(NotAPluginWithAnInitializer::class.java.name, PluginDiscovery.MANIFEST_VALUE)
+            putString(IdlessPlugin::class.java.name, PluginDiscovery.MANIFEST_VALUE)
+            putString(ObjectPlugin::class.java.name, PluginDiscovery.MANIFEST_VALUE)
+        }
+
+        val found = PluginDiscovery.declared(metaData, javaClass.classLoader!!)
+
+        assertEquals(listOf("object-plugin"), found.map { it.id })
+        assertFalse(initialized)
+    }
+
     object ObjectPlugin : AppServerPlugin {
         override val id = "object-plugin"
         override fun apply(ctx: PluginContext) = Unit
@@ -53,4 +68,21 @@ class PluginDiscoveryTest {
     class NotAPlugin
 
     object OtherEntry
+
+    /** Not a plugin: its initializer, which would run code the manifest named, must not run. */
+    object NotAPluginWithAnInitializer {
+        init {
+            initialized = true
+        }
+    }
+
+    class IdlessPlugin : AppServerPlugin {
+        override val id: String get() = error("no id")
+        override fun apply(ctx: PluginContext) = Unit
+    }
+
+    companion object {
+        @JvmStatic
+        var initialized = false
+    }
 }
