@@ -4,11 +4,16 @@ package cc.noharry.agent.appserver.runtime
 
 import android.content.Context
 import android.util.Log
+import cc.noharry.agent.appserver.mcp.DEBUG_MCP_PROVIDER_TOOLS_JSON
 import cc.noharry.agent.appserver.mcp.fixedProviderIds
+import cc.noharry.agent.appserver.mcp.loadMcpServers
 import cc.noharry.agent.appserver.mcp.PluginMcpServers
+import cc.noharry.agent.appserver.packages.InstalledPackage
 import cc.noharry.agent.appserver.server.PluginAdditions
+import cc.noharry.agent.appserver.server.PluginHost
 import cc.noharry.agent.appserver.server.PluginMcpServer
 import cc.noharry.agent.appserver.server.PluginTools
+import cc.noharry.agent.appserver.tools.isCallFailure
 import cc.noharry.agent.runtime.RuntimeInspection
 import cc.noharry.agent.spi.HookContext
 import cc.noharry.agent.spi.HookDecision
@@ -41,6 +46,22 @@ internal fun toolServerName(name: String): String {
     val plain = name.lowercase().map { if (it in 'a'..'z' || it in '0'..'9') it else '_' }.joinToString("")
         .replace(REPEATED_UNDERSCORES, "_").trim('_').take(MAX_SERVER_NAME_CHARS).trimEnd('_').ifEmpty { "plugin" }
     return if (AppHost.additions.ownsByPrefix(plain)) "p_$plain" else plain
+}
+
+/**
+ * The names tool servers other than plugin packages' go by in a run: the host's tool providers, the configured MCP
+ * servers, the bundled tools.json catalog's, and the running plugins' (packages aside). A package's tools may not take
+ * one of them ([cc.noharry.agent.appserver.packages.PackageInstaller]).
+ */
+internal fun otherToolServerNames(context: Context, plugins: PluginHost): Set<String> = buildSet {
+    try {
+        AppHost.tools(context).forEach { add(it.providerId) }
+    } catch (failed: Throwable) {
+        if (!failed.isCallFailure()) throw failed
+    }
+    loadMcpServers(context).forEach { add(it.id) }
+    add(DEBUG_MCP_PROVIDER_TOOLS_JSON)
+    addAll(plugins.runningToolServerNames(context) { it !is InstalledPackage })
 }
 
 /**
@@ -115,7 +136,8 @@ private suspend fun describesReadOnly(provider: ToolProvider, server: String, to
         provider.listTools()
     } catch (cancelled: CancellationException) {
         throw cancelled
-    } catch (_: Exception) {
+    } catch (failed: Throwable) {
+        if (!failed.isCallFailure()) throw failed
         return false
     }
     return tools.any { RuntimeInspection.qualifiedToolName(server, it.name) == called && it.effectKind == RuntimeEffectKind.READ_ONLY.name }

@@ -26,9 +26,9 @@ internal class ModelWords private constructor(
     private val foreground: (label: String, packageName: String) -> String,
     private val lateAnswer: (question: String, answer: String) -> String,
 ) {
-    /** 「现在：2026-10-19 周一 11:35」, "Now: 2026-10-19 Mon 11:35". */
+    /** 「现在：2026-10-19 周一 11:35」, "Now: 2026-10-19 Mon 11:35": ASCII digits whatever the device's locale. */
     fun clock(time: ZonedDateTime): String =
-        "%s%s %s %02d:%02d".format(nowLabel, time.toLocalDate(), weekdays[time.dayOfWeek.value - 1], time.hour, time.minute)
+        "%s%s %s %02d:%02d".format(Locale.ROOT, nowLabel, time.toLocalDate(), weekdays[time.dayOfWeek.value - 1], time.hour, time.minute)
 
     /** The app in front, named so it is not opened again, and what an unaddressed "pause" most likely means. */
     fun foregroundApp(label: String, packageName: String): String = foreground(label, packageName)

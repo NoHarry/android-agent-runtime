@@ -2,6 +2,7 @@
 
 package cc.noharry.agent.appserver.packages
 
+import cc.noharry.agent.appserver.tools.isCallFailure
 import cc.noharry.agent.runtime.RuntimeInspection
 import cc.noharry.agent.spi.ExecToolBridge
 import cc.noharry.agent.spi.RuntimeEffectKind
@@ -22,8 +23,8 @@ import kotlinx.serialization.json.JsonPrimitive
 /**
  * The engine's bridge for one call of a script tool: each host call the script makes, `host.http` or `host.tool`,
  * done within what is left of the call's time ([deadlineNanos]) and answered as `{value}`, or as `{error}` when it is
- * refused or fails, which the script reads as an error it can catch. It never throws but for cancellation, so nothing
- * a script asks for can end the engine's run another way.
+ * refused or fails, which the script reads as an error it can catch. It never throws but for cancellation (and running
+ * out of memory), so nothing a script asks for can end the engine's run another way.
  */
 internal class ScriptBridge(
     private val http: ScriptHttp,
@@ -50,7 +51,9 @@ internal class ScriptBridge(
             throw cancelled
         } catch (refusal: ScriptRefusal) {
             JsonObject(mapOf(KEY_ERROR to JsonPrimitive(refusal.message)))
-        } catch (failed: Exception) {
+        } catch (failed: Throwable) {
+            // A host tool's Error too: the script reads it as an error it can catch.
+            if (!failed.isCallFailure()) throw failed
             JsonObject(mapOf(KEY_ERROR to JsonPrimitive("$name failed (${failed.javaClass.simpleName})")))
         }
         return answer.toString()
@@ -91,7 +94,7 @@ internal class ScriptHostTools(private val allowed: Set<String>, private val pro
     private suspend fun find(name: String): Pair<ToolProvider, ToolDescriptor> {
         val all = listing.withLock {
             listed ?: providers.flatMap { provider ->
-                runCatching { provider.listTools() }.getOrDefault(emptyList()).map { provider to it }
+                listedTools(provider).map { provider to it }
             }.also { listed = it }
         }
         all.firstOrNull { (provider, tool) -> RuntimeInspection.qualifiedToolName(provider.providerId, tool.name) == name }?.let { return it }
@@ -102,6 +105,16 @@ internal class ScriptHostTools(private val allowed: Set<String>, private val pro
             else -> refused("host.tool: more than one tool is named $name; name it as mcp__<server>__$name")
         }
     }
+}
+
+/** [provider]'s tools; none when listing them fails. */
+private suspend fun listedTools(provider: ToolProvider): List<ToolDescriptor> = try {
+    provider.listTools()
+} catch (cancelled: CancellationException) {
+    throw cancelled
+} catch (failed: Throwable) {
+    if (!failed.isCallFailure()) throw failed
+    emptyList()
 }
 
 internal const val HOST_HTTP = "host.http"

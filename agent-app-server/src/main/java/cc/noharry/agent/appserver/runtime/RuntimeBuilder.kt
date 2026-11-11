@@ -36,7 +36,7 @@ import cc.noharry.agent.appserver.skills.preloadedSkillBodies
 import cc.noharry.agent.appserver.skills.selectedWorkflowSkills
 import cc.noharry.agent.appserver.skills.systemPromptIds
 import cc.noharry.agent.appserver.skills.withSubagentSwitch
-import cc.noharry.agent.exec.js.ZiplineExecEngine
+import cc.noharry.agent.appserver.packages.JsSandbox
 import cc.noharry.agent.AgentRuntime
 import cc.noharry.agent.spi.RuntimeHook
 import cc.noharry.agent.spi.ToolCatalogCacheIdentity
@@ -249,7 +249,8 @@ internal fun buildRuntime(
         // A plugin's tools that act wait for the person's yes, every time; the others that act, as the mode says.
         val pluginGate = pluginToolGate(pluginServers, gatedPluginTools)?.also { hook(it) }
         hook(ActingToolGate(servers, AppHost.unaskedTools, pluginGate?.asking.orEmpty(), approvalMode, outsideAnswer, plugins::acts))
-        if (basicTools.any { it.name == "exec_js" && it.enabled }) execEngine(ZiplineExecEngine())
+        // The scripts built-in needs agent-exec-js in the app, which AppServer.install checks.
+        if (basicTools.any { it.name == "exec_js" && it.enabled } && JsSandbox.available) execEngine(JsSandbox.execEngine())
         // Production entry: only when host explicitly sets caseBound=true.
         // Hash [userInput] as-is (same bytes as RuntimeTurnRequest.input) — no trim/normalize.
         if (caseBound) {

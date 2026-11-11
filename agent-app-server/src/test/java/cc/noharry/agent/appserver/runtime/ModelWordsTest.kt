@@ -5,6 +5,7 @@ import cc.noharry.agent.appserver.model.appSystemPrompt
 import cc.noharry.agent.mcp.McpClientMessages
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
@@ -24,6 +25,14 @@ class ModelWordsTest {
         assertFalse(rules.any { Character.UnicodeScript.of(it.code) == Character.UnicodeScript.HAN })
         assertEquals("", words.thinkLine)
         assertEquals("Now: 2026-10-19 Mon 11:35", words.clock(monday))
+        // A device whose locale writes other digits still gives the model these.
+        val before = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("ar-EG-u-nu-arab"))
+            assertEquals("Now: 2026-10-19 Mon 11:35", words.clock(monday))
+        } finally {
+            Locale.setDefault(before)
+        }
         assertTrue(words.lateAnswer("Where to?", "home").startsWith("About your earlier question"))
         assertSame(McpClientMessages.Default, words.mcp)
         val prompt = runtimePrompt("", emptyList(), emptyList(), words = words)

@@ -4,6 +4,7 @@ import cc.noharry.agent.appserver.R
 import cc.noharry.agent.appserver.protocol.McpServer
 import cc.noharry.agent.appserver.protocol.McpServerDraft
 import cc.noharry.agent.appserver.protocol.McpServerKind
+import cc.noharry.agent.appserver.server.AppServer
 import java.io.File
 import java.io.IOException
 import java.net.URI
@@ -44,7 +45,7 @@ internal fun saveMcpServerDraft(context: Context, draft: McpServerDraft): McpSav
     val headers = parseMcpHeaders(context, draft.headers)
         .getOrElse { return McpSaveResult.Rejected(it.message.orEmpty()) }
     val server = McpServer(
-        id = existing?.id ?: draft.preferredId?.takeIf { id -> servers.none { it.id == id } && id !in fixedProviderIds() }
+        id = existing?.id ?: draft.preferredId?.takeIf { id -> servers.none { it.id == id } && id !in fixedProviderIds() && id !in packagesToolServers() }
             ?: newMcpServerId(draft.label, servers),
         label = draft.label.trim(),
         kind = draft.kind,
@@ -117,10 +118,13 @@ internal fun parseMcpHeaders(context: Context, text: String): Result<Map<String,
     }
 }
 
-/** A short ascii id from [label] (letters and digits only, so it is one group in the prompt), unique in [servers]. */
-internal fun newMcpServerId(label: String, servers: List<McpServer>): String {
+/**
+ * A short ascii id from [label] (letters and digits only, so it is one group in the prompt), unique in [servers] and
+ * none that an installed plugin package's tools go by ([packagesToolServers]).
+ */
+internal fun newMcpServerId(label: String, servers: List<McpServer>, packages: Set<String> = packagesToolServers()): String {
     val base = label.lowercase().filter { it in 'a'..'z' || it in '0'..'9' }.take(MAX_ID_CHARS).ifEmpty { "mcp" }
-    val taken = servers.map { it.id }.toSet() + fixedProviderIds()
+    val taken = servers.map { it.id }.toSet() + fixedProviderIds() + packages
     return generateSequence(1) { it + 1 }.map { if (it == 1) base else "$base$it" }.first { it !in taken }
 }
 
@@ -227,3 +231,6 @@ private const val MAX_LABEL_CHARS = 40
 private const val MAX_ID_CHARS = 24
 private val HEADER_NAME = Regex("""[A-Za-z0-9!#$%&'*+.^_`|~-]+""")
 private val RESERVED_HEADERS = setOf("content-type", "accept", "mcp-session-id", "mcp-protocol-version", "content-length", "host")
+
+/** The tool server names installed plugin packages' tools go by: a server the person adds takes none of them. */
+private fun packagesToolServers(): Set<String> = AppServer.packages?.toolServerNames.orEmpty()

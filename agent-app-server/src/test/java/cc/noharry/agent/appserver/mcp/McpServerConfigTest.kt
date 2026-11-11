@@ -87,6 +87,8 @@ class McpServerConfigTest {
         assertEquals("mcp", newMcpServerId("天气", servers))
         assertEquals("weather2", newMcpServerId("Weather", servers))
         assertEquals("toolsjson", newMcpServerId("tools_json", servers))
+        // A name an installed package's tools go by is not given to a server the person adds.
+        assertEquals("recipes2", newMcpServerId("Recipes", servers, packages = setOf("recipes")))
 
         assertTrue(deleteMcpServerConfig(context, weather))
         assertFalse(deleteMcpServerConfig(context, weather))

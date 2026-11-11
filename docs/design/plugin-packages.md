@@ -52,10 +52,13 @@ scripts/<name>.js      the scripts of its tools (section 5)
   the app server version it needs: the version the server was built as, without a pre-release.
 - The manifest is read strictly: a member the format does not have is refused, and so is anything a member names that
   is not in the package. Everything a package contributes is named in it.
-- Names are scoped by the package so two packages cannot collide: a skill is `<id>:<skill>` (the runtime reads a
-  skill's name as one path segment); an MCP server's tools are `mcp__<last part of id>_<server id>__<tool>`
-  (`trains_trains`), the server's name taking a digit when another has it; the script tools are one tool server named
-  for the package.
+- Names are scoped by the package: a skill is `<id>:<skill>` (the runtime reads a skill's name as one path segment);
+  an MCP server's tools are `mcp__<last part of id>_<server id>__<tool>` (`trains_trains`); the script tools are one
+  tool server named for the last part of the id (`mcp__trains__<tool>`). No two installed packages share such a name,
+  and a package does not take one the host's other tool servers go by when it is installed (the host's tools, the
+  configured MCP servers, the running plugins'): the install is refused (`TOOL_SERVER_TAKEN`). A server the person
+  adds later takes none of them; a tool server the host itself adds later keeps its name, and the package's then
+  takes a digit.
 - Limits: 5 MB packed and unpacked, 200 files (400 zip entries), paths of at most 200 characters and 8 levels, text in
   UTF-8. A package holds only markdown, json and png, and JavaScript under `scripts/`; no hidden files, no path that
   leaves it. At most 20 hosts, 10 secrets, 10 MCP servers, 20 skills and 20 tools; `rules.md` at most 20 lines and
@@ -136,8 +139,9 @@ tell it to misuse tools the person already has. The limits:
 
 ## 5. Tools written as scripts
 
-A package may carry tools of its own, written in JavaScript and run in the sandbox the runtime ships (`agent-exec-js`:
-QuickJS through Zipline). A script has no access to the device: everything it does outside pure computation goes
+A package may carry tools of its own, written in JavaScript and run in the runtime's sandbox (`agent-exec-js`: QuickJS
+through Zipline), which a host adds to its app for them: a host without it refuses such a package
+(`SCRIPTS_UNAVAILABLE`). A script has no access to the device: everything it does outside pure computation goes
 through three host functions, each checked against what the package asked for.
 
 ```json

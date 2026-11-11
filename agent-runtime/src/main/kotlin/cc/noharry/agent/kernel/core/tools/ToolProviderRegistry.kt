@@ -368,15 +368,17 @@ internal class ToolProviderRegistry(
         provider.initialize(context.toMcpInitializeContext())
     } catch (error: CancellationException) {
         throw error
-    } catch (error: RuntimeException) {
-        ToolInitializeResult.failed(error.message ?: "MCP provider initialization failed.")
+    } catch (error: Throwable) {
+        if (!error.isCallFailure()) throw error
+        ToolInitializeResult.failed(error.callFailureMessage("MCP provider initialization failed."))
     }
 
     private suspend fun listToolDescriptors(provider: ToolProvider): List<ToolDescriptor>? = try {
         provider.listTools()
     } catch (error: CancellationException) {
         throw error
-    } catch (_: RuntimeException) {
+    } catch (error: Throwable) {
+        if (!error.isCallFailure()) throw error
         null
     }
 
@@ -393,7 +395,8 @@ internal class ToolProviderRegistry(
             provider.list()
         } catch (error: CancellationException) {
             throw error
-        } catch (_: RuntimeException) {
+        } catch (error: Throwable) {
+            if (!error.isCallFailure()) throw error
             emptyList()
         }
     }

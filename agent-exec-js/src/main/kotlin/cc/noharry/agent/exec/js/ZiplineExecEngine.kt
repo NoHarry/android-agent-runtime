@@ -55,6 +55,8 @@ class ZiplineExecEngine @JvmOverloads constructor(
         val deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(request.timeoutMillis)
         val hostResults = mutableListOf<Pair<HostCall, String>>()
         return try {
+            // The engine cannot run here, not the script's failure.
+            if (!readsNumbersRight) return ExecResult(ok = false, errorCode = RuntimeErrorCode.EXEC_ENGINE_NOT_CONFIGURED.wireCode, message = MISREAD_NUMBERS_MESSAGE)
             for (attempt in 0..maxToolCalls) {
                 val result = evaluate(request, deadlineNanos, hostResults)
                 if (result.hostCall == null) {
@@ -85,6 +87,14 @@ class ZiplineExecEngine @JvmOverloads constructor(
                 ok = false,
                 errorCode = RuntimeErrorCode.EXEC_FAILED.wireCode,
                 message = error.message ?: "JavaScript exec failed.",
+            )
+        } catch (error: LinkageError) {
+            // QuickJS's native library or a class of Zipline did not load (on a JVM, Zipline's Android build in place
+            // of its JVM one, say): the engine cannot run here.
+            ExecResult(
+                ok = false,
+                errorCode = RuntimeErrorCode.EXEC_ENGINE_NOT_CONFIGURED.wireCode,
+                message = "The JavaScript engine (QuickJS) did not load: ${error.javaClass.simpleName}: ${error.message.orEmpty()}",
             )
         }
     }
@@ -223,6 +233,21 @@ private class OutputBudget(outputTokenBudget: Int) {
 
     fun result(): String = builder.toString()
 }
+
+/**
+ * Whether QuickJS reads numbers right in this process, checked once. It reads a number literal (and `parseFloat`,
+ * `Number()`, `JSON.parse`) with the C library's strtod, which follows the process's numeric locale: a JVM started under
+ * one that writes 12,5 (`LC_NUMERIC=de_DE.UTF-8`, or `LC_ALL`) reads 12.5 as 12. A script run there would compute with
+ * wrong numbers, so none runs. Android's C library reads numbers the same in every locale.
+ */
+private val readsNumbersRight: Boolean by lazy {
+    @OptIn(EngineApi::class)
+    QuickJs.create().use { it.evaluate("String(0.5 * 4)", "locale_check") == "2" }
+}
+
+private const val MISREAD_NUMBERS_MESSAGE =
+    "JavaScript does not run in this process: its C library reads 0.5 as 0 under the process's numeric locale, so " +
+        "QuickJS would misread every number with a fraction. Start the JVM with LC_NUMERIC=C (and no LC_ALL)."
 
 private class ExecTimeoutException : RuntimeException("Exec timed out.")
 private class ExecBridgeException(message: String) : RuntimeException(message)

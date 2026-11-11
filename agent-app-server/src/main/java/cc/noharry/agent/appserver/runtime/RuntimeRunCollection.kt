@@ -5,6 +5,8 @@ import cc.noharry.agent.appserver.evidence.RuntimeEventDispatchEvidence
 import cc.noharry.agent.appserver.mcp.McpProgressiveEvidenceCollector
 import cc.noharry.agent.appserver.mcp.McpProgressiveEvidenceRecorder
 import cc.noharry.agent.appserver.session.SessionTurnRecorder
+import cc.noharry.agent.appserver.tools.failureText
+import cc.noharry.agent.appserver.tools.isCallFailure
 import cc.noharry.agent.ThreadEvent
 import cc.noharry.agent.TurnInput
 import cc.noharry.agent.appserver.runtime.RuntimeTurnRequest
@@ -76,9 +78,12 @@ internal suspend fun collectRuntime(
         drainUiEvents = false
         ExecutionEvents.publish(request.requestId, ExecutionMessage.Stopped)
         onStopped()
-    } catch (error: Exception) {
-        ExecutionEvents.publish(request.requestId, ExecutionMessage.Failure(error.message ?: "Runtime failed"))
-        onFailure(error.message)
+    } catch (error: Throwable) {
+        // An Error too (a class or native library missing at run time): the turn fails saying so, never silently.
+        if (!error.isCallFailure()) throw error
+        val message = if (error is Exception) error.message else error.failureText()
+        ExecutionEvents.publish(request.requestId, ExecutionMessage.Failure(message ?: "Runtime failed"))
+        onFailure(message)
     } finally {
         withContext(NonCancellable) {
             val observerFailure = observers.closeAndJoin(drainUiEvents)

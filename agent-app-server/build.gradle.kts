@@ -16,6 +16,7 @@ android {
     compileSdk = 34
     defaultConfig {
         minSdk = 24
+        consumerProguardFiles("consumer-proguard-rules.pro")
     }
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -68,7 +69,10 @@ dependencies {
     // client): a host implementing HostModels or RunAddOns compiles against them. A2A's modules come with its plugin.
     api(project(":agent-runtime-android"))
     api(project(":agent-app-protocol"))
-    implementation(project(":agent-exec-js"))
+    // The JavaScript sandbox scripts run in (packages' tools written as scripts, the scripts built-in) is the host's to
+    // add: compiled against here and not carried, since its QuickJS is about 4 MB of native code (JsSandbox).
+    compileOnly(project(":agent-exec-js"))
+    testImplementation(project(":agent-exec-js"))
     implementation(project(":agent-acp"))
     implementation("androidx.annotation:annotation:1.9.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
@@ -89,22 +93,46 @@ configurations.matching { it.name.endsWith("UnitTestRuntimeClasspath") }.configu
     }
 }
 
-// GuideSnippetsTest reads the host guide, the package tool's README and the samples' code the guide quotes: a change to
-// any of them runs the tests again.
+// GuideSnippetsTest reads the host guide, the package tool's README, the samples' code and the root build files the guide
+// quotes, and the version, and PackageToolTest the timer sample's package: a change to any of them runs the tests again.
 tasks.withType<Test>().configureEach {
     inputs.file("README.md").withPropertyName("hostGuide")
     inputs.file("../tools/agent-plugin/README.md").withPropertyName("packageToolGuide")
     inputs.file("../build.gradle.kts").withPropertyName("guideRootBuild")
+    inputs.file("../settings.gradle.kts").withPropertyName("guideRootSettings")
+    inputs.file("../gradle.properties").withPropertyName("guideVersion")
     inputs.files(
-        fileTree("../samples") { include("agent-app-sample*/build.gradle.kts", "agent-app-sample*/src/**") },
+        fileTree("../samples") { include("agent-app-sample*/build.gradle.kts", "agent-app-sample*/src/**", "agent-app-sample*/package/**") },
     ).withPropertyName("guideSamples")
 }
 
-// QuickJS reads number literals with the C library's strtod, which follows the process's numeric locale: a test JVM
-// started under a locale that writes 12,5 read 12.5 as 12. Android's C library reads numbers the same in every locale.
+// QuickJS reads numbers (literals, parseFloat, JSON.parse) with the C library's strtod, which follows the process's
+// numeric locale: a test JVM started under a locale that writes 12,5 would read 12.5 as 12, so the engine runs no script
+// there (agent-exec-js checks). The tests run under C's; LC_ALL, which would win over LC_NUMERIC, gives way, its character
+// set kept. Android's C library reads numbers the same in every locale.
+val commaLocaleTest = "testScriptsUnderACommaLocale"
+val allLocale = providers.environmentVariable("LC_ALL")
 tasks.withType<Test>().configureEach {
-    environment("LC_NUMERIC", "C")
+    if (name != commaLocaleTest) environment("LC_NUMERIC", "C")
+    allLocale.orNull?.takeIf { it.isNotEmpty() }?.let {
+        environment("LC_CTYPE", it)
+        environment("LC_ALL", "")
+    }
 }
+
+// The same script under a locale that writes 0,5 (where the machine has one, as macOS does): its numbers come out right
+// or it does not run, never misread.
+val scriptsUnderACommaLocale = tasks.register<Test>(commaLocaleTest) {
+    group = "verification"
+    description = "A package's script under a numeric locale that writes 0,5 computes right or does not run."
+    val unitTests = tasks.named<Test>("testDebugUnitTest")
+    testClassesDirs = files(unitTests.map { it.testClassesDirs })
+    classpath = files(unitTests.map { it.classpath })
+    filter.includeTestsMatching("cc.noharry.agent.appserver.packages.ScriptRunnerTest.numbersWithFractions*")
+    environment("LC_NUMERIC", "de_DE.UTF-8")
+}
+tasks.named("check") { dependsOn(scriptsUnderACommaLocale) }
+rootProject.tasks.named("ciCheck") { dependsOn(scriptsUnderACommaLocale) }
 
 // What may use each public declaration (a host; a plugin module, @AppServerPluginApi; another module's tests,
 // @InternalAppServerApi), listed in api/agent-app-server-levels.txt by tools/app-server-api/api_dump.py: apiCheck fails

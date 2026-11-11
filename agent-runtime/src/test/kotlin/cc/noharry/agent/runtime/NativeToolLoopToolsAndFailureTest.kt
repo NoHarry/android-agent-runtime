@@ -174,6 +174,40 @@ class NativeToolLoopToolsAndFailureTest {
     }
 
     @Test
+    fun aProviderThatThrowsAnErrorOrACheckedExceptionFailsOnlyItsCall() = runBlocking {
+        val thrown = listOf(UnsatisfiedLinkError("no quickjs in java.library.path"), java.io.IOException("the bell is not there"))
+        thrown.forEach { throwable ->
+            val seen = mutableListOf<ModelRequest>()
+            val runtime = AgentRuntimeBuilder.create()
+                .workspaceRoot(Files.createTempDirectory("provider-throws-").toFile())
+                .toolProvider(Throwing(throwable))
+                .modelClient(FakeModelClient(schemaThenBackendRounds("ring", finish = true), seen))
+                .buildEngine()
+
+            val events = runtime.run(agentRequest()).toList()
+            val finished = events.filterIsInstance<AgentEvent.NativeToolCallFinished>().single { it.toolCallId == "backend-1" }
+            val result = backendToolCallResult(finished.result)
+            val expected = if (throwable is Error) "UnsatisfiedLinkError: no quickjs in java.library.path" else "the bell is not there"
+            assertEquals(RuntimeErrorCode.BACKEND_CALL_FAILED.wireCode, result.code)
+            assertTrue(finished.result, finished.result.contains(expected))
+            // An Error is not worth trying again; an exception may be.
+            assertEquals(throwable !is Error, finished.result.contains("\"retryable\":true"))
+            // The model read the failure and finished: the run goes on as for any failed tool.
+            assertTrue(seen.last().messages.any { it.role == "tool" && it.content.contains(expected) })
+            assertEquals(RuntimeRunStatus.COMPLETED, events.filterIsInstance<AgentEvent.ResultAvailable>().single().result.status)
+        }
+    }
+
+    /** A provider whose one tool throws [throwable]. */
+    private class Throwing(private val throwable: Throwable) : McpClientProvider {
+        override val serverId: String = TEST_MCP_SERVER_ID
+        override val displayName: String = TEST_MCP_SERVER_ID
+        override val providerConcurrency: ProviderConcurrencyDeclaration = ProviderConcurrencyDeclaration.serialized()
+        override suspend fun listTools(): List<ToolDescriptor> = listOf(mcpTool("ring"))
+        override suspend fun callTool(toolName: String, argumentsJson: String, context: ToolCallContext): ToolCallResult = throw throwable
+    }
+
+    @Test
     fun providerFailureBecomesRuntimeFailureEvent() = runBlocking {
         var calls = 0
         val runtime = AgentRuntimeBuilder.create()

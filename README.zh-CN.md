@@ -92,7 +92,7 @@ val runtime = AgentRuntime.builder()
 | `agent-runtime` | 运行时和宿主门面（纯 JVM）：`AgentRuntimeBuilder`、OpenAI / Anthropic 兼容的模型客户端、MCP、`functionTools`、skill、子 agent、会话与记忆、联网搜索与读网页、hook 与策略，以及工作区背后的虚拟文件系统 |
 | `agent-runtime-android` | Android 层：`AndroidAgentRuntime.builder(context)`、SQLite 会话、App 私有的事件日志，以及把用户通过 SAF 选的文件夹挂进工作区 |
 | `agent-api` | 与 Android 无关的 Thread / Turn / Item 契约，以及模型、工具、hook 和事件日志扩展接口 |
-| `agent-exec-js` | 可选：`exec_js`，能调用工具的沙箱 JavaScript（Zipline 里的 QuickJS） |
+| `agent-exec-js` | 可选：`exec_js`，能调用工具的沙箱 JavaScript（Zipline 里的 QuickJS）；app server 的脚本（插件包里用 JavaScript 写的工具）也要它 |
 | `agent-device-capabilities` | 可选：日历、通知和媒体控制工具 |
 | `agent-android-use` | 可选：通过无障碍服务看屏幕、操作屏幕 |
 | `agent-a2a` | 可选（纯 JVM）：通过直连的 JSON-RPC/SSE 传输把任务交给远程 A2A agent，并把 agent 本身开放成本地 A2A 端点 |

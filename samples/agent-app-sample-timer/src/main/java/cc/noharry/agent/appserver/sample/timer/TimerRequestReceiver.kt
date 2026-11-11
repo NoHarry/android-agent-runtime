@@ -7,12 +7,19 @@ import android.util.Log
 import cc.noharry.agent.appserver.protocol.ClientInfo
 import cc.noharry.agent.appserver.protocol.ClientRequests
 import cc.noharry.agent.appserver.protocol.ConversationItem
+import cc.noharry.agent.appserver.protocol.PackageRefusal
+import cc.noharry.agent.appserver.protocol.PluginConfirmParams
+import cc.noharry.agent.appserver.protocol.PluginInstallParams
+import cc.noharry.agent.appserver.protocol.PluginRemoveParams
+import cc.noharry.agent.appserver.protocol.PluginRequests
 import cc.noharry.agent.appserver.protocol.ServerNotifications
 import cc.noharry.agent.appserver.protocol.ToolCallStatus
 import cc.noharry.agent.appserver.protocol.TranscriptRole
 import cc.noharry.agent.appserver.protocol.TurnStartParams
 import cc.noharry.agent.appserver.protocol.client.ServerClient
+import cc.noharry.agent.appserver.protocol.jsonrpc.JsonRpcException
 import cc.noharry.agent.appserver.protocol.jsonrpc.JsonRpcNotification
+import cc.noharry.agent.appserver.protocol.jsonrpc.ProtocolJson
 import cc.noharry.agent.appserver.protocol.jsonrpc.paramsOf
 import cc.noharry.agent.appserver.server.AppServer
 import kotlinx.coroutines.CoroutineStart
@@ -58,7 +65,10 @@ class TimerRequestReceiver : BroadcastReceiver() {
 
 private const val TAG = "TimerAgent"
 
-/** The process's one protocol client: connects on the first request, then runs turns one after another. */
+/**
+ * The process's one protocol client: connects on the first request, then runs turns one after another, and installs
+ * and removes plugin packages between them.
+ */
 object TimerAgent {
     internal val scope = MainScope()
     private val turns = Mutex()
@@ -81,6 +91,40 @@ object TimerAgent {
             .filterIsInstance<ConversationItem.MessageItem>()
         messages.lastOrNull { it.role == TranscriptRole.ERROR || (it.role == TranscriptRole.ASSISTANT && it.final) }?.content ?: "no answer"
     }
+
+    // guide:start install
+    /**
+     * Installs the plugin package [source] names (its bytes as base64, an HTTPS address or a file) in the protocol's
+     * two steps: `plugins/install` fetches and checks it and says what it asks for, `plugins/confirm` installs it with
+     * the secrets it asks for. A screen shows the person what it asks for in between; with no screen, Pip takes only a
+     * package that needs no second yes (one from a publisher it trusts) and none that asks for a secret it was not
+     * given. Its answer: what was installed, or why not.
+     */
+    suspend fun install(app: Context, source: PluginInstallParams, secrets: Map<String, String> = emptyMap()): String = turns.withLock {
+        val client = connected(app)
+        try {
+            val checked = client.request(PluginRequests.INSTALL, source)
+            val pkg = checked.pkg
+            // An unknown publisher or an unsigned package: confirming needs acknowledgeUntrusted = true, the person's yes.
+            if (checked.needsAcknowledgement) return@withLock "not installed: ${pkg.publisher.name} is not a publisher Pip trusts"
+            // An update keeps the secrets set before (set = true); a value given here replaces one.
+            val missing = pkg.permissions.secrets.filter { !it.set && it.name !in secrets }
+            if (missing.isNotEmpty()) return@withLock "not installed: it needs ${missing.joinToString { it.label }}"
+            val plugins = client.request(PluginRequests.CONFIRM, PluginConfirmParams(checked.installId, secrets))
+            val installed = plugins.plugins.single { it.id == pkg.id }
+            "installed ${pkg.id} ${pkg.version}" + if (installed.running) "" else " (not running)"
+        } catch (refused: JsonRpcException) {
+            // A refused package or step: the error's data says what the server found.
+            val why = refused.data?.let { ProtocolJson.decodeFromJsonElement(PackageRefusal.serializer(), it) }
+            "not installed: " + (why?.let { "${it.problem} ${it.detail}".trim() } ?: refused.message)
+        }
+    }
+
+    /** Removes the installed package [id], its files and secrets with it. */
+    suspend fun remove(app: Context, id: String) {
+        turns.withLock { connected(app).request(PluginRequests.REMOVE, PluginRemoveParams(id)) }
+    }
+    // guide:end install
 
     private suspend fun connected(app: Context): ServerClient = (client ?: scope.async {
         ServerClient(AppServer.connect(app), ClientInfo(name = "agent-app-sample-timer", version = "0.1"), scope = scope)

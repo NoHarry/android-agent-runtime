@@ -12,6 +12,7 @@ import cc.noharry.agent.appserver.protocol.ConversationItem
 import cc.noharry.agent.appserver.protocol.Empty
 import cc.noharry.agent.appserver.protocol.RunOutcome
 import cc.noharry.agent.appserver.protocol.ServerNotifications
+import cc.noharry.agent.appserver.protocol.ToolCallStatus
 import cc.noharry.agent.appserver.protocol.TranscriptRole
 import cc.noharry.agent.appserver.protocol.TurnCompleted
 import cc.noharry.agent.appserver.protocol.TurnStartParams
@@ -48,7 +49,8 @@ import org.robolectric.annotation.Config
  * How a turn ends, through the protocol as a host sees it (the `turn/completed` notification's outcome and what the
  * transcript shows last): an answer the model gave as `partial` or `blocked` is an answer, not a failed run, and one that
  * asks the person ends as a question does; a run that gave no answer, or claimed a success with a required action the
- * person refused, fails. (Its own SDK level: the server's singletons are fresh.)
+ * person refused, fails. A tool that throws, an Error as well, fails its call and the turn goes on; a run that throws
+ * fails saying why. (Its own SDK level: the server's singletons are fresh. Its two methods share one server.)
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)
@@ -72,6 +74,28 @@ class TurnOutcomesTest {
         // A required action the person refused, under a claimed success: the runtime fails the run.
         expect("lock the door", RunOutcome.FAILED, "REQUIRED_ACTION_UNRESOLVED", role = TranscriptRole.ERROR)
     }
+
+    @Test
+    fun aToolThatThrowsFailsItsCallAndTheTurnGoesOnAndARunThatThrowsSaysWhy() {
+        start()
+        // An Error (a native library missing under a JVM, say) and a checked exception fail the call alone: the model
+        // and the client read why, and the turn goes on.
+        listOf("ring the bell" to "UnsatisfiedLinkError: no bell in java.library.path", "knock" to "the door is not there").forEach { (said, why) ->
+            expect(said, RunOutcome.COMPLETED, "Heard: ")
+            val call = client.state.value.items.filterIsInstance<ConversationItem.ToolCallItem>().single { it.toolName.startsWith("mcp__door__") }
+            assertEquals(said, ToolCallStatus.FAILED, call.status)
+            val result = call.resultJson.orEmpty()
+            assertTrue(result, "\"code\":\"BACKEND_CALL_FAILED\"" in result && why in result)
+            assertTrue(lastAnswer().contains(why))
+            // Every call of the turn is an item, by its full name: the search, the tool's call, the answer.
+            val calls = client.state.value.items.filterIsInstance<ConversationItem.ToolCallItem>().map { it.toolName }
+            assertEquals(listOf("search_tools", "mcp__door__${if (said == "knock") "knock" else "ring"}", "finish"), calls)
+        }
+        // An Error that ends the run itself fails the turn saying what it was.
+        expect("finish broken", RunOutcome.FAILED, "Runtime: NoClassDefFoundError: com/example/Missing", role = TranscriptRole.ERROR)
+    }
+
+    private fun lastAnswer(): String = client.state.value.items.filterIsInstance<ConversationItem.MessageItem>().last { it.final }.content
 
     /** A turn of its own conversation for [said]: it ends [outcome], the transcript's last word by [role] showing [shown]. */
     private fun expect(said: String, outcome: RunOutcome, shown: String, role: TranscriptRole = TranscriptRole.ASSISTANT) {
@@ -125,9 +149,14 @@ class TurnOutcomesTest {
         override val providerId = "door"
         override suspend fun listTools() = listOf(
             ToolDescriptor("lock", "Locks the door.", """{"type":"object","properties":{}}""", effectKind = "MUTATING", completionImpact = "REQUIRED_ON_CALL"),
+            ToolDescriptor("ring", "Rings the bell.", """{"type":"object","properties":{}}""", effectKind = "READ_ONLY"),
+            ToolDescriptor("knock", "Knocks.", """{"type":"object","properties":{}}""", effectKind = "READ_ONLY"),
         )
-        override suspend fun callTool(toolName: String, argumentsJson: String, context: ToolCallContext) =
-            ToolCallResult(success = true, resultJson = "{}")
+        override suspend fun callTool(toolName: String, argumentsJson: String, context: ToolCallContext): ToolCallResult = when (toolName) {
+            "ring" -> throw UnsatisfiedLinkError("no bell in java.library.path")
+            "knock" -> throw java.io.IOException("the door is not there")
+            else -> ToolCallResult(success = true, resultJson = "{}")
+        }
     }
 
     /** Finishes as the person's words say ("finish partial"), or plays its script for the rest. */
@@ -135,6 +164,8 @@ class TurnOutcomesTest {
         private val script = ScriptedModel {
             on("list my habits") { call("habit_list", "list_habits"); answer { it.single() } }
             on("lock the door") { call("door", "lock"); answer("Locked.") }
+            on("ring the bell") { call("door", "ring"); answer { "Heard: " + it.single() } }
+            on("knock") { call("door", "knock"); answer { "Heard: " + it.single() } }
         }
 
         override fun complete(request: ModelRequest): Flow<ModelEvent> {
@@ -145,6 +176,7 @@ class TurnOutcomesTest {
                 "finish blocked asking" in said -> ASKING to "blocked"
                 "finish blocked" in said -> BLOCKED to "blocked"
                 "finish blank" in said -> "" to "partial"
+                "finish broken" in said -> throw NoClassDefFoundError("com/example/Missing")
                 else -> return script.complete(request)
             }
             return flow {

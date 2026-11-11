@@ -258,6 +258,8 @@ val checkAppServerLayering by tasks.registering(PackageRulesTask::class) {
     allowedIn.set(APP_SERVER_PLUGIN_PACKAGES)
 }
 tasks.named("ciCheck") { dependsOn(checkAppServerLayering) }
+// A bare host's release build shrinks with R8 and no rules of its own (the app server's guide says so).
+tasks.named("ciCheck") { dependsOn(":samples:agent-app-sample:minifyReleaseWithR8") }
 tasks.named("check") { dependsOn(checkAppServerLayering) }
 
 listOf(":agent-app-protocol" to listOf("compileClasspath", "runtimeClasspath"),
@@ -283,7 +285,7 @@ if (providers.gradleProperty("samplesFromMavenLocal").orNull.let { it != null &&
     project(":samples").subprojects.filter { it.name.startsWith("agent-app-sample") }.forEach { sample ->
         sample.configurations.configureEach {
             resolutionStrategy.dependencySubstitution {
-                listOf("agent-app-protocol", "agent-app-server").forEach {
+                listOf("agent-app-protocol", "agent-app-server", "agent-exec-js").forEach {
                     substitute(project(":$it")).using(module("$group:$it:$sdkVersion"))
                 }
             }

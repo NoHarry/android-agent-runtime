@@ -22,6 +22,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    // guide:start release
+    buildTypes {
+        // R8 with no rules of the app's own: what the server and its libraries need comes in their artifacts. CI runs it.
+        release {
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+        }
+    }
+    // guide:end release
 }
 
 kotlin {

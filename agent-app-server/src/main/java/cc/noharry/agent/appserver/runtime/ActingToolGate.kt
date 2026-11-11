@@ -3,6 +3,7 @@
 package cc.noharry.agent.appserver.runtime
 
 import cc.noharry.agent.appserver.protocol.ConfirmationMode
+import cc.noharry.agent.appserver.tools.isCallFailure
 import cc.noharry.agent.runtime.RuntimeInspection
 import cc.noharry.agent.spi.HookContext
 import cc.noharry.agent.spi.HookDecision
@@ -72,7 +73,8 @@ internal class ActingToolGate(
                 provider.listTools()
             } catch (cancelled: CancellationException) {
                 throw cancelled
-            } catch (_: Exception) {
+            } catch (failed: Throwable) {
+                if (!failed.isCallFailure()) throw failed
                 return true
             }
             val tool = tools.firstOrNull { RuntimeInspection.qualifiedToolName(provider.providerId, it.name) == name } ?: continue

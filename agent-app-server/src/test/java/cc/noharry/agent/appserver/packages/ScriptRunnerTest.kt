@@ -52,6 +52,49 @@ class ScriptRunnerTest {
     }
 
     @Test
+    fun anEngineThatFailsToStartFailsTheCallSayingWhy() {
+        val grant = ScriptGrant("com.example.trains", emptySet(), emptySet(), emptyMap(), emptySet())
+        fun runnerWith(engine: (() -> ExecEngine)?) =
+            ScriptRunner(grant, ScriptHttp(grant, ScriptLimits(), scriptHttpClient()), ScriptHostTools(emptySet(), emptyList()), {}, ScriptLimits(), engine)
+        // QuickJS's native library missing (Zipline's Android build under a JVM), thrown as the engine starts or runs.
+        val missing = runnerWith { throw UnsatisfiedLinkError("no quickjs in java.library.path") }
+        assertFailure("the script engine failed: UnsatisfiedLinkError: no quickjs in java.library.path", call("function run() { return 1; }", runner = missing))
+        val broken = runnerWith { Throwing(NoClassDefFoundError("app/cash/zipline/QuickJs")) }
+        assertFailure("the script engine failed: NoClassDefFoundError: app/cash/zipline/QuickJs", call("function run() { return 1; }", runner = broken))
+        // The app does not include agent-exec-js.
+        assertFailure("scripts need agent-exec-js, which this app does not include", call("function run() { return 1; }", runner = runnerWith(null)))
+    }
+
+    @Test
+    fun aHostToolThatThrowsAnErrorIsAnErrorTheScriptCatches() {
+        val broken = object : ToolProvider {
+            override val providerId = "home"
+            override suspend fun listTools() = listOf(ToolDescriptor("weather", inputSchemaJson = "{}", effectKind = RuntimeEffectKind.READ_ONLY.name))
+            override suspend fun callTool(toolName: String, argumentsJson: String, context: ToolCallContext): ToolCallResult =
+                throw ExceptionInInitializerError("no forecast")
+        }
+        val runner = runner(hostTools = ScriptHostTools(setOf("weather"), listOf(broken)))
+        val caught = call("function run() { try { host.tool('weather'); return 'ran'; } catch (e) { return e.message; } }", runner = runner)
+        assertEquals("""{"result":"host.tool failed (ExceptionInInitializerError)"}""", caught.resultJson)
+    }
+
+    @Test
+    fun numbersWithFractionsAreReadAsWrittenOrNoScriptRuns() {
+        // QuickJS reads them with the C library's strtod, which follows the process's numeric locale. Under C's (what
+        // Gradle gives the tests) they are read right; under one that writes 0,5 (testScriptsUnderACommaLocale) 236.588
+        // would be 236, so the engine runs no script there, saying why. Never a misread number.
+        val result = call("function run(input) { return { ml: Math.round(input.cups * 236.588), half: parseFloat('0.5'), parsed: JSON.parse('[1.25]')[0] }; }", """{"from": "Bern", "to": "Basel", "cups": 2}""")
+        if (result.success) {
+            assertEquals("""{"ml":473,"half":0.5,"parsed":1.25}""", result.resultJson)
+        } else {
+            assertFailure("the script engine cannot run here: JavaScript does not run in this process", result)
+            assertFailure("reads 0.5 as 0 under the process's numeric locale", result)
+            assertFailure("Start the JVM with LC_NUMERIC=C", result)
+        }
+        assertTrue(result.resultJson, System.getenv("LC_NUMERIC") != "C" || result.success)
+    }
+
+    @Test
     fun argumentsAreCheckedBeforeTheScriptRuns() {
         val script = "function run(input) { host.log('ran'); return input; }"
         assertFailure("to: missing", call(script, """{"from": "Bern"}"""))
@@ -167,6 +210,12 @@ class ScriptRunnerTest {
         assertFalse(result.resultJson, result.success)
         val error = (Json.parseToJsonElement(result.resultJson) as JsonObject)["error"]!!.jsonPrimitive.content
         assertTrue("\"$expected\" not in \"$error\"", expected in error)
+    }
+
+    /** An engine whose run throws [thrown]. */
+    private class Throwing(private val thrown: Throwable) : ExecEngine {
+        override val providerConcurrency = ProviderConcurrencyDeclaration.serialized()
+        override suspend fun run(request: ExecRequest, bridge: ExecToolBridge): ExecResult = throw thrown
     }
 
     /** An engine that keeps the time it was given and answers that the script ran over it. */

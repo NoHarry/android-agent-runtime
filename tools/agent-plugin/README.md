@@ -22,7 +22,9 @@ of any repository (this directory ignores `*.key` and built packages).
 `example/` is one: `plugin.json` (format 1: a reverse-domain `id`, a semantic `version`, `name`, `publisher`, the
 `permissions` it asks for — `network` hosts and `secrets` the person types at install — its `mcpServers`, `skills` and
 `rules`, and optionally an `icon` and a `minServer`), one `skills/<name>/SKILL.md` per skill, and `rules.md` (at most 20
-lines and 2,000 characters). A package holds only markdown, json, png and its tools' scripts, at most 200 files and
+lines and 2,000 characters). Every member but `format`, `id`, `name`, `version` and `publisher` may be left out:
+`permissions` too, or `{}`, for a package that reaches nothing (the timer sample's, `samples/agent-app-sample-timer/package/`,
+is a `plugin.json` and one script that only computes). A package holds only markdown, json, png and its tools' scripts, at most 200 files and
 5 MB; hidden files are left out. An MCP server's host must be among the `network` hosts and its address HTTPS (HTTP only
 on `127.0.0.1`/`localhost`); a secret goes into a header value or a whole query value as `${name}`. An MCP server's
 tools that act ask the person every time; for a publisher the host does not trust, every one of its tools does,
@@ -30,9 +32,29 @@ whatever the server's `readOnlyHint` says. A skill may ask to be preloaded (`{ "
 only a trusted publisher's is. `code/`, `code` and `nativeCode` are
 reserved for compiled code: this server refuses a package that has them.
 
+## Names
+
+The model, and the person's switches, know what a package brings by names the server makes from its id:
+
+- its tools written as scripts: `mcp__<last segment of the id>__<tool>` (`com.example.pantry.recipes`'s `cups_to_ml`
+  is `mcp__recipes__cups_to_ml`), the segment written as a tool server's name is (lower-case letters, digits and
+  single `_`, 32 characters at most);
+- its MCP servers' tools: `mcp__<last segment>_<server id>__<tool>` (`mcp__weather_weather__<tool>` for this
+  directory's `example/`);
+- its skills: `<id>:<skill>`, the skill being the directory under `skills/` (`com.example.weather:forecast`); the
+  `name` in the SKILL.md header is replaced with it.
+
+No two installed packages share one of those names, and none takes a name the host's other tool servers go by when
+it is installed (the app's own tools, the MCP servers the person configured, the app's plugins): `plugins/install`
+refuses such a package with `TOOL_SERVER_TAKEN`, naming the name (and the package that has it). Give the last segment
+something of your own: `recipes` is likelier taken than `pantryrecipes`. A host's test addresses a script tool by
+that segment, `ScriptedModel`'s `call("recipes", "cups_to_ml", …)`, and the conversation shows its calls as
+`ToolCallItem`s by the full name, beside the `search_tools` that found it and the `finish` that answered.
+
 ## Tools written as scripts
 
-`example-scripts/` has three. A tool in `tools` has a `name` (lower-case letters, digits and `_`, 24 at most), a
+`example-scripts/` has three. They run in the host app's JavaScript sandbox, `agent-exec-js`, which an app adds when
+it takes such packages: one without it refuses them (`SCRIPTS_UNAVAILABLE`). A tool in `tools` has a `name` (lower-case letters, digits and `_`, 24 at most), a
 `description` for the model, an `inputSchema` (an object schema in the part of JSON Schema the server checks: `type`,
 `properties`, `required`, `additionalProperties`, `items`, `enum`, `const`, `minimum`/`maximum` and their exclusive
 forms, `minLength`/`maxLength`, `minItems`/`maxItems`, and the annotations `description`, `title`, `default`,

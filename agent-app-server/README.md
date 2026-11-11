@@ -18,7 +18,8 @@ turns it on.
 
 The code below is quoted from four apps in this repository's `samples/`, which build with every check:
 `agent-app-sample` (the smallest host), `agent-app-sample-notes` (a notes assistant with a screen and a background service),
-`agent-app-sample-timer` (a kitchen timer with no screen and no model service, tested offline) and
+`agent-app-sample-timer` (a kitchen timer with no screen and no model service, tested offline, whose test installs a
+plugin package with a tool written as a script) and
 `agent-app-sample-habits` (a habit tracker with no screen that answers approvals in code and switches a plugin of its
 own off and on in its test). A test keeps the quotes in step with them.
 
@@ -30,6 +31,27 @@ check the repository out beside your project, add `includeBuild("../android-agen
 `settings.gradle.kts`, and depend on the same coordinates at `VERSION_NAME` of this repository's `gradle.properties`;
 Gradle builds them, and the runtime modules they need, from the source. The samples, which build in this repository,
 name the same modules as projects.
+
+The repositories, in `settings.gradle.kts` (this repository's own):
+
+<!-- quote: settings.gradle.kts repositories -->
+```kotlin
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+```
 
 A whole module build file, the habits app's:
 
@@ -71,6 +93,8 @@ kotlin {
     jvmToolchain(17)
     // The app server is experimental: its entry points ask for this opt-in.
     compilerOptions.optIn.add("cc.noharry.agent.appserver.protocol.ExperimentalAppServerApi")
+    // And what a plugin goes further with (HabitListPlugin's line for each run's context) asks for this one.
+    compilerOptions.optIn.add("cc.noharry.agent.appserver.AppServerPluginApi")
 }
 
 dependencies {
@@ -97,16 +121,51 @@ id("org.jetbrains.kotlin.jvm") version "2.4.21" apply false
 
 - The server needs `minSdk` 24 and Java 17; the samples compile against API 34.
 - `ExperimentalAppServerApi`: the app server is experimental, and its entry points ask for an opt-in. The compiler
-  option opts the whole module in; without it, each use is a warning.
+  option opts the whole module in; without it, each use is a warning. `AppServerPluginApi` is a second one, for what a
+  plugin goes further with ([Plugins](#plugins)); without it, each use is an error. A module that only hosts the server
+  needs the first alone.
 - Core library desugaring with `desugar_jdk_libs_nio` 2.1.5 or later: the server's workspace and event log use
   `java.nio.file`, which Android has from API 26.
-- `project(":agent-app-server")` and `project(":agent-app-protocol")` are the modules above (`cc.noharry:agent-app-server`
-  and `cc.noharry:agent-app-protocol` outside this repository); `agent-app-server` gives
+- `project(":agent-app-server")` and `project(":agent-app-protocol")` are the modules above; `agent-app-server` gives
   you the runtime's `ToolProvider`, `RuntimeHook` and `ModelClient` as well, and `agent-app-protocol` is the protocol
-  and its client, plain Kotlin. Clients run on coroutines (`kotlinx-coroutines-android`).
+  and its client, plain Kotlin. Clients run on coroutines (`kotlinx-coroutines-android`). An app outside this
+  repository names them by their coordinates, their version from `agent-bom` (CI builds the samples so too, against
+  the artifacts `publishToMavenLocal` writes):
+
+<!-- published: samples/agent-app-sample-habits/build.gradle.kts dependencies -->
+```kotlin
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:2.1.5")
+    implementation(platform("cc.noharry:agent-bom:0.5.0"))
+    implementation("cc.noharry:agent-app-server")
+    implementation("cc.noharry:agent-app-protocol")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.12.2")
+    testImplementation("androidx.test:core:1.5.0")
+}
+```
+
 - For tests run offline under Robolectric ([Testing offline](#testing-offline-with-a-scripted-model)):
   `junit`, `robolectric` and `androidx.test:core`, and `unitTests.isIncludeAndroidResources` because the server reads
   its own assets.
+- **Scripts.** Plugin packages' tools written as scripts, and the `scripts` built-in (`exec_js`), run in a JavaScript
+  sandbox, `agent-exec-js` (QuickJS through Zipline). The server is compiled against it but does not bring it, as its
+  native code is about 4 MB of an APK (QuickJS for four ABIs: the bare sample's release APK, shrunk with R8, is 1.5 MB
+  without it and 5.6 MB with it). An app that wants scripts adds it, as the timer does (in its unit tests, too:
+  [Script tools in a test](#script-tools-in-a-test)):
+
+<!-- published: samples/agent-app-sample-timer/build.gradle.kts scripts-dependency -->
+```kotlin
+// Plugin packages' tools written as scripts run in this sandbox (QuickJS through Zipline); without it the server
+// refuses such a package.
+implementation("cc.noharry:agent-exec-js")
+```
+
+  Without it, `plugins/install` refuses a package with tools written as scripts (`SCRIPTS_UNAVAILABLE`), a call of
+  such a tool from a package installed before fails with `scripts need agent-exec-js, which this app does not
+  include`, and `AppServer.install` throws for `BuiltInFeatures(scripts = true)`. Its skills, rules and MCP servers
+  need nothing more.
 
 Your manifest needs the Internet permission and your `Application` class. The server adds one receiver of its own,
 `BootReceiver`, off unless a running plugin asks for the app to start after a reboot (`PluginContext.startOnBoot`); a
@@ -143,6 +202,28 @@ its foreground service (see [A service with no screen](#a-service-with-no-screen
 </application>
 ```
 
+### Release builds and R8
+
+A release build shrinks with R8 and needs no rules of the app's own for the server. kotlinx.serialization (the
+protocol's types), Zipline, OkHttp and coroutines bring their rules in their artifacts, and so do the runtime's
+modules: `agent-app-server` lets R8 build an app that leaves `agent-exec-js` out, and `agent-exec-js` keeps its
+engine's class name, which the server looks up to know whether scripts can run. The server finds nothing else by name
+and loads no service. CI shrinks the bare sample's release with R8 (`minifyReleaseWithR8`) on every check:
+
+<!-- quote: samples/agent-app-sample/build.gradle.kts release -->
+```kotlin
+buildTypes {
+    // R8 with no rules of the app's own: what the server and its libraries need comes in their artifacts. CI runs it.
+    release {
+        isMinifyEnabled = true
+        proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+    }
+}
+```
+
+That checks the build; what runs on a device is your release's own test, as for any app. Your own classes that you
+reach by name, or that a library of yours reads by reflection, need rules of yours as ever.
+
 ## Where things live
 
 Every name this guide uses that is not a sample's own, by package. `agent-app-server`'s public API is listed in
@@ -153,23 +234,32 @@ API is in its `api/<module>.api`, as for the rest of the runtime. The protocol's
 `AppServerMethods`, and each constant (`ClientRequests.TURN_START`, say) is a `RequestMethod` that names its wire method
 and its parameter and result types (`Methods.kt` and one file per area, in `cc.noharry.agent.appserver.protocol`).
 
+Those listings are files of this repository, not of the artifacts; an app that takes the artifacts from Maven reads
+them on GitHub:
+[`agent-app-server-levels.txt`](https://github.com/NoHarry/android-agent-runtime/blob/main/agent-app-server/api/agent-app-server-levels.txt),
+[`agent-app-server.api`](https://github.com/NoHarry/android-agent-runtime/blob/main/agent-app-server/api/agent-app-server.api)
+and [`agent-app-protocol.api`](https://github.com/NoHarry/android-agent-runtime/blob/main/agent-app-protocol/api/agent-app-protocol.api)
+(on `main`; the tag `v<version>` has a release's). Where this guide says a declaration's KDoc is the reference, the
+KDoc is in the sources and javadoc jars published beside each artifact, which an IDE shows from them.
+
 | Package | Module | Names |
 |---|---|---|
+| `cc.noharry.agent.appserver` | `agent-app-server` | `AppServerPluginApi` |
 | `cc.noharry.agent.appserver.server` | `agent-app-server` | `AppServer`, `AppServerConfig`, `AppServerPlugin`, `PluginContext`, `PluginSkill`, `PluginMcpServer`, `PluginToolServer`, `PublishedState`, `RouteModule` |
 | `cc.noharry.agent.appserver.runtime` | `agent-app-server` | `Persona`, `BuiltInFeatures`, `RunAddOns`, `RunFacts`, `HostModels`, `VoicePort`, `ProviderPresets`, `ReplayCheck` |
 | `cc.noharry.agent.appserver.model` | `agent-app-server` | `ModelPreset`, `ScriptedModel` |
 | `cc.noharry.agent.appserver.skills` | `agent-app-server` | `RuntimeSkill` |
-| `cc.noharry.agent.appserver.protocol` | `agent-app-protocol` | `ExperimentalAppServerApi`, `ClientInfo`, `ClientCapabilities`, `ClientRequests`, `SettingsRequests`, `PluginRequests`, `ServerNotifications`, `TurnStartParams`, `TextParams`, `TurnInterruptParams`, `ThreadIdParams`, `Empty`, `ApprovalRequest`, `ApprovalDecision`, `ApprovalRespondParams`, `ConfirmationMode`, `RunSettingsParams`, `ProviderCreateParams`, `ModelSelectParams`, `ModelProvider`, `ProviderEndpoint`, `PluginSetParams`, `ConversationItem` (with `TurnHeader`, `MessageItem`, `ToolCallItem`, `ConfirmationItem`, `RuntimePhaseItem`), `TranscriptRole`, `ToolCallStatus` |
+| `cc.noharry.agent.appserver.protocol` | `agent-app-protocol` | `ExperimentalAppServerApi`, `ClientInfo`, `ClientCapabilities`, `ClientRequests`, `SettingsRequests`, `PluginRequests`, `ServerNotifications`, `TurnStartParams`, `TextParams`, `TurnInterruptParams`, `ThreadIdParams`, `ThreadStartResult`, `ThreadListResult`, `ThreadSnapshot`, `SessionSummary`, `Empty`, `ApprovalRequest`, `ApprovalDecision`, `ApprovalRespondParams`, `ConfirmationMode`, `ConfirmationStatus`, `RunSettingsParams`, `ProviderCreateParams`, `ProviderCreateResult`, `ModelSelectParams`, `ModelProvider`, `ProviderEndpoint`, `PluginSetParams`, `PluginListResult`, `PluginView`, `PluginInstallParams`, `PluginInstallResult`, `PluginConfirmParams`, `PluginRemoveParams`, `PackageView`, `PackageRefusal`, `PackageProblem`, `ConversationItem` (with `TurnHeader`, `MessageItem`, `ToolCallItem`, `ConfirmationItem`, `RuntimePhaseItem`), `TranscriptRole`, `ToolCallStatus` |
 | `cc.noharry.agent.appserver.protocol.client` | `agent-app-protocol` | `ServerClient`, `ServerState` |
-| `cc.noharry.agent.appserver.protocol.jsonrpc` | `agent-app-protocol` | `JsonRpcNotification` |
+| `cc.noharry.agent.appserver.protocol.jsonrpc` | `agent-app-protocol` | `JsonRpcNotification`, `JsonRpcException`, `ProtocolJson` |
 | `cc.noharry.agent.spi` | the runtime's `agent-api`, which `agent-app-server` brings | `ToolProvider`, `ToolDescriptor`, `ToolCallResult`, `ToolCallContext`, `RuntimeHook`, `HookDecision`, `HookContext`, `ToolUse` |
 | `cc.noharry.agent.spi.model` | the runtime's `agent-api` | `ModelClient`, `ModelRequest`, `ModelEvent`, `ModelMessage` |
 
 Names not in the table are Android's, Kotlin's and `kotlinx.coroutines`' (`MainScope`, `CoroutineStart`, `async`,
 `first`, `withTimeoutOrNull`, `Mutex`), or the samples' own, each in its sample's package: `NotesTools`,
 `AskBeforeSavingSecrets`, `NoteStatsPlugin`, `ModelChoice`, `transcript()` and `lastAnswer()` in the notes app;
-`TimerAgent`, `TimerTools`, `TimerScript` and `timerConfig()` in the timer; `HabitsAgent`, `HabitsTools`, `RESET_TOOL`,
-`HabitListPlugin`, `HabitsScript` and `habitsConfig()` in the habits app.
+`TimerAgent`, `TimerTools`, `TimerScript`, `timerConfig()` and `KITCHEN_PUBLISHER` in the timer; `HabitsAgent`,
+`HabitsTools`, `HabitStore`, `RESET_TOOL`, `HabitListPlugin`, `HabitsScript` and `habitsConfig()` in the habits app.
 
 ## A first agent in one file
 
@@ -375,22 +465,42 @@ send.setOnClickListener {
   and plugins are on) and a snapshot; the first client to connect starts the server.
 - `state` is a `StateFlow<ServerState>`: `items` (the current thread's `ConversationItem`s), `isRunning`,
   `providerLabel` (the model profile in use), `confirmationMode`, `simulated`, `lastRun`, `sessions` and more. Items
-  are `TurnHeader` (the person's words), `MessageItem` (`role` `ASSISTANT`, with `final` on the answer; `THINKING`,
-  `STATUS`, `RUNTIME`, `NOTICE`, `ERROR`), `ToolCallItem` (`toolName`, `argumentsJson`, `resultJson`, `status`),
-  `ConfirmationItem` (an approval) and `RuntimePhaseItem`.
+  are:
+  - `TurnHeader`: the person's words (`fullText`).
+  - `MessageItem`: `role` `ASSISTANT`, with `final` on the answer; `THINKING`, `STATUS`, `RUNTIME`, `NOTICE`, `ERROR`
+    (what made a turn fail).
+  - `ToolCallItem`, one per call the model made, the server's own tools' included: a turn that searched, called a
+    tool and answered has `search_tools`, `mcp__notes__add_note` and `finish`. `toolName` is the full name, also for
+    a call made through `call_tool`; `argumentsJson` and `resultJson` are what the model sent and read; `status` is
+    `RUNNING`, `DONE`, `FAILED` (the tool failed, threw or was refused; `resultJson` says why), or `UNKNOWN` for one
+    still running when its run ended.
+  - `ConfirmationItem`: an approval (`pendingId`, `mode`, `alwaysAsk`) and its `status`, a `ConfirmationStatus`:
+    `PENDING` while it waits, `APPROVED` or `DENIED` once answered, `EXPIRED` when nobody answered within a minute,
+    `FAILED` when it can no longer be answered (its run ended or was stopped). `CONSUMED`, `AUTO_APPROVED` and
+    `AUTO_DENIED` are in the protocol; this server does not set them.
+  - `RuntimePhaseItem`: a phase of the runtime (intake, result, evidence), for a debug screen.
 - `notifications` is every notification as it came (`ServerNotifications.TURN_COMPLETED` tells a turn ended).
-- `request(method, params)` calls a method. The ones a simple client needs:
+- `request(method, params)` calls a method and returns its result, or throws a `JsonRpcException` (`code`, `message`,
+  `data`) when the server refuses it. The ones a simple client needs:
 
-| Method | Params | What it does |
-|---|---|---|
-| `ClientRequests.TURN_START` | `TurnStartParams(text)` | Starts a turn in the current thread |
-| `ClientRequests.TURN_STEER` | `TextParams(text)` | Adds the person's words to the running turn |
-| `ClientRequests.TURN_INTERRUPT` | `TurnInterruptParams()` | Stops the current thread's run |
-| `ClientRequests.THREAD_START`, `THREAD_LIST`, `THREAD_SELECT`, `THREAD_DELETE` | `Empty`, `ThreadIdParams(id)` | Conversations: a new one (which becomes the current thread), the list, another one, deleting one |
-| `ClientRequests.APPROVAL_RESPOND` | `ApprovalRespondParams(pendingId, decision)` | Answers an approval from its `ConfirmationItem` (a client without an `approvals` handler) |
-| `SettingsRequests.RUN_SET` | `RunSettingsParams(confirmationMode, simulatedBackend)` | The approval mode, the backend |
-| `SettingsRequests.PROVIDER_CREATE`, `MODEL_SELECT` | `ProviderCreateParams(…)`, `ModelSelectParams(profileId)` | Adds a model profile, picks one |
-| `PluginRequests.LIST`, `SET` | `Empty`, `PluginSetParams(id, enabled)` | Lists the plugins, turns one off or on |
+| Method | Params | Result | What it does |
+|---|---|---|---|
+| `ClientRequests.TURN_START` | `TurnStartParams(text)` | `Empty` | Starts a turn in the current thread; `turn/completed` tells its end |
+| `ClientRequests.TURN_STEER` | `TextParams(text)` | `Empty` | Adds the person's words to the running turn |
+| `ClientRequests.TURN_INTERRUPT` | `TurnInterruptParams()` | `Empty` | Stops the current thread's run |
+| `ClientRequests.THREAD_START` | `Empty` | `ThreadStartResult(threadId)` | A new conversation, which becomes the current thread |
+| `ClientRequests.THREAD_LIST` | `Empty` | `ThreadListResult(threads, activeThreadId)`, each a `SessionSummary` (`sessionId`, `title`, `updatedAtEpochMillis`, `turnCount`, …) | The conversations |
+| `ClientRequests.THREAD_SELECT` | `ThreadIdParams(threadId)` | `ThreadSnapshot(threadId, items)` | Makes another conversation the current thread |
+| `ClientRequests.THREAD_DELETE` | `ThreadIdParams(threadId)` | `Empty` | Deletes a conversation |
+| `ClientRequests.APPROVAL_RESPOND` | `ApprovalRespondParams(pendingId, decision)` | `Empty` | Answers an approval from its `ConfirmationItem` (a client without an `approvals` handler) |
+| `SettingsRequests.RUN_SET` | `RunSettingsParams(confirmationMode, simulatedBackend, toggleStream)`: a field left null stays as it is | `Empty` | The approval mode, the backend, streaming |
+| `SettingsRequests.PROVIDER_CREATE` | `ProviderCreateParams(label, provider, endpoint, apiKey, model, baseUrl)` | `ProviderCreateResult(profileId)` | Adds a model profile |
+| `SettingsRequests.MODEL_SELECT` | `ModelSelectParams(profileId = …)` | `Empty` | Picks a profile |
+| `PluginRequests.LIST` | `Empty` | `PluginListResult(plugins)`, each a `PluginView(id, enabled, running, required, needs, source, pkg)` | The plugins: on or off (`enabled`, the person's choice), running or not |
+| `PluginRequests.SET` | `PluginSetParams(id, enabled)` | `PluginListResult` | Turns a plugin off or on |
+| `PluginRequests.INSTALL` | `PluginInstallParams(url, file, data)`: one of the three | `PluginInstallResult(installId, pkg, needsAcknowledgement, update, expiresInSeconds)` | Fetches and checks a plugin package; nothing installed yet ([Plugin packages from a client](#plugin-packages-from-a-client)) |
+| `PluginRequests.CONFIRM` | `PluginConfirmParams(installId, secrets, acknowledgeUntrusted)` | `PluginListResult` | Installs what `INSTALL` checked, and starts it |
+| `PluginRequests.REMOVE` | `PluginRemoveParams(id)` | `PluginListResult` | Removes an installed package, its files and secrets |
 
 When a tool waits for a yes, a client that took on approvals is asked; the first client to answer decides, and the
 others' asks are called off:
@@ -684,7 +794,9 @@ A client answers approvals when it says so in the handshake and has a handler:
   is never asked.
 - **The handler**: `client.approvals = { request -> … }`, a suspending function from `ApprovalRequest` to
   `ApprovalDecision.APPROVE` or `DENY` (or null, which leaves it to another client). The request names the tool
-  (`toolName`, its full name, and `argumentsJson`), the approval mode (`mode`), the conversation (`threadId`), the site
+  (`toolName`, its full name, and `argumentsJson`, the call's arguments as JSON: a `String?`, null, with `toolName`
+  empty, when the server does not find the call among the thread's items), the approval mode (`mode`), the
+  conversation (`threadId`), the site
   for a web fetch (`domain`), the pending approval (`pendingId`, `itemId`) and `alwaysAsk`: true when the call asks
   every time whatever the mode (a plugin's tool that acts), so a yes covers this call alone; a screen then offers no
   "always allow" and no switch to allowing all. The `ConfirmationItem` in the conversation carries the same
@@ -713,7 +825,10 @@ or read why a run did what it did; `ScriptedModel` (next section) does all of it
   whose result lists matches as `{"name": "mcp__notes__add_note", "originalName": "add_note", "description": ...,
   "via": "call_tool", "schema": {...}}`, and calls one with `call_tool {"name": "mcp__notes__add_note", "arguments":
   {"text": "..."}}`. A tool's full name is `mcp__<providerId>__<tool name>` (characters other than letters, digits, `_`
-  and `-` become `_`; a name over 64 characters is cut and ends in a hash).
+  and `-` become `_`; a name over 64 characters is cut and ends in a hash). A plugin package's tools written as scripts
+  go by the last segment of its id (`com.example.pantry.recipes`'s `cups_to_ml` is `mcp__recipes__cups_to_ml`), its
+  MCP servers' by `<last segment>_<server id>`, and its skills are `<package id>:<skill>`
+  ([Plugin packages from a client](#plugin-packages-from-a-client)).
 - **Tools found before.** A tool a conversation found stays loaded for its later turns: the model calls it with
   `call_tool` without searching again, reading its schema from the earlier search. After the app's process restarts,
   the conversation still has the tools its earlier turns show and calls them without searching. While a tool's server
@@ -751,7 +866,8 @@ with these arguments, then answer with text made from their results. The timer's
 ```kotlin
 /**
  * What Pip does with no model service: the script the simulated backend plays, offline, in the tests and on a device.
- * "start a 5 minute egg timer", "list my timers", "cancel the egg timer".
+ * "start a 5 minute egg timer", "list my timers", "cancel the egg timer"; and, with the kitchen measures package
+ * installed, "how many ml in 2 cups".
  */
 val TimerScript = ScriptedModel {
     on(Regex("""(?:cancel|stop)\s+(?:the\s+)?([a-z ]+?)\s*(?:timer|$)""")) { found ->
@@ -768,14 +884,20 @@ val TimerScript = ScriptedModel {
         call("timer", "start_timer", mapOf("label" to label.ifBlank { "kitchen" }, "seconds" to seconds))
         answer { results -> sentence(results.single()) }
     }
+    // A plugin package's script tools go by its id's last segment: com.example.kitchen.measures's are mcp__measures__….
+    on(Regex("""(\d+(?:\.\d+)?)\s+cups?""")) { found ->
+        call("measures", "cups_to_ml", mapOf("cups" to found.groupValues[1].toDouble()))
+        answer { results -> sentence(results.single()) }
+    }
     otherwise { answer("I'm Pip, the kitchen timer. Ask me to start, list or cancel a timer.") }
 }
 ```
 
 - `on(words)` matches words the person's message contains (ignoring case), `on(regex)` a pattern (the turn gets the
   match), `otherwise` everything else; the first that matches plays.
-- `call(provider, tool, arguments)` takes the provider's `providerId`, the tool's name and its arguments as a map (or
-  JSON text); calls run in order.
+- `call(provider, tool, arguments)` takes the provider's `providerId` (for a plugin package's tools written as scripts,
+  the last segment of its id: `call("measures", "cups_to_ml", …)` for `com.example.kitchen.measures`), the tool's name
+  and its arguments as a map (or JSON text); calls run in order.
 - `answer(text)` ends the turn. `answer { results -> ... }` makes the text from the calls' results: `results` is a
   `List<String>`, one per `call` in the order written, each the text the model was given for it
   ([above](#the-models-side)): your `resultJson` when the call succeeded, otherwise the server's JSON. The habits
@@ -814,7 +936,10 @@ service:
 
 <!-- quote: samples/agent-app-sample-timer/src/main/java/cc/noharry/agent/appserver/sample/timer/TimerApplication.kt config -->
 ```kotlin
-/** Pip, a kitchen timer with no screen and no model service: its persona, its tools and rule, and the script it plays. */
+/**
+ * Pip, a kitchen timer with no screen and no model service: its persona, its tools and rule, the script it plays, and
+ * the publisher whose plugin packages it takes with no second yes.
+ */
 fun timerConfig(): AppServerConfig {
     val timers = TimerTools()
     return AppServerConfig(
@@ -832,6 +957,8 @@ fun timerConfig(): AppServerConfig {
         // No model service: every turn plays the script, from the first one on.
         simulatedModel = { TimerScript },
         simulatedBackend = true,
+        // Its tools that say they only read run unasked; any other publisher's package needs the person's second yes.
+        trustedPublishers = setOf(KITCHEN_PUBLISHER),
     )
 }
 
@@ -960,7 +1087,70 @@ class HabitsAgentTest {
 - **Switching a plugin in a test** is a request like any other: `plugins/set` through the test's client
   (`HabitsAgent.setPlugin`). It takes effect from the next turn; what a conversation then sees is under
   [Plugins](#plugins).
+- **A restart** cannot be played in a test: the server is one per process (under Robolectric, one per SDK level), and
+  nothing stops it and starts it again over the same files; a class at another SDK level gets a new server with files
+  of its own. What a test can check of a switch is what `plugins/list` answers: each `PluginView`'s `enabled` (the
+  person's choice, which the server keeps on the device) and `running`. That the choice outlives the process is the
+  server's own test's (`PluginHostTest`). `AppServerTesting` is for the server's own tests in other modules, not an
+  app's, and does not restart it either.
 - **What the model is offered** can be checked too ([below](#seeing-what-your-model-was-offered)).
+
+### Script tools in a test
+
+A plugin package's tools written as scripts run in QuickJS in a test too. Under the JVM that needs two things, both in
+the timer's build file, beside the sandbox itself ([Add it to your app](#add-it-to-your-app)):
+
+<!-- quote: samples/agent-app-sample-timer/build.gradle.kts script-tests -->
+```kotlin
+// A unit test runs the scripts in QuickJS too, under the JVM: Zipline's JVM build carries QuickJS for macOS and
+// Linux x86-64, its Android build only for devices. The same version agent-exec-js uses.
+configurations.matching { it.name.endsWith("UnitTestRuntimeClasspath") }.configureEach {
+    resolutionStrategy.dependencySubstitution {
+        substitute(module("app.cash.zipline:zipline")).using(module("app.cash.zipline:zipline-jvm:1.16.0"))
+    }
+}
+// QuickJS reads numbers by the C library's numeric locale, which the JVM takes from the environment: under one that
+// writes 0,5 it runs no script. LC_ALL would win over LC_NUMERIC, so it gives way (its character set kept).
+val allLocale = providers.environmentVariable("LC_ALL")
+tasks.withType<Test>().configureEach {
+    environment("LC_NUMERIC", "C")
+    allLocale.orNull?.takeIf { it.isNotEmpty() }?.let {
+        environment("LC_CTYPE", it)
+        environment("LC_ALL", "")
+    }
+}
+```
+
+- **QuickJS for the JVM.** `agent-exec-js` brings Zipline's Android build, whose QuickJS is built for devices only:
+  under the JVM a script tool's call fails with `the script engine cannot run here: The JavaScript engine (QuickJS)
+  did not load: UnsatisfiedLinkError: no quickjs in java.library.path`. The substitution puts Zipline's JVM build,
+  `app.cash.zipline:zipline-jvm`, in its place in the unit tests only, at the version `agent-exec-js` depends on (1.16.0
+  for this release; its POM names it). The JVM build carries QuickJS for macOS (arm64 and x86-64) and Linux x86-64, not
+  for Linux on ARM or Windows. `testImplementation("app.cash.zipline:zipline-jvm:1.16.0")` also works while the JVM
+  build comes first on the test classpath, but leaves both builds, which have the same classes, on it.
+- **Numbers.** QuickJS reads numbers (a literal, `parseFloat`, `JSON.parse`) with the C library's `strtod`, which
+  follows the process's numeric locale, and the JVM takes its locale from the environment: under one that writes 0,5
+  (`LC_NUMERIC=de_DE.UTF-8`, `hy_AM.UTF-8`, or such an `LC_ALL`), `236.588` would be read as `236`. `agent-exec-js`
+  checks once per process and runs no script where numbers are misread: each call fails with `the script engine
+  cannot run here: JavaScript does not run in this process: its C library reads 0.5 as 0 under the process's numeric
+  locale, … Start the JVM with LC_NUMERIC=C (and no LC_ALL).` The test task sets `LC_NUMERIC=C`, and `LC_ALL`, which would win over it, gives way. On Android
+  nothing is needed: its C library reads numbers the same in every locale.
+
+The timer's test installs a package through the protocol, as a client does
+([Plugin packages from a client](#plugin-packages-from-a-client)), and asks for its tool:
+
+<!-- quote: samples/agent-app-sample-timer/src/test/java/cc/noharry/agent/appserver/sample/timer/TimerAgentTest.kt install-test -->
+```kotlin
+val bytes = checkNotNull(javaClass.getResourceAsStream("/com.example.kitchen.measures-1.0.0.agentplugin")).use { it.readBytes() }
+val source = PluginInstallParams(data = Base64.getEncoder().encodeToString(bytes))
+assertEquals("installed com.example.kitchen.measures 1.0.0", onMain { TimerAgent.install(app, source) })
+// Its script runs in QuickJS: 2 × 236.588 ml, read right under the numeric locale the build file gives the test.
+assertEquals("That is 473 ml.", ask("how many ml in 2 cups"))
+```
+
+The package is the sample's `package/` directory (a `plugin.json` and `scripts/cups_to_ml.js`), built and signed with
+`tools/agent-plugin` into `src/test/resources/`; `timerConfig()` trusts its publisher's key, so its tool that only
+reads runs unasked. An installed package stays for the process's server, so the test removes it when done.
 
 ## Tools
 
@@ -1077,7 +1267,7 @@ no row on the basic tools page and no request of its own, and `serverInfo.featur
 |---|---|
 | `fileWriting` | `write_file`, `edit_file` in the model's workspace |
 | `web` | `web_search`, `web_fetch` and a model service's own search |
-| `scripts` | `exec_js` (JavaScript in a sandbox), still off on the basic tools page until a client switches it on |
+| `scripts` | `exec_js` (JavaScript in a sandbox), still off on the basic tools page until a client switches it on; needs `agent-exec-js` in the app ([Add it to your app](#add-it-to-your-app)) |
 | `subagents` | `spawn_agent`, `wait_agent`, `cancel_agent` and the subagent settings |
 
 On without a switch: reading the workspace (`list_dir`, `read_file`, `grep`), and the **lessons the runtime draws from
@@ -1194,6 +1384,41 @@ private class NoteStats(context: Context) : ToolProvider {
 }
 ```
 
+The habits app's plugin, which its test turns off and on, also gives each run a line of context:
+
+<!-- quote: samples/agent-app-sample-habits/src/main/java/cc/noharry/agent/appserver/sample/habits/HabitListPlugin.kt plugin -->
+```kotlin
+/**
+ * Listing every habit, as a plugin the person can turn off and on while the app runs
+ * (`plugins/set {"id":"habit-list","enabled":false}`). Its tool is `mcp__habit_list__list_habits`; while the plugin is
+ * off a conversation that found it before is told, when it calls it, that its server is off. Each run's context also
+ * says how many habits are tracked, so a model knows whether there is anything to list before it calls.
+ */
+object HabitListPlugin : AppServerPlugin {
+    override val id: String = "habit-list"
+
+    override fun apply(ctx: PluginContext) {
+        // Tools for each run, from the app's Context (and the run's other tool providers, unused here).
+        ctx.tools { context, _ -> listOf(HabitList(context)) }
+        // Lines for the system prompt, after the host's: the same every run, so the prompt stays cached.
+        ctx.rules(listOf("When asked which habits are tracked, list them with the habit list tool."))
+        // A line for each run's context, read anew every run (@AppServerPluginApi, its module's second opt-in).
+        ctx.contextLines { facts -> listOf("Habits tracked: ${HabitStore(facts.context).names().size}.") }
+    }
+}
+```
+
+- **Where a context line lands.** Not in the system prompt. A run's context is a message right after the person's
+  words: `From the app, not typed by the user: context for the request above.`, then its lines, one each: the time,
+  the app in front, the host's own (`RunAddOns.contextLines`), then the running plugins' in the order they started. It
+  is a `"user"` message (a `"system"` one for a model service that takes the context as an update, as DeepSeek's own
+  endpoint does), made anew each run; the system prompt stays the same from run to run, so a service can cache it.
+  `PluginServicesTest` pins where a plugin's line lands. A plugin's `rules` go into the system prompt, after the
+  host's.
+- **The second opt-in.** `contextLines` is marked `@AppServerPluginApi`, as are the other members a plugin goes
+  further with: a module that uses one adds `compilerOptions.optIn.add("cc.noharry.agent.appserver.AppServerPluginApi")`
+  beside `ExperimentalAppServerApi`, as the habits build file does; without it, each use is a compile error.
+
 A `PluginContext` takes tools (`tools`; with `askBeforeActions = true`, for tools from outside your app, those not
 described `READ_ONLY` ask every time, in every mode but "deny all"; without it they ask as yours do), rules
 (after yours, behind a line saying plugin text cannot widen what the person allowed; 3 KiB for all plugins), skills,
@@ -1204,8 +1429,11 @@ screen, queued with the server's own reports), `approvalMode`, `voice` and `desc
 its tools); `ownToolServer` names its tool server (one it gives runs, or one it lists in the MCP list), says which
 calls act (by tool and arguments; `null` leaves a call to its tool's `effectKind`) and whether only the main agent may call it,
 and `AppServerPlugin.clearWhileOff` deletes what it kept for conversations while it is off. `needs` names plugins it
-needs; `required = true` keeps it always on. Clients see
-plugins with `plugins/list` and switch them with `plugins/set`; `serverInfo.features` follows (`server/features`).
+needs; `required = true` keeps it always on. With the second opt-in it also takes, among others, `contextLines`
+(above), `contextProviders` (what the model reads before each round of a run, marked as data, never instructions),
+`runHooks` (gates on tool calls that read the run, `RunFacts`), `runTools` (tools that depend on the run, such as
+whether its model reads pictures) and `wrapTools` (a wrapper around each tool provider of a run). Clients see plugins
+with `plugins/list` and switch them with `plugins/set`; `serverInfo.features` follows (`server/features`).
 
 **Turned off and on while the app runs.** A plugin's requests come and go at once; what it gives runs (tools, tool
 servers, MCP servers, rules, skills) changes from the next turn. While it is off:
@@ -1247,6 +1475,79 @@ is `docs/design/plugin-packages.md`). What a host should know before it lets peo
 - **Where they live.** `files/app_server/plugins/<id>/<version>/`, checked again against their digests and signature
   each time they start. A package whose files changed shows as damaged and does not start until it is installed again
   or removed; one whose record cannot be read, until it is removed.
+- **Scripts** need the sandbox in your app ([Add it to your app](#add-it-to-your-app)): without `agent-exec-js`, a
+  package with tools written as scripts is refused.
+
+### Plugin packages from a client
+
+A client installs a package in two steps, as a screen does: `plugins/install` fetches and checks it and says what it
+is and asks for, with nothing installed; the person looks; `plugins/confirm` installs it and starts it. The timer
+installs one with no screen, taking only what needs no second yes:
+
+<!-- quote: samples/agent-app-sample-timer/src/main/java/cc/noharry/agent/appserver/sample/timer/TimerRequestReceiver.kt install -->
+```kotlin
+/**
+ * Installs the plugin package [source] names (its bytes as base64, an HTTPS address or a file) in the protocol's
+ * two steps: `plugins/install` fetches and checks it and says what it asks for, `plugins/confirm` installs it with
+ * the secrets it asks for. A screen shows the person what it asks for in between; with no screen, Pip takes only a
+ * package that needs no second yes (one from a publisher it trusts) and none that asks for a secret it was not
+ * given. Its answer: what was installed, or why not.
+ */
+suspend fun install(app: Context, source: PluginInstallParams, secrets: Map<String, String> = emptyMap()): String = turns.withLock {
+    val client = connected(app)
+    try {
+        val checked = client.request(PluginRequests.INSTALL, source)
+        val pkg = checked.pkg
+        // An unknown publisher or an unsigned package: confirming needs acknowledgeUntrusted = true, the person's yes.
+        if (checked.needsAcknowledgement) return@withLock "not installed: ${pkg.publisher.name} is not a publisher Pip trusts"
+        // An update keeps the secrets set before (set = true); a value given here replaces one.
+        val missing = pkg.permissions.secrets.filter { !it.set && it.name !in secrets }
+        if (missing.isNotEmpty()) return@withLock "not installed: it needs ${missing.joinToString { it.label }}"
+        val plugins = client.request(PluginRequests.CONFIRM, PluginConfirmParams(checked.installId, secrets))
+        val installed = plugins.plugins.single { it.id == pkg.id }
+        "installed ${pkg.id} ${pkg.version}" + if (installed.running) "" else " (not running)"
+    } catch (refused: JsonRpcException) {
+        // A refused package or step: the error's data says what the server found.
+        val why = refused.data?.let { ProtocolJson.decodeFromJsonElement(PackageRefusal.serializer(), it) }
+        "not installed: " + (why?.let { "${it.problem} ${it.detail}".trim() } ?: refused.message)
+    }
+}
+
+/** Removes the installed package [id], its files and secrets with it. */
+suspend fun remove(app: Context, id: String) {
+    turns.withLock { connected(app).request(PluginRequests.REMOVE, PluginRemoveParams(id)) }
+}
+```
+
+- **`PluginRequests.INSTALL`**, `PluginInstallParams` with one of `data` (the package's bytes, base64), `url` (HTTPS)
+  or `file` (a `content://` address, or a `file://` path in the app's external files, where `adb push` can put one).
+  Its result, `PluginInstallResult`: `installId`, which confirms it within `expiresInSeconds` (a quarter of an hour);
+  `pkg`, a `PackageView` for the screen (`id`, `name`, `version`, `description`, `publisher` with its `name`, key
+  `fingerprint` and whether the host `trusted` it, `unsigned`, `permissions`: the `network` hosts and where each is,
+  the `secrets` with a `label` each, the `hostTools`; `contents`: skills, MCP servers, lines of rules, and tools with
+  whether each `asks`); `needsAcknowledgement`; and, for an update, `update`, what it asks for beyond the version
+  installed now.
+- **`needsAcknowledgement`** is true for a publisher the host does not trust (`AppServerConfig.trustedPublishers`) or
+  an unsigned package (only where `allowUnsignedPackages` is on). The screen then shows a second, plainer warning, and
+  the confirmation says the person accepted it: `acknowledgeUntrusted = true`. Without it, `plugins/confirm` is
+  refused with `NEEDS_ACKNOWLEDGEMENT`.
+- **`PluginRequests.CONFIRM`**, `PluginConfirmParams(installId, secrets, acknowledgeUntrusted)`: `secrets` are the
+  values the person typed for `pkg.permissions.secrets`, by `name`. Every one is needed (`MISSING_SECRET`), except on
+  an update, where one already `set` keeps its value unless given again. It answers the plugins after it
+  (`PluginListResult`); the package is one of them, `source` `PACKAGE`, its `pkg` as above.
+- **`PluginRequests.REMOVE`**, `PluginRemoveParams(id)`: stops the package and deletes its files and secrets. A
+  plugin your build carries is not removed (`NOT_A_PACKAGE_PLUGIN`). A package is turned off and on as any plugin is,
+  with `plugins/set`.
+- **Refusals.** A refused package or step throws `JsonRpcException`, whose `data` is a `PackageRefusal(problem,
+  detail)`: `ProtocolJson.decodeFromJsonElement(PackageRefusal.serializer(), data)`. `PackageProblem` lists every
+  problem; their KDoc says what each means.
+- **Names.** Its tools written as scripts go by the last segment of its id (`com.example.kitchen.measures`:
+  `mcp__measures__cups_to_ml`), its MCP servers' tools by `<last segment>_<server id>`, its skills by `<id>:<skill>`.
+  No two installed packages share one of those names, and a package does not take one of the names your other tool servers go by when it is
+  installed (your `tools`, the MCP servers the person configured, your plugins'): `plugins/install` refuses it with
+  `TOOL_SERVER_TAKEN`, naming the name (and the package that has it). A server the person adds later takes none of a
+  package's names. If a tool provider of yours added in a later version of your app takes one, the package's tools
+  go by that name with a digit (`measures2`).
 
 ## Going deeper (experimental)
 
@@ -1257,19 +1558,19 @@ tool wrappers, a spoken note on tool calls, subagent types), `replayCheck` (`Rep
 runs), `extraTrustRoots`, `scene`, `trustedPublishers`,
 `allowUnsignedPackages` and `maxScriptToolSeconds`. Their KDoc is the reference.
 
-A plugin that goes further uses the members of its `PluginContext` marked `@AppServerPluginApi` (its module opts in
-with the compiler option `optIn.add("cc.noharry.agent.appserver.AppServerPluginApi")`). One that works the conversation
+A plugin that goes further uses more of the members of its `PluginContext` marked `@AppServerPluginApi` (with the
+second opt-in, [Plugins](#plugins)). One that works the conversation
 itself (a voice, a companion, a debug door) has `turns` (`Turns`: start, replace or stop a turn of the conversation on
 screen, follow the runtime's state, start a new conversation, keep a turn something else answered, add a line of your
 own), `speech` (`Speech`: words the person said, an acknowledgement said first, a preview of the voice, silencing the
 run going on), `assistant` (`Assistant`: the client presenting the assistant on this device, its wake and card, and
 requests and notifications of your own to it), `outsideTurns` (turns for a client outside the app, such as another
 agent's task) and `request` (any protocol request, answered as a client's would be, by the server's routes and the
-running plugins'). The others shape runs and the server: `offer`/`offers` (features named to clients),
-`providerAdapter` (what a model service offers beyond chat), `wrapTools`, `runTools`, `contextLines`,
-`contextProviders`, `runHooks`, `skillSections`, `prepareInput` and `turnLabel` (what each run gets), `onLocalTurn`,
-`onAppInFront`, `onPresenterReady` and `onClearData` (what happens on the device), and `provide`/`service` (services
-plugins offer each other). Their KDoc is the reference. A host keeps nothing of the server's own objects: what it
+running plugins'). The others shape runs and the server, beside those under [Plugins](#plugins): `offer`/`offers`
+(features named to clients), `providerAdapter` (what a model service offers beyond chat), `skillSections`,
+`prepareInput` and `turnLabel` (what each run gets), `onLocalTurn`, `onAppInFront`, `onPresenterReady` and
+`onClearData` (what happens on the device), and `provide`/`service` (services plugins offer each other). Their KDoc is
+the reference. A host keeps nothing of the server's own objects: what it
 needs outside its plugins it reaches through one of its plugins' contexts.
 
 ## What is experimental, and what is not done
