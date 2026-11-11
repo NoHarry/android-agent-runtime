@@ -19,11 +19,13 @@ class ModelCatalogClient(
 ) {
     /**
      * The ids at [baseUrl]'s list (asked as [provider]'s wire asks), or at [modelsUrl] when the service lists its models
-     * elsewhere (an OpenAI-compatible list, asked with a bearer key), without [idPrefix] where an id starts with it.
+     * elsewhere (an OpenAI-compatible list, asked with a bearer key), without [idPrefix] where an id starts with it. The
+     * key is read for each address asked ([ConnectionKey.sendTo]): a saved key the list's address may not have is a
+     * [cc.noharry.agent.appserver.FoundException], and nothing is sent.
      */
     suspend fun fetch(
         provider: ModelProvider,
-        apiKey: String,
+        apiKey: ConnectionKey,
         baseUrl: String,
         modelsUrl: String? = null,
         idPrefix: String = "",
@@ -31,29 +33,38 @@ class ModelCatalogClient(
         val url = modelsUrl ?: "${baseUrl.trimEnd('/')}/models"
         // A service's own list is OpenAI-compatible, whatever endpoint the profile is on.
         val wire = if (modelsUrl != null) ModelProvider.OPENAI else provider
-        val response = transport.execute(wire.modelsRequest(apiKey, url))
+        val response = transport.execute(wire.modelsRequest(apiKey.sendTo(url), url))
         if (response.statusCode in SUCCESS_STATUS_RANGE) {
             return parseModelIds(response.body.toString(Charsets.UTF_8), idPrefix)
         }
         // A gateway's Anthropic-compatible path often has no list of its own, while the same backend lists its models on
         // its OpenAI-compatible path beside it.
-        val fallbackUrl = if (modelsUrl != null) null else openAiModelsFallbackUrl(baseUrl)
-        if (fallbackUrl != null) {
-            val fallbackResponse = transport.execute(ModelProvider.OPENAI.modelsRequest(apiKey, "$fallbackUrl/models"))
+        val fallbackUrl = if (modelsUrl != null) null else openAiModelsFallbackUrl(baseUrl)?.let { "$it/models" }
+        if (fallbackUrl != null && apiKey.allows(fallbackUrl)) {
+            val fallbackResponse = transport.execute(ModelProvider.OPENAI.modelsRequest(apiKey.sendTo(fallbackUrl), fallbackUrl))
             if (fallbackResponse.statusCode in SUCCESS_STATUS_RANGE) {
                 return parseModelIds(fallbackResponse.body.toString(Charsets.UTF_8), idPrefix)
             }
         }
         error("Model catalog request failed: status=${response.statusCode}")
     }
+
+    /** [fetch] with [apiKey], a key the caller has itself (its own, or one the person typed), which goes where it asks. */
+    suspend fun fetch(
+        provider: ModelProvider,
+        apiKey: String,
+        baseUrl: String,
+        modelsUrl: String? = null,
+        idPrefix: String = "",
+    ): List<String> = fetch(provider, ConnectionKey.typed(apiKey), baseUrl, modelsUrl, idPrefix)
 }
 
 /**
  * The models a profile at [baseUrl] offers: its service adapter's own listing ([ProviderAdapter.listModels]) when it
  * has one, the service's list alone when it lists none ([ModelService.listsModels]), else the wire protocol's list at
- * the service's models endpoint ([ModelService.modelsUrl], or `<base URL>/models`).
+ * the service's models endpoint ([ModelService.modelsUrl], or `<base URL>/models`). [apiKey] goes only where it may.
  */
-internal suspend fun listModels(context: Context, transport: HttpTransport, profile: ProviderProfile, apiKey: String): List<String> {
+internal suspend fun listModels(context: Context, transport: HttpTransport, profile: ProviderProfile, apiKey: ConnectionKey): List<String> {
     val (adapter, service) = serviceAt(profile.baseUrl) ?: return ModelCatalogClient(transport).fetch(profile.provider, apiKey, profile.baseUrl)
     adapter.listModels(context, service, profile, apiKey)?.let { return it }
     if (!service.listsModels) return service.models.map { it.id }

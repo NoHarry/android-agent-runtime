@@ -3,6 +3,7 @@ package cc.noharry.agent.appserver.models.deepseek
 import android.app.Application
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import cc.noharry.agent.appserver.model.ConnectionKey
 import cc.noharry.agent.appserver.model.ModelService
 import cc.noharry.agent.appserver.model.ProviderAdapter
 import cc.noharry.agent.appserver.model.ProviderConfig
@@ -48,10 +49,10 @@ class DeepSeekRequestKeysTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val sent = mutableListOf<String>()
 
-    /** DeepSeek's adapter, whose balance only notes the key it would send. */
+    /** DeepSeek's adapter, whose balance only notes the key it would send, where DeepSeek's own sends it. */
     private val adapter = object : ProviderAdapter by DeepSeekAdapter {
-        override suspend fun balance(context: Context, service: ModelService, apiKey: String, relayUrl: String?): BalanceView {
-            sent += apiKey
+        override suspend fun balance(context: Context, service: ModelService, apiKey: ConnectionKey, relayUrl: String?): BalanceView {
+            sent += apiKey.sendTo(relayUrl ?: "https://api.deepseek.com/user/balance")
             return BalanceView(true)
         }
     }
@@ -98,6 +99,16 @@ class DeepSeekRequestKeysTest {
                 assertEquals(JsonRpcErrorCodes.INVALID_PARAMS, expected.code)
             }
         }
+        assertEquals(emptyList<String>(), sent)
+    }
+
+    @Test
+    fun aRelayProfilesSavedKeyIsNotSentToDeepSeekItself() = runBlocking {
+        context.getSharedPreferences("app_server_provider_config", Context.MODE_PRIVATE).edit()
+            .putString("profile.pc_local.api_key", "sk-relay-stand-in").commit()
+        // The relay's own key, asked of DeepSeek's balance: refused, as the person did not type it for DeepSeek.
+        val failure = balance(ServiceBalanceParams(DEEPSEEK, connection = connection("pc-local", "https://relay.example.com/v1"))).failure
+        assertEquals(FindingCode.MODEL_KEY_TYPE_AGAIN.name, failure?.more?.single()?.code)
         assertEquals(emptyList<String>(), sent)
     }
 

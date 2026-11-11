@@ -42,6 +42,9 @@ internal class RuntimeSessionRunner(
     private val uiObserver = UiObserverDispatcher(scope, notifyChanged)
     private var announcer: RunAnnouncer? = null
     private val externalRuns = java.util.Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
+
+    /** The base URL each run's profile is at, by request id, for pricing its usage by the service's region. */
+    private val runBaseUrls = ConcurrentHashMap<String, String>()
     private val registry = ActiveRunRegistry(maxActiveSessions)
     private val sessionUsage by lazy { SessionUsage(sessionCoordinator, scope) }
     private val admissionMutex = Mutex()
@@ -304,7 +307,7 @@ internal class RuntimeSessionRunner(
             val request = agentRequest(
                 intake?.requestId ?: RequestIds.next("debug"), sessionId, modelInput, activeConfig, profile,
             )
-            val runScope = RuntimeRunScope(request.requestId, request.sessionId)
+            val runScope = RuntimeRunScope(request.requestId, request.sessionId).also { runBaseUrls[it.requestId] = profile.baseUrl }
             if (intake?.external == true) externalRuns.add(request.requestId)
             if (isSelected(sessionId)) prepareRunUiState(runScope, request, text) else sessionCoordinator.loadTranscript(sessionId).openTurn(text)
             val diagnostics = diagnosticsForRun(context, runScope)
@@ -584,6 +587,7 @@ internal class RuntimeSessionRunner(
             },
             onCompleted = { job ->
                 externalRuns.remove(runScope.requestId)
+                runBaseUrls.remove(runScope.requestId)
                 clearCompletedJob(runScope, job)
             },
         )
@@ -758,7 +762,7 @@ internal class RuntimeSessionRunner(
             cachedInputTokens = delta.cachedInputTokens - previous.cachedInputTokens, cacheHitTokens = delta.cacheHitTokens - previous.cacheHitTokens,
             cacheMissTokens = delta.cacheMissTokens - previous.cacheMissTokens, cacheWriteTokens = delta.cacheWriteTokens - previous.cacheWriteTokens)
         record.tokenUsage = TokenUsageState().plus(delta).copy(requestCount = previous.requestCount + 1)
-        UsageStore.record(record.request.modelRef?.modelId.orEmpty(), increment.toModelUsage())
+        UsageStore.record(record.request.modelRef?.modelId.orEmpty(), increment.toModelUsage(), runBaseUrls[runScope.requestId])
         if (isSelected(runScope.sessionId)) {
             tokenUsage = boardUsage(runScope.sessionId)
             uiObserver.requestNotify()

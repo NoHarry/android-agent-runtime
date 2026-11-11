@@ -133,8 +133,11 @@ in the app's private storage; the guide lists where.
 - **Plugins a library brings.** A library declares a plugin in its manifest (`<meta-data android:name="<class>"
   android:value="cc.noharry.agent.appserver.plugin"/>`); `PluginDiscovery` loads each the app's merged manifest
   declares after the host's own, leaving out those `AppServerConfig.ignoredPlugins` names and any whose id the host
-  lists itself. The server's consumer rules keep every `AppServerPlugin` class with its name and how it is made; the
-  notes sample's release, shrunk by R8, is checked for it (`checkReleaseDiscoveredPlugins`, part of `ciCheck`).
+  lists itself. A class is checked to be a plugin before it is initialized; one that cannot be made is left out. A
+  discovered plugin whose needs the app does not meet is left out and one that fails to start stays off, each shown in
+  `plugins/list` with its `problem`; the host's own still fail fast. The server's consumer rules keep every
+  `AppServerPlugin` class with its name and how it is made; the notes sample's release, shrunk by R8, is checked for it
+  and for the models plugin's data file (`checkReleaseDiscoveredPlugins`, part of `ciCheck`).
 - **What is not a plugin.** The core (sessions, models, MCP, skills, subagents, usage) is always there. Its state is
   held in process-wide objects (`AppHost`, `RuntimeSession` and others), so there is one server per process.
 
@@ -187,11 +190,21 @@ knows (`ServiceRoutes`) and refuses them for a service none knows.
   `usageFields`, `hosts`, `errors`, `retry`). The core asks the adapter of the service at a profile's host, and for a
   model on an unknown host (a relay) the service that lists it by name. Its defaults read the data; an adapter overrides
   them for behaviour (DeepSeek's pricing of versions it does not list, its lookups, native updates, balance and check).
-- **Who wins.** The person's settings (a model's window and picture switch, a typed price) over the host's
-  (`AppServerConfig.modelFacts`, `modelPrices`), over the adapters'. The facts the server uses are the window (usage,
-  compaction) and the picture switch's default; output limits and reasoning efforts are shown, and requests send what
-  the runtime sends for every model of its wire. A service's `retry` sets the run's model retries (no service in the
-  data documents one).
+- **Who wins.** The person's settings (a model's window, picture switch and requested output, a typed price) over the
+  host's (`AppServerConfig.modelFacts`, `modelPrices`, in USD or CNY), over the adapters'. The facts the server uses
+  are the window (usage, compaction), the picture switch's default and the requested output (`requestOutputTokens`,
+  sent as the request's output limit); output limits and reasoning efforts (those the variant menu can send) are
+  shown. A service's `retry` sets the run's model retries (no service in the data documents one).
+- **Defaults and prices.** A service names its default model (`defaultModel`, the general model that calls tools on
+  its default endpoint); a profile named after a service takes its default endpoint when the host gave none, and the
+  default model there. Prices are per region where a service's lists differ (`ModelPrice.region`, from the region of
+  the endpoint the model ran at; none for a region the data has no list for) and per day where a service announced a
+  change (`effectiveFrom`). The usage store keeps only typed and models.dev prices; the host's and the services' are
+  taken on each read.
+- **Saved keys.** A request about a connection gets its key as a `ConnectionKey`: a typed key goes where the request
+  says; a saved one only to its saved profile's host, or to an address a check made with the key typed found and the
+  server recorded (`KeyDestinations`), over https (plain http to local addresses). An adapter reads the key only for the
+  address it sends it to (`sendTo`).
 - **`agent-app-models`** holds the adapters of thirteen services, their facts in `services.json` (each value with the
   official page it was read from and the day, checked by `ServiceCatalogTest`; the guide's table is kept equal to it by
   `GuideServicesTableTest`), DeepSeek's extras in code, tests against a local mock of each service's documented answers

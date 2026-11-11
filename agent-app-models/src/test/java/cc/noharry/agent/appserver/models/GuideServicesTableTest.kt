@@ -35,14 +35,20 @@ class GuideServicesTableTest {
 
     /** The table as the data gives it: one row per service, in the file's order. */
     private fun table(services: List<ModelService>): List<String> = listOf(
-        "| Service | `id` | Endpoints, the default first | Models in the data, with facts and prices | Model list |",
+        "| Service | `id` | Endpoints, the default first | Models in the data, with facts and prices; the default model in bold | Model list |",
         "|---|---|---|---|---|",
     ) + services.map { service ->
         val endpoints = service.endpoints.joinToString("<br>") { endpoint ->
             "${endpoint.endpoint.wireName} `${endpoint.baseUrl}`" + if (endpoint.region.isEmpty()) "" else " (${endpoint.region})"
         }
-        val currency = ServiceCatalog.load().services.single { it.id == service.id }.currency
-        val models = if (service.models.isEmpty()) "none: its own list has them" else service.models.joinToString(", ") { "`${it.id}`" } + " ($currency)"
+        val data = ServiceCatalog.load().services.single { it.id == service.id }
+        val lists = (listOf(data.pricesRegion to data.currency) + data.priceLists.map { it.region to it.currency })
+            .joinToString("; ") { (region, currency) -> if (region.isEmpty()) currency else "$region $currency" }
+        val models = if (service.models.isEmpty()) {
+            "none: its own list has them"
+        } else {
+            service.models.joinToString(", ") { if (it.id == service.defaultModel) "**`${it.id}`**" else "`${it.id}`" } + " ($lists)"
+        }
         val list = when {
             !service.listsModels -> "none documented: the models in the data"
             service.modelsUrl != null -> "`${service.modelsUrl}`"

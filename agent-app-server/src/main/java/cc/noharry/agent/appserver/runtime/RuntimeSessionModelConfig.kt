@@ -1,8 +1,12 @@
 package cc.noharry.agent.appserver.runtime
 import android.content.Context
+import cc.noharry.agent.appserver.model.ConnectionKey
+import cc.noharry.agent.appserver.model.DEFAULT_LOCAL_API_KEY
 import cc.noharry.agent.appserver.model.ModelOptionsController
 import cc.noharry.agent.appserver.model.ProviderConfig
 import cc.noharry.agent.appserver.model.ProviderProfile
+import cc.noharry.agent.appserver.model.connectionKey
+import cc.noharry.agent.appserver.model.isLocalBaseUrl
 import cc.noharry.agent.appserver.protocol.DEFAULT_DEBUG_VARIANT_ID
 import cc.noharry.agent.appserver.protocol.ModelProvider
 import cc.noharry.agent.appserver.protocol.ProviderEditState
@@ -84,13 +88,10 @@ internal fun appConfigEditor(
     )
 }
 
-/** The key a model list is fetched with: [typed], else the one saved for [profileId], else a local server's stand-in. */
-internal fun catalogKey(config: ProviderConfig?, profileId: String, typed: String, baseUrl: String): String =
-    (config?.keyFor(profileId, typed) ?: typed).ifBlank { DEFAULT_TEST_API_KEY.takeIf { baseUrl.isLocalUrl() }.orEmpty() }
-
-private fun String.isLocalUrl(): Boolean {
-    val lower = trim().lowercase()
-    return lower.startsWith("http://localhost") || lower.startsWith("http://127.0.0.1")
-}
-
-private const val DEFAULT_TEST_API_KEY = "local"
+/**
+ * The key a model list is fetched with: [typed], else the one saved for [profileId] (which goes only where it may,
+ * [cc.noharry.agent.appserver.model.ConnectionKey]), else a local server's stand-in.
+ */
+internal fun catalogKey(context: Context, config: ProviderConfig?, profileId: String, typed: String, baseUrl: String): ConnectionKey =
+    config?.connectionKey(context, profileId, typed, baseUrl)
+        ?: ConnectionKey.typed(typed.ifBlank { DEFAULT_LOCAL_API_KEY.takeIf { baseUrl.isLocalBaseUrl() }.orEmpty() })

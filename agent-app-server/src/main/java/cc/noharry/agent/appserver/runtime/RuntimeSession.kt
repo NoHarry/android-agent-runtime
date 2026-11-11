@@ -341,7 +341,7 @@ internal object RuntimeSession {
         onModels: (Result<List<String>>) -> Unit = {},
     ) {
         val profile = ProviderProfile(profileId, selectedProvider.label, selectedProvider, apiKey, model, baseUrl, endpoint)
-        val effectiveKey = catalogKey(config, profileId, apiKey, baseUrl)
+        val effectiveKey = catalogKey(context.applicationContext, config, profileId, apiKey, baseUrl)
         scope.launch {
             status = "Fetching models"
             notifyChanged()

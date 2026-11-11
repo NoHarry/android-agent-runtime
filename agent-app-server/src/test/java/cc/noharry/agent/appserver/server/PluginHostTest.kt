@@ -3,6 +3,8 @@ package cc.noharry.agent.appserver.server
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import cc.noharry.agent.appserver.protocol.Empty
+import cc.noharry.agent.appserver.protocol.PackageProblem
+import cc.noharry.agent.appserver.protocol.PackageRefusal
 import cc.noharry.agent.appserver.protocol.client.ServerState
 import cc.noharry.agent.appserver.protocol.jsonrpc.JsonRpcNotification
 import cc.noharry.agent.appserver.protocol.jsonrpc.RequestMethod
@@ -220,6 +222,37 @@ class PluginHostTest {
         assertEquals(1, host.additions.tools.size)
         assertEquals(listOf(server), host.additions.toolServers)
         assertEquals(listOf(mcp), host.additions.mcpServers)
+    }
+
+    @Test
+    fun aLibrarysPluginThatNeedsWhatTheAppLacksIsLeftOutAndShownWhileTheHostsOwnFailsFast() {
+        val host = PluginHost(
+            app, listOf(plugin("account")), switches, Dispatchers.Unconfined,
+            discovered = listOf(plugin("search", needs = setOf("index")), plugin("cards", needs = setOf("search")), plugin("maps", needs = setOf("account"))),
+        )
+        host.startAll()
+        assertEquals(listOf("start account", "start maps"), log)
+        val leftOut = host.views().filter { it.problem != null }.associate { it.id to it.problem }
+        assertEquals(PackageRefusal(PackageProblem.NEEDS_MISSING, "index"), leftOut["search"])
+        assertEquals(PackageRefusal(PackageProblem.NEEDS_MISSING, "search"), leftOut["cards"])
+        assertFalse(host.views().single { it.id == "search" }.running)
+        assertThrows(IllegalArgumentException::class.java) { host.setEnabled("search", true) }
+        assertThrows(IllegalArgumentException::class.java) { host(plugin("search", needs = setOf("index"))) }
+    }
+
+    @Test
+    fun aLibrarysPluginThatFailsToStartStaysOffWithWhyWhileTheHostsOwnThrows() {
+        val broken = object : AppServerPlugin {
+            override val id = "broken"
+            override fun apply(ctx: PluginContext) = error("its data file is missing")
+        }
+        val host = PluginHost(app, listOf(plugin("account")), switches, Dispatchers.Unconfined, discovered = listOf(broken))
+        host.startAll()
+        val view = host.views().single { it.id == "broken" }
+        assertFalse(view.running)
+        assertEquals(PackageRefusal(PackageProblem.START_FAILED, "its data file is missing"), view.problem)
+        assertEquals(listOf("start account"), log)
+        assertThrows(IllegalStateException::class.java) { host(broken).startAll() }
     }
 
     private fun host(vararg plugins: AppServerPlugin) = PluginHost(app, plugins.toList(), switches, Dispatchers.Unconfined)

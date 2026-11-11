@@ -73,6 +73,7 @@ private fun profileFromValues(values: Map<String, String>, rawId: String): Provi
         searchCapability = values["${prefix}SEARCH_CAPABILITY"]
             ?: values["${prefix}SERVER_SIDE_SEARCH_CAPABILITY"]
             ?: defaultSearchCapability(provider, endpoint),
+        endpointGiven = !values["${prefix}ENDPOINT"].isNullOrBlank(),
     )
 }
 
@@ -92,6 +93,7 @@ internal fun legacyProfile(values: Map<String, String>, provider: ModelProvider)
         streamEnabled = null,
         serverSideSearch = values[providerServerSideSearchName(provider)].toBooleanOverride() ?: true,
         searchCapability = defaultSearchCapability(provider, endpoint),
+        endpointGiven = !values[providerEndpointName(provider)].isNullOrBlank(),
     )
 }
 
@@ -120,6 +122,7 @@ private fun ProviderProfile.withOverride(override: ProviderProfileOverride?): Pr
         serverSideSearch = override.serverSideSearch.toBooleanOverride() ?: serverSideSearch,
         searchCapability = override.searchCapability
             ?: if (profileShapeChanged) defaultSearchCapability(activeProvider, activeEndpoint) else searchCapability,
+        endpointGiven = endpointGiven || !override.endpoint.isNullOrBlank(),
     )
 }
 
@@ -139,6 +142,7 @@ private fun ProviderProfileOverride.toProfile(id: String): ProviderProfile? {
         serverSideSearch = serverSideSearch.toBooleanOverride() ?: true,
         searchCapability = searchCapability
             ?: defaultSearchCapability(provider, ProviderEndpoint.from(endpoint, provider)),
+        endpointGiven = !endpoint.isNullOrBlank(),
     )
 }
 

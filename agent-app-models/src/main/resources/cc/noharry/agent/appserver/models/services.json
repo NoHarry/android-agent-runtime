@@ -31,11 +31,13 @@
       ],
       "balance": true,
       "relayCheck": true,
+      "defaultModel": "deepseek-flash",
+      "defaultModelReason": "The cheaper of its two models, both calling tools; the docs' own examples name it (https://api-docs.deepseek.com/zh-cn/quick_start/pricing).",
       "currency": "CNY",
       "pricesSource": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
       "notes": [
         "Base URLs: https://api-docs.deepseek.com/ (OpenAI) and https://api-docs.deepseek.com/guides/anthropic_api (Anthropic).",
-        "Prices are the peak rates (Beijing time Mon-Fri 9:00-12:00 and 14:00-18:00); off-peak rates are half. The English page lists USD prices.",
+        "Prices are the zh-cn page's in CNY, at the peak rates (Beijing time Mon-Fri 9:00-12:00 and 14:00-18:00); off-peak rates are half. The English page lists USD prices for the same models.",
         "deepseek-chat and deepseek-reasoner were discontinued on 2026-07-24 (https://api-docs.deepseek.com/updates).",
         "No error is documented for an exceeded context window, and none for a timeout."
       ],
@@ -46,7 +48,7 @@
             "deepseek-v4-flash",
             "deepseek-v4-flash-vision-exp"
           ],
-          "source": "https://api-docs.deepseek.com/quick_start/pricing",
+          "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
           "contextWindow": 1048576,
           "maxOutputTokens": 393216,
           "imageInput": true,
@@ -67,7 +69,7 @@
         },
         {
           "id": "deepseek-v4-pro",
-          "source": "https://api-docs.deepseek.com/quick_start/pricing",
+          "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
           "contextWindow": 1048576,
           "maxOutputTokens": 393216,
           "imageInput": false,
@@ -111,6 +113,8 @@
           "source": "https://developers.openai.com/api/docs/guides/error-codes"
         }
       ],
+      "defaultModel": "gpt-6.1-sol",
+      "defaultModelReason": "The docs' choice 'to balance intelligence and cost' (GPT-6 Astra is the flagship; GPT-6 Luna is 'for cost-sensitive, high-volume workloads'); it calls tools over Responses, the default endpoint (https://developers.openai.com/api/docs/models).",
       "currency": "USD",
       "pricesSource": "https://developers.openai.com/api/docs/pricing",
       "notes": [
@@ -240,6 +244,8 @@
           "source": "https://platform.claude.com/docs/en/api/errors"
         }
       ],
+      "defaultModel": "claude-sonnet-5-5",
+      "defaultModelReason": "'Speed and capability for everyday coding, agent, and enterprise workloads', with agentic tool use; Opus 5.5 is the flagship and Haiku 5.5 is meant for high-volume, latency-sensitive tasks such as classification and routing (https://platform.claude.com/docs/en/about-claude/models/choosing-a-model).",
       "currency": "USD",
       "pricesSource": "https://platform.claude.com/docs/en/about-claude/pricing",
       "notes": [
@@ -383,10 +389,12 @@
           "source": "https://aistudio.google.com/docs/api-errors"
         }
       ],
+      "defaultModel": "gemini-3.8-flash",
+      "defaultModelReason": "The stable Flash model, with function calling, which the OpenAI-compatible endpoint's own examples use; Gemini 4 is the costlier tier and 3.5 Flash-Lite is scoped to subagent tasks and document parsing (https://aistudio.google.com/docs/models/gemini-3.8-flash).",
       "currency": "USD",
       "pricesSource": "https://aistudio.google.com/docs/pricing",
       "notes": [
-        "Gemini 4 prices double on 2026-12-01 (4.00 / 0.20 / 20.00) and Gemini 3.8 Flash prices on 2027-01-01 (1.50 / 0.15 / 7.50).",
+        "Gemini 4's prices double on 2026-12-01 (4.00 / 0.20 / 20.00) and Gemini 3.8 Flash's on 2027-01-01 (1.50 / 0.15 / 7.50): both are in the data with the day they take effect.",
         "Gemini 4 caps one non-streaming answer at 32,768 tokens (65,536 streaming).",
         "The list's ids are read without a models/ prefix should the list have one (its output is not documented).",
         "The error pages describe the native APIs; none covers the OpenAI-compatible endpoint."
@@ -408,9 +416,16 @@
           "price": {
             "input": 2.0,
             "output": 10.0,
-            "cachedInput": 0.1,
-            "tier": "through 2026-11-30"
-          }
+            "cachedInput": 0.1
+          },
+          "prices": [
+            {
+              "input": 4.0,
+              "output": 20.0,
+              "cachedInput": 0.2,
+              "effectiveFrom": "2026-12-01"
+            }
+          ]
         },
         {
           "id": "gemini-4-argon",
@@ -428,9 +443,16 @@
           "price": {
             "input": 2.0,
             "output": 10.0,
-            "cachedInput": 0.1,
-            "tier": "through 2026-11-30"
-          }
+            "cachedInput": 0.1
+          },
+          "prices": [
+            {
+              "input": 4.0,
+              "output": 20.0,
+              "cachedInput": 0.2,
+              "effectiveFrom": "2026-12-01"
+            }
+          ]
         },
         {
           "id": "gemini-3.8-flash",
@@ -448,9 +470,16 @@
           "price": {
             "input": 0.75,
             "output": 3.75,
-            "cachedInput": 0.075,
-            "tier": "through 2026-12-31"
-          }
+            "cachedInput": 0.075
+          },
+          "prices": [
+            {
+              "input": 1.5,
+              "output": 7.5,
+              "cachedInput": 0.15,
+              "effectiveFrom": "2027-01-01"
+            }
+          ]
         },
         {
           "id": "gemini-3.5-flash-lite",
@@ -497,11 +526,14 @@
         }
       ],
       "keyHint": "Create an API key at https://console.x.ai/team/default/api-keys",
+      "defaultModel": "grok-4.3",
+      "defaultModelReason": "'Fast, reliable model with strong tool calling and instruction following capabilities', cheaper than grok-4.7 (https://docs.x.ai/developers/models/grok-4.3).",
       "currency": "USD",
       "pricesSource": "https://docs.x.ai/developers/pricing",
+      "pricesRegion": "global",
       "notes": [
         "Chat Completions is a legacy endpoint there; new features come to Responses first (https://docs.x.ai/developers/model-capabilities/legacy/chat-completions).",
-        "Prompts of 200K tokens or more are billed at twice these rates; the US endpoint costs 10% more.",
+        "Prompts of 200K tokens or more are billed at twice these rates. The prices are the global endpoint's; the US endpoint costs 10% more, and its profiles have no price here.",
         "The model pages state no output limit; no error is documented for a balance, a context window, a server error or a timeout (https://docs.x.ai/developers/debugging)."
       ],
       "models": [
@@ -603,6 +635,8 @@
           "source": "https://console.groq.com/docs/errors"
         }
       ],
+      "defaultModel": "openai/gpt-oss-20b",
+      "defaultModelReason": "The faster and cheaper of the two, for low-latency agentic and tool-augmented applications (https://console.groq.com/docs/model/openai/gpt-oss-20b).",
       "currency": "USD",
       "pricesSource": "https://console.groq.com/docs/models",
       "notes": [
@@ -687,10 +721,21 @@
           "source": "https://platform.kimi.ai/docs/api/errors"
         }
       ],
+      "defaultModel": "kimi-k3.1-pro",
+      "defaultModelReason": "Its current flagship, and cheaper than the previous one (kimi-k3); the highspeed model is the same model faster, at twice the price (https://platform.kimi.com/docs/models.md).",
       "currency": "CNY",
       "pricesSource": "https://platform.kimi.com/docs/pricing/chat",
+      "pricesRegion": "cn",
+      "priceLists": [
+        {
+          "region": "global",
+          "currency": "USD",
+          "source": "https://platform.kimi.ai/docs/pricing/chat",
+          "asOf": "2026-11-11"
+        }
+      ],
       "notes": [
-        "Prices from the China site in CNY; the international site lists USD (https://platform.kimi.ai/docs/pricing/chat). cacheWrite is the 5-minute write.",
+        "Prices from the China site in CNY (cn) and the international site in USD (global, https://platform.kimi.ai/docs/pricing/chat). cacheWrite is the 5-minute write.",
         "K3 models always think, and take temperature 1.0, top_p 0.95 and n 1 only.",
         "The output limit is the documented ceiling of max_completion_tokens (131072 by default); the service lowers it to the context left."
       ],
@@ -713,7 +758,16 @@
             "output": 68.0,
             "cachedInput": 1.3,
             "cacheWrite": 13.0
-          }
+          },
+          "prices": [
+            {
+              "input": 2.0,
+              "output": 10.0,
+              "cachedInput": 0.2,
+              "cacheWrite": 2.0,
+              "region": "global"
+            }
+          ]
         },
         {
           "id": "kimi-k3.1-pro-highspeed",
@@ -733,7 +787,16 @@
             "output": 136.0,
             "cachedInput": 1.3,
             "cacheWrite": 26.0
-          }
+          },
+          "prices": [
+            {
+              "input": 4.0,
+              "output": 20.0,
+              "cachedInput": 0.2,
+              "cacheWrite": 4.0,
+              "region": "global"
+            }
+          ]
         },
         {
           "id": "kimi-k3",
@@ -753,7 +816,16 @@
             "output": 100.0,
             "cachedInput": 2.0,
             "cacheWrite": 20.0
-          }
+          },
+          "prices": [
+            {
+              "input": 3.0,
+              "output": 15.0,
+              "cachedInput": 0.3,
+              "cacheWrite": 3.0,
+              "region": "global"
+            }
+          ]
         }
       ]
     },
@@ -796,12 +868,23 @@
           "source": "https://docs.z.ai/api-reference/api-code.md"
         }
       ],
+      "defaultModel": "glm-5.3-flash",
+      "defaultModelReason": "Priced at a tenth of GLM-5.3 ('GLM-5.3-Flash 定价为 GLM-5.3 的 1/10'), with function calling (https://docs.bigmodel.cn/cn/guide/models/vlm/glm-5.3-flash.md).",
       "currency": "CNY",
       "pricesSource": "https://docs.bigmodel.cn/cn/guide/start/pricing.md",
+      "pricesRegion": "cn",
+      "priceLists": [
+        {
+          "region": "global",
+          "currency": "USD",
+          "source": "https://docs.z.ai/guides/overview/pricing.md",
+          "asOf": "2026-11-11"
+        }
+      ],
       "notes": [
         "No model list is documented: the models offered are those below.",
         "The window is given as 1M (read here as 1,000,000). GLM-5.3 and its Flash models always think: thinking.type disabled is refused.",
-        "Prices from the China site in CNY; the international site lists USD (https://docs.z.ai/guides/overview/pricing.md). A Coding Plan key uses its own base (/api/coding/paas/v4)."
+        "Prices from the China site in CNY (cn) and from Z.ai in USD (global, https://docs.z.ai/guides/overview/pricing.md). A Coding Plan key uses its own base (/api/coding/paas/v4)."
       ],
       "models": [
         {
@@ -821,7 +904,15 @@
             "input": 8,
             "output": 28,
             "cachedInput": 2
-          }
+          },
+          "prices": [
+            {
+              "input": 1.4,
+              "output": 4.4,
+              "cachedInput": 0.26,
+              "region": "global"
+            }
+          ]
         },
         {
           "id": "glm-5.3-flash",
@@ -840,7 +931,15 @@
             "input": 0.8,
             "output": 2.8,
             "cachedInput": 0.23
-          }
+          },
+          "prices": [
+            {
+              "input": 0.15,
+              "output": 0.5,
+              "cachedInput": 0.03,
+              "region": "global"
+            }
+          ]
         },
         {
           "id": "glm-5.3-flashx",
@@ -859,7 +958,15 @@
             "input": 2,
             "output": 7,
             "cachedInput": 0.57
-          }
+          },
+          "prices": [
+            {
+              "input": 0.37,
+              "output": 1.25,
+              "cachedInput": 0.075,
+              "region": "global"
+            }
+          ]
         }
       ]
     },
@@ -883,6 +990,10 @@
       "hosts": [
         ".maas.aliyuncs.com"
       ],
+      "hostRegions": {
+        ".cn-beijing.maas.aliyuncs.com": "cn",
+        ".ap-southeast-1.maas.aliyuncs.com": "global"
+      },
       "keyHint": "Create an API key at https://bailian.console.aliyun.com/cn-beijing/model/settings/api-key (international: https://modelstudio.console.alibabacloud.com/ap-southeast-1/settings/api-key); a key works only in the region it was made in",
       "listsModels": false,
       "errors": [
@@ -916,13 +1027,24 @@
           "source": "https://help.aliyun.com/zh/model-studio/error-code.md"
         }
       ],
+      "defaultModel": "qwen3.8-flash",
+      "defaultModelReason": "Described as fast and low-cost ('快速且低成本'; Plus balances performance and cost), with function calling (https://help.aliyun.com/zh/model-studio/models).",
       "currency": "CNY",
       "pricesSource": "https://help.aliyun.com/zh/model-studio/models.md",
+      "pricesRegion": "cn",
+      "priceLists": [
+        {
+          "region": "global",
+          "currency": "USD",
+          "source": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+          "asOf": "2026-11-11"
+        }
+      ],
       "notes": [
         "The documented base is now an account's own (https://{WorkspaceId}.{region}.maas.aliyuncs.com/compatible-mode/v1), which these hosts take too; the dashscope hosts get no new features after 2026-09-30.",
         "Its insufficient_quota is a tokens-per-minute limit, not an empty balance; an empty balance is Arrearage (400).",
         "qwen3.8-max and qwen3.8-flash keep their thinking in history (preserve_thinking on by default).",
-        "No OpenAI-compatible model list is documented: the models offered are those below. Prices from the Beijing region in CNY; Singapore lists USD."
+        "No OpenAI-compatible model list is documented: the models offered are those below. Prices from the Beijing region in CNY (cn) and Singapore in USD (global, the International deployment); a workspace host in another region has no price here. Singapore's cache price for qwen3.8-max and qwen3.8-flash is only in the console, so their cached input is billed at the input price."
       ],
       "models": [
         {
@@ -942,7 +1064,14 @@
             "input": 12,
             "output": 36,
             "cachedInput": 1.5
-          }
+          },
+          "prices": [
+            {
+              "input": 2,
+              "output": 6,
+              "region": "global"
+            }
+          ]
         },
         {
           "id": "qwen3.7-plus",
@@ -957,7 +1086,16 @@
             "output": 8,
             "cachedInput": 0.4,
             "tier": "prompts up to 256K tokens; up to 1M: 6 / 1.2 / 24"
-          }
+          },
+          "prices": [
+            {
+              "input": 0.4,
+              "output": 1.6,
+              "cachedInput": 0.08,
+              "tier": "prompts up to 256K tokens; up to 1M: 1.2 / 0.24 / 4.8; the implicit cache reads at 20% of input (https://www.alibabacloud.com/help/en/model-studio/context-cache)",
+              "region": "global"
+            }
+          ]
         },
         {
           "id": "qwen3.8-flash",
@@ -976,7 +1114,14 @@
             "input": 0.8,
             "output": 2.7,
             "cachedInput": 0.1
-          }
+          },
+          "prices": [
+            {
+              "input": 0.15,
+              "output": 0.47,
+              "region": "global"
+            }
+          ]
         }
       ]
     },
@@ -1019,10 +1164,12 @@
           "source": "https://docs.volcengine.com/docs/82379/1299023"
         }
       ],
+      "defaultModel": "doubao-seed-2-1-lite-260915",
+      "defaultModelReason": "The cheapest of the four, with function calling and the highest rate limits; doubao-seed-evolving changes every week (https://docs.volcengine.com/docs/82379/1330310).",
       "currency": "CNY",
       "pricesSource": "https://docs.volcengine.com/docs/82379/1544106",
       "notes": [
-        "Its K is 1024 tokens (the model list's own numbers). An answer is cut at 4K tokens unless the request sets max_tokens.",
+        "Its K is 1024 tokens (the model list's own numbers). max_tokens (the answer, without the chain of thought) defaults to 4096 (https://docs.volcengine.com/docs/82379/1494384; the model list's '最大回答(默认 4K)'), so requests ask for 32768 (requestOutputTokens), well under each model's 256K answer limit; max_completion_tokens (1 to 65536, the chain of thought included) would lift it too. The DeepSeek models it hosts default to 131072.",
         "OutofContextError is documented only for requests with pictures. BytePlus ModelArk, its international service, has other model ids and is not in this file."
       ],
       "models": [
@@ -1031,6 +1178,8 @@
           "source": "https://docs.volcengine.com/docs/82379/1330310",
           "contextWindow": 1048576,
           "maxOutputTokens": 262144,
+          "requestOutputTokens": 32768,
+          "requestOutputSource": "https://docs.volcengine.com/docs/82379/1494384",
           "imageInput": true,
           "toolCalls": true,
           "reasoning": true,
@@ -1051,6 +1200,8 @@
           "source": "https://docs.volcengine.com/docs/82379/1330310",
           "contextWindow": 1048576,
           "maxOutputTokens": 262144,
+          "requestOutputTokens": 32768,
+          "requestOutputSource": "https://docs.volcengine.com/docs/82379/1494384",
           "imageInput": true,
           "toolCalls": true,
           "reasoning": true,
@@ -1071,6 +1222,8 @@
           "source": "https://docs.volcengine.com/docs/82379/1330310",
           "contextWindow": 262144,
           "maxOutputTokens": 262144,
+          "requestOutputTokens": 32768,
+          "requestOutputSource": "https://docs.volcengine.com/docs/82379/1494384",
           "imageInput": true,
           "toolCalls": true,
           "reasoning": true,
@@ -1091,6 +1244,8 @@
           "source": "https://docs.volcengine.com/docs/82379/1330310",
           "contextWindow": 1048576,
           "maxOutputTokens": 262144,
+          "requestOutputTokens": 32768,
+          "requestOutputSource": "https://docs.volcengine.com/docs/82379/1494384",
           "imageInput": true,
           "toolCalls": true,
           "reasoning": true,
@@ -1153,11 +1308,22 @@
           "source": "https://platform.minimax.io/docs/api-reference/errorcode"
         }
       ],
+      "defaultModel": "MiniMax-M3.1-Flash",
+      "defaultModelReason": "Its everyday model ('日常高效主力模型'), an agentic model with tool use, cheaper than M3 (https://platform.minimax.cn/docs/guides/text-generation).",
       "currency": "CNY",
       "pricesSource": "https://platform.minimax.cn/docs/pricing/overview",
+      "pricesRegion": "cn",
+      "priceLists": [
+        {
+          "region": "global",
+          "currency": "USD",
+          "source": "https://platform.minimax.io/docs/pricing/overview",
+          "asOf": "2026-11-11"
+        }
+      ],
       "notes": [
         "Its error codes come in the body (base_resp.status_code); the page does not say with which HTTP status, so they are read only from a call that failed.",
-        "Thinking cannot be turned off; temperature and top_p are fixed. Prices from the China site in CNY; the international site lists USD."
+        "Thinking cannot be turned off; temperature and top_p are fixed. Prices from the China site in CNY (cn) and the international site in USD (global, https://platform.minimax.io/docs/pricing/overview)."
       ],
       "models": [
         {
@@ -1179,7 +1345,15 @@
             "input": 1.0,
             "output": 4.0,
             "cachedInput": 0.1
-          }
+          },
+          "prices": [
+            {
+              "input": 0.15,
+              "output": 0.6,
+              "cachedInput": 0.015,
+              "region": "global"
+            }
+          ]
         },
         {
           "id": "MiniMax-M3",
@@ -1194,7 +1368,16 @@
             "output": 8.4,
             "cachedInput": 0.42,
             "tier": "prompts up to 512K tokens; over: 4.20 / 0.84 / 16.80"
-          }
+          },
+          "prices": [
+            {
+              "input": 0.3,
+              "output": 1.2,
+              "cachedInput": 0.06,
+              "tier": "prompts up to 512K tokens, after a permanent 50% off; over: 0.60 / 0.12 / 2.40",
+              "region": "global"
+            }
+          ]
         }
       ]
     },
@@ -1220,11 +1403,22 @@
         "cacheHit": "prompt_cache_hit_tokens",
         "cacheMiss": "prompt_cache_miss_tokens"
       },
+      "defaultModel": "deepseek-ai/DeepSeek-V4-Flash",
+      "defaultModelReason": "The only one of the three tagged as a general assistant ('通用助手'), with tools; GLM-5.2 is a costlier flagship and Kimi-K2.7-Code is for code (https://cloud.siliconflow.cn/open/models).",
       "currency": "CNY",
       "pricesSource": "https://www.siliconflow.cn/pricing",
+      "pricesRegion": "cn",
+      "priceLists": [
+        {
+          "region": "global",
+          "currency": "USD",
+          "source": "https://www.siliconflow.com/pricing",
+          "asOf": "2026-11-11"
+        }
+      ],
       "notes": [
         "It hosts other makers' models under their ids (author/model); its list (GET /v1/models) includes image, audio and embedding models.",
-        "Output limits from the international model pages; prices from the China site in CNY (DeepSeek-V4-Flash at its standard hours; 2:00-8:00 costs half)."
+        "Output limits from the international model pages; prices from the China site in CNY (cn; DeepSeek-V4-Flash at its standard hours, 2:00-8:00 costs half) and the international model pages in USD (global)."
       ],
       "models": [
         {
@@ -1244,7 +1438,16 @@
             "output": 9.0,
             "cachedInput": 0.3,
             "tier": "0:00-2:00 and 8:00-24:00"
-          }
+          },
+          "prices": [
+            {
+              "input": 0.13,
+              "output": 0.28,
+              "cachedInput": 0.028,
+              "region": "global",
+              "source": "https://www.siliconflow.com/models/deepseek-v4-flash"
+            }
+          ]
         },
         {
           "id": "zai-org/GLM-5.2",
@@ -1258,7 +1461,16 @@
             "input": 8.0,
             "output": 28.0,
             "cachedInput": 2.0
-          }
+          },
+          "prices": [
+            {
+              "input": 1.302,
+              "output": 4.092,
+              "cachedInput": 0.26,
+              "region": "global",
+              "source": "https://www.siliconflow.com/models/glm-5-2"
+            }
+          ]
         },
         {
           "id": "moonshotai/Kimi-K2.7-Code",
@@ -1272,7 +1484,16 @@
             "input": 6.5,
             "output": 27.0,
             "cachedInput": 1.3
-          }
+          },
+          "prices": [
+            {
+              "input": 0.85916,
+              "output": 3.8,
+              "cachedInput": 0.17993,
+              "region": "global",
+              "source": "https://www.siliconflow.com/models/kimi-k2-7-code"
+            }
+          ]
         }
       ]
     }

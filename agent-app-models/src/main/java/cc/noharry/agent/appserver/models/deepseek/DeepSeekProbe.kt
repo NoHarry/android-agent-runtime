@@ -1,7 +1,9 @@
 package cc.noharry.agent.appserver.models.deepseek
 import android.content.Context
+import cc.noharry.agent.appserver.FoundException
 import cc.noharry.agent.appserver.http.appServerHttpClient
 import cc.noharry.agent.appserver.httpFailure
+import cc.noharry.agent.appserver.model.ConnectionKey
 import cc.noharry.agent.appserver.model.ProviderProfile
 import cc.noharry.agent.appserver.protocol.Finding
 import cc.noharry.agent.appserver.protocol.FindingCode
@@ -12,7 +14,6 @@ import cc.noharry.agent.appserver.protocol.jsonrpc.ProtocolJson
 import cc.noharry.agent.appserver.protocol.logText
 import cc.noharry.agent.appserver.protocol.text as plainText
 import java.io.IOException
-import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -84,7 +85,11 @@ object DeepSeekProbes {
     fun current(context: Context, profile: ProviderProfile, apiKey: String): DeepSeekProbe? =
         saved(context, profile.id)?.takeIf { it.fingerprint == deepSeekProbeFingerprint(profile.endpoint, profile.baseUrl, apiKey) }
 
-    suspend fun check(context: Context, profile: ProviderProfile, apiKey: String): DeepSeekProbe = withContext(Dispatchers.IO) {
+    /** Checks [profile] at its base URL with [apiKey], the host's own (the profile's key from its configuration), and keeps the result. */
+    suspend fun check(context: Context, profile: ProviderProfile, apiKey: String): DeepSeekProbe = check(context, profile, ConnectionKey.typed(apiKey))
+
+    /** Checks [profile] with [apiKey], sent only where it may go ([ConnectionKey.sendTo]), and keeps the result. */
+    suspend fun check(context: Context, profile: ProviderProfile, apiKey: ConnectionKey): DeepSeekProbe = withContext(Dispatchers.IO) {
         probeDeepSeek(profile.endpoint, profile.baseUrl, apiKey, profile.model, deepSeekProbeClient(context))
             .also { save(context, profile.id, it) }
     }
@@ -104,11 +109,10 @@ object DeepSeekProbes {
 internal suspend fun probeDeepSeek(
     endpoint: ProviderEndpoint,
     baseUrl: String,
-    apiKey: String,
+    key: ConnectionKey,
     model: String,
     client: OkHttpClient,
 ): DeepSeekProbe = withContext(Dispatchers.IO) {
-    val key = apiKey.trim()
     // At once, so a relay that does not answer costs one timeout rather than five.
     val balance = async {
         firstPassing(deepSeekBalanceCandidates(baseUrl)) { url -> checkBalance(client, url, key) }
@@ -143,10 +147,11 @@ internal fun deepSeekBalanceCandidates(baseUrl: String): List<String> = deepSeek
 internal fun deepSeekToolsCandidates(baseUrl: String): List<String> = deepSeekRootCandidates(baseUrl).map { "$it/v1/tools" }
 
 /** Ties a check to what it was made with; the key goes in only as part of a hash. */
-internal fun deepSeekProbeFingerprint(endpoint: ProviderEndpoint, baseUrl: String, apiKey: String): String {
-    val identity = listOf(endpoint.wireName, baseUrl.trim().trimEnd('/'), apiKey.trim()).joinToString("\n")
-    return MessageDigest.getInstance("SHA-256").digest(identity.toByteArray()).joinToString("") { "%02x".format(it) }
-}
+internal fun deepSeekProbeFingerprint(endpoint: ProviderEndpoint, baseUrl: String, apiKey: String): String =
+    deepSeekProbeFingerprint(endpoint, baseUrl, ConnectionKey.typed(apiKey))
+
+internal fun deepSeekProbeFingerprint(endpoint: ProviderEndpoint, baseUrl: String, apiKey: ConnectionKey): String =
+    apiKey.fingerprint(endpoint.wireName, baseUrl.trim().trimEnd('/'))
 
 /** The trust some devices need for some relays (the host's extra roots), with timeouts for a search. */
 internal fun deepSeekRelayClient(context: Context): OkHttpClient =
@@ -166,8 +171,8 @@ private inline fun firstPassing(urls: List<String>, check: (String) -> DeepSeekC
     return DeepSeekCheck(null, if (notes.isEmpty()) finding(FindingCode.MODEL_PROBE_NOT_HTTP) else notes.singleOrNull() ?: alternatives(notes))
 }
 
-private fun checkBalance(client: OkHttpClient, url: String, key: String) = attempt {
-    val request = Request.Builder().url(url).header("Authorization", "Bearer $key").header("Accept", "application/json").build()
+private fun checkBalance(client: OkHttpClient, url: String, key: ConnectionKey) = attempt {
+    val request = Request.Builder().url(url).header("Authorization", "Bearer ${key.sendTo(url)}").header("Accept", "application/json").build()
     val (code, body) = client.call(request)
     val json = body.jsonObjectOrNull()
     when {
@@ -179,12 +184,12 @@ private fun checkBalance(client: OkHttpClient, url: String, key: String) = attem
 }
 
 /** One real search with one result (a paid request); a path the relay does not have answers 404 without reaching DeepSeek. */
-private fun checkSearch(client: OkHttpClient, url: String, key: String) = attempt {
+private fun checkSearch(client: OkHttpClient, url: String, key: ConnectionKey) = attempt {
     val body = buildJsonObject {
         put("query", PROBE_QUERY)
         put("count", 1)
     }
-    val request = Request.Builder().url("$url/search").header("Authorization", "Bearer $key").post(body.toString().toRequestBody(JSON_TYPE)).build()
+    val request = Request.Builder().url("$url/search").header("Authorization", "Bearer ${key.sendTo("$url/search")}").post(body.toString().toRequestBody(JSON_TYPE)).build()
     val (code, text) = client.call(request)
     when {
         code != HTTP_OK -> DeepSeekCheck(null, text.failure(code))
@@ -202,7 +207,7 @@ private fun checkSearch(client: OkHttpClient, url: String, key: String) = attemp
 private fun checkPassthrough(
     client: OkHttpClient,
     baseUrl: String,
-    key: String,
+    key: ConnectionKey,
     model: String,
 ): DeepSeekCheck {
     if (model.isBlank()) return DeepSeekCheck(null, finding(FindingCode.MODEL_PROBE_NO_MODEL))
@@ -224,8 +229,8 @@ private fun checkPassthrough(
     }
 }
 
-private fun messagesRequest(url: String, key: String, body: JsonObject): Request = Request.Builder().url(url)
-    .header("x-api-key", key)
+private fun messagesRequest(url: String, key: ConnectionKey, body: JsonObject): Request = Request.Builder().url(url)
+    .header("x-api-key", key.sendTo(url))
     .header("anthropic-version", MESSAGES_API_VERSION)
     .header("anthropic-beta", TOOL_CHANGES_BETA)
     .post(body.toString().toRequestBody(JSON_TYPE))
@@ -311,6 +316,8 @@ private inline fun attempt(block: () -> DeepSeekCheck): DeepSeekCheck = try {
     block()
 } catch (cancelled: CancellationException) {
     throw cancelled
+} catch (refused: FoundException) {
+    DeepSeekCheck(null, refused.finding)
 } catch (error: Exception) {
     val reason = (error.message ?: error.javaClass.simpleName).take(MAX_NOTE_CHARS)
     DeepSeekCheck(null, finding(FindingCode.MODEL_PROBE_UNREACHABLE, reason))

@@ -5,8 +5,12 @@ package cc.noharry.agent.appserver.server
 import android.content.Context
 import android.net.Uri
 import cc.noharry.agent.appserver.mcp.McpToolCatalogs
+import cc.noharry.agent.appserver.model.ProviderConfig
+import cc.noharry.agent.appserver.model.sameOrigin
+import cc.noharry.agent.appserver.model.urlHost
 import cc.noharry.agent.appserver.protocol.ApprovalDecision
 import cc.noharry.agent.appserver.protocol.Finding
+import cc.noharry.agent.appserver.protocol.FindingCode
 import cc.noharry.agent.appserver.protocol.McpServerDraft
 import cc.noharry.agent.appserver.protocol.ModelSelectParams
 import cc.noharry.agent.appserver.protocol.ProviderCreateParams
@@ -19,6 +23,7 @@ import cc.noharry.agent.appserver.protocol.SkillCheckView
 import cc.noharry.agent.appserver.protocol.SubagentSettingsView
 import cc.noharry.agent.appserver.protocol.SubagentToolKind
 import cc.noharry.agent.appserver.protocol.UserQuestion
+import cc.noharry.agent.appserver.protocol.finding
 import cc.noharry.agent.appserver.protocol.text
 import cc.noharry.agent.appserver.runtime.RequestIds
 import cc.noharry.agent.appserver.runtime.RunIntake
@@ -99,6 +104,13 @@ internal class RuntimeBackend(private val app: Context) : ServerBackend, Setting
     }
 
     override fun reloadConfig() = RuntimeSession.reloadConfig(app)
+
+    override fun savedKeyMoves(params: ProviderSaveParams): Finding? {
+        if (params.apiKey.isNotBlank()) return null
+        val saved = ProviderConfig.load(app).profileForProvider(params.provider)
+        if (saved.apiKey.isBlank() || saved.baseUrl.isBlank() || sameOrigin(saved.baseUrl, params.baseUrl)) return null
+        return finding(FindingCode.MODEL_KEY_TYPE_AGAIN, params.baseUrl.urlHost() ?: params.baseUrl.trim())
+    }
 
     override fun saveProvider(params: ProviderSaveParams) = with(params) {
         RuntimeSession.saveProviderOverride(app, provider, apiKey, model, baseUrl, endpoint)

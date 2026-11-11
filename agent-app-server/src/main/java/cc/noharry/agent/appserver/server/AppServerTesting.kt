@@ -130,7 +130,9 @@ object AppServerTesting {
 
     /** The models [profile] offers with [apiKey], as the server lists them for the settings page. */
     suspend fun models(context: Context, profile: cc.noharry.agent.appserver.model.ProviderProfile, apiKey: String): List<String> =
-        cc.noharry.agent.appserver.model.listModels(context, cc.noharry.agent.transport.OkHttpHttpTransport(), profile, apiKey)
+        cc.noharry.agent.appserver.model.listModels(
+            context, cc.noharry.agent.transport.OkHttpHttpTransport(), profile, cc.noharry.agent.appserver.model.ConnectionKey.typed(apiKey),
+        )
 
     private inline fun <reified T> standIn(): T = Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { _, method, _ ->
         error("${method.name} is not answered while requests are only listed")

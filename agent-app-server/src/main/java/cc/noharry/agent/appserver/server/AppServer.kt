@@ -17,6 +17,7 @@ import cc.noharry.agent.appserver.protocol.ConfirmationMode
 import cc.noharry.agent.appserver.protocol.ExperimentalAppServerApi
 import cc.noharry.agent.appserver.protocol.ModelFacts
 import cc.noharry.agent.appserver.protocol.ModelPrice
+import cc.noharry.agent.appserver.protocol.PRICE_CURRENCIES
 import cc.noharry.agent.appserver.protocol.ServerInfo
 import cc.noharry.agent.appserver.protocol.client.ServerState
 import cc.noharry.agent.appserver.protocol.jsonrpc.JsonRpcNotification
@@ -149,6 +150,9 @@ class AppServerConfig(
 ) {
     init {
         require(maxScriptToolSeconds >= 1) { "maxScriptToolSeconds must be at least 1." }
+        modelPrices.forEach { (model, price) ->
+            require(price.currency in PRICE_CURRENCIES) { "modelPrices[$model]: the currency ${price.currency} is not one of $PRICE_CURRENCIES." }
+        }
     }
 }
 
@@ -182,7 +186,7 @@ object AppServer {
         installHost(config)
         ApprovalSettings.init(app, config.approvals)
         RuntimeSession.startWith(simulated = config.simulatedBackend)
-        val plugins = PluginHost(app, config.plugins + PluginDiscovery.find(app, config))
+        val plugins = PluginHost(app, config.plugins, discovered = PluginDiscovery.find(app, config))
         plugins.onChange = { additions ->
             AppHost.install(additions = additions)
             // Started after a reboot only while a running plugin asks (plans, a host's own).

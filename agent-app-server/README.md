@@ -1353,7 +1353,13 @@ the person adds), and nothing is known of any service or model:
 - a failed call carries the stable code the wire protocols give it: HTTP 401 and 403 `PROVIDER_AUTH_FAILED`, 402 and
   `insufficient_quota` `PROVIDER_QUOTA_EXCEEDED`, `context_length_exceeded` `PROVIDER_CONTEXT_WINDOW_EXCEEDED`, 429 and
   `rate_limit_error` `PROVIDER_RATE_LIMITED`, other 5xx and `overloaded_error` `PROVIDER_SERVER_ERROR`, 408, 504 and a
-  call that timed out `PROVIDER_TIMEOUT`; quota, context window and auth failures are not tried again.
+  call the HTTP client timed out `PROVIDER_TIMEOUT`; quota, context window and auth failures are not tried again,
+  except that on a host no adapter knows (a relay) a 429 is tried again as the runtime decides, whatever code it gets,
+  since a relay's `insufficient_quota` may be a per-minute limit (DashScope's) and not an empty balance. A streamed call
+  whose model sends nothing in its first 20 seconds is not a timeout of the call: it is asked again as a transport
+  failure (`PROVIDER_TRANSPORT_FAILED`; four minutes for the host's own on-device model). An error that comes inside an
+  answer of HTTP 200 (MiniMax's `base_resp`, OpenRouter's failure after the model has started) is not read as one of
+  these codes.
 
 `CoreWithoutServicesTest` runs a turn this way against a service on the test's own machine.
 
@@ -1368,46 +1374,74 @@ implementation("cc.noharry:agent-app-models")
 
 It brings an adapter per service (`ProviderAdapter`), and for a profile on a service's host the server then has:
 
-- **Connection defaults**: each service's endpoints, the first its default, and where a person gets a key
-  (`services/list` gives them to a screen that offers the services). A profile whose id is a service's id and that has
-  no base URL takes the service's endpoint for its wire and, without a model, the service's first model.
+- **Connection defaults**: each service's endpoints, the first its default, its default model (the general model that
+  calls tools on its default endpoint, the cheaper tier where the service's docs make one; the data file says why for
+  each) and where a person gets a key (`services/list` gives them to a screen that offers the services). A profile
+  whose id is a service's id and that has no base URL takes the base URL of the service's endpoint of its kind when the
+  host gave one, else of the service's default endpoint for its wire, and, on that default endpoint and without a
+  model, the default model. What the host or the person gave is never replaced.
 - **The model list** from the service's own list, without a prefix its ids carry; for a service that documents none,
   the models in the data.
-- **Facts per model** (`ModelFacts`): context window, output limit, whether it reads pictures, calls tools and
-  reasons, and its reasoning efforts. The server uses the window (the usage shown, compaction at 80 percent) and the
-  picture switch's default; all of them are in `modelSettings/read`, for a screen to show. A model on a host no adapter
-  knows (a relay's, its name perhaps behind a prefix such as `relay/`) gets the facts of the service that lists it.
-- **Prices**, per million tokens, in the service's currency (`USD` or `CNY`, with `asOf`): `usage/read` prices every
-  model a service lists, before models.dev. `PriceBook.costUsd(model, usage)` converts yuan at the book's rate.
+- **Facts per model** (`ModelFacts`): context window, output limit (the documented ceiling of one answer), whether it
+  reads pictures, calls tools and reasons, its reasoning efforts, and the output its requests ask for
+  (`requestOutputTokens`), set only where the service's own default would cut answers short: Volcengine Ark answers
+  stop at 4,096 tokens unless the request sets `max_tokens`, so its requests ask for 32,768. The server uses the window
+  (the usage shown, compaction at 80 percent), the picture switch's default and the requested output (sent as the
+  request's output limit; without one the wire client's default goes: the Messages API's 16,000, or none on the
+  OpenAI wire); all of them are in `modelSettings/read`, for a screen to show, where the reasoning efforts are only
+  those the runtime's variant menu can send for the model (a service's `xhigh` is left out where the menu has none). A
+  model on a host no adapter knows (a relay's, its name perhaps behind a prefix such as `relay/`) gets the facts of the
+  service that lists it.
+- **Prices**, per million tokens, in their list's currency (`USD` or `CNY`, with `asOf`): `usage/read` prices every
+  model a service lists, before models.dev. Moonshot, Zhipu, Alibaba Cloud Model Studio, MiniMax and SiliconFlow have a
+  China list in yuan and an international one in dollars: a model is priced from the list of the region of the
+  endpoint its profile ran at (`ModelPrice.region`), a profile at a host whose region the data has no list for (xAI's US
+  endpoint, a Model Studio workspace outside Beijing and Singapore) has no service price, and a model named on a host no
+  adapter knows takes the list of the service's first region. A price a service announced for a later day
+  (`effectiveFrom`: Gemini 4's on 2026-12-01, Gemini 3.8 Flash's on 2027-01-01) applies from that day. DeepSeek's are its
+  peak rates (off-peak costs half), and prices that rise above a prompt length (OpenAI over 272K, xAI from 200K, Qwen
+  3.7 Plus over 256K, MiniMax M3 over 512K) are the lower ones: the tiers are not modelled. `PriceBook.costUsd(model,
+  usage)` converts yuan at the book's rate. The book keeps only the prices typed in and those a sync found at
+  models.dev; the host's and the services' are taken each time it is read, so a change to them applies at once.
 - **Failures** read as each service's error pages say (a balance run dry, a context window exceeded, an overloaded
   service), before the wire protocols' reading.
 - **DeepSeek's extras**: its search and page fetch APIs for `web_search` and pages that refuse the device, its own
   history updates on its Anthropic-compatible endpoint, its balance (`services/balance`), the check of a relay that may
-  have DeepSeek behind it (`services/check`, `services/checked`), and one key for every profile on its host.
+  have DeepSeek behind it (`services/check`, `services/checked`), and one key for every profile on its host (`https`,
+  `api.deepseek.com` exactly, its default port).
+
+**Where a saved key goes.** A request about a connection (`services/balance`, `services/check`, `services/checked`,
+the model list, saving the connection) takes a key typed in the request, or uses the one saved for its profile. A typed
+key goes where the request says. A saved key goes only to the host (scheme, host and port) its saved profile points at,
+or to an address that a check made with the key typed found and the server recorded for that profile and that key, and
+only over https (plain http to this device or a private network address); for any other address nothing is sent and
+the answer asks for the key again (`MODEL_KEY_TYPE_AGAIN`; `ServiceCheckView.savedKeyRefused` for a check). An adapter
+reads the key only for the address it sends it to (`ConnectionKey.sendTo`), so it cannot send it elsewhere by
+mistake.
 
 The services, from the module's data file (`services.json`, each value with the official page it was read from and
 the day; a test keeps this table equal to it):
 
 <!-- services:start -->
-| Service | `id` | Endpoints, the default first | Models in the data, with facts and prices | Model list |
+| Service | `id` | Endpoints, the default first | Models in the data, with facts and prices; the default model in bold | Model list |
 |---|---|---|---|---|
-| DeepSeek | `deepseek` | chat_completions `https://api.deepseek.com`<br>messages `https://api.deepseek.com/anthropic` | `deepseek-flash`, `deepseek-v4-pro` (CNY) | `https://api.deepseek.com/models` |
-| OpenAI | `openai` | responses `https://api.openai.com/v1`<br>chat_completions `https://api.openai.com/v1` | `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6.1-terra`, `gpt-6-luna` (USD) | `<base URL>/models` |
-| Anthropic | `anthropic` | messages `https://api.anthropic.com/v1` | `claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-5-5`, `claude-fable-5-2` (USD) | `<base URL>/models` |
-| Google Gemini | `gemini` | chat_completions `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-4-carbon`, `gemini-4-argon`, `gemini-3.8-flash`, `gemini-3.5-flash-lite` (USD) | `<base URL>/models` |
-| xAI | `xai` | chat_completions `https://api.x.ai/v1` (global)<br>chat_completions `https://us.api.x.ai/v1` (us)<br>responses `https://api.x.ai/v1` (global) | `grok-4.7`, `grok-4.3` (USD) | `<base URL>/models` |
+| DeepSeek | `deepseek` | chat_completions `https://api.deepseek.com`<br>messages `https://api.deepseek.com/anthropic` | **`deepseek-flash`**, `deepseek-v4-pro` (CNY) | `https://api.deepseek.com/models` |
+| OpenAI | `openai` | responses `https://api.openai.com/v1`<br>chat_completions `https://api.openai.com/v1` | `gpt-6-astra`, **`gpt-6.1-sol`**, `gpt-6.1-terra`, `gpt-6-luna` (USD) | `<base URL>/models` |
+| Anthropic | `anthropic` | messages `https://api.anthropic.com/v1` | `claude-opus-5-5`, **`claude-sonnet-5-5`**, `claude-haiku-5-5`, `claude-fable-5-2` (USD) | `<base URL>/models` |
+| Google Gemini | `gemini` | chat_completions `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-4-carbon`, `gemini-4-argon`, **`gemini-3.8-flash`**, `gemini-3.5-flash-lite` (USD) | `<base URL>/models` |
+| xAI | `xai` | chat_completions `https://api.x.ai/v1` (global)<br>chat_completions `https://us.api.x.ai/v1` (us)<br>responses `https://api.x.ai/v1` (global) | `grok-4.7`, **`grok-4.3`** (global USD) | `<base URL>/models` |
 | OpenRouter | `openrouter` | chat_completions `https://openrouter.ai/api/v1` | none: its own list has them | `<base URL>/models` |
-| Groq | `groq` | chat_completions `https://api.groq.com/openai/v1` | `openai/gpt-oss-120b`, `openai/gpt-oss-20b` (USD) | `<base URL>/models` |
-| Moonshot (Kimi) | `moonshot` | chat_completions `https://api.moonshot.cn/v1` (cn)<br>chat_completions `https://api.moonshot.ai/v1` (global) | `kimi-k3.1-pro`, `kimi-k3.1-pro-highspeed`, `kimi-k3` (CNY) | `<base URL>/models` |
-| Zhipu (GLM) | `zhipu` | chat_completions `https://open.bigmodel.cn/api/paas/v4` (cn)<br>chat_completions `https://api.z.ai/api/paas/v4` (global) | `glm-5.3`, `glm-5.3-flash`, `glm-5.3-flashx` (CNY) | none documented: the models in the data |
-| Alibaba Cloud Model Studio (Qwen) | `dashscope` | chat_completions `https://dashscope.aliyuncs.com/compatible-mode/v1` (cn)<br>chat_completions `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` (global) | `qwen3.8-max`, `qwen3.7-plus`, `qwen3.8-flash` (CNY) | none documented: the models in the data |
-| Volcengine Ark (Doubao) | `volcengine` | chat_completions `https://ark.cn-beijing.volces.com/api/v3` (cn) | `doubao-seed-2-1-pro-260915`, `doubao-seed-2-1-lite-260915`, `doubao-seed-2-1-turbo-260628`, `doubao-seed-evolving` (CNY) | `<base URL>/models` |
-| MiniMax | `minimax` | chat_completions `https://api.minimax.cn/v1` (cn)<br>chat_completions `https://api.minimax.io/v1` (global) | `MiniMax-M3.1-Flash`, `MiniMax-M3` (CNY) | `<base URL>/models` |
-| SiliconFlow | `siliconflow` | chat_completions `https://api.siliconflow.cn/v1` (cn)<br>chat_completions `https://api.siliconflow.com/v1` (global) | `deepseek-ai/DeepSeek-V4-Flash`, `zai-org/GLM-5.2`, `moonshotai/Kimi-K2.7-Code` (CNY) | `<base URL>/models` |
+| Groq | `groq` | chat_completions `https://api.groq.com/openai/v1` | `openai/gpt-oss-120b`, **`openai/gpt-oss-20b`** (USD) | `<base URL>/models` |
+| Moonshot (Kimi) | `moonshot` | chat_completions `https://api.moonshot.cn/v1` (cn)<br>chat_completions `https://api.moonshot.ai/v1` (global) | **`kimi-k3.1-pro`**, `kimi-k3.1-pro-highspeed`, `kimi-k3` (cn CNY; global USD) | `<base URL>/models` |
+| Zhipu (GLM) | `zhipu` | chat_completions `https://open.bigmodel.cn/api/paas/v4` (cn)<br>chat_completions `https://api.z.ai/api/paas/v4` (global) | `glm-5.3`, **`glm-5.3-flash`**, `glm-5.3-flashx` (cn CNY; global USD) | none documented: the models in the data |
+| Alibaba Cloud Model Studio (Qwen) | `dashscope` | chat_completions `https://dashscope.aliyuncs.com/compatible-mode/v1` (cn)<br>chat_completions `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` (global) | `qwen3.8-max`, `qwen3.7-plus`, **`qwen3.8-flash`** (cn CNY; global USD) | none documented: the models in the data |
+| Volcengine Ark (Doubao) | `volcengine` | chat_completions `https://ark.cn-beijing.volces.com/api/v3` (cn) | `doubao-seed-2-1-pro-260915`, **`doubao-seed-2-1-lite-260915`**, `doubao-seed-2-1-turbo-260628`, `doubao-seed-evolving` (CNY) | `<base URL>/models` |
+| MiniMax | `minimax` | chat_completions `https://api.minimax.cn/v1` (cn)<br>chat_completions `https://api.minimax.io/v1` (global) | **`MiniMax-M3.1-Flash`**, `MiniMax-M3` (cn CNY; global USD) | `<base URL>/models` |
+| SiliconFlow | `siliconflow` | chat_completions `https://api.siliconflow.cn/v1` (cn)<br>chat_completions `https://api.siliconflow.com/v1` (global) | **`deepseek-ai/DeepSeek-V4-Flash`**, `zai-org/GLM-5.2`, `moonshotai/Kimi-K2.7-Code` (cn CNY; global USD) | `<base URL>/models` |
 <!-- services:end -->
 
 <!-- real-services:start -->
-**Run against the services themselves:** none yet; every service above is covered by tests against a local mock of its documented answers (`ServicesMockTest`) only.
+**Run against the services themselves:** DeepSeek and Alibaba Cloud Model Studio (DashScope) were exercised against the real services on 2026-11-11 (model list, a turn, a tool call, usage and cost); the others by mock tests only (`ServicesMockTest`).
 <!-- real-services:end -->
 
 `./gradlew :agent-app-models:realServiceTest` runs each service whose key is in `AGENT_E2E_<ID>_KEY` (the service's
@@ -1416,11 +1450,12 @@ lists the models, runs a plain turn and one that calls a tool, and checks their 
 build's checks, skips a service without a key, and prints no key.
 
 What a service's pages leave out is not in the data, and the server keeps its default for it. Prices and models change
-on the services' own schedule: the data is as of the day it names, and a scheduled change (Gemini 4's prices double on
-2026-12-01) is noted in the file, not applied.
+on the services' own schedule: the data is as of the day it names, and a change a service announced for a later day is
+in the data with that day (`effectiveFrom`) and applies from it.
 
 **Overriding facts and prices.** The host's own, by model id, win over a service's, fact by fact; the person's own
-settings (a model's window and picture switch, a price typed in) win over both:
+settings (a model's window, picture switch and requested output, a price typed in with its currency) win over both. A
+host's price is in `USD` or `CNY`; another currency is a configuration error when the `AppServerConfig` is made:
 
 <!-- quote: agent-app-models/src/test/java/cc/noharry/agent/appserver/models/OverridesTest.kt host-overrides -->
 ```kotlin
@@ -1715,9 +1750,14 @@ nothing), and the manifest merger puts it in the app's. `agent-app-models` decla
 `AppServer.install` loads each plugin the app's manifest declares (`PluginDiscovery`), after the host's own. It is in
 `plugins/list` and switched with `plugins/set` like any plugin. The host leaves one out by its id
 (`AppServerConfig.ignoredPlugins`), and a plugin the host lists itself with the same id is loaded as listed, not
-twice. One that cannot be made (a class that is missing or is not a plugin) is left out, with a warning in the log.
-`agent-app-server`'s consumer rules keep every class that implements `AppServerPlugin` with its name and the way it is
-made, so a release shrunk by R8 finds it too; `checkReleaseDiscoveredPlugins` checks the notes sample's.
+twice. One that cannot be made (a class that is missing or is not a plugin, which is not initialized; or one whose id
+cannot be read) is left out, with a warning in the log. Unlike the host's own plugins, which fail `AppServer.install`
+when they need a plugin it does not have or fail to start, a library's plugin that needs a plugin the app does not have
+is left out, and one that fails to start stays off: `plugins/list` shows either with its `problem` (`NEEDS_MISSING`
+with the ids it needs, `START_FAILED` with why), and the log has a warning. `agent-app-server`'s consumer rules keep
+every class that implements `AppServerPlugin` with its name and the way it is made, so a release shrunk by R8 finds it
+too; `checkReleaseDiscoveredPlugins` checks the notes sample's, and that its release carries the models plugin's data
+file (`services.json`), without which that plugin does not start and says so.
 
 ## Going deeper (experimental)
 
@@ -1748,8 +1788,10 @@ needs outside its plugins it reaches through one of its plugins' contexts.
 - All of it is experimental for 0.5.0. What this guide names before "Going deeper" is the part meant for every host;
   the rest is for hosts that go deep and is likelier to change.
 - What `agent-app-models` knows of a service is its pages on the day its data names; a service's model list may hold
-  models with no facts or prices in the data, which get the defaults. A model's output limit and reasoning efforts are
-  shown, not sent: the runtime sends what it sends for every model of its wire.
+  models with no facts or prices in the data, which get the defaults. Of a model's facts, the requested output is sent;
+  its output limit and reasoning efforts are shown, not sent (a variant the person picks sends what the runtime sends
+  for every model of its wire). The runtime itself still names some services: its variant menu by model names, OpenAI's
+  own API (`max_completion_tokens`) and DeepSeek's (its output limit by name, its updates and DSML).
 - The protocol's methods are not yet marked stable or experimental one by one.
 - Keys the person types (model profiles, MCP servers, plugin packages' secrets) are kept unencrypted in your app's
   private storage.

@@ -3,6 +3,7 @@ package cc.noharry.agent.appserver.models
 import java.net.URI
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -26,13 +27,19 @@ class ServiceCatalogTest {
         data.services.forEach { service ->
             val domains = OFFICIAL.getValue(service.id)
             val sources = listOf(service.source, service.pricesSource) + service.models.map { it.source } + service.errors.map { it.source } +
-                listOfNotNull(service.retry?.source) + Regex("""https://\S+""").findAll(service.keyHint).map { it.value.trimEnd(')', ';', ',') }
+                listOfNotNull(service.retry?.source) + Regex("""https://\S+""").findAll(service.keyHint).map { it.value.trimEnd(')', ';', ',') } +
+                service.priceLists.map { it.source } + service.models.flatMap { model -> model.prices.map { it.source } + model.requestOutputSource } +
+                Regex("""https://[^\s)]+""").findAll(service.defaultModelReason).map { it.value.trimEnd('.', ',', ';') }
             sources.filter { it.isNotEmpty() }.forEach { source ->
                 val host = URI(source).host.orEmpty()
                 assertTrue("${service.id}: $source is not on ${domains.joinToString()}", source.startsWith("https://") && domains.any { host == it || host.endsWith(".$it") })
             }
             assertEquals(service.id, "2026-11-11", LocalDate.parse(service.asOf).toString())
             assertTrue(service.id, service.currency in setOf("USD", "CNY"))
+            service.priceLists.forEach { list ->
+                assertTrue(service.id, list.currency in setOf("USD", "CNY") && list.region != service.pricesRegion)
+                assertEquals(service.id, "2026-11-11", LocalDate.parse(list.asOf).toString())
+            }
         }
     }
 
@@ -59,13 +66,44 @@ class ServiceCatalogTest {
                 assertTrue(model.id, window == null || window in 8_192L..2_000_000L)
                 assertTrue(model.id, output == null || output in 1_024L..(window ?: Long.MAX_VALUE))
                 assertTrue(model.id, facts.reasoningEfforts.all { it.matches(Regex("[a-z]+")) })
-                val price = model.price ?: return@forEach
-                assertTrue(model.id, price.input > 0 && price.output > 0 && (price.cacheRead ?: 0.0) <= price.input)
-                assertEquals(model.id, service.id, price.source)
-                assertEquals(model.id, "2026-11-11", price.asOf)
+                // A request's output is asked for below the documented ceiling, never the window.
+                facts.requestOutputTokens?.let { asked -> assertTrue(model.id, asked <= (output ?: 0) && asked < (window ?: 0)) }
+                (listOfNotNull(model.price) + model.prices).forEach { price ->
+                    assertTrue(model.id, price.input > 0 && price.output > 0 && (price.cacheRead ?: 0.0) <= price.input)
+                    assertEquals(model.id, service.id, price.source)
+                    assertEquals(model.id, "2026-11-11", price.asOf)
+                    assertTrue(model.id, price.region == null || service.endpoints.any { it.region == price.region })
+                    price.effectiveFrom?.let { assertTrue(model.id, LocalDate.parse(it).isAfter(LocalDate.parse(price.asOf))) }
+                }
             }
             service.errors.forEach { rule -> assertTrue(service.id, rule.status != null || rule.pattern != null) }
         }
+    }
+
+    @Test
+    fun aProfileIsPricedFromItsRegionsListAndAnAnnouncedChangeFromItsDay() {
+        val day = LocalDate.of(2026, 11, 11)
+        val kimi = ServiceCatalog.service("moonshot").model("kimi-k3.1-pro")!!
+        assertEquals("CNY", kimi.priceIn("cn", day)?.currency)
+        assertEquals(13.0, kimi.priceIn("cn", day)!!.input, 0.0)
+        assertEquals("USD", kimi.priceIn("global", day)?.currency)
+        assertEquals(2.0, kimi.priceIn("global", day)!!.input, 0.0)
+        // A region the data has no list for gets none, not the China list.
+        val qwen = ServiceCatalog.service("dashscope")
+        assertNull(qwen.model("qwen3.8-max")!!.priceIn(qwen.regionOf("https://ws.eu-central-1.maas.aliyuncs.com/compatible-mode/v1"), day))
+        assertEquals("global", qwen.regionOf("https://ws.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"))
+        val xai = ServiceCatalog.service("xai")
+        assertNull(xai.model("grok-4.3")!!.priceIn(xai.regionOf("https://us.api.x.ai/v1"), day))
+        // One list everywhere: DeepSeek's.
+        assertEquals("CNY", ServiceCatalog.service("deepseek").model("deepseek-flash")!!.priceIn("", day)?.currency)
+        // Gemini 4 doubles on 2026-12-01, Gemini 3.8 Flash on 2027-01-01.
+        val gemini = ServiceCatalog.service("gemini")
+        fun input(model: String, on: LocalDate) = gemini.model(model)!!.priceIn("", on)!!.input
+        assertEquals(2.0, input("gemini-4-carbon", LocalDate.of(2026, 11, 30)), 0.0)
+        assertEquals(4.0, input("gemini-4-carbon", LocalDate.of(2026, 12, 1)), 0.0)
+        assertEquals(0.75, input("gemini-3.8-flash", LocalDate.of(2026, 12, 31)), 0.0)
+        assertEquals(1.5, input("gemini-3.8-flash", LocalDate.of(2027, 1, 1)), 0.0)
+        assertEquals(0.3, input("gemini-3.5-flash-lite", LocalDate.of(2027, 1, 1)), 0.0)
     }
 
     private companion object {

@@ -45,6 +45,13 @@ data class ModelPrice(
     val currency: String = USD,
     /** The day ([java.time.LocalDate] text) the service's list said so, when it came from one. */
     val asOf: String? = null,
+    /**
+     * The region of the service's list it is from (`cn`, `global`: the region of the endpoint a profile is on), for a
+     * service with a list per region; null for one list everywhere.
+     */
+    val region: String? = null,
+    /** The first day ([java.time.LocalDate] text) it applies, for a change the service announced; null for now. */
+    val effectiveFrom: String? = null,
 )
 
 /** What [this] usage cost at [price], in the price's currency. */
@@ -126,4 +133,7 @@ const val USD = "USD"
 
 /** [ModelPrice.currency] of prices in Chinese yuan. */
 const val CNY = "CNY"
+
+/** The currencies a price may be in, which the book converts ([PriceBook.usd]). */
+val PRICE_CURRENCIES: Set<String> = setOf(USD, CNY)
 private const val TOKENS_PER_MILLION = 1_000_000.0

@@ -57,6 +57,17 @@ class ModelsPluginTest {
     }
 
     @Test
+    fun aDataFileMissingFromTheAppSaysSoRatherThanGivingNoServices() {
+        val empty = object : ClassLoader(null) {}
+        try {
+            ServiceCatalog.load(empty)
+            org.junit.Assert.fail("a missing data file gave services")
+        } catch (missing: IllegalStateException) {
+            assertTrue(missing.message.orEmpty(), missing.message.orEmpty().contains(ServiceCatalog.RESOURCE) && missing.message.orEmpty().contains("cannot start"))
+        }
+    }
+
+    @Test
     fun runningItBringsEveryServiceAndTurnedOffTheServerKnowsNone() = runBlocking {
         val plugins = PluginHost(app, listOf(ModelsPlugin), main = Dispatchers.Unconfined)
         plugins.startAll()

@@ -13,10 +13,13 @@ import kotlinx.coroutines.flow.catch
 /**
  * [delegate], whose failed calls carry the stable code of what they were: as the adapter of the service at the
  * profile's base URL reads them ([ProviderAdapter.classify]), else as the wire protocols say ([genericKind]). A failure
- * neither reads keeps the runtime's code.
+ * neither reads keeps the runtime's code. On a host no adapter knows ([knownHost] false), a 429 keeps the runtime's own
+ * decision to try again: the wire's codes only name it, as a relay's 429 may be a service's per-minute limit (one
+ * service sends `insufficient_quota` for that) as well as an empty balance.
  */
 internal class ClassifiedModelClient(
     private val delegate: ModelClient,
+    private val knownHost: Boolean = false,
     private val classify: (ModelFailure) -> ModelFailureKind?,
 ) : ModelClient {
     @OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
@@ -30,16 +33,18 @@ internal class ClassifiedModelClient(
 
     private fun reclassified(error: ModelClientException): ModelClientException {
         val failure = error.toFailure()
-        val kind = classify(failure) ?: failure.genericKind() ?: return error
-        if (kind.code == error.code && kind.recoverable == error.recoverable) return error
-        return ModelClientException(code = kind.code, recoverable = kind.recoverable, message = error.message, cause = error)
+        val read = classify(failure)
+        val kind = read ?: failure.genericKind() ?: return error
+        val recoverable = if (read == null && !knownHost && failure.status == HTTP_TOO_MANY_REQUESTS) error.recoverable else kind.recoverable
+        if (kind.code == error.code && recoverable == error.recoverable) return error
+        return ModelClientException(code = kind.code, recoverable = recoverable, message = error.message, cause = error)
     }
 }
 
 /** [this] client's failures read by the adapter of the service at [baseUrl], if one knows it, and the wire protocols. */
 internal fun ModelClient.classifiedAt(baseUrl: String): ModelClient {
     val known = serviceAt(baseUrl)
-    return ClassifiedModelClient(this) { failure -> known?.let { (adapter, service) -> adapter.classify(service, failure) } }
+    return ClassifiedModelClient(this, knownHost = known != null) { failure -> known?.let { (adapter, service) -> adapter.classify(service, failure) } }
 }
 
 /** The failure as the runtime reported it: its message names the HTTP status and the answer's start (keys redacted). */

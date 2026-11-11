@@ -17,8 +17,10 @@ fun normalizeProviderModels(models: List<String>): List<String> =
     models.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
 
 /**
- * One model of a profile: the context window set for it (null: its default), the default, whether it takes images, and
- * what is known of it ([facts]: its service's, with the host's own over them; read only, not saved).
+ * One model of a profile: the context window set for it (null: its default), the default, whether it takes images, the
+ * output tokens its requests ask for set for it ([outputOverride], null: [ModelFacts.requestOutputTokens], else the wire
+ * client's default), and what is known of it ([facts]: its service's, with the host's own over them; read only, not
+ * saved; its reasoning efforts are those the runtime's variant menu can send).
  */
 @Serializable
 data class ModelSettingsView(
@@ -27,6 +29,7 @@ data class ModelSettingsView(
     val defaultWindow: Long = 0,
     val imageInput: Boolean = true,
     val facts: ModelFacts = ModelFacts(),
+    val outputOverride: Long? = null,
 )
 
 /** The profile (as [ProviderEditState] names it) and the models whose settings are asked for. */
@@ -36,7 +39,10 @@ data class ModelSettingsParams(val profile: ProviderEditState, val models: List<
 @Serializable
 data class ModelSettingsResult(val models: List<ModelSettingsView>)
 
-/** Each model's window ([ModelSettingsView.windowOverride], null for the default) and image input, saved for [profile]. */
+/**
+ * Each model's window ([ModelSettingsView.windowOverride], null for the default), image input and output tokens
+ * ([ModelSettingsView.outputOverride], null for the default), saved for [profile].
+ */
 @Serializable
 data class ModelSettingsSaveParams(val profile: ProviderEditState, val models: List<ModelSettingsView>)
 

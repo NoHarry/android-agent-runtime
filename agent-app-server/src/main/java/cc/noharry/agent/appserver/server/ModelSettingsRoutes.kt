@@ -9,6 +9,9 @@ import cc.noharry.agent.appserver.model.defaultContextWindow
 import cc.noharry.agent.appserver.model.hasWebLookup
 import cc.noharry.agent.appserver.model.loadModelImageInput
 import cc.noharry.agent.appserver.model.modelFacts
+import cc.noharry.agent.appserver.model.outputTokensOverride
+import cc.noharry.agent.appserver.model.saveOutputTokens
+import cc.noharry.agent.appserver.model.selectableEfforts
 import cc.noharry.agent.appserver.model.saveContextWindow
 import cc.noharry.agent.appserver.model.saveModelImageInput
 import cc.noharry.agent.appserver.protocol.Empty
@@ -36,7 +39,8 @@ internal class ModelSettingsRoutes(private val app: Context) : RouteModule {
                             windowOverride = contextWindowOverride(app, profile),
                             defaultWindow = defaultContextWindow(profile.baseUrl, model),
                             imageInput = loadModelImageInput(app, profile),
-                            facts = modelFacts(profile.baseUrl, model),
+                            facts = modelFacts(profile.baseUrl, model).selectableEfforts(profile.provider, model),
+                            outputOverride = outputTokensOverride(app, profile),
                         )
                     },
                 )
@@ -47,6 +51,7 @@ internal class ModelSettingsRoutes(private val app: Context) : RouteModule {
                 val profile = params.profile.copy(model = settings.model)
                 saveContextWindow(app, profile, settings.windowOverride)
                 saveModelImageInput(app, profile, settings.imageInput)
+                saveOutputTokens(app, profile, settings.outputOverride)
             }
             Empty
         }

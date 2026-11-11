@@ -2,6 +2,8 @@ package cc.noharry.agent.appserver.usage
 import cc.noharry.agent.appserver.protocol.ModelPrice
 import cc.noharry.agent.appserver.protocol.ModelUsage
 import cc.noharry.agent.appserver.protocol.PriceBook
+import cc.noharry.agent.appserver.model.modelPrice
+import cc.noharry.agent.appserver.runtime.AppHost
 import cc.noharry.agent.appserver.runtime.runtimeDataDirs
 import java.io.File
 import kotlinx.serialization.json.Json
@@ -87,6 +89,41 @@ class ModelUsageTest {
 
         assertEquals(ModelPrice(1.0, 2.0, manual = true), prices["a"])
         assertEquals(ModelPrice(1.0, 2.0, source = "deepseek", pricedAs = "deepseek-flash"), prices["b"])
+    }
+
+    @Test
+    fun theHostsPricesAreTakenOnEachReadAndNotKeptSoAChangeAppliesAfterARestart() {
+        // As the host guide's example gives it: no source.
+        AppHost.install(modelPrices = mapOf("m" to ModelPrice(1.0, 2.0)))
+        try {
+            val book = PriceBook(mapOf("t" to ModelPrice(0.5, 0.5, manual = true), "m" to ModelPrice(9.0, 9.0, source = "resale-a")))
+            val (synced, matched) = book.synced(setOf("m", "t"), { modelPrice(it) }) { error("models.dev is not asked for a model the host prices") }
+            assertEquals(1, matched)
+            // The book as kept, read again after a restart: the host's price is not in it, nor models.dev's older one.
+            val restarted = parsePriceBook(priceBookJson(synced))
+            assertNull(restarted.prices["m"])
+            assertEquals(true, restarted.prices.getValue("t").manual)
+            // The host changes its price; the next read takes it, and nothing typed in stands for it.
+            AppHost.install(modelPrices = mapOf("m" to ModelPrice(3.0, 4.0)))
+            val read = restarted.withKnownPrices(listOf("m", "t")).prices
+            assertEquals(3.0, read.getValue("m").input, 0.0)
+            assertFalse(read.getValue("m").manual)
+            assertEquals(0.5, read.getValue("t").input, 0.0)
+        } finally {
+            AppHost.install(modelPrices = emptyMap())
+        }
+    }
+
+    @Test
+    fun aBookThatKeptTheHostsPricesHasThemDroppedNotTakenAsTyped() {
+        val kept = """{"version":1,"usdToCny":7.2,"prices":{""" +
+            """"host":{"input":1.0,"output":2.0,"source":"","manual":false,"currency":"USD"},""" +
+            """"synced":{"input":1.0,"output":2.0,"source":"resale-a","manual":false,"currency":"USD"},""" +
+            """"typed":{"input":1.0,"output":2.0,"source":"","manual":true,"currency":"USD"}}}"""
+        val prices = parsePriceBook(kept).prices
+        assertNull(prices["host"])
+        assertFalse(prices.getValue("synced").manual)
+        assertTrue(prices.getValue("typed").manual)
     }
 
     @Test

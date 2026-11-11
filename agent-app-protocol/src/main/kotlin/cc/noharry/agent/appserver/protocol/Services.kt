@@ -4,9 +4,11 @@ import cc.noharry.agent.appserver.protocol.jsonrpc.RequestMethod
 import kotlinx.serialization.Serializable
 
 /**
- * What is known of one model: its [contextWindow] and [maxOutputTokens] in tokens, whether it reads pictures
- * ([imageInput]), calls tools ([toolCalls]) and reasons before it answers ([reasoning]), and the reasoning efforts it
- * takes ([reasoningEfforts], as its service names them). Null where nothing is known: the server then keeps its
+ * What is known of one model: its [contextWindow] and [maxOutputTokens] (the documented ceiling of one answer) in
+ * tokens, whether it reads pictures ([imageInput]), calls tools ([toolCalls]) and reasons before it answers
+ * ([reasoning]), the reasoning efforts it takes ([reasoningEfforts], as its service names them), and the output a
+ * request asks for ([requestOutputTokens]: sent as the request's output limit, where the service's own default would
+ * cut answers short; null sends the wire client's default). Null where nothing is known: the server then keeps its
  * conservative default (a 128K window, pictures on).
  */
 @Serializable
@@ -17,6 +19,7 @@ data class ModelFacts(
     val toolCalls: Boolean? = null,
     val reasoning: Boolean? = null,
     val reasoningEfforts: List<String> = emptyList(),
+    val requestOutputTokens: Long? = null,
 ) {
     /** These facts where they say something, [base]'s elsewhere. */
     fun over(base: ModelFacts): ModelFacts = ModelFacts(
@@ -26,6 +29,7 @@ data class ModelFacts(
         toolCalls = toolCalls ?: base.toolCalls,
         reasoning = reasoning ?: base.reasoning,
         reasoningEfforts = reasoningEfforts.ifEmpty { base.reasoningEfforts },
+        requestOutputTokens = requestOutputTokens ?: base.requestOutputTokens,
     )
 }
 
@@ -38,9 +42,9 @@ data class ServiceEndpointView(val endpoint: ProviderEndpoint, val baseUrl: Stri
 
 /**
  * A model service an adapter of the server knows: its [id] and [label], the [endpoints] it speaks (the first is its
- * default), where a person gets a key ([keyHint], plain text), the models its list names ([models]), and whether it
- * answers [ServiceRequests.BALANCE] ([balance]) and [ServiceRequests.CHECK] ([relayCheck], for a relay that may have it
- * behind).
+ * default), where a person gets a key ([keyHint], plain text), the models its list names ([models]) and the one a
+ * profile that names none takes on its default endpoint ([defaultModel], blank for none), and whether it answers
+ * [ServiceRequests.BALANCE] ([balance]) and [ServiceRequests.CHECK] ([relayCheck], for a relay that may have it behind).
  */
 @Serializable
 data class ServiceView(
@@ -51,12 +55,17 @@ data class ServiceView(
     val models: List<String> = emptyList(),
     val balance: Boolean = false,
     val relayCheck: Boolean = false,
+    val defaultModel: String = "",
 )
 
 @Serializable
 data class ServiceListResult(val services: List<ServiceView> = emptyList())
 
-/** The connection a service request is about, as filled in: saved or not; a blank [apiKey] is the one saved for [profileId]. */
+/**
+ * The connection a service request is about, as filled in: saved or not; a blank [apiKey] is the one saved for
+ * [profileId], which the server sends only to the host that saved profile points at, or to an address a check made
+ * with the key typed found for it; for any other [baseUrl] the person types the key again.
+ */
 @Serializable
 data class ProviderConnection(
     val profileId: String,
@@ -69,9 +78,9 @@ data class ProviderConnection(
 )
 
 /**
- * [service]'s balance for the key typed in ([apiKey]), else the one saved for [connection]; or, with [connection] and
- * [url], a relay's at [url] (where a check found it), with the key the server resolves for that connection. A key goes
- * in only; it never comes back.
+ * [service]'s balance for the key typed in ([apiKey], else [connection]'s), else the one saved for [connection]; or,
+ * with [connection] and [url], a relay's at [url] (where a check found it). A saved key goes only where
+ * [ProviderConnection] says, else the balance fails with `MODEL_KEY_TYPE_AGAIN`. A key goes in only; it never comes back.
  */
 @Serializable
 data class ServiceBalanceParams(
@@ -98,6 +107,8 @@ data class ServiceCheckPart(val passed: Boolean, val note: Finding, val url: Str
  * ([checked]), whether it was made for the connection as now filled in ([current]), whether that connection has a key
  * at all ([hasKey]), and, when current, its parts: the service's balance query, its search and page fetch APIs
  * ([lookup]), and whether its own history updates pass ([nativeUpdates], checked on the Messages endpoint only).
+ * [savedKeyRefused]: the key is the profile's saved one, which does not go to the connection's base URL (a host other
+ * than the saved profile's): nothing is checked until the person types the key.
  */
 @Serializable
 data class ServiceCheckView(
@@ -107,6 +118,7 @@ data class ServiceCheckView(
     val balance: ServiceCheckPart? = null,
     val lookup: ServiceCheckPart? = null,
     val nativeUpdates: ServiceCheckPart? = null,
+    val savedKeyRefused: Boolean = false,
 )
 
 /**

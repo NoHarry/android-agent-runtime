@@ -26,6 +26,7 @@ import cc.noharry.agent.appserver.server.PluginAdditions
 import cc.noharry.agent.appserver.server.RouteTable
 import cc.noharry.agent.appserver.server.coreModules
 import cc.noharry.agent.appserver.usage.UsageStore
+import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -90,15 +91,19 @@ class OverridesTest {
 
     @Test
     fun deepSeekPricesTheModelsItDoesNotListAsItsOwnOfTheirKindAndNoOtherServicesModel() {
-        val flash = DeepSeekAdapter.price("deepseek-flash")!!
-        assertEquals(flash.copy(pricedAs = "deepseek-flash"), DeepSeekAdapter.price("deepseek-v4.2-flash"))
-        assertEquals("deepseek-v4-pro", DeepSeekAdapter.price("deepseek-v4.2-pro")?.pricedAs)
-        assertNull(DeepSeekAdapter.price("deepseek-chat"))
-        assertNull(DeepSeekAdapter.price("other-flash"))
+        val deepSeek = DeepSeekAdapter.services.single()
+        fun price(model: String) = DeepSeekAdapter.price(deepSeek, model, deepSeek.defaultRegion, LocalDate.of(2026, 11, 11))
+        val flash = price("deepseek-flash")!!
+        assertEquals(flash.copy(pricedAs = "deepseek-flash"), price("deepseek-v4.2-flash"))
+        assertEquals("deepseek-v4-pro", price("deepseek-v4.2-pro")?.pricedAs)
+        assertNull(price("deepseek-chat"))
+        assertNull(price("other-flash"))
         // A relay's name for it is DeepSeek's; another service's listing of a DeepSeek model is that service's.
         assertEquals(flash.copy(pricedAs = "deepseek-flash"), modelPrice("relay/deepseek-v4.1-flash"))
+        // By name alone (a relay's), from the list of the service's first region: SiliconFlow's China site.
         val hosted = ServiceCatalog.service("siliconflow").model("deepseek-ai/DeepSeek-V4-Flash")!!.price
         assertEquals(hosted, modelPrice("deepseek-ai/DeepSeek-V4-Flash"))
+        assertEquals("CNY", hosted?.currency)
         // The facts of a model a relay names come from the service that lists it.
         assertEquals(1_048_576L, modelFacts("https://relay.example.com/v1", "relay/deepseek-flash").contextWindow)
     }

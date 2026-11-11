@@ -4,6 +4,8 @@ import cc.noharry.agent.appserver.model.ProviderProfile
 import cc.noharry.agent.appserver.protocol.ModelProvider
 import cc.noharry.agent.appserver.protocol.ProviderEndpoint
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** DeepSeek's endpoints (OpenAI-compatible and Anthropic-compatible) take one key: a profile there with none takes another's. */
@@ -24,6 +26,19 @@ class DeepSeekKeysTest {
         assertEquals("sk-openai-port", kept.getValue("api").apiKey)
         assertEquals("sk-anthropic-port", kept.getValue("anthropic").apiKey)
         assertEquals("", kept.getValue("relay").apiKey)
+    }
+
+    @Test
+    fun onlyDeepSeeksOwnHttpsHostOnItsDefaultPortIsDeepSeeksAndSharesItsKey() {
+        assertTrue("https://API.DeepSeek.com/anthropic".isDeepSeekUrl())
+        assertTrue("https://api.deepseek.com:443/v1".isDeepSeekUrl())
+        listOf(
+            "http://api.deepseek.com/v1", "https://api.deepseek.com:8443/v1", "https://api.deepseek.com.evil.test/v1",
+            "https://user@api.deepseek.com/v1", "https://evil.test/api.deepseek.com", "not a url",
+        ).forEach { assertFalse(it, it.isDeepSeekUrl()) }
+        val plain = api("").copy(id = "plain", baseUrl = "http://api.deepseek.com/v1")
+        val shared = DeepSeekAdapter.shareKeys(listOf(api("sk-shared-deepseek"), plain)).associateBy { it.id }
+        assertEquals("", shared.getValue("plain").apiKey)
     }
 
     private fun api(key: String) = ProviderProfile(
