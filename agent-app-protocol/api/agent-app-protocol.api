@@ -2157,15 +2157,16 @@ public final class cc/noharry/agent/appserver/protocol/FindingCode : java/lang/E
 	public static final field MODEL_BALANCE_FAILED Lcc/noharry/agent/appserver/protocol/FindingCode;
 	public static final field MODEL_BALANCE_KEY_REJECTED Lcc/noharry/agent/appserver/protocol/FindingCode;
 	public static final field MODEL_CHOOSE_MODEL_FIRST Lcc/noharry/agent/appserver/protocol/FindingCode;
-	public static final field MODEL_DEEPSEEK_AVAILABLE Lcc/noharry/agent/appserver/protocol/FindingCode;
 	public static final field MODEL_HTTP_ERROR Lcc/noharry/agent/appserver/protocol/FindingCode;
 	public static final field MODEL_MISSING_API_KEY Lcc/noharry/agent/appserver/protocol/FindingCode;
+	public static final field MODEL_MISSING_BASE_URL Lcc/noharry/agent/appserver/protocol/FindingCode;
 	public static final field MODEL_PROBE_DROPPED Lcc/noharry/agent/appserver/protocol/FindingCode;
 	public static final field MODEL_PROBE_NOT_BALANCE Lcc/noharry/agent/appserver/protocol/FindingCode;
 	public static final field MODEL_PROBE_NOT_HTTP Lcc/noharry/agent/appserver/protocol/FindingCode;
 	public static final field MODEL_PROBE_NOT_SEARCH Lcc/noharry/agent/appserver/protocol/FindingCode;
 	public static final field MODEL_PROBE_NO_MODEL Lcc/noharry/agent/appserver/protocol/FindingCode;
 	public static final field MODEL_PROBE_PASSED_THROUGH Lcc/noharry/agent/appserver/protocol/FindingCode;
+	public static final field MODEL_PROBE_SEARCH_AVAILABLE Lcc/noharry/agent/appserver/protocol/FindingCode;
 	public static final field MODEL_PROBE_UNREACHABLE Lcc/noharry/agent/appserver/protocol/FindingCode;
 	public static final field PARTS Lcc/noharry/agent/appserver/protocol/FindingCode;
 	public static final field PLANS_ACTION_DENIED Lcc/noharry/agent/appserver/protocol/FindingCode;
@@ -3281,6 +3282,46 @@ public final class cc/noharry/agent/appserver/protocol/ModelCallPhase$Companion 
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class cc/noharry/agent/appserver/protocol/ModelFacts {
+	public static final field Companion Lcc/noharry/agent/appserver/protocol/ModelFacts$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Long;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Ljava/lang/Boolean;
+	public final fun component4 ()Ljava/lang/Boolean;
+	public final fun component5 ()Ljava/lang/Boolean;
+	public final fun component6 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/util/List;)Lcc/noharry/agent/appserver/protocol/ModelFacts;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ModelFacts;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ModelFacts;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContextWindow ()Ljava/lang/Long;
+	public final fun getImageInput ()Ljava/lang/Boolean;
+	public final fun getMaxOutputTokens ()Ljava/lang/Long;
+	public final fun getReasoning ()Ljava/lang/Boolean;
+	public final fun getReasoningEfforts ()Ljava/util/List;
+	public final fun getToolCalls ()Ljava/lang/Boolean;
+	public fun hashCode ()I
+	public final fun over (Lcc/noharry/agent/appserver/protocol/ModelFacts;)Lcc/noharry/agent/appserver/protocol/ModelFacts;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class cc/noharry/agent/appserver/protocol/ModelFacts$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/protocol/ModelFacts$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcc/noharry/agent/appserver/protocol/ModelFacts;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcc/noharry/agent/appserver/protocol/ModelFacts;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ModelFacts$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
 public final class cc/noharry/agent/appserver/protocol/ModelListResult {
 	public static final field Companion Lcc/noharry/agent/appserver/protocol/ModelListResult$Companion;
 	public fun <init> (Ljava/util/List;)V
@@ -3310,8 +3351,8 @@ public final class cc/noharry/agent/appserver/protocol/ModelListResult$Companion
 
 public final class cc/noharry/agent/appserver/protocol/ModelPrice {
 	public static final field Companion Lcc/noharry/agent/appserver/protocol/ModelPrice$Companion;
-	public fun <init> (DDLjava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;Z)V
-	public synthetic fun <init> (DDLjava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (DDLjava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (DDLjava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()D
 	public final fun component2 ()D
 	public final fun component3 ()Ljava/lang/Double;
@@ -3319,11 +3360,15 @@ public final class cc/noharry/agent/appserver/protocol/ModelPrice {
 	public final fun component5 ()Ljava/lang/String;
 	public final fun component6 ()Ljava/lang/String;
 	public final fun component7 ()Z
-	public final fun copy (DDLjava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;Z)Lcc/noharry/agent/appserver/protocol/ModelPrice;
-	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ModelPrice;DDLjava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ModelPrice;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (DDLjava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ModelPrice;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ModelPrice;DDLjava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ModelPrice;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAsOf ()Ljava/lang/String;
 	public final fun getCacheRead ()Ljava/lang/Double;
 	public final fun getCacheWrite ()Ljava/lang/Double;
+	public final fun getCurrency ()Ljava/lang/String;
 	public final fun getInput ()D
 	public final fun getManual ()Z
 	public final fun getOutput ()D
@@ -3572,16 +3617,18 @@ public final class cc/noharry/agent/appserver/protocol/ModelSettingsSaveParams$C
 
 public final class cc/noharry/agent/appserver/protocol/ModelSettingsView {
 	public static final field Companion Lcc/noharry/agent/appserver/protocol/ModelSettingsView$Companion;
-	public fun <init> (Ljava/lang/String;Ljava/lang/Long;JZ)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Long;JZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/Long;JZLcc/noharry/agent/appserver/protocol/ModelFacts;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Long;JZLcc/noharry/agent/appserver/protocol/ModelFacts;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/Long;
 	public final fun component3 ()J
 	public final fun component4 ()Z
-	public final fun copy (Ljava/lang/String;Ljava/lang/Long;JZ)Lcc/noharry/agent/appserver/protocol/ModelSettingsView;
-	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ModelSettingsView;Ljava/lang/String;Ljava/lang/Long;JZILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ModelSettingsView;
+	public final fun component5 ()Lcc/noharry/agent/appserver/protocol/ModelFacts;
+	public final fun copy (Ljava/lang/String;Ljava/lang/Long;JZLcc/noharry/agent/appserver/protocol/ModelFacts;)Lcc/noharry/agent/appserver/protocol/ModelSettingsView;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ModelSettingsView;Ljava/lang/String;Ljava/lang/Long;JZLcc/noharry/agent/appserver/protocol/ModelFacts;ILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ModelSettingsView;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDefaultWindow ()J
+	public final fun getFacts ()Lcc/noharry/agent/appserver/protocol/ModelFacts;
 	public final fun getImageInput ()Z
 	public final fun getModel ()Ljava/lang/String;
 	public final fun getWindowOverride ()Ljava/lang/Long;
@@ -5290,6 +5337,46 @@ public final class cc/noharry/agent/appserver/protocol/ProtocolMethodsKt {
 	public static final fun serverRequest (Lcc/noharry/agent/appserver/protocol/jsonrpc/RequestMethod;)Lcc/noharry/agent/appserver/protocol/ProtocolMethod;
 }
 
+public final class cc/noharry/agent/appserver/protocol/ProviderConnection {
+	public static final field Companion Lcc/noharry/agent/appserver/protocol/ProviderConnection$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcc/noharry/agent/appserver/protocol/ModelProvider;
+	public final fun component4 ()Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ProviderConnection;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ProviderConnection;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ProviderConnection;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApiKey ()Ljava/lang/String;
+	public final fun getBaseUrl ()Ljava/lang/String;
+	public final fun getEndpoint ()Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getModel ()Ljava/lang/String;
+	public final fun getProfileId ()Ljava/lang/String;
+	public final fun getProvider ()Lcc/noharry/agent/appserver/protocol/ModelProvider;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class cc/noharry/agent/appserver/protocol/ProviderConnection$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/protocol/ProviderConnection$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcc/noharry/agent/appserver/protocol/ProviderConnection;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcc/noharry/agent/appserver/protocol/ProviderConnection;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ProviderConnection$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
 public final class cc/noharry/agent/appserver/protocol/ProviderCreateParams {
 	public static final field Companion Lcc/noharry/agent/appserver/protocol/ProviderCreateParams$Companion;
 	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
@@ -5357,13 +5444,14 @@ public final class cc/noharry/agent/appserver/protocol/ProviderCreateResult$Comp
 public final class cc/noharry/agent/appserver/protocol/ProviderEditState {
 	public static final field Companion Lcc/noharry/agent/appserver/protocol/ProviderEditState$Companion;
 	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;ZLjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Z)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;ZLjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;ZLjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/lang/String;ZLjava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;ZLjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/lang/String;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component10 ()Ljava/util/List;
 	public final fun component11 ()Ljava/util/List;
 	public final fun component12 ()Ljava/lang/String;
 	public final fun component13 ()Z
+	public final fun component14 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/String;
@@ -5372,8 +5460,8 @@ public final class cc/noharry/agent/appserver/protocol/ProviderEditState {
 	public final fun component7 ()Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;
 	public final fun component8 ()Z
 	public final fun component9 ()Ljava/util/List;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;ZLjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Z)Lcc/noharry/agent/appserver/protocol/ProviderEditState;
-	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ProviderEditState;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;ZLjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/lang/String;ZILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ProviderEditState;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;ZLjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/lang/String;ZLjava/lang/String;)Lcc/noharry/agent/appserver/protocol/ProviderEditState;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ProviderEditState;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;ZLjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/lang/String;ZLjava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ProviderEditState;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBaseUrl ()Ljava/lang/String;
 	public final fun getDefaultVariant ()Ljava/lang/String;
@@ -5386,6 +5474,7 @@ public final class cc/noharry/agent/appserver/protocol/ProviderEditState {
 	public final fun getProfileLabel ()Ljava/lang/String;
 	public final fun getProfileOptions ()Ljava/util/List;
 	public final fun getProvider ()Lcc/noharry/agent/appserver/protocol/ModelProvider;
+	public final fun getService ()Ljava/lang/String;
 	public final fun getVariant ()Ljava/lang/String;
 	public final fun getVariantOptions ()Ljava/util/List;
 	public fun hashCode ()I
@@ -6101,6 +6190,280 @@ public final synthetic class cc/noharry/agent/appserver/protocol/ServerSnapshot$
 }
 
 public final class cc/noharry/agent/appserver/protocol/ServerSnapshot$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceBalanceParams {
+	public static final field Companion Lcc/noharry/agent/appserver/protocol/ServiceBalanceParams$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ProviderConnection;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ProviderConnection;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcc/noharry/agent/appserver/protocol/ProviderConnection;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ProviderConnection;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ServiceBalanceParams;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ServiceBalanceParams;Ljava/lang/String;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ProviderConnection;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ServiceBalanceParams;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApiKey ()Ljava/lang/String;
+	public final fun getConnection ()Lcc/noharry/agent/appserver/protocol/ProviderConnection;
+	public final fun getService ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class cc/noharry/agent/appserver/protocol/ServiceBalanceParams$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/protocol/ServiceBalanceParams$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcc/noharry/agent/appserver/protocol/ServiceBalanceParams;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcc/noharry/agent/appserver/protocol/ServiceBalanceParams;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceBalanceParams$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceBalanceResult {
+	public static final field Companion Lcc/noharry/agent/appserver/protocol/ServiceBalanceResult$Companion;
+	public fun <init> ()V
+	public fun <init> (Lcc/noharry/agent/appserver/protocol/BalanceView;Lcc/noharry/agent/appserver/protocol/Finding;)V
+	public synthetic fun <init> (Lcc/noharry/agent/appserver/protocol/BalanceView;Lcc/noharry/agent/appserver/protocol/Finding;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcc/noharry/agent/appserver/protocol/BalanceView;
+	public final fun component2 ()Lcc/noharry/agent/appserver/protocol/Finding;
+	public final fun copy (Lcc/noharry/agent/appserver/protocol/BalanceView;Lcc/noharry/agent/appserver/protocol/Finding;)Lcc/noharry/agent/appserver/protocol/ServiceBalanceResult;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ServiceBalanceResult;Lcc/noharry/agent/appserver/protocol/BalanceView;Lcc/noharry/agent/appserver/protocol/Finding;ILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ServiceBalanceResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBalance ()Lcc/noharry/agent/appserver/protocol/BalanceView;
+	public final fun getFailure ()Lcc/noharry/agent/appserver/protocol/Finding;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class cc/noharry/agent/appserver/protocol/ServiceBalanceResult$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/protocol/ServiceBalanceResult$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcc/noharry/agent/appserver/protocol/ServiceBalanceResult;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcc/noharry/agent/appserver/protocol/ServiceBalanceResult;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceBalanceResult$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceCheckParams {
+	public static final field Companion Lcc/noharry/agent/appserver/protocol/ServiceCheckParams$Companion;
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ProviderConnection;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcc/noharry/agent/appserver/protocol/ProviderConnection;
+	public final fun copy (Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ProviderConnection;)Lcc/noharry/agent/appserver/protocol/ServiceCheckParams;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ServiceCheckParams;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ProviderConnection;ILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ServiceCheckParams;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConnection ()Lcc/noharry/agent/appserver/protocol/ProviderConnection;
+	public final fun getService ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class cc/noharry/agent/appserver/protocol/ServiceCheckParams$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/protocol/ServiceCheckParams$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcc/noharry/agent/appserver/protocol/ServiceCheckParams;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcc/noharry/agent/appserver/protocol/ServiceCheckParams;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceCheckParams$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceCheckPart {
+	public static final field Companion Lcc/noharry/agent/appserver/protocol/ServiceCheckPart$Companion;
+	public fun <init> (ZLcc/noharry/agent/appserver/protocol/Finding;Ljava/lang/String;)V
+	public synthetic fun <init> (ZLcc/noharry/agent/appserver/protocol/Finding;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Lcc/noharry/agent/appserver/protocol/Finding;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (ZLcc/noharry/agent/appserver/protocol/Finding;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;ZLcc/noharry/agent/appserver/protocol/Finding;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNote ()Lcc/noharry/agent/appserver/protocol/Finding;
+	public final fun getPassed ()Z
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class cc/noharry/agent/appserver/protocol/ServiceCheckPart$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/protocol/ServiceCheckPart$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceCheckPart$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceCheckView {
+	public static final field Companion Lcc/noharry/agent/appserver/protocol/ServiceCheckView$Companion;
+	public fun <init> ()V
+	public fun <init> (ZZZLcc/noharry/agent/appserver/protocol/ServiceCheckPart;Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;)V
+	public synthetic fun <init> (ZZZLcc/noharry/agent/appserver/protocol/ServiceCheckPart;Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun component4 ()Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;
+	public final fun component5 ()Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;
+	public final fun component6 ()Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;
+	public final fun copy (ZZZLcc/noharry/agent/appserver/protocol/ServiceCheckPart;Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;)Lcc/noharry/agent/appserver/protocol/ServiceCheckView;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ServiceCheckView;ZZZLcc/noharry/agent/appserver/protocol/ServiceCheckPart;Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;ILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ServiceCheckView;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBalance ()Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;
+	public final fun getChecked ()Z
+	public final fun getCurrent ()Z
+	public final fun getHasKey ()Z
+	public final fun getLookup ()Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;
+	public final fun getNativeUpdates ()Lcc/noharry/agent/appserver/protocol/ServiceCheckPart;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class cc/noharry/agent/appserver/protocol/ServiceCheckView$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/protocol/ServiceCheckView$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcc/noharry/agent/appserver/protocol/ServiceCheckView;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcc/noharry/agent/appserver/protocol/ServiceCheckView;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceCheckView$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceEndpointView {
+	public static final field Companion Lcc/noharry/agent/appserver/protocol/ServiceEndpointView$Companion;
+	public fun <init> (Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ServiceEndpointView;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ServiceEndpointView;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ServiceEndpointView;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBaseUrl ()Ljava/lang/String;
+	public final fun getEndpoint ()Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;
+	public final fun getRegion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class cc/noharry/agent/appserver/protocol/ServiceEndpointView$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/protocol/ServiceEndpointView$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcc/noharry/agent/appserver/protocol/ServiceEndpointView;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcc/noharry/agent/appserver/protocol/ServiceEndpointView;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceEndpointView$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceListResult {
+	public static final field Companion Lcc/noharry/agent/appserver/protocol/ServiceListResult$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcc/noharry/agent/appserver/protocol/ServiceListResult;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ServiceListResult;Ljava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ServiceListResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getServices ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class cc/noharry/agent/appserver/protocol/ServiceListResult$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/protocol/ServiceListResult$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcc/noharry/agent/appserver/protocol/ServiceListResult;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcc/noharry/agent/appserver/protocol/ServiceListResult;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceListResult$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceRequests {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/protocol/ServiceRequests;
+	public final fun getBALANCE ()Lcc/noharry/agent/appserver/protocol/jsonrpc/RequestMethod;
+	public final fun getCHECK ()Lcc/noharry/agent/appserver/protocol/jsonrpc/RequestMethod;
+	public final fun getCHECKED ()Lcc/noharry/agent/appserver/protocol/jsonrpc/RequestMethod;
+	public final fun getLIST ()Lcc/noharry/agent/appserver/protocol/jsonrpc/RequestMethod;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceView {
+	public static final field Companion Lcc/noharry/agent/appserver/protocol/ServiceView$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/List;ZZ)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/List;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Z
+	public final fun component7 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/List;ZZ)Lcc/noharry/agent/appserver/protocol/ServiceView;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ServiceView;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/List;ZZILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ServiceView;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBalance ()Z
+	public final fun getEndpoints ()Ljava/util/List;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getKeyHint ()Ljava/lang/String;
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getModels ()Ljava/util/List;
+	public final fun getRelayCheck ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class cc/noharry/agent/appserver/protocol/ServiceView$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/protocol/ServiceView$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcc/noharry/agent/appserver/protocol/ServiceView;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcc/noharry/agent/appserver/protocol/ServiceView;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class cc/noharry/agent/appserver/protocol/ServiceView$Companion {
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
@@ -7847,8 +8210,12 @@ public final class cc/noharry/agent/appserver/protocol/UsageData$Companion {
 }
 
 public final class cc/noharry/agent/appserver/protocol/UsageKt {
+	public static final field CNY Ljava/lang/String;
 	public static final field DEFAULT_USD_TO_CNY D
-	public static final fun costUsd (Lcc/noharry/agent/appserver/protocol/ModelUsage;Lcc/noharry/agent/appserver/protocol/ModelPrice;)D
+	public static final field USD Ljava/lang/String;
+	public static final fun cost (Lcc/noharry/agent/appserver/protocol/ModelUsage;Lcc/noharry/agent/appserver/protocol/ModelPrice;)D
+	public static final fun costUsd (Lcc/noharry/agent/appserver/protocol/PriceBook;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelUsage;)Ljava/lang/Double;
+	public static final fun usd (Lcc/noharry/agent/appserver/protocol/PriceBook;DLjava/lang/String;)Ljava/lang/Double;
 }
 
 public final class cc/noharry/agent/appserver/protocol/UsageRequests {

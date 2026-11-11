@@ -147,6 +147,15 @@ public final class cc/noharry/agent/appserver/model/ContextWindowConfigKt {
 	public static final fun saveContextWindow (Landroid/content/Context;Lcc/noharry/agent/appserver/protocol/ProviderEditState;Ljava/lang/Long;)V
 }
 
+public final class cc/noharry/agent/appserver/model/ErrorRule {
+	public fun <init> (Lcc/noharry/agent/appserver/model/ModelFailureKind;Ljava/lang/Integer;Ljava/lang/String;)V
+	public synthetic fun <init> (Lcc/noharry/agent/appserver/model/ModelFailureKind;Ljava/lang/Integer;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getKind ()Lcc/noharry/agent/appserver/model/ModelFailureKind;
+	public final fun getPattern ()Ljava/lang/String;
+	public final fun getStatus ()Ljava/lang/Integer;
+	public final fun matches (Lcc/noharry/agent/appserver/model/ModelFailure;)Z
+}
+
 public final class cc/noharry/agent/appserver/model/FetchFallback {
 	public static final field INSTANCE Lcc/noharry/agent/appserver/model/FetchFallback;
 	public final fun enabled (Landroid/content/Context;)Z
@@ -159,7 +168,35 @@ public final class cc/noharry/agent/appserver/model/MadeUpToolCallsKt {
 
 public final class cc/noharry/agent/appserver/model/ModelCatalogClient {
 	public fun <init> (Lcc/noharry/agent/transport/HttpTransport;)V
-	public final fun fetch (Lcc/noharry/agent/appserver/protocol/ModelProvider;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun fetch (Lcc/noharry/agent/appserver/protocol/ModelProvider;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun fetch$default (Lcc/noharry/agent/appserver/model/ModelCatalogClient;Lcc/noharry/agent/appserver/protocol/ModelProvider;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class cc/noharry/agent/appserver/model/ModelFailure {
+	public fun <init> (Ljava/lang/Integer;Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;Z)V
+	public synthetic fun <init> (Ljava/lang/Integer;Ljava/lang/String;Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBody ()Ljava/lang/String;
+	public final fun getCode ()Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
+	public final fun getStatus ()Ljava/lang/Integer;
+	public final fun getTimedOut ()Z
+}
+
+public final class cc/noharry/agent/appserver/model/ModelFailureKind : java/lang/Enum {
+	public static final field AUTH Lcc/noharry/agent/appserver/model/ModelFailureKind;
+	public static final field CONTEXT_WINDOW Lcc/noharry/agent/appserver/model/ModelFailureKind;
+	public static final field QUOTA Lcc/noharry/agent/appserver/model/ModelFailureKind;
+	public static final field RATE_LIMIT Lcc/noharry/agent/appserver/model/ModelFailureKind;
+	public static final field SERVER Lcc/noharry/agent/appserver/model/ModelFailureKind;
+	public static final field TIMEOUT Lcc/noharry/agent/appserver/model/ModelFailureKind;
+	public final fun getCode ()Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getRecoverable ()Z
+	public static fun valueOf (Ljava/lang/String;)Lcc/noharry/agent/appserver/model/ModelFailureKind;
+	public static fun values ()[Lcc/noharry/agent/appserver/model/ModelFailureKind;
+}
+
+public final class cc/noharry/agent/appserver/model/ModelFailuresKt {
+	public static final fun kindBy (Lcc/noharry/agent/appserver/model/ModelFailure;Ljava/util/List;)Lcc/noharry/agent/appserver/model/ModelFailureKind;
 }
 
 public final class cc/noharry/agent/appserver/model/ModelPreset {
@@ -173,19 +210,70 @@ public final class cc/noharry/agent/appserver/model/ModelPreset {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class cc/noharry/agent/appserver/model/ModelService {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/Set;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLjava/lang/String;Lcc/noharry/agent/appserver/model/UsageFields;Ljava/util/List;Lcc/noharry/agent/appserver/model/RetryPolicy;ZZLjava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/Set;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLjava/lang/String;Lcc/noharry/agent/appserver/model/UsageFields;Ljava/util/List;Lcc/noharry/agent/appserver/model/RetryPolicy;ZZLjava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun endpointFor (Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;)Lcc/noharry/agent/appserver/model/ServiceEndpoint;
+	public static synthetic fun endpointFor$default (Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;ILjava/lang/Object;)Lcc/noharry/agent/appserver/model/ServiceEndpoint;
+	public final fun getAllHosts ()Ljava/util/Set;
+	public final fun getAsOf ()Ljava/lang/String;
+	public final fun getBalance ()Z
+	public final fun getEndpoints ()Ljava/util/List;
+	public final fun getErrors ()Ljava/util/List;
+	public final fun getHosts ()Ljava/util/Set;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getKeyHint ()Ljava/lang/String;
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getListedIdPrefix ()Ljava/lang/String;
+	public final fun getListsModels ()Z
+	public final fun getModels ()Ljava/util/List;
+	public final fun getModelsUrl ()Ljava/lang/String;
+	public final fun getRelayCheck ()Z
+	public final fun getRetry ()Lcc/noharry/agent/appserver/model/RetryPolicy;
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getUsageFields ()Lcc/noharry/agent/appserver/model/UsageFields;
+	public final fun model (Ljava/lang/String;)Lcc/noharry/agent/appserver/model/ServiceModel;
+	public final fun serves (Ljava/lang/String;)Z
+	public fun toString ()Ljava/lang/String;
+	public final fun view ()Lcc/noharry/agent/appserver/protocol/ServiceView;
+}
+
+public final class cc/noharry/agent/appserver/model/ModelServicesKt {
+	public static final fun modelFacts (Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ModelFacts;
+	public static final fun modelPrice (Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ModelPrice;
+}
+
 public abstract interface class cc/noharry/agent/appserver/model/ProviderAdapter {
+	public fun balance (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun check (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun checked (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ServiceCheckView;
+	public fun classify (Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ModelFailure;)Lcc/noharry/agent/appserver/model/ModelFailureKind;
+	public fun facts (Lcc/noharry/agent/appserver/model/ModelService;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ModelFacts;
+	public fun getServices ()Ljava/util/List;
 	public fun hasLookup (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderConfig;Lcc/noharry/agent/appserver/model/ProviderProfile;)Z
+	public fun listModels (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun lookup (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderConfig;Lcc/noharry/agent/appserver/model/ProviderProfile;)Lcc/noharry/agent/appserver/model/WebLookup;
 	public fun nativeUpdates (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderConfig;Lcc/noharry/agent/appserver/model/ProviderProfile;)Z
+	public fun price (Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ModelPrice;
 	public fun routes (Landroid/content/Context;)Ljava/util/List;
+	public fun serviceOf (Ljava/lang/String;)Lcc/noharry/agent/appserver/model/ModelService;
 	public fun shareKeys (Ljava/util/List;)Ljava/util/List;
 }
 
 public final class cc/noharry/agent/appserver/model/ProviderAdapter$DefaultImpls {
+	public static fun balance (Lcc/noharry/agent/appserver/model/ProviderAdapter;Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun check (Lcc/noharry/agent/appserver/model/ProviderAdapter;Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun checked (Lcc/noharry/agent/appserver/model/ProviderAdapter;Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ServiceCheckView;
+	public static fun classify (Lcc/noharry/agent/appserver/model/ProviderAdapter;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ModelFailure;)Lcc/noharry/agent/appserver/model/ModelFailureKind;
+	public static fun facts (Lcc/noharry/agent/appserver/model/ProviderAdapter;Lcc/noharry/agent/appserver/model/ModelService;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ModelFacts;
+	public static fun getServices (Lcc/noharry/agent/appserver/model/ProviderAdapter;)Ljava/util/List;
 	public static fun hasLookup (Lcc/noharry/agent/appserver/model/ProviderAdapter;Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderConfig;Lcc/noharry/agent/appserver/model/ProviderProfile;)Z
+	public static fun listModels (Lcc/noharry/agent/appserver/model/ProviderAdapter;Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static fun lookup (Lcc/noharry/agent/appserver/model/ProviderAdapter;Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderConfig;Lcc/noharry/agent/appserver/model/ProviderProfile;)Lcc/noharry/agent/appserver/model/WebLookup;
 	public static fun nativeUpdates (Lcc/noharry/agent/appserver/model/ProviderAdapter;Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderConfig;Lcc/noharry/agent/appserver/model/ProviderProfile;)Z
+	public static fun price (Lcc/noharry/agent/appserver/model/ProviderAdapter;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ModelPrice;
 	public static fun routes (Lcc/noharry/agent/appserver/model/ProviderAdapter;Landroid/content/Context;)Ljava/util/List;
+	public static fun serviceOf (Lcc/noharry/agent/appserver/model/ProviderAdapter;Ljava/lang/String;)Lcc/noharry/agent/appserver/model/ModelService;
 	public static fun shareKeys (Lcc/noharry/agent/appserver/model/ProviderAdapter;Ljava/util/List;)Ljava/util/List;
 }
 
@@ -285,6 +373,13 @@ public final class cc/noharry/agent/appserver/model/ProviderProfile {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class cc/noharry/agent/appserver/model/RetryPolicy {
+	public fun <init> (IJJ)V
+	public final fun getAttempts ()I
+	public final fun getInitialBackoffMillis ()J
+	public final fun getMaxBackoffMillis ()J
+}
+
 public final class cc/noharry/agent/appserver/model/ScriptedModel : cc/noharry/agent/spi/model/ModelClient {
 	public static final field APP_NOTE Ljava/lang/String;
 	public static final field ASSISTANT Ljava/lang/String;
@@ -326,9 +421,34 @@ public final class cc/noharry/agent/appserver/model/SearchBackend {
 	public final fun usesApi (Landroid/content/Context;Ljava/lang/String;)Z
 }
 
+public final class cc/noharry/agent/appserver/model/ServiceEndpoint {
+	public fun <init> (Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBaseUrl ()Ljava/lang/String;
+	public final fun getEndpoint ()Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;
+	public final fun getRegion ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/appserver/model/ServiceModel {
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelFacts;Lcc/noharry/agent/appserver/protocol/ModelPrice;Ljava/util/Set;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/ModelFacts;Lcc/noharry/agent/appserver/protocol/ModelPrice;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAliases ()Ljava/util/Set;
+	public final fun getFacts ()Lcc/noharry/agent/appserver/protocol/ModelFacts;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getPrice ()Lcc/noharry/agent/appserver/protocol/ModelPrice;
+	public final fun isNamed (Ljava/lang/String;)Z
+}
+
 public final class cc/noharry/agent/appserver/model/TextToolCallsKt {
 	public static final fun withTextToolCalls (Lkotlinx/coroutines/flow/Flow;Ljava/util/Set;Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun withTextToolCalls$default (Lkotlinx/coroutines/flow/Flow;Ljava/util/Set;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class cc/noharry/agent/appserver/model/UsageFields {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCacheHit ()Ljava/lang/String;
+	public final fun getCacheMiss ()Ljava/lang/String;
 }
 
 public abstract interface class cc/noharry/agent/appserver/model/WebLookup : cc/noharry/agent/runtime/WebFetchFallback, cc/noharry/agent/runtime/WebSearchProvider {
@@ -715,8 +835,8 @@ public final class cc/noharry/agent/appserver/server/AppServer {
 }
 
 public final class cc/noharry/agent/appserver/server/AppServerConfig {
-	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/appserver/runtime/Persona;Lkotlin/jvm/functions/Function1;Ljava/util/List;Lkotlin/jvm/functions/Function1;Ljava/util/List;Lcc/noharry/agent/appserver/model/ModelPreset;Lcc/noharry/agent/appserver/protocol/ConfirmationMode;Ljava/util/Set;Lkotlin/jvm/functions/Function0;ZLcc/noharry/agent/appserver/runtime/BuiltInFeatures;Ljava/util/List;ZZLcc/noharry/agent/appserver/runtime/ProviderPresets;Lcc/noharry/agent/appserver/runtime/VoicePort;Lcc/noharry/agent/appserver/runtime/HostModels;Lcc/noharry/agent/appserver/runtime/RunAddOns;Lcc/noharry/agent/appserver/runtime/ReplayCheck;Ljava/lang/Integer;Ljava/lang/String;Ljava/util/Set;ZI)V
-	public synthetic fun <init> (Ljava/lang/String;Lcc/noharry/agent/appserver/runtime/Persona;Lkotlin/jvm/functions/Function1;Ljava/util/List;Lkotlin/jvm/functions/Function1;Ljava/util/List;Lcc/noharry/agent/appserver/model/ModelPreset;Lcc/noharry/agent/appserver/protocol/ConfirmationMode;Ljava/util/Set;Lkotlin/jvm/functions/Function0;ZLcc/noharry/agent/appserver/runtime/BuiltInFeatures;Ljava/util/List;ZZLcc/noharry/agent/appserver/runtime/ProviderPresets;Lcc/noharry/agent/appserver/runtime/VoicePort;Lcc/noharry/agent/appserver/runtime/HostModels;Lcc/noharry/agent/appserver/runtime/RunAddOns;Lcc/noharry/agent/appserver/runtime/ReplayCheck;Ljava/lang/Integer;Ljava/lang/String;Ljava/util/Set;ZIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/appserver/runtime/Persona;Lkotlin/jvm/functions/Function1;Ljava/util/List;Lkotlin/jvm/functions/Function1;Ljava/util/List;Lcc/noharry/agent/appserver/model/ModelPreset;Lcc/noharry/agent/appserver/protocol/ConfirmationMode;Ljava/util/Set;Lkotlin/jvm/functions/Function0;ZLcc/noharry/agent/appserver/runtime/BuiltInFeatures;Ljava/util/List;ZZLcc/noharry/agent/appserver/runtime/ProviderPresets;Lcc/noharry/agent/appserver/runtime/VoicePort;Lcc/noharry/agent/appserver/runtime/HostModels;Lcc/noharry/agent/appserver/runtime/RunAddOns;Lcc/noharry/agent/appserver/runtime/ReplayCheck;Ljava/lang/Integer;Ljava/lang/String;Ljava/util/Set;ZILjava/util/Set;Ljava/util/Map;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcc/noharry/agent/appserver/runtime/Persona;Lkotlin/jvm/functions/Function1;Ljava/util/List;Lkotlin/jvm/functions/Function1;Ljava/util/List;Lcc/noharry/agent/appserver/model/ModelPreset;Lcc/noharry/agent/appserver/protocol/ConfirmationMode;Ljava/util/Set;Lkotlin/jvm/functions/Function0;ZLcc/noharry/agent/appserver/runtime/BuiltInFeatures;Ljava/util/List;ZZLcc/noharry/agent/appserver/runtime/ProviderPresets;Lcc/noharry/agent/appserver/runtime/VoicePort;Lcc/noharry/agent/appserver/runtime/HostModels;Lcc/noharry/agent/appserver/runtime/RunAddOns;Lcc/noharry/agent/appserver/runtime/ReplayCheck;Ljava/lang/Integer;Ljava/lang/String;Ljava/util/Set;ZILjava/util/Set;Ljava/util/Map;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getAllowUnsignedPackages ()Z
 	public final fun getApprovals ()Lcc/noharry/agent/appserver/protocol/ConfirmationMode;
 	public final fun getBuiltIns ()Lcc/noharry/agent/appserver/runtime/BuiltInFeatures;
@@ -724,8 +844,11 @@ public final class cc/noharry/agent/appserver/server/AppServerConfig {
 	public final fun getDiagnostics ()Z
 	public final fun getExtraTrustRoots ()Ljava/lang/Integer;
 	public final fun getHooks ()Ljava/util/List;
+	public final fun getIgnoredPlugins ()Ljava/util/Set;
 	public final fun getMaxScriptToolSeconds ()I
 	public final fun getModel ()Lcc/noharry/agent/appserver/model/ModelPreset;
+	public final fun getModelFacts ()Ljava/util/Map;
+	public final fun getModelPrices ()Ljava/util/Map;
 	public final fun getModels ()Lcc/noharry/agent/appserver/runtime/HostModels;
 	public final fun getName ()Ljava/lang/String;
 	public final fun getPersona ()Lcc/noharry/agent/appserver/runtime/Persona;
@@ -767,6 +890,7 @@ public final class cc/noharry/agent/appserver/server/AppServerTesting {
 	public final fun completedTurn (Lcc/noharry/agent/ThreadEvent$TurnCompleted;Lcc/noharry/agent/spi/reliability/RuntimeResult;)Lcc/noharry/agent/ThreadEvent$TurnCompleted;
 	public final fun deleteMcpServer (Landroid/content/Context;Ljava/lang/String;)Z
 	public final fun install (Lcc/noharry/agent/appserver/server/AppServerConfig;)V
+	public final fun models (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun noteToolCall (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public final fun prompt (Landroid/content/Context;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)Lcc/noharry/agent/appserver/server/AppServerTesting$Prompt;
 	public static synthetic fun prompt$default (Lcc/noharry/agent/appserver/server/AppServerTesting;Landroid/content/Context;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/appserver/server/AppServerTesting$Prompt;
@@ -942,6 +1066,12 @@ public final class cc/noharry/agent/appserver/server/PluginContext$DefaultImpls 
 	public static synthetic fun ownToolServer$default (Lcc/noharry/agent/appserver/server/PluginContext;Ljava/lang/String;ZZZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 	public static synthetic fun startOnBoot$default (Lcc/noharry/agent/appserver/server/PluginContext;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
 	public static synthetic fun tools$default (Lcc/noharry/agent/appserver/server/PluginContext;ZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+}
+
+public final class cc/noharry/agent/appserver/server/PluginDiscovery {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/server/PluginDiscovery;
+	public static final field MANIFEST_VALUE Ljava/lang/String;
+	public final fun find (Landroid/content/Context;Lcc/noharry/agent/appserver/server/AppServerConfig;)Ljava/util/List;
 }
 
 public final class cc/noharry/agent/appserver/server/PluginHost {

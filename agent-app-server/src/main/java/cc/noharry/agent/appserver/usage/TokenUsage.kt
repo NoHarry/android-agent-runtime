@@ -1,4 +1,6 @@
 package cc.noharry.agent.appserver.usage
+import cc.noharry.agent.appserver.model.UsageFields
+import cc.noharry.agent.appserver.model.knownUsageFields
 import cc.noharry.agent.appserver.protocol.TokenUsageState
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -19,8 +21,8 @@ data class TokenDelta(
 )
 
 internal fun cc.noharry.agent.Usage.toUsageDelta(): TokenDelta {
-    // One event is one model request: the runtime sums the call's usage frames and normalizes Anthropic's exclusive
-    // cache counts into inclusive inputTokens, so input already covers the cache reads.
+    // One event is one model request: the runtime sums the call's usage frames and normalizes the Messages API's
+    // exclusive cache counts into inclusive inputTokens, so input already covers the cache reads.
     val input = inputTokens.coerceAtLeast(cacheReadTokens + cacheWriteTokens)
     val miss = (input - cacheReadTokens).coerceAtLeast(0)
     return TokenDelta(
@@ -35,8 +37,12 @@ internal fun cc.noharry.agent.Usage.toUsageDelta(): TokenDelta {
     )
 }
 
-internal fun parseTokenUsage(text: String): TokenDelta? =
-    usageObjects(text).mapNotNull(::usageDelta).lastOrNull()
+/**
+ * The last usage a model call's answer ([text]: its body or its stream's events) reports, reading cached input from the
+ * wire protocols' fields and from those of [fields] (a service's own, [cc.noharry.agent.appserver.model.UsageFields]).
+ */
+internal fun parseTokenUsage(text: String, fields: List<UsageFields> = knownUsageFields()): TokenDelta? =
+    usageObjects(text).mapNotNull { usageDelta(it, fields) }.lastOrNull()
 
 private fun usageObjects(text: String): List<JsonObject> {
     val roots = mutableListOf<JsonObject>()
@@ -52,30 +58,31 @@ private fun usageObjects(text: String): List<JsonObject> {
         listOfNotNull(
             root.objectValue("usage"),
             root.objectValue("response")?.objectValue("usage"),
-            // Anthropic message_start nests usage under message.
+            // The Messages API's message_start nests usage under message.
             root.objectValue("message")?.objectValue("usage"),
         )
     }
 }
 
-private fun usageDelta(usage: JsonObject): TokenDelta? {
+private fun usageDelta(usage: JsonObject, fields: List<UsageFields>): TokenDelta? {
     val details = usage.objectValue("prompt_tokens_details") ?: usage.objectValue("input_tokens_details")
-    val deepSeekHit = usage.intValue("prompt_cache_hit_tokens")
-    val anthropicHit = usage.intValue("cache_read_input_tokens")
-    val cached = deepSeekHit ?: anthropicHit ?: details?.intValue("cached_tokens") ?: 0
-    val deepSeekMiss = usage.intValue("prompt_cache_miss_tokens")
-    val anthropicWrite = usage.intValue("cache_creation_input_tokens")
-    val anthropicExclusiveCache =
+    val serviceHit = fields.firstNotNullOfOrNull { usage.intValue(it.cacheHit) }
+    val messagesHit = usage.intValue("cache_read_input_tokens")
+    val cached = serviceHit ?: messagesHit ?: details?.intValue("cached_tokens") ?: 0
+    val serviceMiss = fields.firstNotNullOfOrNull { field -> field.cacheMiss?.let(usage::intValue) }
+    val messagesWrite = usage.intValue("cache_creation_input_tokens")
+    // The Messages API counts cache reads and writes apart from input_tokens.
+    val messagesExclusiveCache =
         usage.containsKey("cache_read_input_tokens") || usage.containsKey("cache_creation_input_tokens")
-    // DeepSeek miss is uncached input; Anthropic creation is cache write only.
-    val cacheWrite = deepSeekMiss ?: anthropicWrite ?: 0
+    // A service's cache miss is uncached input; the Messages API's creation is cache write only.
+    val cacheWrite = serviceMiss ?: messagesWrite ?: 0
     val rawInput = usage.intValue("prompt_tokens") ?: usage.intValue("input_tokens") ?: 0
-    val input = if (anthropicExclusiveCache) {
+    val input = if (messagesExclusiveCache) {
         rawInput + cached + cacheWrite
     } else {
-        maxOf(rawInput, cached + (deepSeekMiss ?: maxOf(rawInput - cached, 0)))
+        maxOf(rawInput, cached + (serviceMiss ?: maxOf(rawInput - cached, 0)))
     }
-    val miss = deepSeekMiss ?: (input - cached).coerceAtLeast(0)
+    val miss = serviceMiss ?: (input - cached).coerceAtLeast(0)
     val output = usage.intValue("completion_tokens") ?: usage.intValue("output_tokens") ?: 0
     val reasoning = usage.objectValue("completion_tokens_details")
         ?.intValue("reasoning_tokens")

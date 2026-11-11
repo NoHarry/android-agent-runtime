@@ -109,6 +109,10 @@ object AppServerMethods {
         request(UsageRequests.SET_PRICE),
         request(UsageRequests.SET_RATE),
         request(UsageRequests.SYNC_PRICES),
+        request(ServiceRequests.LIST),
+        request(ServiceRequests.BALANCE),
+        request(ServiceRequests.CHECKED),
+        request(ServiceRequests.CHECK),
         // Notifications a client sends the server.
         clientNotification(ClientNotifications.INITIALIZED),
         clientNotification(PresentationReports.STATE),

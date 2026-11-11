@@ -56,13 +56,13 @@ private fun profileFromValues(values: Map<String, String>, rawId: String): Provi
     val prefix = "$PROFILE_ENV_PREFIX${id.envProfileKey()}_"
     val provider = ModelProvider.from(values["${prefix}PROVIDER"] ?: values["${prefix}KIND"])
     val endpoint = ProviderEndpoint.from(values["${prefix}ENDPOINT"], provider)
-    val baseUrl = values["${prefix}BASE_URL"].orDefault(defaultBaseUrl(provider))
+    val baseUrl = values["${prefix}BASE_URL"].orEmpty().trim()
     return ProviderProfile(
         id = id,
         label = values["${prefix}LABEL"].orDefault(id),
         provider = provider,
         apiKey = values["${prefix}API_KEY"].orEmpty(),
-        model = values["${prefix}MODEL"].orDefault(defaultModel(provider)),
+        model = values["${prefix}MODEL"].orEmpty().trim(),
         baseUrl = baseUrl,
         endpoint = endpoint,
         variant = values["${prefix}VARIANT"].orEmpty(),
@@ -77,9 +77,9 @@ private fun profileFromValues(values: Map<String, String>, rawId: String): Provi
 }
 
 internal fun legacyProfile(values: Map<String, String>, provider: ModelProvider): ProviderProfile {
-    val model = values[providerModelName(provider)].orDefault(defaultModel(provider))
+    val model = values[providerModelName(provider)].orEmpty().trim()
     val endpoint = ProviderEndpoint.from(values[providerEndpointName(provider)], provider)
-    val baseUrl = values[providerBaseUrlName(provider)].orDefault(defaultBaseUrl(provider))
+    val baseUrl = values[providerBaseUrlName(provider)].orEmpty().trim()
     return ProviderProfile(
         id = provider.wireName,
         label = provider.label,
@@ -125,7 +125,7 @@ private fun ProviderProfile.withOverride(override: ProviderProfileOverride?): Pr
 
 private fun ProviderProfileOverride.toProfile(id: String): ProviderProfile? {
     val provider = provider ?: return null
-    val model = model ?: defaultModel(provider)
+    val model = model.orEmpty()
     val baseUrl = baseUrl?.takeIf { it.isNotBlank() } ?: return null
     return ProviderProfile(
         id = id.normalizedProfileId().takeIf { it.isNotBlank() } ?: return null,
@@ -247,15 +247,3 @@ private fun variant(values: Map<String, String>, provider: ModelProvider, model:
 
 private fun providerModelVariantName(provider: ModelProvider, model: String): String =
     "${providerVariantName(provider)}$MODEL_VARIANT_KEY_SEPARATOR${model.preferenceKey()}"
-
-private fun defaultModel(provider: ModelProvider): String =
-    when (provider) {
-        ModelProvider.ANTHROPIC -> DEFAULT_ANTHROPIC_MODEL
-        ModelProvider.OPENAI -> DEFAULT_OPENAI_MODEL
-    }
-
-private fun defaultBaseUrl(provider: ModelProvider): String =
-    when (provider) {
-        ModelProvider.ANTHROPIC -> DEFAULT_ANTHROPIC_BASE_URL
-        ModelProvider.OPENAI -> DEFAULT_OPENAI_BASE_URL
-    }

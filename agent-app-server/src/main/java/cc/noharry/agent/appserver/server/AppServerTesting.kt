@@ -38,6 +38,7 @@ internal fun installHost(config: AppServerConfig) {
         config.extraTrustRoots, scene = config.scene, diagnostics = config.diagnostics, tools = config.tools,
         rules = config.rules, skills = config.skills, hooks = config.hooks, modelPreset = config.model,
         simulatedModel = config.simulatedModel, replayCheck = config.replayCheck, unaskedTools = config.unaskedTools,
+        modelFacts = config.modelFacts, modelPrices = config.modelPrices,
     )
 }
 
@@ -58,6 +59,8 @@ internal fun installHost(config: AppServerConfig) {
  * - [saveMcpServer], [deleteMcpServer] and [switchMcpProvider]: the MCP list as the person sets it up (a server added
  *   or edited, deleted, a row switched).
  * - [requestsAnswered]: the requests a server answers, so a host checks its protocol's list against them.
+ * - [models]: a profile's model list as the server fetches it, through the running adapters
+ *   ([cc.noharry.agent.appserver.model.ProviderAdapter]), so an adapter's module checks its services' lists.
  *
  * Process-wide, as the server is: a test that installs puts the bare host back when it ends.
  */
@@ -124,6 +127,10 @@ object AppServerTesting {
         )
         return hub.routes.methodNames + CONNECTION_METHODS
     }
+
+    /** The models [profile] offers with [apiKey], as the server lists them for the settings page. */
+    suspend fun models(context: Context, profile: cc.noharry.agent.appserver.model.ProviderProfile, apiKey: String): List<String> =
+        cc.noharry.agent.appserver.model.listModels(context, cc.noharry.agent.transport.OkHttpHttpTransport(), profile, apiKey)
 
     private inline fun <reified T> standIn(): T = Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { _, method, _ ->
         error("${method.name} is not answered while requests are only listed")

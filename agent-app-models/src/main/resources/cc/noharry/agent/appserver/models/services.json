@@ -1,0 +1,1280 @@
+{
+  "format": 1,
+  "services": [
+    {
+      "id": "deepseek",
+      "label": "DeepSeek",
+      "source": "https://api-docs.deepseek.com/",
+      "asOf": "2026-11-11",
+      "endpoints": [
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://api.deepseek.com"
+        },
+        {
+          "endpoint": "messages",
+          "baseUrl": "https://api.deepseek.com/anthropic"
+        }
+      ],
+      "keyHint": "Create an API key at https://platform.deepseek.com/api_keys",
+      "modelsUrl": "https://api.deepseek.com/models",
+      "usageFields": {
+        "cacheHit": "prompt_cache_hit_tokens",
+        "cacheMiss": "prompt_cache_miss_tokens"
+      },
+      "errors": [
+        {
+          "kind": "QUOTA",
+          "status": 402,
+          "source": "https://api-docs.deepseek.com/quick_start/error_codes"
+        }
+      ],
+      "balance": true,
+      "relayCheck": true,
+      "currency": "CNY",
+      "pricesSource": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "notes": [
+        "Base URLs: https://api-docs.deepseek.com/ (OpenAI) and https://api-docs.deepseek.com/guides/anthropic_api (Anthropic).",
+        "Prices are the peak rates (Beijing time Mon-Fri 9:00-12:00 and 14:00-18:00); off-peak rates are half. The English page lists USD prices.",
+        "deepseek-chat and deepseek-reasoner were discontinued on 2026-07-24 (https://api-docs.deepseek.com/updates).",
+        "No error is documented for an exceeded context window, and none for a timeout."
+      ],
+      "models": [
+        {
+          "id": "deepseek-flash",
+          "aliases": [
+            "deepseek-v4-flash",
+            "deepseek-v4-flash-vision-exp"
+          ],
+          "source": "https://api-docs.deepseek.com/quick_start/pricing",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 393216,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "price": {
+            "input": 2,
+            "output": 8,
+            "cachedInput": 0.04,
+            "tier": "peak; off-peak 1 / 0.02 / 4"
+          },
+          "note": "Context and output from https://api-docs.deepseek.com/api/list-models; the aliases are legacy ids the service routes to it."
+        },
+        {
+          "id": "deepseek-v4-pro",
+          "source": "https://api-docs.deepseek.com/quick_start/pricing",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 393216,
+          "imageInput": false,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "price": {
+            "input": 9,
+            "output": 27,
+            "cachedInput": 0.3,
+            "tier": "peak; off-peak 4.5 / 0.15 / 13.5"
+          }
+        }
+      ]
+    },
+    {
+      "id": "openai",
+      "label": "OpenAI",
+      "source": "https://developers.openai.com/api/reference/overview",
+      "asOf": "2026-11-11",
+      "endpoints": [
+        {
+          "endpoint": "responses",
+          "baseUrl": "https://api.openai.com/v1"
+        },
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://api.openai.com/v1"
+        }
+      ],
+      "keyHint": "Create an API key at https://platform.openai.com/settings/organization/api-keys",
+      "errors": [
+        {
+          "kind": "QUOTA",
+          "status": 429,
+          "pattern": "credit_balance_exhausted|organization_spend_limit_exceeded|project_spend_limit_exceeded|organization_usage_limit_exceeded",
+          "source": "https://developers.openai.com/api/docs/guides/error-codes"
+        }
+      ],
+      "currency": "USD",
+      "pricesSource": "https://developers.openai.com/api/docs/pricing",
+      "notes": [
+        "GPT-6 Astra, GPT-6.1 Sol and GPT-6.1 Terra take Chat Completions but call tools only through Responses; GPT-6 Luna calls tools on Chat Completions only with reasoning_effort none (https://developers.openai.com/api/docs/guides/latest-model). Responses is the default endpoint.",
+        "Prompts over 272K input tokens are priced at 2x input and cache rates and 1.5x output.",
+        "The model list (GET /v1/models) includes embedding, image and audio models."
+      ],
+      "models": [
+        {
+          "id": "gpt-6-astra",
+          "source": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+          "contextWindow": 1050000,
+          "maxOutputTokens": 128000,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "price": {
+            "input": 10.0,
+            "output": 50.0,
+            "cachedInput": 1.0,
+            "cacheWrite": 12.5,
+            "tier": "standard, prompts up to 272K tokens; cacheWrite is the 30-minute write"
+          }
+        },
+        {
+          "id": "gpt-6.1-sol",
+          "source": "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+          "contextWindow": 1050000,
+          "maxOutputTokens": 128000,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "price": {
+            "input": 2.0,
+            "output": 10.0,
+            "cachedInput": 0.1,
+            "cacheWrite": 2.5,
+            "tier": "standard, prompts up to 272K tokens; cacheWrite is the 30-minute write"
+          }
+        },
+        {
+          "id": "gpt-6.1-terra",
+          "source": "https://developers.openai.com/api/docs/models/gpt-6.1-terra",
+          "contextWindow": 1050000,
+          "maxOutputTokens": 128000,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "price": {
+            "input": 1.0,
+            "output": 5.0,
+            "cachedInput": 0.05,
+            "cacheWrite": 1.25,
+            "tier": "standard, prompts up to 272K tokens; cacheWrite is the 30-minute write"
+          }
+        },
+        {
+          "id": "gpt-6-luna",
+          "source": "https://developers.openai.com/api/docs/models/gpt-6-luna",
+          "contextWindow": 1050000,
+          "maxOutputTokens": 128000,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "price": {
+            "input": 0.1,
+            "output": 0.5,
+            "cachedInput": 0.01,
+            "cacheWrite": 0.125,
+            "tier": "standard, prompts up to 272K tokens; cacheWrite is the 30-minute write"
+          }
+        }
+      ]
+    },
+    {
+      "id": "anthropic",
+      "label": "Anthropic",
+      "source": "https://platform.claude.com/docs/en/api/overview",
+      "asOf": "2026-11-11",
+      "endpoints": [
+        {
+          "endpoint": "messages",
+          "baseUrl": "https://api.anthropic.com/v1"
+        }
+      ],
+      "keyHint": "Create an API key at https://platform.claude.com/settings/keys",
+      "errors": [
+        {
+          "kind": "CONTEXT_WINDOW",
+          "status": 400,
+          "pattern": "prompt is too long",
+          "source": "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+        },
+        {
+          "kind": "TIMEOUT",
+          "pattern": "timeout_error",
+          "source": "https://platform.claude.com/docs/en/api/errors"
+        }
+      ],
+      "currency": "USD",
+      "pricesSource": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "notes": [
+        "The docs give the window as 1M and the output as 128K (Sonnet 5.5's 128,000 written out); GET /v1/models reports the exact values.",
+        "Opus 5.5, Sonnet 5.5 and Fable 5.2 refuse a forced tool_choice; Opus 5.5 and Fable 5.2 always think.",
+        "cacheWrite is the 5-minute cache write; a 1-hour write costs more."
+      ],
+      "models": [
+        {
+          "id": "claude-opus-5-5",
+          "source": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "price": {
+            "input": 4,
+            "output": 20,
+            "cachedInput": 0.2,
+            "cacheWrite": 5
+          }
+        },
+        {
+          "id": "claude-sonnet-5-5",
+          "source": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "price": {
+            "input": 2,
+            "output": 10,
+            "cachedInput": 0.1,
+            "cacheWrite": 2.5
+          }
+        },
+        {
+          "id": "claude-haiku-5-5",
+          "source": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "price": {
+            "input": 0.1,
+            "output": 0.5,
+            "cachedInput": 0.01,
+            "cacheWrite": 0.125,
+            "tier": "prompts up to 100,000 tokens; over that 0.50 / 0.05 / 2.50, write 0.625"
+          }
+        },
+        {
+          "id": "claude-fable-5-2",
+          "source": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "price": {
+            "input": 8,
+            "output": 40,
+            "cachedInput": 0.2,
+            "cacheWrite": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "gemini",
+      "label": "Google Gemini",
+      "source": "https://aistudio.google.com/docs/openai",
+      "asOf": "2026-11-11",
+      "endpoints": [
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+        }
+      ],
+      "keyHint": "Create an API key at https://aistudio.google.com/apikey",
+      "listedIdPrefix": "models/",
+      "errors": [
+        {
+          "kind": "QUOTA",
+          "status": 429,
+          "pattern": "quota_exceeded",
+          "source": "https://aistudio.google.com/docs/api-errors"
+        },
+        {
+          "kind": "QUOTA",
+          "status": 400,
+          "pattern": "free tier is not available",
+          "source": "https://aistudio.google.com/docs/api-errors?generate-content=true"
+        },
+        {
+          "kind": "AUTH",
+          "status": 400,
+          "pattern": "API_KEY_INVALID",
+          "source": "https://aistudio.google.com/docs/api-errors?generate-content=true"
+        },
+        {
+          "kind": "CONTEXT_WINDOW",
+          "status": 500,
+          "pattern": "input context is too long",
+          "source": "https://aistudio.google.com/docs/api-errors?generate-content=true"
+        },
+        {
+          "kind": "TIMEOUT",
+          "pattern": "deadline_exceeded",
+          "source": "https://aistudio.google.com/docs/api-errors"
+        }
+      ],
+      "currency": "USD",
+      "pricesSource": "https://aistudio.google.com/docs/pricing",
+      "notes": [
+        "Gemini 4 prices double on 2026-12-01 (4.00 / 0.20 / 20.00) and Gemini 3.8 Flash prices on 2027-01-01 (1.50 / 0.15 / 7.50).",
+        "Gemini 4 caps one non-streaming answer at 32,768 tokens (65,536 streaming).",
+        "The list's ids are read without a models/ prefix should the list have one (its output is not documented).",
+        "The error pages describe the native APIs; none covers the OpenAI-compatible endpoint."
+      ],
+      "models": [
+        {
+          "id": "gemini-4-carbon",
+          "source": "https://aistudio.google.com/docs/models/gemini-4-carbon",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 65536,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "price": {
+            "input": 2.0,
+            "output": 10.0,
+            "cachedInput": 0.1,
+            "tier": "through 2026-11-30"
+          }
+        },
+        {
+          "id": "gemini-4-argon",
+          "source": "https://aistudio.google.com/docs/models/gemini-4-argon",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 65536,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "price": {
+            "input": 2.0,
+            "output": 10.0,
+            "cachedInput": 0.1,
+            "tier": "through 2026-11-30"
+          }
+        },
+        {
+          "id": "gemini-3.8-flash",
+          "source": "https://aistudio.google.com/docs/models/gemini-3.8-flash",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 65536,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "price": {
+            "input": 0.75,
+            "output": 3.75,
+            "cachedInput": 0.075,
+            "tier": "through 2026-12-31"
+          }
+        },
+        {
+          "id": "gemini-3.5-flash-lite",
+          "source": "https://aistudio.google.com/docs/models/gemini-3.5-flash-lite",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 65536,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high"
+          ],
+          "price": {
+            "input": 0.3,
+            "output": 2.5,
+            "cachedInput": 0.03
+          }
+        }
+      ]
+    },
+    {
+      "id": "xai",
+      "label": "xAI",
+      "source": "https://docs.x.ai/developers/rest-api-reference/inference",
+      "asOf": "2026-11-11",
+      "endpoints": [
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://api.x.ai/v1",
+          "region": "global"
+        },
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://us.api.x.ai/v1",
+          "region": "us"
+        },
+        {
+          "endpoint": "responses",
+          "baseUrl": "https://api.x.ai/v1",
+          "region": "global"
+        }
+      ],
+      "keyHint": "Create an API key at https://console.x.ai/team/default/api-keys",
+      "currency": "USD",
+      "pricesSource": "https://docs.x.ai/developers/pricing",
+      "notes": [
+        "Chat Completions is a legacy endpoint there; new features come to Responses first (https://docs.x.ai/developers/model-capabilities/legacy/chat-completions).",
+        "Prompts of 200K tokens or more are billed at twice these rates; the US endpoint costs 10% more.",
+        "The model pages state no output limit; no error is documented for a balance, a context window, a server error or a timeout (https://docs.x.ai/developers/debugging)."
+      ],
+      "models": [
+        {
+          "id": "grok-4.7",
+          "source": "https://docs.x.ai/developers/models/grok-4.7",
+          "contextWindow": 500000,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "price": {
+            "input": 2.0,
+            "output": 6.0,
+            "cachedInput": 0.5,
+            "tier": "prompts under 200K tokens"
+          }
+        },
+        {
+          "id": "grok-4.3",
+          "aliases": [
+            "grok-4.3-latest"
+          ],
+          "source": "https://docs.x.ai/developers/models/grok-4.3",
+          "contextWindow": 1000000,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "price": {
+            "input": 1.25,
+            "output": 2.5,
+            "cachedInput": 0.2,
+            "tier": "prompts under 200K tokens"
+          }
+        }
+      ]
+    },
+    {
+      "id": "openrouter",
+      "label": "OpenRouter",
+      "source": "https://openrouter.ai/docs/quickstart",
+      "asOf": "2026-11-11",
+      "endpoints": [
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://openrouter.ai/api/v1"
+        }
+      ],
+      "keyHint": "Create an API key at https://openrouter.ai/keys",
+      "errors": [
+        {
+          "kind": "QUOTA",
+          "status": 403,
+          "pattern": "openrouter_(guardrail_budget|workspace_budget|key_limit)",
+          "source": "https://openrouter.ai/docs/api_reference/errors-and-debugging"
+        }
+      ],
+      "currency": "USD",
+      "notes": [
+        "It routes other services' models (author/model ids); their facts and prices are in its live list (GET /api/v1/models), which this file does not copy.",
+        "A failure after the model has started comes with HTTP 200, in the body or as a stream event."
+      ],
+      "models": []
+    },
+    {
+      "id": "groq",
+      "label": "Groq",
+      "source": "https://console.groq.com/docs/openai",
+      "asOf": "2026-11-11",
+      "endpoints": [
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://api.groq.com/openai/v1"
+        }
+      ],
+      "keyHint": "Create an API key at https://console.groq.com/keys",
+      "errors": [
+        {
+          "kind": "QUOTA",
+          "status": 400,
+          "pattern": "blocked_api_access",
+          "source": "https://console.groq.com/docs/spend-limits"
+        },
+        {
+          "kind": "SERVER",
+          "status": 498,
+          "source": "https://console.groq.com/docs/errors"
+        }
+      ],
+      "currency": "USD",
+      "pricesSource": "https://console.groq.com/docs/models",
+      "notes": [
+        "The model list includes speech and guard models; ids carry their author (openai/gpt-oss-120b)."
+      ],
+      "models": [
+        {
+          "id": "openai/gpt-oss-120b",
+          "source": "https://console.groq.com/docs/model/openai/gpt-oss-120b",
+          "contextWindow": 131072,
+          "maxOutputTokens": 65536,
+          "imageInput": false,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "price": {
+            "input": 0.15,
+            "output": 0.6,
+            "cachedInput": 0.075
+          }
+        },
+        {
+          "id": "openai/gpt-oss-20b",
+          "source": "https://console.groq.com/docs/model/openai/gpt-oss-20b",
+          "contextWindow": 131072,
+          "maxOutputTokens": 65536,
+          "imageInput": false,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "price": {
+            "input": 0.075,
+            "output": 0.3,
+            "cachedInput": 0.037
+          }
+        }
+      ]
+    },
+    {
+      "id": "moonshot",
+      "label": "Moonshot (Kimi)",
+      "source": "https://platform.kimi.com/docs/api/overview",
+      "asOf": "2026-11-11",
+      "endpoints": [
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://api.moonshot.cn/v1",
+          "region": "cn"
+        },
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://api.moonshot.ai/v1",
+          "region": "global"
+        }
+      ],
+      "keyHint": "Create an API key at https://platform.kimi.com/console/api-keys (international: https://platform.kimi.ai/console/api-keys); the two sites' keys are not interchangeable",
+      "errors": [
+        {
+          "kind": "QUOTA",
+          "status": 429,
+          "pattern": "exceeded_current_quota_error",
+          "source": "https://platform.kimi.ai/docs/api/errors"
+        },
+        {
+          "kind": "SERVER",
+          "status": 429,
+          "pattern": "engine_overloaded_error",
+          "source": "https://platform.kimi.ai/docs/api/errors"
+        },
+        {
+          "kind": "CONTEXT_WINDOW",
+          "status": 400,
+          "pattern": "Input token length too long",
+          "source": "https://platform.kimi.ai/docs/api/errors"
+        }
+      ],
+      "currency": "CNY",
+      "pricesSource": "https://platform.kimi.com/docs/pricing/chat",
+      "notes": [
+        "Prices from the China site in CNY; the international site lists USD (https://platform.kimi.ai/docs/pricing/chat). cacheWrite is the 5-minute write.",
+        "K3 models always think, and take temperature 1.0, top_p 0.95 and n 1 only.",
+        "The output limit is the documented ceiling of max_completion_tokens (131072 by default); the service lowers it to the context left."
+      ],
+      "models": [
+        {
+          "id": "kimi-k3.1-pro",
+          "source": "https://platform.kimi.ai/docs/guide/kimi-k3-1-pro-quickstart",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 1048576,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "price": {
+            "input": 13.0,
+            "output": 68.0,
+            "cachedInput": 1.3,
+            "cacheWrite": 13.0
+          }
+        },
+        {
+          "id": "kimi-k3.1-pro-highspeed",
+          "source": "https://platform.kimi.ai/docs/api/models-overview",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 1048576,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "price": {
+            "input": 26.0,
+            "output": 136.0,
+            "cachedInput": 1.3,
+            "cacheWrite": 26.0
+          }
+        },
+        {
+          "id": "kimi-k3",
+          "source": "https://platform.kimi.ai/docs/guide/kimi-k3-quickstart",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 1048576,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "price": {
+            "input": 20.0,
+            "output": 100.0,
+            "cachedInput": 2.0,
+            "cacheWrite": 20.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "zhipu",
+      "label": "Zhipu (GLM)",
+      "source": "https://docs.bigmodel.cn/cn/guide/develop/openai/introduction.md",
+      "asOf": "2026-11-11",
+      "endpoints": [
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
+          "region": "cn"
+        },
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://api.z.ai/api/paas/v4",
+          "region": "global"
+        }
+      ],
+      "keyHint": "Create an API key at https://bigmodel.cn/usercenter/proj-mgmt/apikeys (international: https://z.ai/manage-apikey/apikey-list)",
+      "listsModels": false,
+      "errors": [
+        {
+          "kind": "QUOTA",
+          "status": 429,
+          "pattern": "\"code\"\\s*:\\s*\"?1113\\b",
+          "source": "https://docs.z.ai/api-reference/api-code.md"
+        },
+        {
+          "kind": "SERVER",
+          "status": 429,
+          "pattern": "\"code\"\\s*:\\s*\"?1305\\b",
+          "source": "https://docs.z.ai/api-reference/api-code.md"
+        },
+        {
+          "kind": "CONTEXT_WINDOW",
+          "status": 400,
+          "pattern": "\"code\"\\s*:\\s*\"?1261\\b",
+          "source": "https://docs.z.ai/api-reference/api-code.md"
+        }
+      ],
+      "currency": "CNY",
+      "pricesSource": "https://docs.bigmodel.cn/cn/guide/start/pricing.md",
+      "notes": [
+        "No model list is documented: the models offered are those below.",
+        "The window is given as 1M (read here as 1,000,000). GLM-5.3 and its Flash models always think: thinking.type disabled is refused.",
+        "Prices from the China site in CNY; the international site lists USD (https://docs.z.ai/guides/overview/pricing.md). A Coding Plan key uses its own base (/api/coding/paas/v4)."
+      ],
+      "models": [
+        {
+          "id": "glm-5.3",
+          "source": "https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3.md",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131072,
+          "imageInput": false,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "price": {
+            "input": 8,
+            "output": 28,
+            "cachedInput": 2
+          }
+        },
+        {
+          "id": "glm-5.3-flash",
+          "source": "https://docs.bigmodel.cn/cn/guide/models/vlm/glm-5.3-flash.md",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131072,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "price": {
+            "input": 0.8,
+            "output": 2.8,
+            "cachedInput": 0.23
+          }
+        },
+        {
+          "id": "glm-5.3-flashx",
+          "source": "https://docs.bigmodel.cn/cn/guide/models/vlm/glm-5.3-flash.md",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131072,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "price": {
+            "input": 2,
+            "output": 7,
+            "cachedInput": 0.57
+          }
+        }
+      ]
+    },
+    {
+      "id": "dashscope",
+      "label": "Alibaba Cloud Model Studio (Qwen)",
+      "source": "https://help.aliyun.com/zh/model-studio/compatibility-of-openai-with-dashscope.md",
+      "asOf": "2026-11-11",
+      "endpoints": [
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+          "region": "cn"
+        },
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+          "region": "global"
+        }
+      ],
+      "hosts": [
+        ".maas.aliyuncs.com"
+      ],
+      "keyHint": "Create an API key at https://bailian.console.aliyun.com/cn-beijing/model/settings/api-key (international: https://modelstudio.console.alibabacloud.com/ap-southeast-1/settings/api-key); a key works only in the region it was made in",
+      "listsModels": false,
+      "errors": [
+        {
+          "kind": "QUOTA",
+          "status": 400,
+          "pattern": "Arrearage",
+          "source": "https://help.aliyun.com/zh/model-studio/error-code.md"
+        },
+        {
+          "kind": "QUOTA",
+          "status": 429,
+          "pattern": "Free allocated quota exceeded",
+          "source": "https://help.aliyun.com/zh/model-studio/error-code.md"
+        },
+        {
+          "kind": "RATE_LIMIT",
+          "status": 429,
+          "pattern": "insufficient_quota|Throttling",
+          "source": "https://help.aliyun.com/zh/model-studio/error-code.md"
+        },
+        {
+          "kind": "CONTEXT_WINDOW",
+          "status": 400,
+          "pattern": "Range of input length should be",
+          "source": "https://help.aliyun.com/zh/model-studio/error-code.md"
+        },
+        {
+          "kind": "TIMEOUT",
+          "pattern": "RequestTimeOut",
+          "source": "https://help.aliyun.com/zh/model-studio/error-code.md"
+        }
+      ],
+      "currency": "CNY",
+      "pricesSource": "https://help.aliyun.com/zh/model-studio/models.md",
+      "notes": [
+        "The documented base is now an account's own (https://{WorkspaceId}.{region}.maas.aliyuncs.com/compatible-mode/v1), which these hosts take too; the dashscope hosts get no new features after 2026-09-30.",
+        "Its insufficient_quota is a tokens-per-minute limit, not an empty balance; an empty balance is Arrearage (400).",
+        "qwen3.8-max and qwen3.8-flash keep their thinking in history (preserve_thinking on by default).",
+        "No OpenAI-compatible model list is documented: the models offered are those below. Prices from the Beijing region in CNY; Singapore lists USD."
+      ],
+      "models": [
+        {
+          "id": "qwen3.8-max",
+          "source": "https://help.aliyun.com/zh/model-studio/qwen3-8-max.md",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131072,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "xhigh"
+          ],
+          "price": {
+            "input": 12,
+            "output": 36,
+            "cachedInput": 1.5
+          }
+        },
+        {
+          "id": "qwen3.7-plus",
+          "source": "https://help.aliyun.com/zh/model-studio/qwen3-7-plus.md",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131072,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "price": {
+            "input": 2,
+            "output": 8,
+            "cachedInput": 0.4,
+            "tier": "prompts up to 256K tokens; up to 1M: 6 / 1.2 / 24"
+          }
+        },
+        {
+          "id": "qwen3.8-flash",
+          "source": "https://help.aliyun.com/zh/model-studio/qwen3-8-flash.md",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131072,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "xhigh"
+          ],
+          "price": {
+            "input": 0.8,
+            "output": 2.7,
+            "cachedInput": 0.1
+          }
+        }
+      ]
+    },
+    {
+      "id": "volcengine",
+      "label": "Volcengine Ark (Doubao)",
+      "source": "https://docs.volcengine.com/docs/82379/1298459",
+      "asOf": "2026-11-11",
+      "endpoints": [
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+          "region": "cn"
+        }
+      ],
+      "keyHint": "Create an API key at https://ark.volcengine.com/region:cn-beijing/apiKey",
+      "errors": [
+        {
+          "kind": "QUOTA",
+          "status": 403,
+          "pattern": "AccountOverdueError",
+          "source": "https://docs.volcengine.com/docs/82379/1299023"
+        },
+        {
+          "kind": "QUOTA",
+          "status": 429,
+          "pattern": "QuotaExceeded",
+          "source": "https://docs.volcengine.com/docs/82379/1299023"
+        },
+        {
+          "kind": "SERVER",
+          "status": 429,
+          "pattern": "ServerOverloaded",
+          "source": "https://docs.volcengine.com/docs/82379/1299023"
+        },
+        {
+          "kind": "CONTEXT_WINDOW",
+          "status": 400,
+          "pattern": "OutofContextError",
+          "source": "https://docs.volcengine.com/docs/82379/1299023"
+        }
+      ],
+      "currency": "CNY",
+      "pricesSource": "https://docs.volcengine.com/docs/82379/1544106",
+      "notes": [
+        "Its K is 1024 tokens (the model list's own numbers). An answer is cut at 4K tokens unless the request sets max_tokens.",
+        "OutofContextError is documented only for requests with pictures. BytePlus ModelArk, its international service, has other model ids and is not in this file."
+      ],
+      "models": [
+        {
+          "id": "doubao-seed-2-1-pro-260915",
+          "source": "https://docs.volcengine.com/docs/82379/1330310",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 262144,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high"
+          ],
+          "price": {
+            "input": 6.0,
+            "output": 30.0,
+            "cachedInput": 1.2
+          }
+        },
+        {
+          "id": "doubao-seed-2-1-lite-260915",
+          "source": "https://docs.volcengine.com/docs/82379/1330310",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 262144,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high"
+          ],
+          "price": {
+            "input": 0.8,
+            "output": 2.7,
+            "cachedInput": 0.16
+          }
+        },
+        {
+          "id": "doubao-seed-2-1-turbo-260628",
+          "source": "https://docs.volcengine.com/docs/82379/1330310",
+          "contextWindow": 262144,
+          "maxOutputTokens": 262144,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high"
+          ],
+          "price": {
+            "input": 3.0,
+            "output": 15.0,
+            "cachedInput": 0.6
+          }
+        },
+        {
+          "id": "doubao-seed-evolving",
+          "source": "https://docs.volcengine.com/docs/82379/1330310",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 262144,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high"
+          ],
+          "price": {
+            "input": 6.0,
+            "output": 30.0,
+            "cachedInput": 1.2
+          }
+        }
+      ]
+    },
+    {
+      "id": "minimax",
+      "label": "MiniMax",
+      "source": "https://platform.minimax.cn/docs/guides/text-generation",
+      "asOf": "2026-11-11",
+      "endpoints": [
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://api.minimax.cn/v1",
+          "region": "cn"
+        },
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://api.minimax.io/v1",
+          "region": "global"
+        }
+      ],
+      "keyHint": "Create an API key at https://platform.minimax.cn/user-center/basic-information/interface-key (international: https://platform.minimax.io/user-center/basic-information/interface-key)",
+      "errors": [
+        {
+          "kind": "QUOTA",
+          "pattern": "\"status_code\"\\s*:\\s*(1008)\\b",
+          "source": "https://platform.minimax.io/docs/api-reference/errorcode"
+        },
+        {
+          "kind": "RATE_LIMIT",
+          "pattern": "\"status_code\"\\s*:\\s*(1002)\\b",
+          "source": "https://platform.minimax.io/docs/api-reference/errorcode"
+        },
+        {
+          "kind": "AUTH",
+          "pattern": "\"status_code\"\\s*:\\s*(1004|2049)\\b",
+          "source": "https://platform.minimax.io/docs/api-reference/errorcode"
+        },
+        {
+          "kind": "TIMEOUT",
+          "pattern": "\"status_code\"\\s*:\\s*(1001|2066)\\b",
+          "source": "https://platform.minimax.io/docs/api-reference/errorcode"
+        },
+        {
+          "kind": "SERVER",
+          "pattern": "\"status_code\"\\s*:\\s*(1000|1024|2064)\\b",
+          "source": "https://platform.minimax.io/docs/api-reference/errorcode"
+        }
+      ],
+      "currency": "CNY",
+      "pricesSource": "https://platform.minimax.cn/docs/pricing/overview",
+      "notes": [
+        "Its error codes come in the body (base_resp.status_code); the page does not say with which HTTP status, so they are read only from a call that failed.",
+        "Thinking cannot be turned off; temperature and top_p are fixed. Prices from the China site in CNY; the international site lists USD."
+      ],
+      "models": [
+        {
+          "id": "MiniMax-M3.1-Flash",
+          "source": "https://platform.minimax.io/docs/guides/text-generation",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 524288,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "price": {
+            "input": 1.0,
+            "output": 4.0,
+            "cachedInput": 0.1
+          }
+        },
+        {
+          "id": "MiniMax-M3",
+          "source": "https://platform.minimax.io/docs/api-reference/text-chat-openai",
+          "contextWindow": 1000000,
+          "maxOutputTokens": 524288,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "price": {
+            "input": 2.1,
+            "output": 8.4,
+            "cachedInput": 0.42,
+            "tier": "prompts up to 512K tokens; over: 4.20 / 0.84 / 16.80"
+          }
+        }
+      ]
+    },
+    {
+      "id": "siliconflow",
+      "label": "SiliconFlow",
+      "source": "https://docs.siliconflow.cn/docs/userguide/quickstart",
+      "asOf": "2026-11-11",
+      "endpoints": [
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://api.siliconflow.cn/v1",
+          "region": "cn"
+        },
+        {
+          "endpoint": "chat_completions",
+          "baseUrl": "https://api.siliconflow.com/v1",
+          "region": "global"
+        }
+      ],
+      "keyHint": "Create an API key at https://cloud.siliconflow.cn/account/ak (international: https://cloud.siliconflow.com/account/ak)",
+      "usageFields": {
+        "cacheHit": "prompt_cache_hit_tokens",
+        "cacheMiss": "prompt_cache_miss_tokens"
+      },
+      "currency": "CNY",
+      "pricesSource": "https://www.siliconflow.cn/pricing",
+      "notes": [
+        "It hosts other makers' models under their ids (author/model); its list (GET /v1/models) includes image, audio and embedding models.",
+        "Output limits from the international model pages; prices from the China site in CNY (DeepSeek-V4-Flash at its standard hours; 2:00-8:00 costs half)."
+      ],
+      "models": [
+        {
+          "id": "deepseek-ai/DeepSeek-V4-Flash",
+          "source": "https://www.siliconflow.cn/models",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 393216,
+          "imageInput": false,
+          "toolCalls": true,
+          "reasoning": true,
+          "reasoningEfforts": [
+            "high",
+            "max"
+          ],
+          "price": {
+            "input": 3.0,
+            "output": 9.0,
+            "cachedInput": 0.3,
+            "tier": "0:00-2:00 and 8:00-24:00"
+          }
+        },
+        {
+          "id": "zai-org/GLM-5.2",
+          "source": "https://www.siliconflow.com/models/glm-5-2",
+          "contextWindow": 1048576,
+          "maxOutputTokens": 262144,
+          "imageInput": false,
+          "toolCalls": true,
+          "reasoning": true,
+          "price": {
+            "input": 8.0,
+            "output": 28.0,
+            "cachedInput": 2.0
+          }
+        },
+        {
+          "id": "moonshotai/Kimi-K2.7-Code",
+          "source": "https://www.siliconflow.com/models/kimi-k2-7-code",
+          "contextWindow": 262144,
+          "maxOutputTokens": 262144,
+          "imageInput": true,
+          "toolCalls": true,
+          "reasoning": true,
+          "price": {
+            "input": 6.5,
+            "output": 27.0,
+            "cachedInput": 1.3
+          }
+        }
+      ]
+    }
+  ]
+}

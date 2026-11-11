@@ -41,10 +41,11 @@ include(":agent-a2a-client-official")
 include(":agent-acp")
 // One version for all of them.
 include(":agent-bom")
-// The app server (experimental): its protocol and the server with its plugin kernel. Its first-party plugins are source
-// modules of the Bothy app, not published.
+// The app server (experimental): its protocol, the server with its plugin kernel, and the model services' plugin. Its
+// other first-party plugins are source modules of the Bothy app, not published.
 include(":agent-app-protocol")
 include(":agent-app-server")
+include(":agent-app-models")
 // Samples (not published).
 include(":samples:quickstart-jvm")
 include(":samples:acp-jvm")

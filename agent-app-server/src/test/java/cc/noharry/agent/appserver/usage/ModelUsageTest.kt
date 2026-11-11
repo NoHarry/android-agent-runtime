@@ -36,36 +36,40 @@ class ModelUsageTest {
     ).jsonObject
 
     @Test
-    fun everyDeepSeekFlashModelIsPricedAtTheOfficialDeepseekFlash() {
-        listOf("cline-pass/deepseek-v4-flash", "cline-pass/deepseek-v4.1-flash", "deepseek-flash").forEach { model ->
-            val price = matchModelsDevPrice(catalog, model)!!
-            assertEquals(model, 0.14, price.input, 0.0)
-            assertEquals(model, 0.002, price.cacheRead!!, 0.0)
-            assertEquals(model, "deepseek" to "deepseek-flash", price.source to price.pricedAs)
-        }
-    }
-
-    @Test
-    fun otherDeepSeekTiersTakeTheClosestOfficialModelNeverAReseller() {
-        val price = matchModelsDevPrice(catalog, "cline-pass/deepseek-v4.2-pro")!!
-
-        assertEquals(0.66, price.input, 0.0)
-        assertEquals("deepseek" to "deepseek-v4-pro", price.source to price.pricedAs)
-    }
-
-    @Test
-    fun theFirstPartyPriceWinsAndResellersGiveTheirMedian() {
+    fun aModelIsPricedFromEveryListingOfItsIdAtTheirMedianFreeOnesLeftOut() {
+        // Three listings of qwen3-max: 1.2 and 2.0; the median of two is the lower.
         assertEquals("alibaba", matchModelsDevPrice(catalog, "proxy/qwen3-max")!!.source)
-        // No first party for glm-x here: three resellers at 0.1, 0.3 and 0.5.
+        // glm-x at three resellers, 0.1, 0.3 and 0.5.
         assertEquals(0.3, matchModelsDevPrice(catalog, "glm-x")!!.input, 0.0)
+        // deepseek-v4.1-flash: the free plan's entry is left out; ids equal up to dots and dashes count.
+        assertEquals(0.3, matchModelsDevPrice(catalog, "deepseek-v4.1-flash")!!.input, 0.0)
         assertNull(matchModelsDevPrice(catalog, "jev-1.13.0"))
+    }
+
+    @Test
+    fun aPriceTypedInStaysAndTheHostsPriceWinsOverASyncedOne() {
+        val synced = ModelPrice(1.0, 2.0, source = "resale-a")
+        val typed = ModelPrice(0.5, 0.5, manual = true)
+        cc.noharry.agent.appserver.runtime.AppHost.install(modelPrices = mapOf("m" to ModelPrice(3.0, 4.0, source = "host"), "t" to ModelPrice(9.0, 9.0)))
+        try {
+            val book = PriceBook(mapOf("m" to synced, "t" to typed, "s" to synced)).withKnownPrices(listOf("m", "t", "s", "new"))
+            assertEquals(3.0, book.prices.getValue("m").input, 0.0)
+            assertEquals(typed, book.prices["t"])
+            assertEquals(synced, book.prices["s"])
+            assertNull(book.prices["new"])
+        } finally {
+            cc.noharry.agent.appserver.runtime.AppHost.install(modelPrices = emptyMap())
+        }
     }
 
     @Test
     fun theLedgerAndPriceBookRoundTrip() {
         val days = mapOf("2026-10-11" to mapOf("m" to ModelUsage(3, 100, 40, 5, 20)))
         val book = PriceBook(
-            mapOf("m" to ModelPrice(0.1, 0.2, 0.01, null, manual = true), "f" to ModelPrice(1.0, 2.0, source = "deepseek", pricedAs = "deepseek-flash")),
+            mapOf(
+                "m" to ModelPrice(0.1, 0.2, 0.01, null, manual = true),
+                "f" to ModelPrice(1.0, 2.0, source = "example", pricedAs = "example-flash", currency = "CNY", asOf = "2026-11-11"),
+            ),
             7.1,
             42L,
         )

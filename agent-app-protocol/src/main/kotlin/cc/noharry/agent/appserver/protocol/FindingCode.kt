@@ -134,7 +134,7 @@ enum class FindingCode : FindingKind {
 
     MEMORY_REFUSED_TOO_LONG,
 
-    // Chat models and DeepSeek
+    // Chat models and their services
     MODEL_BALANCE,
 
     MODEL_BALANCE_FAILED,
@@ -143,11 +143,11 @@ enum class FindingCode : FindingKind {
 
     MODEL_CHOOSE_MODEL_FIRST,
 
-    MODEL_DEEPSEEK_AVAILABLE,
-
     MODEL_HTTP_ERROR,
 
     MODEL_MISSING_API_KEY,
+
+    MODEL_MISSING_BASE_URL,
 
     MODEL_PROBE_DROPPED,
 
@@ -160,6 +160,8 @@ enum class FindingCode : FindingKind {
     MODEL_PROBE_NO_MODEL,
 
     MODEL_PROBE_PASSED_THROUGH,
+
+    MODEL_PROBE_SEARCH_AVAILABLE,
 
     MODEL_PROBE_UNREACHABLE,
 

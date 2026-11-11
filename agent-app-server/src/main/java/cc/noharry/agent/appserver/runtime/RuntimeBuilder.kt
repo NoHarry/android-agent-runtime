@@ -20,8 +20,9 @@ import cc.noharry.agent.appserver.model.appWebFetchFallback
 import cc.noharry.agent.appserver.model.appWebSearch
 import cc.noharry.agent.appserver.model.hasWebLookup
 import cc.noharry.agent.appserver.model.nativeUpdates
-import cc.noharry.agent.appserver.model.defaultContextWindow
 import cc.noharry.agent.appserver.model.loadContextWindow
+import cc.noharry.agent.appserver.model.RetryPolicy
+import cc.noharry.agent.appserver.model.serviceAt
 import cc.noharry.agent.appserver.model.loadModelImageInput
 import cc.noharry.agent.appserver.protocol.McpProviderState
 import cc.noharry.agent.appserver.server.AppScreen
@@ -219,8 +220,8 @@ internal fun buildRuntime(
     // sample keeps a durable lossless v2 stream instead of falling back to in-memory.
     // Hide web_fetch only when the provider exposes a model-visible web_search server tool and no fetch fallback is on
     // (with one, the main agent opens pages that refuse the device, as subagents do).
-    // OpenAI chat-options search is request-side and opaque, so web_fetch remains the fallback.
-    .limits(LoopLimits(contextWindowTokens = loadContextWindow(context, config.editState(profile)) ?: defaultContextWindow(profile.model)))
+    // Chat Completions' search options are request-side and opaque, so web_fetch remains the fallback.
+    .limits(runLimits(loadContextWindow(context, config.editState(profile)), serviceAt(profile.baseUrl)?.second?.retry))
     .settings(AppHost.runs.loopSettings(LoopSettings(
         imageInputEnabled = imageInput,
         nativeWebFetchEnabled = subagentChild || fetchFallback != null || !profile.usesVisibleWebSearchTool(),
@@ -234,8 +235,8 @@ internal fun buildRuntime(
     .webFetchFallback(fetchFallback)
     .sessionToolActivations(appSessionToolActivations)
     // Backend tools through call_tool: the tool list stays the same all session, so the history stays cached. A service
-    // with native updates ([ProviderAdapter.nativeUpdates]: DeepSeek's official endpoint, or a relay its check found
-    // passing them on) loads deferred tools natively instead (schema-checked calls) and takes the context as a system
+    // with native updates ([ProviderAdapter.nativeUpdates]: a service's own endpoint that takes them, or a relay its
+    // check found passing them on) loads deferred tools natively instead (schema-checked calls) and takes the context as a system
     // update; gateways drop those fields, so they keep call_tool and a user-role context.
     .runContext(prompt.runContext)
     .apply { if (sessionId.isNotBlank()) sessionHistory(history) }
@@ -313,3 +314,15 @@ private fun AgentRuntimeBuilder.applyMcpProviders(
 private fun AgentRuntimeBuilder.register(servers: MutableList<ToolProvider>, providers: List<ToolProvider>): AgentRuntimeBuilder =
     tools(providers.also { servers += it })
 
+/** A run's limits: the model's context [window], and how a failed model call is tried again when its service says ([retry]). */
+private fun runLimits(window: Long, retry: RetryPolicy?): LoopLimits =
+    if (retry == null) {
+        LoopLimits(contextWindowTokens = window)
+    } else {
+        LoopLimits(
+            contextWindowTokens = window,
+            modelRetryAttempts = retry.attempts,
+            retryInitialBackoffMillis = retry.initialBackoffMillis,
+            retryMaxBackoffMillis = retry.maxBackoffMillis,
+        )
+    }

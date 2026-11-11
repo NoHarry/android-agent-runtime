@@ -12,10 +12,33 @@ called out; a patch release does not break it.
   `@ExperimentalAppServerApi`, whose opt-in, without one, is a warning. The guide for hosts is
   `agent-app-server/README.md`; `samples/agent-app-sample`, `-notes`, `-timer` and `-habits` are apps on it, and
   `tools/agent-plugin` makes plugin packages. No plugin is published: a host writes its own, and the first-party ones
-  (cards, DeepSeek's extras, operating the screen, the device's tools, drawn pages, memory, pictures, plans, A2A) are
-  source modules of the Bothy app, not Maven artifacts; their source is published with Bothy's next release. Scripts
-  (plugin packages' tools written in JavaScript, and `exec_js`) run in `agent-exec-js`, which a host that wants them
-  adds: the server does not carry its native code, about 4 MB of an APK.
+  (cards, operating the screen, the device's tools, drawn pages, memory, pictures, plans, A2A) are source modules of
+  the Bothy app, not Maven artifacts; their source is published with Bothy's next release. Scripts (plugin packages'
+  tools written in JavaScript, and `exec_js`) run in `agent-exec-js`, which a host that wants them adds: the server does
+  not carry its native code, about 4 MB of an APK.
+
+- **The model services (experimental).** A third app server artifact, `agent-app-models`, in `agent-bom`: one plugin
+  (`ModelsPlugin`, id `models`) with an adapter for each of DeepSeek, OpenAI, Anthropic, Google Gemini, xAI,
+  OpenRouter, Groq, Moonshot (Kimi), Zhipu (GLM), Alibaba Cloud Model Studio (Qwen), Volcengine Ark (Doubao), MiniMax
+  and SiliconFlow: their endpoints and key pages, their models' facts (context window, output limit, pictures, tools,
+  reasoning and its efforts) and prices (with currency and date), their model lists and how their failures read, from
+  each service's official pages as of 2026-11-11 (the data file names each page). DeepSeek's extras (its search and
+  fetch APIs, native updates, balance, the check of a relay, one key for its profiles) moved here from Bothy. A library
+  declares a plugin in its manifest and the server loads it without the host listing it (`PluginDiscovery`;
+  `AppServerConfig.ignoredPlugins` leaves one out): an app that depends on `agent-app-models` has the services. The
+  server itself (`agent-app-server`, `agent-app-protocol`) names no service: with it alone a profile reaches any
+  compatible service, with conservative defaults (a 128K window, pictures on, no base URL or model until given one).
+  A host's `AppServerConfig.modelFacts` and `modelPrices` win over a service's; `ProviderAdapter` is the contract
+  (`services`, `facts`, `price`, `listModels`, `classify`, `balance`, `check`), and `services/list`,
+  `services/balance`, `services/check` and `services/checked` the requests. `ModelPrice` has a `currency` and `asOf`;
+  `ModelUsage.cost(price)` is in the price's currency and `PriceBook.costUsd(model, usage)` converts yuan.
+
+- **A model service's failures say what they were.** `RuntimeErrorCode` gains `PROVIDER_QUOTA_EXCEEDED`,
+  `PROVIDER_CONTEXT_WINDOW_EXCEEDED` and `PROVIDER_TIMEOUT` (new constants: a host's exhaustive `when` over the codes
+  needs a branch for each). The app server gives them, and `PROVIDER_AUTH_FAILED`, `PROVIDER_RATE_LIMITED` and
+  `PROVIDER_SERVER_ERROR`, to a failed model call as the wire protocols' statuses and error codes say, or as the
+  service's own error pages say where `agent-app-models` knows it; a quota, context window or key failure is not tried
+  again. The runtime's own clients report HTTP failures as before.
 
 - **A tool provider that throws anything fails only its call.** A `ToolProvider.callTool` that throws an `Error`
   (`UnsatisfiedLinkError`, `NoClassDefFoundError`, `ExceptionInInitializerError`) or a checked exception fails that

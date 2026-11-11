@@ -1,5 +1,7 @@
 package cc.noharry.agent.appserver.usage
+import cc.noharry.agent.appserver.model.modelPrice
 import cc.noharry.agent.appserver.protocol.ModelPrice
+import cc.noharry.agent.appserver.protocol.PriceBook
 import cc.noharry.agent.appserver.protocol.ModelUsage
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.doubleOrNull
@@ -16,16 +18,14 @@ fun TokenDelta.toModelUsage() = ModelUsage(
 )
 
 /**
- * The models.dev price for [model] (a proxy prefix such as `cline-pass/` is ignored). The first-party provider,
- * guessed from the name, wins; otherwise any provider listing the exact ID, then IDs equal up to `.`/`-`. Free
- * plan entries (zero cost) are skipped, and among several resellers the median input price is taken. DeepSeek is
- * always priced at DeepSeek's own list: every flash model at deepseek-flash, and other versions
- * the list lacks at the closest official model of the same tier.
+ * The models.dev price for [model] (a relay's prefix such as `relay/` is ignored): the listings of its exact ID, else of
+ * IDs equal up to `.`, `_`, `-` and a `-latest` suffix, from every provider that lists it. Free plan entries (zero cost)
+ * are skipped, and among several the median input price is taken. A model a service's adapter prices is priced from its
+ * list instead ([cc.noharry.agent.appserver.model.ProviderAdapter.price]).
  */
 internal fun matchModelsDevPrice(catalog: JsonObject, model: String): ModelPrice? {
     val key = model.substringAfterLast('/').lowercase()
     val loose = key.looseModelKey()
-    val official = officialProviders(key)
     val entries = catalog.entries.flatMap { (providerId, provider) ->
         val models = (provider as? JsonObject)?.get("models") as? JsonObject ?: return@flatMap emptyList()
         models.entries.mapNotNull { (id, entry) -> (entry as? JsonObject)?.let { Triple(providerId, id.lowercase(), it) } }
@@ -34,37 +34,22 @@ internal fun matchModelsDevPrice(catalog: JsonObject, model: String): ModelPrice
         val prices = candidates.mapNotNull { (provider, _, entry) -> entry.price(provider) }.filter { it.input > 0 || it.output > 0 }
         return prices.sortedBy { it.input }.getOrNull((prices.size - 1) / 2)
     }
-    tierAlias(key)?.let { alias -> pricedAs(entries.filter { it.first in official && it.second == alias }, alias)?.let { return it } }
-    val firstParty = priced(entries.filter { it.first in official && it.second.substringAfterLast('/') == key })
-        ?: priced(entries.filter { it.first in official && it.second.substringAfterLast('/').looseModelKey() == loose })
-    if (firstParty != null) return firstParty
-    if (official.any(OFFICIAL_ONLY::contains)) return closestOfficialTier(entries.filter { it.first in official }, key)
     return priced(entries.filter { it.second.substringAfterLast('/') == key })
-        ?: priced(entries.filter { it.first in official && it.second.substringAfterLast('/').looseModelKey() == loose })
         ?: priced(entries.filter { it.second.substringAfterLast('/').looseModelKey() == loose })
 }
 
 /**
- * The official model of [key]'s tier (its last word, such as flash or pro) whose name shares the longest start with
- * [key]; ties go to the plainer name. Labelled with the model it was priced at.
+ * [this] book with each of [models] (and each model it prices) priced as the server takes it: a price typed in stays,
+ * else the host's or its service's ([modelPrice]), else the one the last sync found.
  */
-private fun closestOfficialTier(official: List<Triple<String, String, JsonObject>>, key: String): ModelPrice? {
-    val tier = key.substringAfterLast('-')
-    // Longest shared start wins; among equals, the plainer (shorter) name.
-    val best = official.filter { (_, id, _) -> id.split('-').contains(tier) }
-        .maxWithOrNull(compareBy({ it.second.commonPrefixWith(key).length }, { -it.second.length }))
-        ?: return null
-    return pricedAs(listOf(best), best.second)
+internal fun PriceBook.withKnownPrices(models: Collection<String>): PriceBook {
+    val priced = prices.toMutableMap()
+    (models + prices.keys).toSet().forEach { model ->
+        if (priced[model]?.manual == true) return@forEach
+        modelPrice(model)?.let { priced[model] = it }
+    }
+    return copy(prices = priced)
 }
-
-/** [candidates]' price labelled with the official model it was taken from. */
-private fun pricedAs(candidates: List<Triple<String, String, JsonObject>>, alias: String): ModelPrice? =
-    candidates.firstNotNullOfOrNull { (provider, _, entry) -> entry.price(provider)?.takeIf { it.input > 0 || it.output > 0 } }
-        ?.copy(pricedAs = alias)
-
-/** Owner's pricing aliases: DeepSeek prices every flash model at deepseek-flash. */
-private fun tierAlias(key: String): String? =
-    if (key.startsWith("deepseek") && key.split('-', '.').contains("flash")) DEEPSEEK_FLASH else null
 
 private fun JsonObject.price(provider: String): ModelPrice? {
     val cost = this["cost"] as? JsonObject ?: return null
@@ -79,20 +64,3 @@ private fun JsonObject.price(provider: String): ModelPrice? {
 }
 
 private fun String.looseModelKey(): String = replace('.', '-').replace('_', '-').removeSuffix("-latest")
-
-private fun officialProviders(key: String): Set<String> = when {
-    key.startsWith("deepseek") -> setOf("deepseek")
-    key.startsWith("qwen") -> setOf("alibaba", "alibaba-cn")
-    key.startsWith("mimo") -> setOf("xiaomi")
-    key.startsWith("gpt") || key.startsWith("o1") || key.startsWith("o3") || key.startsWith("o4") -> setOf("openai")
-    key.startsWith("claude") -> setOf("anthropic")
-    key.startsWith("gemini") -> setOf("google")
-    key.startsWith("kimi") || key.startsWith("moonshot") -> setOf("moonshotai", "moonshotai-cn")
-    key.startsWith("glm") -> setOf("zhipuai", "zai")
-    key.startsWith("minimax") || key.startsWith("abab") -> setOf("minimax")
-    else -> emptySet()
-}
-
-/** Vendors priced only at their own list, never a reseller's. */
-private val OFFICIAL_ONLY = setOf("deepseek")
-private const val DEEPSEEK_FLASH = "deepseek-flash"

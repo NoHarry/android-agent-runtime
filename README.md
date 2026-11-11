@@ -109,7 +109,7 @@ of your own (a scripted one standing in for an on-device model), tools from your
 | `agent-a2a` | Optional (plain JVM): delegate tasks to remote A2A agents over a direct JSON-RPC/SSE transport, and expose the agent as a local A2A endpoint |
 | `agent-a2a-client-official` | Optional: the same client over the official A2A Java SDK |
 | `agent-acp` | Optional (plain JVM): serve the agent's threads over the Agent Client Protocol (ACP) to editors and other ACP clients, on stdio or any stream |
-| `agent-bom` | One version for all of the above and the app server's two artifacts below |
+| `agent-bom` | One version for all of the above and the app server's three artifacts below |
 
 An Android app depends on `agent-runtime-android`; a server, desktop tool or test uses `agent-runtime`. Optional
 modules depend at most on `agent-api`. The loop implementation is internal to `agent-runtime`; `samples/minimal`
@@ -123,14 +123,17 @@ hosts is [agent-app-server/README.md](agent-app-server/README.md); `samples/agen
 |---|---|
 | `agent-app-protocol` | The protocol (plain JVM): requests, notifications and approvals over threads, turns and items, the state a front end renders, and its client (`ServerClient`) |
 | `agent-app-server` | The server (Android): sessions, models, MCP, skills, subagents and usage behind the protocol, the plugin kernel (`AppServerPlugin`, `PluginHost`) and plugin packages a person installs; a host installs it with an `AppServerConfig` |
+| `agent-app-models` | Optional (Android): the model services' plugin, loaded by default once on the classpath: DeepSeek (with its balance, search and relay check), OpenAI, Anthropic, Google Gemini, xAI, OpenRouter, Groq, Moonshot (Kimi), Zhipu (GLM), Alibaba Cloud Model Studio (Qwen), Volcengine Ark (Doubao), MiniMax and SiliconFlow: where each is reached, its models' facts and prices, how its failures read |
 
-Plugins are a host's own code (`AppServerPlugin`); none is published. The first-party ones (cards, DeepSeek's extras,
+The core speaks the wire protocols (OpenAI Chat Completions and Responses, the Anthropic Messages API) and knows no
+service: with it alone a profile reaches any compatible service, with conservative defaults. `agent-app-models` is the
+one plugin published; a host's own plugins are its code (`AppServerPlugin`). The other first-party ones (cards,
 operating the screen, the device's tools, drawn pages, memory, pictures, plans, A2A) are source modules of the
 [Bothy](https://github.com/NoHarry/bothy) app, built into it rather than published as Maven artifacts, so they change
 without a release of this one; their source is published with Bothy's next release.
-The core names no plugin's package and carries none of the runtime modules only a plugin brings (`agent-a2a`,
-`agent-a2a-client-official`, `agent-android-use`, `agent-device-capabilities`; `checkAppServerLayering`, part of
-`ciCheck`).
+The core names no plugin's package and no model service, and carries none of the runtime modules only a plugin brings
+(`agent-a2a`, `agent-a2a-client-official`, `agent-android-use`, `agent-device-capabilities`, `agent-app-models`;
+`checkAppServerLayering`, part of `ciCheck`).
 
 ## API stability
 
@@ -139,7 +142,7 @@ stable. Advanced diagnostic and tuning APIs remain experimental. The [changelog]
 
 - Declarations marked `@ExperimentalAgentRuntimeApi` or `@ExperimentalA2aClientApi` are the likeliest to change, and
   ask for an opt-in (without one, the runtime's are a compile error and the A2A client's a warning).
-- The app server's artifacts (`agent-app-protocol`, `agent-app-server`) are experimental as a whole; their entry points
+- The app server's artifacts (`agent-app-protocol`, `agent-app-server`, `agent-app-models`) are experimental as a whole; their entry points
   (`ServerClient`, `AppServer`, `AppServerConfig`, `AppServerPlugin`) carry `@ExperimentalAppServerApi`, whose opt-in,
   without one, is a warning.
 - Declarations marked `@InternalAgentRuntimeApi` are not API: they are there for the runtime's own modules and tests,

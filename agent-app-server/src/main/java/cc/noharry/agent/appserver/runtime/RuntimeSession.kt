@@ -346,7 +346,7 @@ internal object RuntimeSession {
             status = "Fetching models"
             notifyChanged()
             runCatching {
-                ModelCatalogClient(AppServerHttpTransport(context.applicationContext)).fetch(selectedProvider, effectiveKey, baseUrl)
+                listModels(context.applicationContext, AppServerHttpTransport(context.applicationContext), profile, effectiveKey)
             }.onSuccess { models ->
                 status = "Models loaded: ${models.size}"
                 transcript.appendStatus(
