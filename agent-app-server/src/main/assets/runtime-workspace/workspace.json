@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "vfsContractVersion": "1.0.0",
+  "bundleVersion": "debug-console-2026.06",
+  "workspaceRoot": "/",
+  "mounts": [
+    {
+      "id": "debug-private-workspace",
+      "source": "app-private://runtime-debug-workspace",
+      "target": "/",
+      "mode": "readWrite",
+      "priority": 10
+    },
+    {
+      "id": "debug-agents",
+      "source": "asset://runtime-workspace/AGENTS.md",
+      "target": "/AGENTS.md",
+      "mode": "readOnly",
+      "priority": 100
+    },
+    {
+      "id": "debug-skills",
+      "source": "asset://runtime-workspace/skills",
+      "target": "/.agents/skills",
+      "mode": "readOnly",
+      "priority": 90
+    },
+    {
+      "id": "debug-memory",
+      "source": "memory://debug-runtime-memory",
+      "target": "/memory/host",
+      "mode": "readWrite",
+      "priority": 80
+    },
+    {
+      "id": "debug-saf-workspace",
+      "source": "saf://selected-tree",
+      "target": "/saf",
+      "mode": "readWrite",
+      "priority": 70
+    },
+    {
+      "id": "debug-session-index",
+      "source": "database://debug-session-index",
+      "target": "/context/debug-session-index",
+      "mode": "readOnly",
+      "priority": 80
+    }
+  ]
+}

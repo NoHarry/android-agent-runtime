@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- MCP problems the screen shows (the model's stay in ChineseMcpMessages) -->
+    <string name="mcp_problem_timed_out">No answer in %1$d s</string>
+    <string name="mcp_problem_unreachable">Can\'t connect: %1$s</string>
+    <string name="mcp_problem_unreachable_plain">Can\'t connect</string>
+    <string name="mcp_problem_not_json_rpc">The server\'s answer is not JSON-RPC</string>
+    <string name="mcp_problem_no_initialize">The server did not answer initialize</string>
+    <string name="mcp_problem_no_initialize_hint">The server did not answer initialize: %1$s</string>
+    <string name="mcp_problem_http_refused">The server refused (HTTP %1$d); check the token or headers</string>
+    <string name="mcp_problem_http_not_found">Wrong address (HTTP 404)</string>
+    <string name="mcp_problem_http_no_post">This address does not take POST (HTTP 405); it may be an old SSE server, and only Streamable HTTP is supported</string>
+    <string name="mcp_problem_http_format">The server does not accept this format (HTTP %1$d)</string>
+    <string name="mcp_problem_http_server">The server failed (HTTP %1$d)</string>
+    <string name="mcp_problem_tools_list_failed">tools/list failed (status=%1$d)</string>
+    <string name="mcp_problem_tools_list_not_json">The tools/list answer is not JSON</string>
+    <string name="mcp_problem_tools_list_error">tools/list failed: %1$s</string>
+    <string name="mcp_problem_tools_list_cursor">tools/list repeated a page cursor</string>
+    <string name="mcp_problem_tools_list_pages">tools/list has more than %1$d pages</string>
+    <string name="mcp_provider_tools_json">Tools JSON</string>
+    <string name="mcp_server_deleted">This MCP server has been deleted</string>
+    <string name="mcp_name_required">Enter a name</string>
+    <string name="mcp_name_too_long">The name can be at most %1$d characters</string>
+    <string name="mcp_url_invalid">Invalid address, e.g. https://example.com/mcp</string>
+    <string name="mcp_url_scheme">The address must start with https:// or http://</string>
+    <string name="mcp_url_no_host">The address has no host name</string>
+    <string name="mcp_url_http_loopback_only">http:// only works for this device (127.0.0.1 or localhost, with adb reverse); use https:// for other addresses</string>
+    <string name="mcp_header_format">Write headers as \"Name: value\", one per line: %1$s</string>
+    <string name="mcp_header_reserved">The app sets the %1$s header itself; it can\'t be entered</string>
+    <string name="mcp_token_spaces">The token can\'t contain spaces</string>
+    <string name="mcp_key_spaces">The key can\'t contain spaces</string>
+    <string name="mcp_token_save_failed">Couldn\'t save the token</string>
+</resources>

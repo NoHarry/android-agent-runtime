@@ -1,14 +1,14 @@
 # Plugin packages a person downloads
 
-Status: approved 2026-11-09 (section 7) and built in the Bothy repository, branch `codex/api-redesign`: declarative
-packages (section 8) and tools written as scripts (section 9). Compiled code in a package is reserved (section 6).
+Status: built, in `agent-app-server` (`packages/`), with the publishing tool in `tools/agent-plugin`. Experimental, as
+the app server is.
 
-A package is a plugin that carries no native code: skills, rules, addresses of MCP servers, templates. A person
-installs one inside the app from an address or a file; it starts at once and can be turned off or removed like any
-plugin. The core sees no difference from a plugin built into the host: one generic plugin (`PackagePlugin`) reads an
-installed package and says its contents to the `PluginContext`.
+A package is a plugin with no compiled code: skills, rules, addresses of MCP servers, and tools written as scripts
+that run in a sandbox. A person installs one inside the app from an address, a file or its bytes; it starts at once and
+is turned off or removed like any plugin. The rest of the server sees no difference from a plugin built into the host:
+one generic plugin (`PackagePlugin`) reads an installed package and says its contents to its `PluginContext`.
 
-Three things are hard to change once people write packages, so they are decided here: the format, how a package is
+Three things are hard to change once people write packages, so this document fixes them: the format, how a package is
 trusted, and what it may do.
 
 ## 1. The format
@@ -17,13 +17,11 @@ A package is a zip file named `<id>-<version>.agentplugin`:
 
 ```
 plugin.json            the manifest (below)
-signature.json         digests of every other file, and the publisher's signature over them (section 2)
-skills/<name>/SKILL.md one directory per skill, the same SKILL.md the app server reads today
-rules.md               optional: lines added to the system rules while the plugin runs
-templates/…            optional: card and page templates (html, json)
+signature.json         the digest of every other file, and the publisher's key and signature over them (section 2)
+skills/<name>/SKILL.md one directory per skill, a SKILL.md as the app server reads one
+rules.md               optional: lines added to the system rules while the package runs
 icon.png               optional
-scripts/…              reserved for step B
-code/…                 reserved for step C (section 6)
+scripts/<name>.js      the scripts of its tools (section 5)
 ```
 
 `plugin.json`:
@@ -49,268 +47,179 @@ code/…                 reserved for step C (section 6)
 }
 ```
 
-- `format` is this document's version. A server refuses a format it does not know.
-- `id` is a reverse-domain name: unique, and the publisher's to keep. `version` is semantic.
-- Everything a package contributes is named in the manifest; a file the manifest does not name is ignored.
-- Names are scoped by the package so two packages cannot collide: a skill is `<id>/<skill>`, an MCP server's
-  model-visible name is `<last part of id>_<server id>` (`trains_trains`), made unique with a digit when taken.
-- Limits: 5 MB a package, 200 files, text files UTF-8. In format 1 a package holds only markdown, json, html and png.
+- `format` is this document's version; a server refuses a format it does not know, before anything else.
+- `id` is a reverse-domain name, the publisher's to keep; `version` is semantic (no build metadata). `minServer` is
+  the app server version it needs: the version the server was built as, without a pre-release.
+- The manifest is read strictly: a member the format does not have is refused, and so is anything a member names that
+  is not in the package. Everything a package contributes is named in it.
+- Names are scoped by the package so two packages cannot collide: a skill is `<id>:<skill>` (the runtime reads a
+  skill's name as one path segment); an MCP server's tools are `mcp__<last part of id>_<server id>__<tool>`
+  (`trains_trains`), the server's name taking a digit when another has it; the script tools are one tool server named
+  for the package.
+- Limits: 5 MB packed and unpacked, 200 files (400 zip entries), paths of at most 200 characters and 8 levels, text in
+  UTF-8. A package holds only markdown, json and png, and JavaScript under `scripts/`; no hidden files, no path that
+  leaves it. At most 20 hosts, 10 secrets, 10 MCP servers, 20 skills and 20 tools; `rules.md` at most 20 lines and
+  2,000 characters; an icon at most 256 KiB.
 
 ## 2. Trust
 
 Who published a package, and that nobody changed it since.
 
-- `signature.json` lists the SHA-256 of every other file and carries a signature over that list: ECDSA P-256 with
-  SHA-256, which every Android version the library supports can verify. It also carries the publisher's public key.
-- The **publisher's key is the package's identity**. The first install of an id records its key; an update must be
-  signed by the same key, as Android does for apps. A different key is refused: the person removes the old one first.
+- `signature.json` lists the SHA-256 of every other file and, when signed, carries the publisher's public key and an
+  ECDSA P-256 / SHA-256 signature over `agentplugin-signature-1\n` followed by `<sha256>  <path>\n` for each file in
+  path order. The key is a DER SubjectPublicKeyInfo naming the curve P-256 with the point uncompressed (91 bytes), in
+  that one form, so which keys are taken does not depend on the device's security provider.
+- **The publisher's key is the package's identity.** The first install of an id records its key; an update must be
+  signed by the same key and be no older, as Android does for apps. Another key is refused: the person removes the old
+  package first.
 - **Which publishers a host accepts** is the host's decision, in `AppServerConfig`:
   - `trustedPublishers`: public keys the host vouches for (its own catalog's key). Their packages install with one
-    confirmation.
-  - Any other signed package installs only after a second, plainer warning that the host does not know the publisher.
-  - `allowUnsignedPackages` (off by default): for a developer's own device. An unsigned package says so on every
-    screen that lists it.
-- A package is downloaded over HTTPS, checked against its digests and signature before anything is unpacked, and
-  unpacked into the app's private storage (`plugins/<id>/<version>/`), where no other app can change it. The check
-  runs again each time the plugin starts.
+    confirmation, and their word that a tool only reads is taken.
+  - Any other signed package installs only after a second, plainer warning that the host does not know the publisher
+    (`needsAcknowledgement`, answered with `acknowledgeUntrusted`).
+  - `allowUnsignedPackages` (off by default), for a developer's own device: an unsigned package needs the same
+    acknowledgement, and says so on every screen that lists it.
+- A package is checked whole (zip, digests, signature, manifest, contents) before anything of it is written, and
+  unpacked into the app's private storage, `files/app_server/plugins/<id>/<version>/`, with its record (id, version,
+  publisher's key) in `files/app_server/plugins/<id>/installed.json`. The check runs again each time it starts.
 
 A signature says who, not whether it is safe. Section 3 is what limits a package the person chose to trust.
 
 ## 3. What a package may do
 
-A package asks for what it needs in `permissions`; the install screen shows it in plain words; the server enforces it
-while the plugin runs. Asking for more in an update asks the person again.
+A package asks for what it needs in `permissions`; the install screen shows it; the server enforces it while the
+package runs. An update that asks for more says what (`PackageChange`), and the person confirms it again.
 
 | Permission | What it allows | Enforced where |
 |---|---|---|
-| `network: [hosts]` | Its MCP servers (and, in step B, its scripts) reach these hosts, over HTTPS | An MCP server whose address is not on the list is not mounted. Loopback and private addresses need the host named explicitly and are shown as "this device" or "your network" |
-| `secrets: [names]` | Values the person types once (a key, an account), kept encrypted with the package, placed into its headers or addresses as `${name}` | A package reads only its own secrets; they are deleted with it and never reach the model |
-| `hostTools: [names]` (step B) | Its scripts call these tools of the host | Reserved |
-| `nativeCode: true` (step C) | It carries compiled code that runs as the host's own | Reserved; cannot be limited, see section 6 |
+| `network: [hosts]` | Its MCP servers and scripts reach these hosts, matched exactly | An MCP server's host must be listed; it is reached over HTTPS (HTTP only to this device) and a redirect is not followed. Each host is shown with where it is: the internet, the person's network (private addresses, `.local` names) or this device (loopback) |
+| `secrets: [names]` | Values the person types once (a key, an account), placed into its MCP servers' and scripts' requests as `${name}` | Only in a header value or as a whole query value, never in a host or path. A package reads only its own; they never reach the model or a script, and are deleted with the package |
+| `hostTools: [names]` | Its scripts call these tools of the run, each one that says it only reads | Section 5 |
 
-What a declarative package cannot do, with nothing to ask for: run code, read files, reach the host's other tools
+What a package cannot do, with nothing to ask for: carry compiled code, contribute hooks, input preparation or tool
+wrappers (those points of the kernel are for plugins built into the host), read files, or reach the host's other tools
 except by what its text tells the model.
 
-That last part is the real risk of a text-only package: a skill or a rule is an instruction to the model, and a hostile
-one can tell it to misuse tools the person already has. The limits:
+That last part is the real risk of a package: a skill or a rule is an instruction to the model, and a hostile one can
+tell it to misuse tools the person already has. The limits:
 
-- A package's rules and skills are given to the model **marked as coming from that package**, after the host's own, and
-  the host's rules say that a plugin's text cannot widen what the person allowed.
-- A package's skills are loaded on demand, not placed in every system prompt. Only a trusted publisher's package may
-  ask to preload one.
-- `rules.md` is capped (20 lines, 2,000 characters).
-- Tool approvals do not change: a tool that asks before it acts still asks, whoever suggested the call. A package's own
-  MCP tools start in "ask every time" for anything that is not a read.
-- A package cannot contribute hooks, input preparation or tool wrappers: those points of the kernel are for built-in
-  plugins.
+- A package's rules and skills reach the model **marked as coming from that package**, after the host's own, and the
+  server's rules say that a plugin's text cannot widen what the person allowed.
+- Its skills are read on demand, not placed in every system prompt; only a trusted publisher's may ask to be preloaded.
+- `rules.md` is capped, and all plugins' rules share 3 KiB of the system prompt.
+- **Asking does not change.** A tool that asks before it acts still asks, whoever suggested the call, and a package's
+  own tools that act ask every time, in every approval mode but "deny all", which refuses them; a yes is never
+  remembered, and a subagent's call of one is refused. A tool counts as only reading when it says so **and** its
+  publisher is one the host trusts: an unknown publisher's script tools, and every tool of its MCP servers whatever
+  the remote server's `readOnlyHint` says, ask before each call.
 
 ## 4. Life of a package
 
-- **Install**: `plugins/install {url | file}` fetches and checks it and answers with what it is and what it asks
-  (manifest, publisher, whether trusted, permissions, what changed since the installed version). Nothing runs yet.
-  `plugins/confirm {installId, secrets}` unpacks it, registers it with the plugin kernel and starts it.
-- **Use**: it appears in `plugins/list` with its source (`built-in` or `package`), version, publisher and permissions,
-  and is switched with `plugins/set` like any plugin.
-- **Update**: installing a higher version of an installed id, signed by the same key. The old version stays on disk
-  until the new one has started, and comes back if it does not.
-- **Remove**: `plugins/remove {id}` stops it, deletes its files and its secrets. Conversations keep the records of the
-  calls it made.
-- A package whose check fails at start (a changed file) does not start and is shown as damaged.
+- **Install**, in two steps. `plugins/install` takes one of `url` (HTTPS; a redirect to plain HTTP is not followed),
+  `file` (a `content://` address, or a `file://` path in the app's own external files) or `data` (the package's bytes,
+  base64), checks the package and answers with what it is and asks for: the manifest, the publisher, whether trusted,
+  the permissions, and for an update what it asks beyond the installed version. Nothing runs and nothing is written.
+  `plugins/confirm {installId, secrets, acknowledgeUntrusted}` within 15 minutes unpacks it, keeps its secrets,
+  registers it with the plugin kernel and starts it.
+- **Use**: it is in `plugins/list` with its source (`package`), version, publisher, permissions and contents, and is
+  switched with `plugins/set` like any plugin.
+- **Update**: a higher version of an installed id, signed by the same key. A secret left out keeps its value. The
+  version it replaces stays on disk until the new one has started, and comes back if it does not.
+- **Remove**: `plugins/remove {id}` stops it and deletes its files, its secrets and its skills' switches.
+  Conversations keep the records of the calls it made.
+- **Damaged**: a package whose files changed since it was installed does not start and is shown as damaged with what
+  the check found; installing it again repairs it. One whose record cannot be read is shown as damaged with its files
+  and secrets kept, and its id takes no install until it is removed, since the key it was installed with is not known.
+- **At start**, the server clears what an install the process did not finish left: staged files, a version moved aside,
+  a record half written, a first install that did not finish (with its secrets). It looks only at directories named as
+  package ids under its own directory, and deletes only those leftovers.
 
-## 5. What the kernel needs for this
+## 5. Tools written as scripts
 
-- Adding and removing a plugin while the server runs (`PluginHost.add`, `remove`); today the list is fixed when the
-  process starts.
-- Three more additions on `PluginContext`, which built-in plugins get too and which replace the matching parts of
-  `RunAddOns`: `skills`, `rules`, `mcpServers`.
-- A store for a plugin's secrets.
-- `PackagePlugin`, the reader described above, and the install requests.
-
-## 6. Not in this step
-
-- Scripts (step B): `scripts/` and `hostTools` are reserved so format 1 packages stay valid.
-- The catalog: where packages are listed, reviewed and updated from is a product of its own. The library installs a
-  package from an address a client gives it.
-- Compiled code (step C), reserved as below.
-
-### Compiled code in a package, later
-
-Bothy is distributed by its own channel, so loading compiled code from a download is allowed; it is the third kind of
-package, after declarative ones and scripts, and the only one this design cannot confine.
-
-| Kind | Carries | Who may publish | What limits it |
-|---|---|---|---|
-| A, declarative | Skills, rules, MCP server addresses, templates | Anyone (an unknown publisher behind a second warning) | The permissions of section 3, enforced |
-| B, scripts | Tools in JavaScript, in the sandbox | Anyone | The same, enforced by the sandbox's bridge |
-| C, compiled code | Kotlin compiled to DEX | Only a publisher the host trusts (`trustedPublishers`) | Nothing: it runs in the host's process with all the host may do |
-
-What is reserved in format 1 so that C needs no new format:
-
-- `code/` in the package: `code/classes.dex`, and `"code": { "entry": "<class name>", "api": "<plugin API version>" }`
-  in the manifest. The entry class implements `AppServerPlugin`; the kernel treats it as any other plugin.
-- The permission `"nativeCode": true`. A server that does not load code refuses a package that asks for it, so a
-  format 1 server never half-installs one.
-
-What C will have to settle before it is built, none of it decided here:
-
-- **A frozen binary interface.** The package compiles against a small API jar (`agent-api` and the plugin interface)
-  and links to the host's classes at run time. Those classes must be kept from the host's shrinker and renamer, and
-  their signatures must not change within an API version. `agent-api` already has an API comparison in CI; the plugin
-  interface would need the same, and to leave "experimental" first.
-- **The host's Kotlin, not the package's.** A package runs on the host's standard library and coroutines. The API
-  version in the manifest names what the package was built against, and the server refuses one it cannot serve.
-- **No confinement.** Class loaders separate names, not trust: compiled code can read the app's private files and
-  reach the network whatever its manifest says. That is why only a trusted publisher's package may carry code, and why
-  the install screen says so in those words.
-- **Unloading is not guaranteed.** One reference left (a thread, a listener, a cache) keeps the old code alive, so an
-  update may leave two versions in memory until the process restarts. The kernel stops the old plugin's additions;
-  it does not promise its classes are gone.
-- **What it cannot carry.** No manifest components, permissions or resources: a feature that needs a system
-  capability (the microphone, accessibility, notifications) stays a plugin built into the host. Loading from memory
-  needs Android 8; on Android 7 the code is loaded from a read-only file in private storage.
-
-Good first candidates are plugins of pure logic: a model service's adapter, tools that call web interfaces.
-
-## 7. Decided by the owner (2026-11-09)
-
-1. A package signed by a publisher the host does not know may be installed, behind a second warning.
-2. A package's skill may be preloaded into the system prompt only when its publisher is trusted.
-3. The file extension is `.agentplugin` and ids are reverse-domain names.
-4. A package may point at MCP servers on the device or the local network, named explicitly and shown as such.
-
-## 8. As built, and what a run on the tablet found (2026-11-10)
-
-Built in the Bothy repository (`codex/api-redesign`, commits ce5f0297 to 7cf56931, in `agent-app-server` under
-`packages/`, with the tool in `tools/agent-plugin/`). Where it differs from the text above:
-
-- A package's skill is named `<id>:<skill>`: the runtime reads a skill's name as one path segment.
-- Secrets are kept as the app's other keys are, as plain text in its private no-backup storage, not encrypted.
-- A secret goes into a header value, or stands for a whole query value; never into the host or path of an address.
-- HTTP is allowed to the device itself only; hosts match exactly; rules over the cap are refused, and all plugins'
-  rules share 3 KiB of the system prompt.
-- A package with `code/`, `code`, `nativeCode`, `scripts/` or `hostTools` is refused when it is checked.
-- An install may also give the package's bytes directly, and an unsigned package needs the same acknowledgement as an
-  unknown publisher's.
-
-Checked on the tablet with DeepSeek and a test MCP service on the device: an unknown publisher needs the
-acknowledgement; a missing secret, a changed file, code in the package, an older version, another key and an unsigned
-update are each refused with their reason; the secret reaches the service in its header; a tool marked read-only runs
-unasked and one that acts asks first, in ask-every-time and in allow-all; an update keeps the secret; the package is
-there after a restart; a file changed on the device shows it damaged and not running, and installing the same version
-repairs it; removing it leaves no files and no secrets; switching it off takes its tool from the next turn.
-
-Found there:
-
-- The manifest's placeholder pattern did not compile on Android and crashed the app at the first install (fixed and
-  checked on the device; the JVM unit tests could not see it).
-- Through the debug ACP socket in its approve-all mode a package's acting tool ran unasked: that mode sets the turn's
-  policy itself and passes the server's rule by. The app's own protocol asks. Open.
-- In the runtime, not in packages: a tool that was approved and then failed ended the whole turn with an error. It
-  was a rule of the loop, with two tests keeping it ("the user approved this call, not further attempts"). Changed
-  2026-11-10 (6c40996): the model reads the failure and answers for it; an approval still covers one call, and another
-  attempt that needs one asks again. Checked on the tablet.
-
-Not yet tried: installing from an address (only bytes were given), a trusted publisher's package and preloading,
-templates, what a subagent or a plan run does with a tool that asks.
-
-## 9. Step B: tools written as scripts
-
-Status: built 2026-11-10 (below, "As built"). A package may carry tools of its own, written in JavaScript and run in
-the sandbox the runtime already ships (`agent-exec-js`: QuickJS through Zipline, `ZiplineExecEngine`). A script has no
-access to the device: everything it does outside pure computation goes through a few host functions, each checked
-against what the package asked for.
-
-### In the package
+A package may carry tools of its own, written in JavaScript and run in the sandbox the runtime ships (`agent-exec-js`:
+QuickJS through Zipline). A script has no access to the device: everything it does outside pure computation goes
+through three host functions, each checked against what the package asked for.
 
 ```json
-"permissions": { "network": ["api.example.com"], "secrets": [{ "name": "apiKey", "label": "API key" }], "hostTools": ["web_search"] },
+"permissions": { "network": ["api.example.com"], "secrets": [{ "name": "apiKey", "label": "API key" }], "hostTools": ["mcp__calendar__list_events"] },
 "tools": [
   { "name": "fare", "description": "The fare between two stations.", "script": "scripts/fare.js",
     "inputSchema": { "type": "object", "properties": { "from": { "type": "string" }, "to": { "type": "string" } }, "required": ["from", "to"] },
-    "readOnly": true }
+    "readOnly": true, "timeoutSeconds": 20 }
 ]
 ```
 
-- `scripts/<name>.js` is allowed once the manifest names it as a tool's `script`; a script no tool names is refused.
-- The script defines `function run(input)` and returns a value that can be written as JSON; a thrown error is the
-  tool's failure. `input` is the call's arguments, already checked against `inputSchema`.
-- The model sees the package's script tools as one tool server named for the package, like its MCP servers.
+- A tool has a `name` (lower-case letters, digits and `_`, at most 24, so the full name stays within what model
+  services take), a `description` for the model, an `inputSchema` in the part of JSON Schema the server checks (no
+  `pattern`, `$ref` or `oneOf`, so no pattern of a package's runs on the host), its `script` (`scripts/<name>.js`, at
+  most 128 KiB; a script no tool names is refused), `readOnly`, and `timeoutSeconds` (1 to 120; 10 when left out).
+- The script defines `function run(input)`, `input` being the call's arguments already checked against `inputSchema`,
+  and returns a value JSON can write (at most 64 KiB); a thrown error is the tool's failure, its message what the model
+  reads. It runs in strict mode with 16 MiB of memory and at most 20 host calls; `host` and names starting with
+  `__pkg` are the host's.
+- **One time limit per call**, host calls included: the tool's `timeoutSeconds`, held to the host's most
+  (`AppServerConfig.maxScriptToolSeconds`, 30 unless the host sets another). Clients are shown both numbers.
+- The engine runs a script again from the start after each host call, replaying earlier answers in order, so a script
+  must make the same calls each time; one that does not stops with an error, no request repeated.
 
-### What a script can call
-
-Through the engine's bridge (`tools.call(name, arguments)`), under names kept for the host:
+What a script can call:
 
 | Call | Does | Limited by |
 |---|---|---|
-| `host.http` `{method, url, headers, body}` | One HTTPS request, answer as `{status, headers, body}` | Only hosts in `network` (the device itself over HTTP when named, as for MCP servers); no redirects followed; request and answer capped (64 KiB sent, 256 KiB read); what is left of the call's time |
-| `host.tool` `{name, arguments}` | Calls one of the host's tools | Only tools in `hostTools`, and only tools that say they read (`effectKind` read-only): a script cannot act through the host's tools in this step |
-| `host.log` `{message}` | A line in the app's log, marked as the package's | Length capped |
+| `host.http({method, url, headers, body})` | One request, answered as `{status, headers, body}` | Only hosts in `network`, over HTTPS (HTTP only to this device when named); no redirect followed; never through a proxy; a name on the internet that resolves into this device or the person's network is refused; 64 KiB sent, 256 KiB read; within what is left of the call's time |
+| `host.tool(name, arguments)` | Calls a tool of the run, without asking the person | Only tools named in `hostTools` that say they only read, among the run's configured MCP servers and the plugins' tool servers the person switched on. Not the host's own tools, plugins' or packages' MCP servers, or the runtime's own tools (`web_search`, `web_fetch`, files). A name is the whole `mcp__<server>__<tool>`, or the tool's own when one server has it |
+| `host.log(message)` | A line in the app's log, marked with the package and tool | 20 lines of 500 characters, written when the call ends |
 
-- **Secrets never enter the script.** A header value or a whole query value may hold `${name}`; the host fills it in
-  when it sends the request, as it does for MCP servers. The script sees the placeholder.
+- **Secrets never enter the script.** A header value or a whole query value may hold `${name}`; the host fills it in as
+  it sends the request. The script sees the placeholder, an answer that repeats a secret has the placeholder put back,
+  and what a refusal says never holds the address or a secret.
 - No files, no timers, no other network, no other tools.
-- The engine runs a script again from the start after each host call, replaying earlier answers in order, so a script
-  must be deterministic between calls (no branching on the time or on random numbers). One that is not stops with an
-  error, as `exec_js` does today.
-- Limits per call of a tool: its time in all, host calls included; 16 MiB of memory; 20 host calls; 64 KiB returned.
-  The time is the tool's to ask for (`"timeoutSeconds"` in the manifest, 1 to 120, 10 when left out) up to the host's
-  ceiling (`AppServerConfig.maxScriptToolSeconds`, 30 by default): a tool that asks for more runs with the ceiling. The
-  other limits protect the host and are not a package's to set.
 
-### Asking first
+## 6. Known limits
 
-- A script tool is a package's own tool: it asks before it runs unless the manifest says `readOnly: true` **and** the
-  publisher is trusted. An unknown publisher's word that a tool only reads is not taken: its script tools always ask
-  (every time, in every mode but the one that refuses everything: the hook answers `RequireConfirmation(alwaysAsk = true)`).
-- What a script calls through `host.tool` is read-only by the rule above, so it does not ask again.
+- **Secrets are not encrypted.** They are kept as plain JSON in the app's no-backup storage
+  (`no_backup/app_server/plugin-secrets/<id>.json`), as the server keeps its other keys: private to the app, out of its
+  backups, readable by anything that can read the app's private files.
+- **This device is one host.** A package that names `localhost` or `127.0.0.1` reaches every port on the device, the
+  host app's own local servers included.
+- **The server's trust manager.** Packages' downloads, MCP servers and scripts connect with the server's own trust
+  manager (the system's roots and the host's `extraTrustRoots`); the host's `network_security_config` (pins, per-domain
+  trust) does not apply to them.
+- **The debug socket.** With `debugSockets` on, anyone with adb's shell can install a package and acknowledge an unknown
+  publisher, as any client can.
+- Nothing limits how often a package's tools are called; a package may send what it reads through `host.tool` to any
+  host it named; `host.log` lines are lost when a call ends on its time or memory limit.
 
-### What it needs
+## 7. Compiled code, reserved
 
-- Format 1 gains `tools` and lets `scripts/` and `hostTools` through for a package that uses them this way; `code/`
-  and `nativeCode` stay refused.
-- `PackagePlugin` adds a tool provider for the package's script tools, through the kernel's `tools` addition, with the
-  gate packages' MCP tools already use.
-- No change to the runtime is expected: the app server already depends on `agent-exec-js` and gives the engine its
-  own bridge.
+Loading compiled code from a download is a third kind of package, after declarative ones and scripts, and the only one
+this design cannot confine. It is not built; format 1 reserves what it needs so it will need no new format.
 
-### Proposed, open to the owner
+| Kind | Carries | Who may publish | What limits it |
+|---|---|---|---|
+| Declarative | Skills, rules, MCP server addresses | Anyone (an unknown publisher behind a second warning) | The permissions of section 3, enforced |
+| Scripts | Tools in JavaScript, in the sandbox | Anyone | The same, enforced by the sandbox's host functions |
+| Compiled code | Kotlin compiled to DEX | Only a publisher the host trusts | Nothing: it would run in the host's process with all the host may do |
 
-1. Host tools a script may call are read-only ones only, in this step.
-2. A script tool's `readOnly` is honoured only for a trusted publisher.
-3. The limits above.
+Reserved in format 1: a `code/` directory (`code/classes.dex`), a `"code": { "entry": "<class name>", "api": "<plugin
+API version>" }` member and the permission `"nativeCode": true`. A server that does not load code refuses a package
+that has any of them (`CARRIES_CODE`), so it never half-installs one.
 
-### As built, and what a run on the tablet found (2026-11-10)
+What compiled code would have to settle first:
 
-In the Bothy repository (`codex/api-redesign`, commits 414fa136 to 62b5785a; `packages/Script*.kt`). Where it differs
-from the text above:
+- **A frozen binary interface.** The package compiles against a small API jar (`agent-api` and the plugin interface)
+  and links to the host's classes at run time; those classes must be kept from the host's shrinker, and their
+  signatures must not change within an API version, so the plugin interface would have to leave "experimental".
+- **The host's Kotlin, not the package's.** A package runs on the host's standard library and coroutines; the API
+  version in the manifest names what it was built against, and the server refuses one it cannot serve.
+- **No confinement.** Class loaders separate names, not trust: compiled code can read the app's private files and
+  reach the network whatever its manifest says. That is why only a trusted publisher's package may carry code.
+- **Unloading is not guaranteed.** One reference left keeps the old code alive, so an update may leave two versions in
+  memory until the process restarts; the kernel stops the old plugin's additions, not its classes.
+- **What it cannot carry**: manifest components, permissions or resources. A feature that needs a system capability
+  (the microphone, accessibility, notifications) stays a plugin built into the host.
 
-- **`host.tool` reaches less than the example suggests.** It reaches the tools of the run's backend tool providers
-  that say they only read, in practice a configured MCP server's tools marked read-only. The runtime's own tools
-  (`web_search`, `web_fetch`, files) are not tool providers and cannot be called from a script, so
-  `"hostTools": ["web_search"]` does not work; that would take a change to the runtime's interfaces. A name in
-  `hostTools` is the whole name (`mcp__home__get_home_status`), or the tool's own when one server has it.
-- **One time limit, and the tool asks for it** (939ca43f). A call's time includes its host calls, so a request gets
-  what is left of it; a separate limit per request could never apply and is gone. On the tablet a tool asking 3 s
-  whose script never ends stopped 3.0 s after its approval, and one asking 120 s stopped at the host's 30.0 s, each
-  failure naming the seconds in effect; a client is shown both numbers (`PackageTool`).
-- `host.log` keeps its lines in the sandbox and writes them when the call ends; they are lost when the call ends on
-  time or memory.
-- Added: a name that reads as on the internet must resolve to public addresses; where an answer repeats a secret's
-  value the placeholder is put back; `inputSchema` is a checked subset of JSON Schema (no `pattern`, `$ref`, `oneOf`),
-  so no pattern of a package's runs on the host; at most 20 tools a package, 128 KiB a script, tool names of at most 24
-  characters; `run` returns at once (no promise).
-- The kernel's `tools` addition gained `askBeforeActions`, and the gate packages' MCP tools use covers script tools.
+## 8. The catalog, out of scope
 
-The real engine runs in the unit tests on the JVM. On the tablet, with DeepSeek: the three example tools ran (the
-weather over HTTPS with decimal numbers intact, the home's state through `host.tool` from the Playground's MCP server,
-the echo with the secret shown as its placeholder in header and query); each asked first, the publisher being unknown;
-the log lines appeared and the secret did not. A package written to misbehave was refused each thing it tried: a tool
-that acts, a tool it had not named, a secret in a body (sent as the placeholder) or in a path, plain HTTP, an address on
-the device it had not named, a `file:` address, the engine's bridge called directly; a loop without end stopped at
-10 s and an allocation without end at the memory limit, the app staying up.
-
-Not yet tried: a trusted publisher's script tools running unasked, a subagent or a plan run calling one, a turn
-cancelled while a script runs, two packages' scripts at once.
-
-Open: the debug ACP socket's approve-all mode passes the asking rule by (as for packages' MCP tools); nothing limits
-how often a package's tools are called; a package may send what it reads through `host.tool` to any host it named.
+Where packages are listed, reviewed and updated from is a product of its own. The library installs a package from an
+address, a file or the bytes a client gives it, and leaves finding packages to the host.

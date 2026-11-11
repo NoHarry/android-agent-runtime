@@ -49,6 +49,12 @@ jobs:
         run: ./gradlew publishToMavenLocal --stacktrace
       - name: Build and run the extensions sample against the published artifacts
         run: ./gradlew -PsamplesFromMavenLocal :samples:extensions:test :samples:extensions:run --stacktrace
+      - name: Build the apps on the app server against the published artifacts, and test the two tested offline
+        run: >-
+          ./gradlew -PsamplesFromMavenLocal
+          :samples:agent-app-sample:assembleDebug :samples:agent-app-sample-notes:assembleDebug
+          :samples:agent-app-sample-timer:testDebugUnitTest :samples:agent-app-sample-habits:testDebugUnitTest
+          --stacktrace
       - name: Keep the reports of a failed run
         if: failure()
         uses: actions/upload-artifact@v4

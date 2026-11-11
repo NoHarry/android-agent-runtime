@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Subagents and their types, adding a skill, the built-in skills, and background task lines. -->
+<resources>
+    <string name="skills_subagent_started">Background task “%1$s” started (%2$s)</string>
+    <string name="skills_subagent_stalled">Background task “%1$s” has made no progress for %2$d s</string>
+    <string name="skills_subagent_stalled_latest">Background task “%1$s” has made no progress for %2$d s; latest: %3$s</string>
+    <string name="skills_subagent_resumed">Background task “%1$s” is making progress again</string>
+    <string name="skills_subagent_finished">Background task “%1$s”: %2$s · %3$s</string>
+</resources>

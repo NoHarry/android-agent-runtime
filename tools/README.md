@@ -1,7 +1,7 @@
 # Tools
 
-Python 3 helpers for looking at what a runtime did, and for trying `agent-a2a` against real servers. None of them is
-needed to build or use the library. `python3 -m unittest discover -s tests` (from this directory) runs their tests, as CI does.
+Python 3 helpers for looking at what a runtime did, for trying `agent-a2a` against real servers, and for the app
+server's API listing and plugin packages. Only `app-server-api` is needed to build (its check is part of `apiCheck`). `python3 -m unittest discover -s tests` (from this directory) runs their tests, as CI does.
 
 | Tool | What it does |
 |---|---|
@@ -9,6 +9,8 @@ needed to build or use the library. `python3 -m unittest discover -s tests` (fro
 | `session_latency.py` | Timings from a session's event log (time to first content, model calls, time spent in tools), without judging whether the task succeeded. |
 | `bench_analyze.py` | Reads the probe evidence a runtime writes with `runtimeEvidence(…)` across bench runs, and checks it against a Case Pack's gates. |
 | `a2a/` | Runners that exercise `agent-a2a` against real A2A servers (the official Python HelloWorld, a fault server); see [a2a/README.md](a2a/README.md). |
+| `agent-plugin/` | Makes plugin packages for the app server: a publisher's key pair, and a package built and signed from a directory, with two examples; Python 3 and `openssl`. `agent-app-server`'s tests check what it builds. See [agent-plugin/README.md](agent-plugin/README.md). |
+| `app-server-api/api_dump.py` | `agent-app-server`'s public API by level (`host`, `plugin`, `test`), checked against `agent-app-server/api/agent-app-server-levels.txt`; `apiCheck` runs it and `apiDump` writes the listing, so it is needed to build. `--counts` prints how many each level has. |
 
 `fixtures/` holds synthetic inputs for these tests. `fixtures/kotlin-e2e` is what the runtime's probes write for one
 scripted run: `agent-runtime`'s `ProbeE2eGoldenTest` checks the runtime still writes exactly that, and the Python tests

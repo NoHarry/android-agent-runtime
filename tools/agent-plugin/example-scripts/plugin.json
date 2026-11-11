@@ -1,0 +1,50 @@
+{
+  "format": 1,
+  "id": "com.example.scripted",
+  "name": "Scripted tools",
+  "version": "1.0.0",
+  "publisher": "Example Co.",
+  "description": "Tools written as scripts: the weather now from Open-Meteo, a digest of the host's notes, and a request echoed back.",
+  "minServer": "0.5.0",
+  "permissions": {
+    "network": ["api.open-meteo.com", "httpbin.org", "localtest.me"],
+    "secrets": [{ "name": "apiKey", "label": "Any text: the echo tool sends it as a key" }],
+    "hostTools": ["mcp__notes__list_notes"]
+  },
+  "tools": [
+    {
+      "name": "current_weather",
+      "description": "The weather now at a place given by its latitude and longitude: temperature in °C, wind in km/h and the WMO weather code.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+          "longitude": { "type": "number", "minimum": -180, "maximum": 180 }
+        },
+        "required": ["latitude", "longitude"],
+        "additionalProperties": false
+      },
+      "script": "scripts/current_weather.js",
+      "readOnly": true,
+      "timeoutSeconds": 20
+    },
+    {
+      "name": "notes_digest",
+      "description": "How many notes the user keeps in this app, and the latest three.",
+      "inputSchema": { "type": "object", "properties": {} },
+      "script": "scripts/notes_digest.js",
+      "readOnly": true
+    },
+    {
+      "name": "echo_request",
+      "description": "Sends a note to an echo service with the package's key and says what the service saw, and which requests the host refused.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "note": { "type": "string", "maxLength": 200 } },
+        "required": ["note"]
+      },
+      "script": "scripts/echo_request.js",
+      "readOnly": false
+    }
+  ]
+}

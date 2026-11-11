@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The app server's own components; permissions and the application stay with the app. Plans, operating the screen
+         and the device's tools are plugins in modules of their own, which bring their manifests only to a host that
+         lists them. -->
+    <application>
+        <!-- Off until the server turns it on while a running plugin asks to start after a reboot (plans, a host's own). -->
+        <receiver
+            android:name="cc.noharry.agent.appserver.BootReceiver"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

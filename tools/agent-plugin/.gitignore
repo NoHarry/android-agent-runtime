@@ -1,0 +1,4 @@
+# Publisher keys and built packages stay out of the repository.
+*.key
+*.pem
+*.agentplugin

@@ -1,0 +1,23 @@
+{
+  "format": 1,
+  "id": "com.example.weather",
+  "name": "Weather",
+  "version": "1.0.0",
+  "publisher": "Example Co.",
+  "description": "Forecasts from the Example weather service.",
+  "minServer": "0.5.0",
+  "permissions": {
+    "network": ["api.example.com"],
+    "secrets": [{ "name": "apiKey", "label": "Example weather API key" }]
+  },
+  "mcpServers": [
+    {
+      "id": "weather",
+      "label": "Weather",
+      "url": "https://api.example.com/mcp",
+      "headers": { "Authorization": "Bearer ${apiKey}" }
+    }
+  ],
+  "skills": ["skills/forecast"],
+  "rules": "rules.md"
+}

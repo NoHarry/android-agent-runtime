@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_tool_exec_js">Runs short scripts that call tools in dependency order; a separate switch that skills never turn on.</string>
+    <string name="runtime_tool_search_tools">Finds MCP tools by meaning and loads their parameter definitions.</string>
+    <string name="runtime_tool_list_dir">Lists the workspace, skill and MCP directories.</string>
+    <string name="runtime_tool_read_file">Reads workspace content, skills and tool definitions.</string>
+    <string name="runtime_tool_grep">Searches the contents of workspace files.</string>
+    <string name="runtime_tool_write_file">Writes workspace files.</string>
+    <string name="runtime_tool_edit_file">Edits workspace files.</string>
+    <string name="runtime_tool_update_todo">Keeps the steps and progress of the task.</string>
+    <string name="runtime_tool_ask_async">Asks a question and carries on; the answer joins a later request, and it doesn\'t wait for a reply.</string>
+    <string name="runtime_tool_ask">Asks the user a clarifying question and waits for the reply.</string>
+    <string name="runtime_tool_web_fetch">Fetches web pages; hidden when the model service has its own visible search tool, unless the fetch fallback for pages that won\'t open is on.</string>
+    <string name="runtime_tool_web_search">Searches the web, with results visible to the model and in the logs; only there when the connection searches through a service\'s search API.</string>
+    <string name="runtime_tool_spawn_agent">Hands slow tasks that can run in parallel to background subagents; the main agent decides whether to use it.</string>
+    <string name="runtime_tool_wait_agent">Waits for background subagents and returns the progress or result of each.</string>
+    <string name="runtime_tool_cancel_agent">Stops background subagents that are no longer needed or are stuck.</string>
+    <string name="runtime_tool_finish">Ends the task and returns the reply; required by the run protocol.</string>
+    <string name="runtime_answer_not_sent">Answer not sent</string>
+    <string name="runtime_answer_session_busy">The task has ended and this session is running another task</string>
+    <string name="runtime_voice_steering_title">Added by voice</string>
+    <string name="runtime_subagent_report_title">Background tasks</string>
+    <string name="runtime_status_chat">Chat · %1$s</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Agent sample</string>
+    <string name="input_hint">Ask something</string>
+    <string name="send">Send</string>
+    <string name="simulated">Simulated model</string>
+    <string name="connecting">Connecting…</string>
+    <string name="running">Working…</string>
+</resources>

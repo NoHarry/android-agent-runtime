@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:name=".TimerApplication"
+        android:allowBackup="false"
+        android:label="Kitchen timer agent">
+        <!-- No Activity. One turn per broadcast; the command is in TimerRequestReceiver. Only a sender holding DUMP
+             (adb's shell) may send it: the timer runs its tools in "allow all", unasked. -->
+        <receiver
+            android:name=".TimerRequestReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="cc.noharry.agent.appserver.sample.timer.ASK" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

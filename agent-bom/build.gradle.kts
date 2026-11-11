@@ -10,7 +10,7 @@ dependencies {
         listOf(
             ":agent-api", ":agent-runtime", ":agent-runtime-android",
             ":agent-exec-js", ":agent-device-capabilities", ":agent-android-use", ":agent-a2a",
-            ":agent-a2a-client-official", ":agent-acp",
+            ":agent-a2a-client-official", ":agent-acp", ":agent-app-protocol", ":agent-app-server",
         ).forEach { api(project(it)) }
     }
 }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="console_subagent_running">Running</string>
+    <string name="console_subagent_stalled">No progress</string>
+    <string name="console_subagent_completed">Done</string>
+    <string name="console_subagent_failed">Failed</string>
+    <string name="console_subagent_cancelled">Cancelled</string>
+    <string name="console_subagent_timed_out">Timed out</string>
+    <string name="console_subagent_log">%1$ds · tools %2$d · model calls %3$d · in %4$d · out %5$d</string>
+    <string name="console_subagent_log_cached">%1$ds · tools %2$d · model calls %3$d · in %4$d cache %5$d%% · out %6$d</string>
+    <string name="console_subagent_task">Task: %1$s</string>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="console_subagent_running">进行中</string>
+    <string name="console_subagent_stalled">没有进展</string>
+    <string name="console_subagent_completed">完成</string>
+    <string name="console_subagent_failed">失败</string>
+    <string name="console_subagent_cancelled">已取消</string>
+    <string name="console_subagent_timed_out">超时停止</string>
+    <string name="console_subagent_log">%1$ds · 工具 %2$d 次 · 模型 %3$d 次 · 输入 %4$d · 输出 %5$d</string>
+    <string name="console_subagent_log_cached">%1$ds · 工具 %2$d 次 · 模型 %3$d 次 · 输入 %4$d 缓存 %5$d%% · 输出 %6$d</string>
+    <string name="console_subagent_task">任务：%1$s</string>
+</resources>
