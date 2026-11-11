@@ -5,6 +5,16 @@ called out; a patch release does not break it.
 
 ## Unreleased (0.5.0)
 
+- **The app server (experimental).** Two new artifacts, in `agent-bom`: `agent-app-protocol` (plain JVM) and
+  `agent-app-server` (Android) make an Android app an agent, one runtime behind a JSON-RPC protocol of threads, turns
+  and items that every front end reaches as a client (`ServerClient`), with a plugin kernel (`AppServerPlugin`) and
+  plugin packages a person installs. Both are experimental and may change in a minor release: their entry points carry
+  `@ExperimentalAppServerApi`, whose opt-in, without one, is a warning. The guide for hosts is
+  `agent-app-server/README.md`; `samples/agent-app-sample`, `-notes`, `-timer` and `-habits` are apps on it, and
+  `tools/agent-plugin` makes plugin packages. No plugin is published: a host writes its own, and the first-party ones
+  (cards, DeepSeek's extras, operating the screen, the device's tools, drawn pages, memory, pictures, plans, A2A) are
+  source modules of the Bothy app, not Maven artifacts; their source is published with Bothy's next release.
+
 - **A remote A2A task that refuses is `REJECTED`, not `FAILED`.** `A2aTask.Status` gains `REJECTED` (a new
   constant: a host's exhaustive `when` over the statuses needs a branch), terminal like `FAILED`; the direct client and
   `agent-a2a-client-official` report a task in the `rejected` state with it, where both reported `FAILED`. On the

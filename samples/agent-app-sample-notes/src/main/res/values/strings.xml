@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Notes agent</string>
+    <string name="input_hint">Ask, or tell it what to note down</string>
+    <string name="send">Send</string>
+    <string name="base_url">Another model service: its URL (OpenAI-compatible)</string>
+    <string name="model">Model</string>
+    <string name="api_key">API key</string>
+    <string name="use_model">Use this model</string>
+    <string name="approve_tool">Let the assistant run %1$s?</string>
+    <string name="allow">Allow</string>
+    <string name="deny">Deny</string>
+    <string name="connecting">Connecting…</string>
+    <string name="running">Working…</string>
+    <string name="service_channel">Background requests</string>
+    <string name="service_working">Working on a request</string>
+</resources>

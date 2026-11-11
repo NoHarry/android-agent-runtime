@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 模型与服务的文字。 -->
+<resources>
+    <string name="model_missing_api_key">缺少 %1$s 的 API key。请在设置中填写，或放在以下位置之一：\n%2$s</string>
+    <string name="model_choose_model_first">请在输入框旁选择模型；可先在设置中拉取或添加模型。</string>
+</resources>

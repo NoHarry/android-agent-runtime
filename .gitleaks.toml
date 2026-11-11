@@ -7,4 +7,7 @@ useDefault = true
 description = "Fake credentials the runtime's redaction and privacy tests feed in"
 regexes = [
   '''sk-(gold|fail|wait)secret123''',
+  # The app server's tests: the public keys (never secret) of the example plugin packages, which all start with the
+  # fixed header of a P-256 public key.
+  '''3059301306072a8648ce3d020106082a8648ce3d030107034200[0-9a-f]+''',
 ]

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Model and service strings. values-zh holds the Chinese. -->
+<resources>
+    <string name="model_missing_api_key">Missing API key for %1$s. Set it in Config or provide one of:\n%2$s</string>
+    <string name="model_choose_model_first">Choose a model beside the message box; you can fetch or add models in Settings first.</string>
+</resources>

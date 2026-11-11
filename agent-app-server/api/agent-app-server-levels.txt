@@ -1,0 +1,401 @@
+cc.noharry.agent.appserver.AppServerPluginApi | host | annotation class AppServerPluginApi
+cc.noharry.agent.appserver.BootReceiver | host | class BootReceiver : BroadcastReceiver()
+cc.noharry.agent.appserver.FoundException | plugin | class FoundException(val finding: Finding) : IOException(finding.logText())
+cc.noharry.agent.appserver.InternalAppServerApi | host | annotation class InternalAppServerApi
+cc.noharry.agent.appserver.console.saveFileAtomically | plugin | fun saveFileAtomically(file: File, text: String)
+cc.noharry.agent.appserver.console.setAsideUnreadable | plugin | fun setAsideUnreadable(file: File)
+cc.noharry.agent.appserver.console.singleLine | plugin | fun singleLine(text: String): String
+cc.noharry.agent.appserver.evidence.AppDiagnostics | host | class AppDiagnostics internal constructor( private val logFile: File, private val appContext: android.content.Context? = null, private val onEntry: (DiagnosticEntry) -> Unit = {}, private val onTokenUsage: (TokenDelta) -> Unit = {}, private val nowMillis: () -> Long = { System.currentTimeMillis() }, private val keepsLog: Boolean = true, )
+cc.noharry.agent.appserver.evidence.AppDiagnostics.flush | host | suspend fun flush()
+cc.noharry.agent.appserver.evidence.AppDiagnostics.transport | host | fun transport(provider: ModelProvider): HttpTransport
+cc.noharry.agent.appserver.evidence.SAMPLE_DEBUG_CASE_PACK_PROMPT_SHA256 | test | const val SAMPLE_DEBUG_CASE_PACK_PROMPT_SHA256: String
+cc.noharry.agent.appserver.finding | plugin | fun Throwable.finding(): Finding
+cc.noharry.agent.appserver.http.AppServerHttpTransport | plugin | class AppServerHttpTransport( context: Context, private val callTimeoutSeconds: Long = CALL_TIMEOUT_SECONDS, private val followRedirects: Boolean = true, ) : HttpTransport
+cc.noharry.agent.appserver.http.appServerHttpClient | plugin | fun appServerHttpClient(context: Context): OkHttpClient.Builder
+cc.noharry.agent.appserver.httpFailure | plugin | fun httpFailure(status: Int, message: String?): Finding
+cc.noharry.agent.appserver.mcp.DEBUG_MCP_PROVIDER_TOOLS_JSON | plugin | const val DEBUG_MCP_PROVIDER_TOOLS_JSON
+cc.noharry.agent.appserver.mcp.McpResource | plugin | data class McpResource(val server: String, val serverLabel: String, val uri: String, val name: String, val description: String)
+cc.noharry.agent.appserver.mcp.McpResourceCatalog | plugin | object McpResourceCatalog
+cc.noharry.agent.appserver.mcp.McpResourceCatalog.forget | plugin | fun forget(serverId: String)
+cc.noharry.agent.appserver.mcp.McpResourceCatalog.resources | plugin | suspend fun resources(context: Context, now: Long = System.currentTimeMillis()): List<McpResource>
+cc.noharry.agent.appserver.mcp.McpSecrets | plugin | object McpSecrets
+cc.noharry.agent.appserver.mcp.McpSecrets.clear | plugin | fun clear(context: Context, id: String)
+cc.noharry.agent.appserver.mcp.McpSecrets.requestHeaders | plugin | fun requestHeaders(context: Context, id: String): Map<String, String>
+cc.noharry.agent.appserver.mcp.McpSecrets.requestQuery | plugin | fun requestQuery(context: Context, id: String): Map<String, String>
+cc.noharry.agent.appserver.mcp.McpToolCatalogCache | plugin | class McpToolCatalogCache( private val scope: CoroutineScope, private val failureRetryDelayMillis: Long = 0L, private val nowMillis: () -> Long = { System.nanoTime() / 1_000_000 }, ) : McpToolCatalog
+cc.noharry.agent.appserver.mcp.McpToolCatalogCache.refresh | plugin | fun refresh(fetch: suspend () -> List<ToolDescriptor>)
+cc.noharry.agent.appserver.mcp.McpToolCatalogs | plugin | object McpToolCatalogs
+cc.noharry.agent.appserver.mcp.McpToolCatalogs.cache | plugin | fun cache(serverId: String): McpToolCatalogCache
+cc.noharry.agent.appserver.mcp.McpToolCatalogs.tools | plugin | suspend fun tools(context: Context, server: McpServer): List<ToolDescriptor>
+cc.noharry.agent.appserver.mcp.ScreenMcpMessages | plugin | class ScreenMcpMessages(private val context: Context) : McpClientMessages
+cc.noharry.agent.appserver.mcp.ScreenMcpMessages.isNetwork | plugin | fun isNetwork(problem: String): Boolean
+cc.noharry.agent.appserver.mcp.ToolsJsonMcpProvider | plugin | class ToolsJsonMcpProvider internal constructor( private val catalog: CatalogData, ) : McpClientProvider, ToolCatalogCacheIdentity
+cc.noharry.agent.appserver.mcp.ToolsJsonMcpProvider.Companion | plugin | companion object
+cc.noharry.agent.appserver.mcp.ToolsJsonMcpProvider.Companion.fromAssets | plugin | fun fromAssets(context: Context): ToolsJsonMcpProvider
+cc.noharry.agent.appserver.mcp.loadMcpProviders | plugin | fun loadMcpProviders(context: Context): List<McpProviderState>
+cc.noharry.agent.appserver.mcp.loadMcpServers | plugin | fun loadMcpServers(context: Context): List<McpServer>
+cc.noharry.agent.appserver.mcp.mcpResourceClient | plugin | suspend fun mcpResourceClient(context: Context, serverId: String): McpRpcClient?
+cc.noharry.agent.appserver.mcp.readMcpResourceAll | plugin | suspend fun readMcpResourceAll(context: Context, serverId: String, uri: String): List<JsonObject>?
+cc.noharry.agent.appserver.mcp.readMcpTool | plugin | suspend fun readMcpTool(context: Context, serverId: String, tool: String, arguments: JsonObject): JsonObject?
+cc.noharry.agent.appserver.model.DEFAULT_LOCAL_API_KEY | plugin | const val DEFAULT_LOCAL_API_KEY
+cc.noharry.agent.appserver.model.FetchFallback | plugin | object FetchFallback
+cc.noharry.agent.appserver.model.FetchFallback.enabled | plugin | fun enabled(context: Context): Boolean
+cc.noharry.agent.appserver.model.FetchFallback.set | plugin | fun set(context: Context, enabled: Boolean)
+cc.noharry.agent.appserver.model.ModelCatalogClient | plugin | class ModelCatalogClient( private val transport: HttpTransport, )
+cc.noharry.agent.appserver.model.ModelCatalogClient.fetch | plugin | suspend fun fetch(provider: ModelProvider, apiKey: String, baseUrl: String): List<String>
+cc.noharry.agent.appserver.model.ModelPreset | host | class ModelPreset( val baseUrl: String, val model: String, val apiKey: String = "", val endpoint: ProviderEndpoint = ProviderEndpoint.CHAT_COMPLETIONS, val label: String = model, )
+cc.noharry.agent.appserver.model.ON_DEVICE_FIRST_EVENT_TIMEOUT_MS | plugin | const val ON_DEVICE_FIRST_EVENT_TIMEOUT_MS
+cc.noharry.agent.appserver.model.ProviderAdapter | host | interface ProviderAdapter
+cc.noharry.agent.appserver.model.ProviderAdapter.hasLookup | host | fun hasLookup(context: Context, config: ProviderConfig, profile: ProviderProfile): Boolean
+cc.noharry.agent.appserver.model.ProviderAdapter.lookup | host | fun lookup(context: Context, config: ProviderConfig, profile: ProviderProfile): WebLookup?
+cc.noharry.agent.appserver.model.ProviderAdapter.nativeUpdates | host | fun nativeUpdates(context: Context, config: ProviderConfig, profile: ProviderProfile): Boolean
+cc.noharry.agent.appserver.model.ProviderAdapter.routes | host | fun routes(app: Context): List<RouteModule>
+cc.noharry.agent.appserver.model.ProviderAdapter.shareKeys | host | fun shareKeys(profiles: List<ProviderProfile>): List<ProviderProfile>
+cc.noharry.agent.appserver.model.ProviderConfig | host | data class ProviderConfig( val values: Map<String, String>, val sourcePath: String?, val expectedPaths: List<String>, val profiles: List<ProviderProfile>, val defaultProfileId: String, val activeProfileId: String, val manualProfileEnabled: Boolean, )
+cc.noharry.agent.appserver.model.ProviderConfig.Companion | host | companion object
+cc.noharry.agent.appserver.model.ProviderConfig.Companion.load | host | fun load(context: Context): ProviderConfig
+cc.noharry.agent.appserver.model.ProviderConfig.Companion.saveProviderOverride | host | fun saveProviderOverride( context: Context, provider: ModelProvider, apiKey: String, model: String, baseUrl: String, )
+cc.noharry.agent.appserver.model.ProviderConfig.activeProfile | host | val activeProfile: ProviderProfile
+cc.noharry.agent.appserver.model.ProviderConfig.client | host | fun client( profile: ProviderProfile, stream: Boolean, diagnostics: AppDiagnostics? = null, ): ModelClient
+cc.noharry.agent.appserver.model.ProviderConfig.client | host | fun client( provider: ModelProvider, stream: Boolean, diagnostics: AppDiagnostics? = null, ): ModelClient
+cc.noharry.agent.appserver.model.ProviderConfig.editState | host | fun editState(profile: ProviderProfile): ProviderEditState
+cc.noharry.agent.appserver.model.ProviderConfig.editState | host | fun editState(provider: ModelProvider): ProviderEditState
+cc.noharry.agent.appserver.model.ProviderConfig.editState | host | fun editState(provider: ModelProvider, selectedModel: String): ProviderEditState
+cc.noharry.agent.appserver.model.ProviderConfig.effectiveApiKey | host | fun effectiveApiKey(profile: ProviderProfile): String
+cc.noharry.agent.appserver.model.ProviderConfig.isReady | host | fun isReady(profile: ProviderProfile): Boolean
+cc.noharry.agent.appserver.model.ProviderConfig.isReady | host | fun isReady(provider: ModelProvider): Boolean
+cc.noharry.agent.appserver.model.ProviderConfig.keyFor | host | fun keyFor(profileId: String, typed: String?): String
+cc.noharry.agent.appserver.model.ProviderConfig.missingFinding | host | fun missingFinding(profile: ProviderProfile): Finding
+cc.noharry.agent.appserver.model.ProviderConfig.missingMessage | host | fun missingMessage(context: Context, profile: ProviderProfile): String
+cc.noharry.agent.appserver.model.ProviderConfig.missingMessage | host | fun missingMessage(context: Context, provider: ModelProvider): String
+cc.noharry.agent.appserver.model.ProviderConfig.modelRef | host | fun modelRef(profile: ProviderProfile): ModelRef
+cc.noharry.agent.appserver.model.ProviderConfig.modelRef | host | fun modelRef(provider: ModelProvider): ModelRef
+cc.noharry.agent.appserver.model.ProviderConfig.provider | host | val provider: ModelProvider
+cc.noharry.agent.appserver.model.ProviderConfig.streamEnabled | host | val streamEnabled: Boolean
+cc.noharry.agent.appserver.model.ProviderConfig.summary | host | fun summary(profile: ProviderProfile): String
+cc.noharry.agent.appserver.model.ProviderConfig.summary | host | fun summary(provider: ModelProvider): String
+cc.noharry.agent.appserver.model.ProviderProfile | host | data class ProviderProfile( val id: String, val label: String, val provider: ModelProvider, val apiKey: String, val model: String, val baseUrl: String, val endpoint: ProviderEndpoint = ProviderEndpoint.defaultFor(provider), val variant: String = "", val streamEnabled: Boolean? = null, val serverSideSearch: Boolean = true, val searchCapability: String = "", )
+cc.noharry.agent.appserver.model.ProviderProfile.displayLabel | host | val displayLabel: String
+cc.noharry.agent.appserver.model.ScriptedModel | host | class ScriptedModel(script: Script.() -> Unit) : ModelClient
+cc.noharry.agent.appserver.model.ScriptedModel.Script | host | class Script internal constructor()
+cc.noharry.agent.appserver.model.ScriptedModel.Script.on | host | fun on(pattern: Regex, turn: Turn.(MatchResult) -> Unit)
+cc.noharry.agent.appserver.model.ScriptedModel.Script.on | host | fun on(words: String, turn: Turn.() -> Unit)
+cc.noharry.agent.appserver.model.ScriptedModel.Script.otherwise | host | fun otherwise(turn: Turn.(said: String) -> Unit)
+cc.noharry.agent.appserver.model.ScriptedModel.Turn | host | class Turn internal constructor()
+cc.noharry.agent.appserver.model.ScriptedModel.Turn.answer | host | fun answer(text: (results: List<String>) -> String)
+cc.noharry.agent.appserver.model.ScriptedModel.Turn.answer | host | fun answer(text: String)
+cc.noharry.agent.appserver.model.ScriptedModel.Turn.call | host | fun call(provider: String, tool: String, arguments: Map<String, Any?> = emptyMap())
+cc.noharry.agent.appserver.model.ScriptedModel.Turn.call | host | fun call(provider: String, tool: String, arguments: String)
+cc.noharry.agent.appserver.model.SearchBackend | plugin | object SearchBackend
+cc.noharry.agent.appserver.model.SearchBackend.load | plugin | fun load(context: Context): Map<String, Boolean>
+cc.noharry.agent.appserver.model.SearchBackend.set | plugin | fun set(context: Context, profileId: String, api: Boolean)
+cc.noharry.agent.appserver.model.SearchBackend.usesApi | plugin | fun usesApi(context: Context, profileId: String): Boolean
+cc.noharry.agent.appserver.model.SearchBackend.usesApi | plugin | val usesApi: StateFlow<Map<String, Boolean>>
+cc.noharry.agent.appserver.model.WebLookup | host | interface WebLookup : WebSearchProvider, WebFetchFallback
+cc.noharry.agent.appserver.model.buildConfigValues | plugin | fun buildConfigValues(): Map<String, String>
+cc.noharry.agent.appserver.model.isLocalBaseUrl | plugin | fun String.isLocalBaseUrl(): Boolean
+cc.noharry.agent.appserver.model.orDefault | plugin | fun String?.orDefault(default: String): String
+cc.noharry.agent.appserver.model.preferenceKey | plugin | fun String.preferenceKey(): String
+cc.noharry.agent.appserver.model.saveContextWindow | plugin | fun saveContextWindow(context: Context, profile: ProviderEditState, tokens: Long?)
+cc.noharry.agent.appserver.model.toStreamOverride | plugin | fun String?.toStreamOverride(): Boolean?
+cc.noharry.agent.appserver.model.webLookup | plugin | fun ProviderConfig.webLookup(context: Context, profile: ProviderProfile): WebLookup?
+cc.noharry.agent.appserver.model.withMadeUpCallsSearched | plugin | fun Flow<ModelEvent>.withMadeUpCallsSearched(request: ModelRequest): Flow<ModelEvent>
+cc.noharry.agent.appserver.model.withTextToolCalls | plugin | fun Flow<ModelEvent>.withTextToolCalls( toolNames: Set<String>, newId: () -> String = { "text-call-${UUID.randomUUID()}" }, ): Flow<ModelEvent>
+cc.noharry.agent.appserver.runtime.ANSWERABLE_STATUSES | plugin | val ANSWERABLE_STATUSES
+cc.noharry.agent.appserver.runtime.AnswerProblems | host | class AnswerProblems(val failures: List<String> = emptyList(), val warnings: List<String> = emptyList())
+cc.noharry.agent.appserver.runtime.AnswerProblems.Companion | host | companion object
+cc.noharry.agent.appserver.runtime.AnswerProblems.Companion.NONE | host | val NONE
+cc.noharry.agent.appserver.runtime.BLOCKED_ANSWER_CODE | plugin | const val BLOCKED_ANSWER_CODE
+cc.noharry.agent.appserver.runtime.BuiltInFeatures | host | class BuiltInFeatures( val fileWriting: Boolean = false, val web: Boolean = false, val scripts: Boolean = false, val subagents: Boolean = false, )
+cc.noharry.agent.appserver.runtime.BuiltInFeatures.Companion | host | companion object
+cc.noharry.agent.appserver.runtime.BuiltInFeatures.Companion.NONE | host | val NONE
+cc.noharry.agent.appserver.runtime.Cues | plugin | class Cues(private val chinese: List<String>, english: List<String>)
+cc.noharry.agent.appserver.runtime.Cues.heardIn | plugin | fun heardIn(text: String): Boolean
+cc.noharry.agent.appserver.runtime.ExecutionMessage | plugin | sealed interface ExecutionMessage
+cc.noharry.agent.appserver.runtime.ExecutionMessage.Ended | plugin | data object Ended : ExecutionMessage
+cc.noharry.agent.appserver.runtime.ExecutionMessage.Failure | plugin | data class Failure(val message: String) : ExecutionMessage
+cc.noharry.agent.appserver.runtime.ExecutionMessage.ObserverIssue | plugin | data class ObserverIssue(val observer: String) : ExecutionMessage
+cc.noharry.agent.appserver.runtime.ExecutionMessage.Runtime | plugin | data class Runtime(val event: ThreadEvent) : ExecutionMessage
+cc.noharry.agent.appserver.runtime.ExecutionMessage.Speech | plugin | data class Speech(val text: String, val final: Boolean) : ExecutionMessage
+cc.noharry.agent.appserver.runtime.ExecutionMessage.Stopped | plugin | data object Stopped : ExecutionMessage
+cc.noharry.agent.appserver.runtime.ExecutionMessage.ToolStatus | plugin | data class ToolStatus(val name: String, val callId: String, val phase: String) : ExecutionMessage
+cc.noharry.agent.appserver.runtime.ExecutionSubscription | plugin | class ExecutionSubscription( private val channel: Channel<ExecutionMessage>, private val unsubscribe: () -> Unit, ) : AutoCloseable
+cc.noharry.agent.appserver.runtime.ExecutionSubscription.events | plugin | val events: ReceiveChannel<ExecutionMessage> get()
+cc.noharry.agent.appserver.runtime.ExecutionSubscription.finish | plugin | fun finish()
+cc.noharry.agent.appserver.runtime.HostModels | host | interface HostModels
+cc.noharry.agent.appserver.runtime.HostModels.Companion | host | companion object
+cc.noharry.agent.appserver.runtime.HostModels.Companion.NONE | host | val NONE: HostModels
+cc.noharry.agent.appserver.runtime.HostModels.client | host | fun client(profile: ProviderProfile, stream: Boolean, diagnostics: AppDiagnostics?): ModelClient
+cc.noharry.agent.appserver.runtime.HostModels.contextTokens | host | fun contextTokens(model: String): Long?
+cc.noharry.agent.appserver.runtime.HostModels.firstEventTimeoutMs | host | fun firstEventTimeoutMs(profile: ProviderProfile): Long?
+cc.noharry.agent.appserver.runtime.HostModels.isReady | host | fun isReady(profile: ProviderProfile): Boolean
+cc.noharry.agent.appserver.runtime.HostModels.missing | host | fun missing(profile: ProviderProfile): Finding
+cc.noharry.agent.appserver.runtime.HostModels.missingMessage | host | fun missingMessage(context: Context, profile: ProviderProfile): String
+cc.noharry.agent.appserver.runtime.HostModels.models | host | fun models(profileId: String): List<String>
+cc.noharry.agent.appserver.runtime.HostModels.owns | host | fun owns(profileId: String): Boolean
+cc.noharry.agent.appserver.runtime.HostModels.savedValues | host | fun savedValues(context: Context): Map<String, String>
+cc.noharry.agent.appserver.runtime.HostModels.selected | host | fun selected(profile: ProviderProfile)
+cc.noharry.agent.appserver.runtime.HostModels.withProfiles | host | fun withProfiles(context: Context, profiles: List<ProviderProfile>): List<ProviderProfile>
+cc.noharry.agent.appserver.runtime.PARTIAL_ANSWER_CODE | plugin | const val PARTIAL_ANSWER_CODE
+cc.noharry.agent.appserver.runtime.Persona | host | class Persona(val name: String, val identity: String, val language: String? = null)
+cc.noharry.agent.appserver.runtime.Persona.Companion | host | companion object
+cc.noharry.agent.appserver.runtime.Persona.Companion.GENERIC | host | val GENERIC
+cc.noharry.agent.appserver.runtime.PreviousExchange | plugin | data class PreviousExchange( val sessionId: String, val turnId: String, val userText: String, val assistantText: String, val status: String, val completion: String, val scene: String = "", )
+cc.noharry.agent.appserver.runtime.ProviderPresets | host | class ProviderPresets( val configText: String = "", val localOverridesText: String = "", val values: Map<String, String> = emptyMap(), val source: String = "", val sections: Map<String, String> = emptyMap(), )
+cc.noharry.agent.appserver.runtime.ProviderPresets.Companion | host | companion object
+cc.noharry.agent.appserver.runtime.ProviderPresets.Companion.NONE | host | val NONE
+cc.noharry.agent.appserver.runtime.ReplayCheck | host | interface ReplayCheck
+cc.noharry.agent.appserver.runtime.ReplayCheck.Companion | host | companion object
+cc.noharry.agent.appserver.runtime.ReplayCheck.Companion.NONE | host | val NONE: ReplayCheck
+cc.noharry.agent.appserver.runtime.ReplayCheck.answerProblems | host | fun answerProblems(request: String, answer: String): AnswerProblems
+cc.noharry.agent.appserver.runtime.ReplayCheck.requiresAction | host | fun requiresAction(request: String): Boolean
+cc.noharry.agent.appserver.runtime.RunAddOns | host | interface RunAddOns
+cc.noharry.agent.appserver.runtime.RunAddOns.Companion | host | companion object
+cc.noharry.agent.appserver.runtime.RunAddOns.Companion.NONE | host | val NONE: RunAddOns
+cc.noharry.agent.appserver.runtime.RunAddOns.contextLines | host | fun contextLines(facts: RunFacts): List<String>
+cc.noharry.agent.appserver.runtime.RunAddOns.describeTool | host | fun describeTool(tool: ToolDescriptor): ToolDescriptor
+cc.noharry.agent.appserver.runtime.RunAddOns.loopSettings | host | fun loopSettings(defaults: cc.noharry.agent.runtime.LoopSettings): cc.noharry.agent.runtime.LoopSettings
+cc.noharry.agent.appserver.runtime.RunAddOns.mountsBundledTools | host | fun mountsBundledTools(): Boolean
+cc.noharry.agent.appserver.runtime.RunAddOns.protocolRules | host | fun protocolRules(): cc.noharry.agent.runtime.ProtocolRules
+cc.noharry.agent.appserver.runtime.RunAddOns.queryOnlyInSubagents | host | fun queryOnlyInSubagents(context: Context): Set<String>
+cc.noharry.agent.appserver.runtime.RunAddOns.runHooks | host | fun runHooks(facts: RunFacts): List<RuntimeHook>
+cc.noharry.agent.appserver.runtime.RunAddOns.subagentKinds | host | fun subagentKinds(): List<SubagentKind>
+cc.noharry.agent.appserver.runtime.RunAddOns.systemRules | host | fun systemRules(facts: RunFacts): List<String>
+cc.noharry.agent.appserver.runtime.RunAddOns.toolNote | host | fun toolNote(): ToolNote?
+cc.noharry.agent.appserver.runtime.RunAddOns.toolWrapper | host | fun toolWrapper(context: Context, sessionContext: String, simulated: Boolean): (ToolProvider) -> ToolProvider
+cc.noharry.agent.appserver.runtime.RunAnnouncer | host | interface RunAnnouncer
+cc.noharry.agent.appserver.runtime.RunAnnouncer.announce | host | fun announce(text: String): Boolean
+cc.noharry.agent.appserver.runtime.RunAnnouncer.announceFirst | host | fun announceFirst(text: String): Boolean
+cc.noharry.agent.appserver.runtime.RunAnnouncer.busy | host | val busy: Boolean
+cc.noharry.agent.appserver.runtime.RunAnnouncer.observe | host | fun observe(runScope: RuntimeRunScope, event: ThreadEvent, ownsUi: (RuntimeRunScope) -> Boolean)
+cc.noharry.agent.appserver.runtime.RunAnnouncer.speakWireSpeech | host | fun speakWireSpeech(taskId: String, text: String, final: Boolean)
+cc.noharry.agent.appserver.runtime.RunAnnouncer.stop | host | fun stop()
+cc.noharry.agent.appserver.runtime.RunFacts | host | class RunFacts( val context: Context, val userInput: String, val child: Boolean, val webSearch: Boolean, val subagentTypes: Set<String>, val previousQuestion: String? = null, val imageInput: Boolean = false, val appInFront: Boolean? = null, val hostModel: Boolean = false, val editor: Boolean = false, )
+cc.noharry.agent.appserver.runtime.RuntimeRunScope | host | data class RuntimeRunScope( val requestId: String, val sessionId: String, )
+cc.noharry.agent.appserver.runtime.RuntimeRunScope.ownsUi | host | fun ownsUi(activeRequestId: String?, activeSessionId: String?, selectedSessionId: String): Boolean
+cc.noharry.agent.appserver.runtime.SpokenRuns | plugin | object SpokenRuns
+cc.noharry.agent.appserver.runtime.SpokenRuns.contains | plugin | fun contains(runId: String): Boolean
+cc.noharry.agent.appserver.runtime.SpokenRuns.mark | plugin | fun mark(runId: String)
+cc.noharry.agent.appserver.runtime.SpokenRuns.next | plugin | fun next(): String
+cc.noharry.agent.appserver.runtime.ToolNote | host | class ToolNote(val field: String, val description: String, val applies: (toolName: String) -> Boolean = { true })
+cc.noharry.agent.appserver.runtime.ToolNote.of | host | fun of(argumentsJson: String): String?
+cc.noharry.agent.appserver.runtime.ToolNotes | plugin | object ToolNotes
+cc.noharry.agent.appserver.runtime.ToolNotes.of | plugin | fun of(toolName: String, argumentsJson: String): String?
+cc.noharry.agent.appserver.runtime.VoicePort | host | interface VoicePort
+cc.noharry.agent.appserver.runtime.VoicePort.Companion | host | companion object
+cc.noharry.agent.appserver.runtime.VoicePort.Companion.NONE | host | val NONE: VoicePort
+cc.noharry.agent.appserver.runtime.VoicePort.active | host | val active: StateFlow<Boolean> get()
+cc.noharry.agent.appserver.runtime.VoicePort.chime | host | fun chime()
+cc.noharry.agent.appserver.runtime.VoicePort.deviceAnnouncer | host | fun deviceAnnouncer(context: Context, scope: CoroutineScope, followsSwitch: Boolean = true, onStatus: (String) -> Unit = {}): RunAnnouncer?
+cc.noharry.agent.appserver.runtime.VoicePort.listenAfterReport | host | fun listenAfterReport(context: Context, since: Long)
+cc.noharry.agent.appserver.runtime.VoicePort.ready | host | suspend fun ready(context: Context): Boolean
+cc.noharry.agent.appserver.runtime.VoicePort.refresh | host | fun refresh(context: Context)
+cc.noharry.agent.appserver.runtime.VoicePort.silence | host | fun silence(requestId: String)
+cc.noharry.agent.appserver.runtime.VoicePort.speak | host | fun speak(event: ThreadEvent, requestId: String, owns: () -> Boolean, say: () -> Unit)
+cc.noharry.agent.appserver.runtime.VoicePort.textAnnouncer | host | fun textAnnouncer(scope: CoroutineScope, output: (text: String, final: Boolean) -> Unit): RunAnnouncer?
+cc.noharry.agent.appserver.runtime.encodeSessionId | plugin | fun encodeSessionId(sessionId: String): String
+cc.noharry.agent.appserver.runtime.followUpQuestion | plugin | fun ThreadEvent.followUpQuestion(): Pair<String, String>?
+cc.noharry.agent.appserver.runtime.generatedImageFile | plugin | fun generatedImageFile(context: Context, reference: String): File?
+cc.noharry.agent.appserver.runtime.imageExtension | plugin | fun imageExtension(bytes: ByteArray): String
+cc.noharry.agent.appserver.runtime.lateAnswerText | plugin | fun lateAnswerText(question: String, answer: String): String
+cc.noharry.agent.appserver.runtime.modelText | plugin | fun <T> modelText(chinese: T, english: T): T
+cc.noharry.agent.appserver.runtime.screenFileName | plugin | fun screenFileName(prefix: String, nowMillis: Long = System.currentTimeMillis(), random: Random = Random.Default): String
+cc.noharry.agent.appserver.runtime.sessionPicturesDir | plugin | fun sessionPicturesDir(context: Context, sessionId: String): File
+cc.noharry.agent.appserver.server.AppServer | host | object AppServer
+cc.noharry.agent.appserver.server.AppServer.connect | host | fun connect(context: Context): MessageChannel
+cc.noharry.agent.appserver.server.AppServer.install | host | fun install(app: Application, config: AppServerConfig)
+cc.noharry.agent.appserver.server.AppServer.resetApprovals | host | fun resetApprovals()
+cc.noharry.agent.appserver.server.AppServer.wakeUp | host | fun wakeUp(context: Context)
+cc.noharry.agent.appserver.server.AppServerConfig | host | class AppServerConfig( val name: String, val persona: Persona = Persona.GENERIC, val tools: (Context) -> List<ToolProvider> = { emptyList() }, val rules: List<String> = emptyList(), val skills: (Context) -> List<RuntimeSkill> = { emptyList() }, val hooks: List<RuntimeHook> = emptyList(), val model: ModelPreset? = null, val approvals: ConfirmationMode = ConfirmationMode.ASK_EVERY_TIME, val unaskedTools: Set<String> = emptySet(), val simulatedModel: (() -> ModelClient)? = null, val simulatedBackend: Boolean = false, val builtIns: BuiltInFeatures = BuiltInFeatures.NONE, val plugins: List<AppServerPlugin> = emptyList(), val debugSockets: Boolean = false, val diagnostics: Boolean = false, val presets: ProviderPresets = ProviderPresets.NONE, val voice: VoicePort = VoicePort.NONE, val models: HostModels = HostModels.NONE, val runs: RunAddOns = RunAddOns.NONE, val replayCheck: ReplayCheck = ReplayCheck.NONE, @RawRes val extraTrustRoots: Int? = null, val scene: String = DEFAULT_SCENE, val trustedPublishers: Set<String> = emptySet(), val allowUnsignedPackages: Boolean = false, val maxScriptToolSeconds: Int = 30, )
+cc.noharry.agent.appserver.server.AppServerPlugin | host | interface AppServerPlugin
+cc.noharry.agent.appserver.server.AppServerPlugin.apply | host | fun apply(ctx: PluginContext)
+cc.noharry.agent.appserver.server.AppServerPlugin.clearWhileOff | host | fun clearWhileOff(app: Application, clearing: DataClearing): Boolean
+cc.noharry.agent.appserver.server.AppServerPlugin.id | host | val id: String
+cc.noharry.agent.appserver.server.AppServerPlugin.needs | host | val needs: Set<String> get()
+cc.noharry.agent.appserver.server.AppServerPlugin.required | host | val required: Boolean get()
+cc.noharry.agent.appserver.server.AppServerTesting | test | object AppServerTesting
+cc.noharry.agent.appserver.server.AppServerTesting.Prompt | test | class Prompt(val system: String, val runContext: String, val skills: List<Pair<String, String>>)
+cc.noharry.agent.appserver.server.AppServerTesting.Prompt.text | test | val text: String get()
+cc.noharry.agent.appserver.server.AppServerTesting.completedTurn | test | fun completedTurn(event: ThreadEvent.TurnCompleted, result: RuntimeResult?): ThreadEvent.TurnCompleted
+cc.noharry.agent.appserver.server.AppServerTesting.deleteMcpServer | test | fun deleteMcpServer(context: Context, id: String): Boolean
+cc.noharry.agent.appserver.server.AppServerTesting.install | test | fun install(config: AppServerConfig)
+cc.noharry.agent.appserver.server.AppServerTesting.noteToolCall | test | fun noteToolCall(toolName: String, argumentsJson: String, note: String)
+cc.noharry.agent.appserver.server.AppServerTesting.prompt | test | fun prompt(context: Context, input: String, skills: List<RuntimeSkill>? = null, history: String = ""): Prompt
+cc.noharry.agent.appserver.server.AppServerTesting.requestsAnswered | test | fun requestsAnswered(modules: List<RouteModule>): Set<String>
+cc.noharry.agent.appserver.server.AppServerTesting.reset | test | fun reset()
+cc.noharry.agent.appserver.server.AppServerTesting.running | test | fun running(additions: PluginAdditions)
+cc.noharry.agent.appserver.server.AppServerTesting.saveMcpServer | test | fun saveMcpServer(context: Context, draft: McpServerDraft): Result<String>
+cc.noharry.agent.appserver.server.AppServerTesting.switchMcpProvider | test | fun switchMcpProvider(context: Context, id: String, enabled: Boolean)
+cc.noharry.agent.appserver.server.Assistant | plugin | interface Assistant
+cc.noharry.agent.appserver.server.Assistant.ask | plugin | suspend fun <P, R> ask(method: RequestMethod<P, R>, params: P): R?
+cc.noharry.agent.appserver.server.Assistant.card | plugin | suspend fun card(command: OverlayCommand): String?
+cc.noharry.agent.appserver.server.Assistant.ensureRunning | plugin | fun ensureRunning(done: (String?) -> Unit = {})
+cc.noharry.agent.appserver.server.Assistant.inFront | plugin | val inFront: Boolean
+cc.noharry.agent.appserver.server.Assistant.ready | plugin | val ready: Boolean
+cc.noharry.agent.appserver.server.Assistant.start | plugin | fun start(open: Boolean, done: (String?) -> Unit = {})
+cc.noharry.agent.appserver.server.Assistant.tell | plugin | fun <P> tell(method: NotificationMethod<P>, params: P)
+cc.noharry.agent.appserver.server.Assistant.wake | plugin | fun wake(origin: String, taken: (Boolean) -> Unit)
+cc.noharry.agent.appserver.server.DataClearing | host | class DataClearing(val sessionId: String?, val also: Set<String> = emptySet())
+cc.noharry.agent.appserver.server.DataClearing.alsoClears | host | fun alsoClears(id: String): Boolean
+cc.noharry.agent.appserver.server.Delivery | host | class Delivery( val shown: String, val title: String, val forModel: String, val said: String? = null, val showCard: Boolean = false, val delivered: () -> Unit = {}, )
+cc.noharry.agent.appserver.server.ForegroundApp | plugin | class ForegroundApp(val label: String, val packageName: String)
+cc.noharry.agent.appserver.server.ForegroundApps | plugin | fun interface ForegroundApps
+cc.noharry.agent.appserver.server.ForegroundApps.current | plugin | fun current(context: Context): ForegroundApp?
+cc.noharry.agent.appserver.server.OutsideTurns | plugin | interface OutsideTurns
+cc.noharry.agent.appserver.server.OutsideTurns.cancel | plugin | suspend fun cancel(sessionId: String, runId: String)
+cc.noharry.agent.appserver.server.OutsideTurns.follow | plugin | fun follow(runId: String): ExecutionSubscription
+cc.noharry.agent.appserver.server.OutsideTurns.input | plugin | suspend fun input(sessionId: String, runId: String, messageId: String, text: String, questionId: String?): SteerResult
+cc.noharry.agent.appserver.server.OutsideTurns.run | plugin | suspend fun run(text: String, runId: String, sessionId: String)
+cc.noharry.agent.appserver.server.OwnToolServer | test | class OwnToolServer(val mainAgentOnly: Boolean = false, val service: Boolean = true, val worksDevice: Boolean = false, val acts: ToolActs? = null)
+cc.noharry.agent.appserver.server.PluginAdditions | test | class PluginAdditions( val offers: Set<String> = emptySet(), val providerAdapters: List<ProviderAdapter> = emptyList(), val tools: List<PluginTools> = emptyList(), val toolWrappers: List<(ToolProvider) -> ToolProvider> = emptyList(), val inputs: List<(String, String, PreviousExchange?) -> String?> = emptyList(), val routes: Map<String, PluginRoute> = emptyMap(), val skills: List<PluginSkill> = emptyList(), val rules: List<String> = emptyList(), val mcpServers: List<PluginMcpServer> = emptyList(), val toolServers: List<PluginToolServer> = emptyList(), val runTools: List<(RunFacts) -> List<ToolProvider>> = emptyList(), val contextLines: List<(RunFacts) -> List<String>> = emptyList(), val contextProviders: List<(RunFacts) -> List<RuntimeContextProvider>> = emptyList(), val ownToolServers: Map<String, OwnToolServer> = emptyMap(), val dataClearers: List<(DataClearing) -> Boolean> = emptyList(), val clockChanged: List<() -> Unit> = emptyList(), val runHooks: List<(RunFacts) -> List<RuntimeHook>> = emptyList(), val skillSections: List<(Context) -> Set<String>> = emptyList(), val turnLabels: List<(String) -> String?> = emptyList(), val localTurns: List<() -> Unit> = emptyList(), private val services: Map<Class<*>, Any> = emptyMap(), )
+cc.noharry.agent.appserver.server.PluginAdditions.Companion | test | companion object
+cc.noharry.agent.appserver.server.PluginAdditions.Companion.NONE | test | val NONE
+cc.noharry.agent.appserver.server.PluginAdditions.acts | test | fun acts(server: String, tool: String, arguments: String): Boolean?
+cc.noharry.agent.appserver.server.PluginAdditions.clearData | test | fun clearData(clearing: DataClearing): Boolean
+cc.noharry.agent.appserver.server.PluginAdditions.localTurnStarted | test | fun localTurnStarted()
+cc.noharry.agent.appserver.server.PluginAdditions.mainAgentOnly | test | fun mainAgentOnly(server: String): Boolean
+cc.noharry.agent.appserver.server.PluginAdditions.ownsByPrefix | test | fun ownsByPrefix(server: String): Boolean
+cc.noharry.agent.appserver.server.PluginAdditions.ownsToolServer | test | fun ownsToolServer(server: String): Boolean
+cc.noharry.agent.appserver.server.PluginAdditions.service | test | fun <T : Any> service(type: Class<T>): T?
+cc.noharry.agent.appserver.server.PluginAdditions.skillSections | test | fun skillSections(context: Context): Set<String>
+cc.noharry.agent.appserver.server.PluginAdditions.startsOnBoot | test | val startsOnBoot: Boolean get()
+cc.noharry.agent.appserver.server.PluginAdditions.turnLabel | test | fun turnLabel(text: String): String?
+cc.noharry.agent.appserver.server.PluginContext | host | interface PluginContext
+cc.noharry.agent.appserver.server.PluginContext.app | host | val app: Application
+cc.noharry.agent.appserver.server.PluginContext.approvalMode | host | val approvalMode: ConfirmationMode
+cc.noharry.agent.appserver.server.PluginContext.assistant | plugin | val assistant: Assistant
+cc.noharry.agent.appserver.server.PluginContext.contextLines | plugin | fun contextLines(lines: (RunFacts) -> List<String>)
+cc.noharry.agent.appserver.server.PluginContext.contextProviders | plugin | fun contextProviders(provide: (RunFacts) -> List<RuntimeContextProvider>)
+cc.noharry.agent.appserver.server.PluginContext.deliver | host | fun deliver(delivery: Delivery)
+cc.noharry.agent.appserver.server.PluginContext.describeTool | host | fun describeTool(tool: ToolDescriptor): ToolDescriptor
+cc.noharry.agent.appserver.server.PluginContext.mcpServers | host | fun mcpServers(servers: List<PluginMcpServer>)
+cc.noharry.agent.appserver.server.PluginContext.offer | plugin | fun offer(feature: String)
+cc.noharry.agent.appserver.server.PluginContext.offers | plugin | fun offers(feature: String): Boolean
+cc.noharry.agent.appserver.server.PluginContext.onAppInFront | plugin | fun onAppInFront(block: (inFront: Boolean) -> Unit)
+cc.noharry.agent.appserver.server.PluginContext.onClearData | plugin | fun onClearData(clear: (DataClearing) -> Boolean)
+cc.noharry.agent.appserver.server.PluginContext.onLocalTurn | plugin | fun onLocalTurn(block: () -> Unit)
+cc.noharry.agent.appserver.server.PluginContext.onPresenterReady | plugin | fun onPresenterReady(block: (ready: Boolean) -> Unit)
+cc.noharry.agent.appserver.server.PluginContext.onStop | host | fun onStop(block: () -> Unit)
+cc.noharry.agent.appserver.server.PluginContext.outsideTurns | plugin | val outsideTurns: OutsideTurns
+cc.noharry.agent.appserver.server.PluginContext.ownToolServer | host | fun ownToolServer( id: String, mainAgentOnly: Boolean = false, service: Boolean = true, worksDevice: Boolean = false, acts: ((tool: String, arguments: String) -> Boolean?)? = null, )
+cc.noharry.agent.appserver.server.PluginContext.prepareInput | plugin | fun prepareInput(prepare: (sessionId: String, text: String, previous: PreviousExchange?) -> String?)
+cc.noharry.agent.appserver.server.PluginContext.provide | plugin | fun <T : Any> provide(type: Class<T>, service: T)
+cc.noharry.agent.appserver.server.PluginContext.providerAdapter | plugin | fun providerAdapter(adapter: ProviderAdapter)
+cc.noharry.agent.appserver.server.PluginContext.publish | host | fun publish(block: PublishedState.() -> Unit)
+cc.noharry.agent.appserver.server.PluginContext.request | plugin | suspend fun <P, R> request(method: RequestMethod<P, R>, params: P): R
+cc.noharry.agent.appserver.server.PluginContext.routes | host | fun routes(module: RouteModule)
+cc.noharry.agent.appserver.server.PluginContext.rules | host | fun rules(rules: List<String>)
+cc.noharry.agent.appserver.server.PluginContext.runHooks | plugin | fun runHooks(provide: (RunFacts) -> List<RuntimeHook>)
+cc.noharry.agent.appserver.server.PluginContext.runTools | plugin | fun runTools(provide: (RunFacts) -> List<ToolProvider>)
+cc.noharry.agent.appserver.server.PluginContext.scope | host | val scope: CoroutineScope
+cc.noharry.agent.appserver.server.PluginContext.service | plugin | fun <T : Any> service(type: Class<T>): T?
+cc.noharry.agent.appserver.server.PluginContext.skillSections | plugin | fun skillSections(on: (Context) -> Set<String>)
+cc.noharry.agent.appserver.server.PluginContext.skills | host | fun skills(skills: List<PluginSkill>)
+cc.noharry.agent.appserver.server.PluginContext.speech | plugin | val speech: Speech
+cc.noharry.agent.appserver.server.PluginContext.startOnBoot | host | fun startOnBoot(clockChanged: () -> Unit = {})
+cc.noharry.agent.appserver.server.PluginContext.toolServers | host | fun toolServers(servers: List<PluginToolServer>)
+cc.noharry.agent.appserver.server.PluginContext.tools | host | fun tools(askBeforeActions: Boolean = false, provide: (context: Context, mounted: List<ToolProvider>) -> List<ToolProvider>)
+cc.noharry.agent.appserver.server.PluginContext.turnLabel | plugin | fun turnLabel(label: (text: String) -> String?)
+cc.noharry.agent.appserver.server.PluginContext.turns | plugin | val turns: Turns
+cc.noharry.agent.appserver.server.PluginContext.voice | host | val voice: VoicePort
+cc.noharry.agent.appserver.server.PluginContext.wrapTools | plugin | fun wrapTools(wrap: (ToolProvider) -> ToolProvider)
+cc.noharry.agent.appserver.server.PluginHost | test | class PluginHost( private val app: Application, plugins: List<AppServerPlugin>, private val store: PluginSwitches = PreferenceSwitches(app), private val main: kotlin.coroutines.CoroutineContext = Dispatchers.Main.immediate, private val conversation: (Context, Delivery) -> Unit = { context, delivery -> RuntimeSession.deliver(context, delivery) }, )
+cc.noharry.agent.appserver.server.PluginHost.additions | test | var additions: PluginAdditions
+cc.noharry.agent.appserver.server.PluginHost.publishInto | test | fun publishInto(published: PublishedState)
+cc.noharry.agent.appserver.server.PluginHost.setEnabled | test | fun setEnabled(id: String, enabled: Boolean): List<PluginView>
+cc.noharry.agent.appserver.server.PluginHost.startAll | test | fun startAll()
+cc.noharry.agent.appserver.server.PluginMcpServer | host | class PluginMcpServer( val name: String, val label: String, val url: String, val headers: () -> Map<String, String> = { emptyMap() }, val query: () -> Map<String, String> = { emptyMap() }, val askBeforeActions: Boolean = false, val readOnlyHints: Boolean = true, )
+cc.noharry.agent.appserver.server.PluginRoute | test | typealias PluginRoute
+cc.noharry.agent.appserver.server.PluginSkill | host | class PluginSkill(val name: String, val description: String, val text: String, val preload: Boolean = false)
+cc.noharry.agent.appserver.server.PluginSwitches | test | interface PluginSwitches
+cc.noharry.agent.appserver.server.PluginSwitches.forget | test | fun forget(id: String)
+cc.noharry.agent.appserver.server.PluginSwitches.isOn | test | fun isOn(id: String): Boolean
+cc.noharry.agent.appserver.server.PluginSwitches.set | test | fun set(id: String, on: Boolean)
+cc.noharry.agent.appserver.server.PluginToolServer | host | class PluginToolServer( val id: String, val label: String, val title: (Context) -> String, val onAtFirst: Boolean = false, val worksDevice: Boolean = false, val notificationAccess: ((Context) -> Boolean)? = null, val provider: (context: Context, wrap: (ToolProvider) -> ToolProvider) -> ToolProvider, )
+cc.noharry.agent.appserver.server.PluginTools | test | class PluginTools(val askBeforeActions: Boolean, val provide: (Context, List<ToolProvider>) -> List<ToolProvider>)
+cc.noharry.agent.appserver.server.PreferencesSource | plugin | object PreferencesSource
+cc.noharry.agent.appserver.server.PreferencesSource.changed | plugin | fun changed()
+cc.noharry.agent.appserver.server.PreferencesSource.changes | plugin | val changes: SharedFlow<Unit>
+cc.noharry.agent.appserver.server.PreferencesSource.read | plugin | fun read(context: Context): Preferences
+cc.noharry.agent.appserver.server.PublishedState | host | interface PublishedState
+cc.noharry.agent.appserver.server.PublishedState.broadcast | host | fun broadcast(notification: JsonRpcNotification)
+cc.noharry.agent.appserver.server.PublishedState.current | host | val current: ServerState
+cc.noharry.agent.appserver.server.PublishedState.follow | host | fun <T> follow(flow: Flow<T>, into: ServerState.(T) -> ServerState)
+cc.noharry.agent.appserver.server.PublishedState.update | host | fun update(change: ServerState.() -> ServerState)
+cc.noharry.agent.appserver.server.RouteModule | host | fun interface RouteModule
+cc.noharry.agent.appserver.server.RouteModule.install | host | fun RouteTable.install()
+cc.noharry.agent.appserver.server.RouteTable | host | interface RouteTable
+cc.noharry.agent.appserver.server.RouteTable.on | host | fun <P, R> on(method: RequestMethod<P, R>, block: suspend (P) -> R)
+cc.noharry.agent.appserver.server.Speech | plugin | interface Speech
+cc.noharry.agent.appserver.server.Speech.announceFirst | plugin | fun announceFirst(text: String): Boolean
+cc.noharry.agent.appserver.server.Speech.heard | plugin | fun heard(text: String, forRun: String = text, modelText: String? = null, onNewTurn: () -> Unit = {})
+cc.noharry.agent.appserver.server.Speech.preview | plugin | fun preview(text: String, done: (Boolean) -> Unit)
+cc.noharry.agent.appserver.server.Speech.silence | plugin | fun silence()
+cc.noharry.agent.appserver.server.Speech.speaking | plugin | val speaking: Boolean
+cc.noharry.agent.appserver.server.Turns | plugin | interface Turns
+cc.noharry.agent.appserver.server.Turns.checkHostedSearch | plugin | fun checkHostedSearch(text: String, stream: Boolean = false)
+cc.noharry.agent.appserver.server.Turns.newConversation | plugin | fun newConversation()
+cc.noharry.agent.appserver.server.Turns.newConversationIfQuiet | plugin | fun newConversationIfQuiet(): Boolean
+cc.noharry.agent.appserver.server.Turns.note | plugin | fun note(text: String)
+cc.noharry.agent.appserver.server.Turns.recentExchanges | plugin | suspend fun recentExchanges(limit: Int = OUTSIDE_CONTEXT_TURNS): List<Pair<String, String>>
+cc.noharry.agent.appserver.server.Turns.record | plugin | fun record(words: String, reply: String, label: String, speak: Boolean = true)
+cc.noharry.agent.appserver.server.Turns.replace | plugin | fun replace(text: String, live: Boolean = true, stream: Boolean? = null)
+cc.noharry.agent.appserver.server.Turns.running | plugin | val running: Boolean
+cc.noharry.agent.appserver.server.Turns.start | plugin | fun start(text: String, spoken: Boolean = false, modelText: String? = null, live: Boolean = false, stream: Boolean? = null)
+cc.noharry.agent.appserver.server.Turns.stop | plugin | fun stop()
+cc.noharry.agent.appserver.server.Turns.watch | plugin | fun watch(listener: (ServerState) -> Unit): () -> Unit
+cc.noharry.agent.appserver.server.coreModules | plugin | fun coreModules(app: Context): List<RouteModule>
+cc.noharry.agent.appserver.server.foregroundApp | plugin | fun foregroundApp(context: Context): ForegroundApp?
+cc.noharry.agent.appserver.session.SESSION_QUERY_INDEX_PATH | plugin | const val SESSION_QUERY_INDEX_PATH
+cc.noharry.agent.appserver.session.SessionSettings | plugin | object SessionSettings
+cc.noharry.agent.appserver.session.SessionSettings.init | plugin | fun init(context: Context)
+cc.noharry.agent.appserver.session.SessionSettings.policy | plugin | val policy: StateFlow<SessionPolicy>
+cc.noharry.agent.appserver.session.SessionSettings.save | plugin | fun save(context: Context, policy: SessionPolicy)
+cc.noharry.agent.appserver.session.UiState | plugin | typealias UiState
+cc.noharry.agent.appserver.skills.DEFAULT_SUBAGENT_TOOLS | plugin | val DEFAULT_SUBAGENT_TOOLS
+cc.noharry.agent.appserver.skills.RuntimeSkill | host | data class RuntimeSkill( val id: String, val label: String, val description: String, val assetPath: String, val enabled: Boolean, val preload: Boolean = false, val manifestPath: String? = null, val requiresToolServer: String? = null, val requiresSection: String? = null, val mainAgentOnly: Boolean = false, val file: java.io.File? = null, val systemPrompt: Boolean = false, val text: String? = null, )
+cc.noharry.agent.appserver.skills.SubagentKind | host | data class SubagentKind( val id: String, @StringRes val label: Int, val description: String, val assetPath: String, val maxLookups: Int = MAX_CHILD_LOOKUPS, val searchApi: Boolean? = null, val enabled: Boolean = true, val tools: Set<SubagentToolGroup> = DEFAULT_SUBAGENT_TOOLS, val requiresWebLookup: Boolean = false, val reportClosing: String? = null, )
+cc.noharry.agent.appserver.skills.SubagentKind.searches | host | val searches: Boolean get()
+cc.noharry.agent.appserver.skills.SubagentSettings | plugin | data class SubagentSettings( val allowDeviceControl: Boolean = false, val model: String = "", val enabled: Boolean = true, val searchApi: Boolean = false, )
+cc.noharry.agent.appserver.skills.SubagentToolGroup | host | enum class SubagentToolGroup(val wire: String, private val chinese: String, private val english: String, val changes: Boolean = false)
+cc.noharry.agent.appserver.skills.SubagentToolGroup.Companion | host | companion object
+cc.noharry.agent.appserver.skills.SubagentToolGroup.DEVICE_CONTROL | host | DEVICE_CONTROL
+cc.noharry.agent.appserver.skills.SubagentToolGroup.DEVICE_QUERY | host | DEVICE_QUERY
+cc.noharry.agent.appserver.skills.SubagentToolGroup.FETCH | host | FETCH
+cc.noharry.agent.appserver.skills.SubagentToolGroup.READ | host | READ
+cc.noharry.agent.appserver.skills.SubagentToolGroup.SEARCH | host | SEARCH
+cc.noharry.agent.appserver.skills.SubagentToolGroup.SERVICES | host | SERVICES
+cc.noharry.agent.appserver.skills.SubagentToolGroup.TODO | host | TODO
+cc.noharry.agent.appserver.skills.SubagentToolGroup.WRITE | host | WRITE
+cc.noharry.agent.appserver.skills.SubagentToolGroup.label | host | val label: String get()
+cc.noharry.agent.appserver.skills.loadSubagentKinds | plugin | fun loadSubagentKinds(context: Context): List<SubagentKind>
+cc.noharry.agent.appserver.skills.loadSubagentSettings | plugin | fun loadSubagentSettings(context: Context): SubagentSettings
+cc.noharry.agent.appserver.skills.saveSubagentKind | plugin | fun saveSubagentKind(context: Context, id: String, enabled: Boolean)
+cc.noharry.agent.appserver.skills.saveSubagentSettings | plugin | fun saveSubagentSettings(context: Context, settings: SubagentSettings)
+cc.noharry.agent.appserver.skills.withSections | plugin | fun String.withSections(on: Set<String>): String
+cc.noharry.agent.appserver.tools.LastPrompt | plugin | object LastPrompt
+cc.noharry.agent.appserver.tools.LastPrompt.record | plugin | fun record(requestBody: String)
+cc.noharry.agent.appserver.tools.LastPrompt.stats | plugin | var stats: PromptStats?
+cc.noharry.agent.appserver.tools.PromptStats | plugin | data class PromptStats(val staticBytes: Int, val toolBytes: Int, val toolGroups: Int, val shortened: Boolean)
+cc.noharry.agent.appserver.tools.PromptStats.Companion | plugin | companion object
+cc.noharry.agent.appserver.tools.PromptStats.Companion.of | plugin | fun of(system: String): PromptStats?
+cc.noharry.agent.appserver.tools.PromptStats.finding | plugin | fun finding(): Finding
+cc.noharry.agent.appserver.tools.PromptStats.overBudget | plugin | val overBudget: Boolean get()
+cc.noharry.agent.appserver.tools.SchemaValidation | plugin | sealed interface SchemaValidation
+cc.noharry.agent.appserver.tools.SchemaValidation.Invalid | plugin | data class Invalid( val code: String, val message: String, val schemaPath: String? = null, ) : SchemaValidation
+cc.noharry.agent.appserver.tools.SchemaValidation.Valid | plugin | data object Valid : SchemaValidation
+cc.noharry.agent.appserver.tools.Sensitive | plugin | enum class Sensitive
+cc.noharry.agent.appserver.tools.Sensitive.LONG_NUMBER | plugin | LONG_NUMBER
+cc.noharry.agent.appserver.tools.Sensitive.SECRET | plugin | SECRET
+cc.noharry.agent.appserver.tools.isServiceTool | plugin | fun isServiceTool(toolName: String): Boolean
+cc.noharry.agent.appserver.tools.isTransaction | plugin | fun isTransaction(toolName: String): Boolean
+cc.noharry.agent.appserver.tools.sensitiveIn | plugin | fun sensitiveIn(text: String): Sensitive?
+cc.noharry.agent.appserver.tools.validateInputSchema | plugin | fun validateInputSchema(inputSchemaJson: String, argumentsJson: String): SchemaValidation
+cc.noharry.agent.appserver.usage.TokenDelta | plugin | data class TokenDelta( val inputTokens: Int, val outputTokens: Int, val totalTokens: Int, val cachedInputTokens: Int, val cacheHitTokens: Int, val cacheMissTokens: Int, val reasoningTokens: Int = 0, val cacheWriteTokens: Int = 0, )
+cc.noharry.agent.appserver.usage.UsageStore | plugin | object UsageStore
+cc.noharry.agent.appserver.usage.UsageStore.init | plugin | fun init(context: Context)
+cc.noharry.agent.appserver.usage.UsageStore.prices | plugin | val prices: StateFlow<PriceBook>
+cc.noharry.agent.appserver.usage.UsageStore.read | plugin | suspend fun read(): Pair<UsageDays, PriceBook>
+cc.noharry.agent.appserver.usage.UsageStore.record | plugin | fun record(model: String, usage: ModelUsage)
+cc.noharry.agent.appserver.usage.UsageStore.usage | plugin | val usage: StateFlow<UsageDays>
+cc.noharry.agent.appserver.usage.toModelUsage | plugin | fun TokenDelta.toModelUsage()

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 屏幕上显示的 MCP 问题（给模型的留在 ChineseMcpMessages） -->
+    <string name="mcp_problem_timed_out">%1$d 秒没有回应</string>
+    <string name="mcp_problem_unreachable">连不上：%1$s</string>
+    <string name="mcp_problem_unreachable_plain">连不上</string>
+    <string name="mcp_problem_not_json_rpc">服务的回应不是 JSON-RPC</string>
+    <string name="mcp_problem_no_initialize">服务没有回应 initialize</string>
+    <string name="mcp_problem_no_initialize_hint">服务没有回应 initialize：%1$s</string>
+    <string name="mcp_problem_http_refused">服务拒绝了（HTTP %1$d），检查令牌或请求头</string>
+    <string name="mcp_problem_http_not_found">地址不对（HTTP 404）</string>
+    <string name="mcp_problem_http_no_post">这个地址不收 POST（HTTP 405），可能是旧版 SSE 服务，只支持 Streamable HTTP</string>
+    <string name="mcp_problem_http_format">服务不接受这个格式（HTTP %1$d）</string>
+    <string name="mcp_problem_http_server">服务出错了（HTTP %1$d）</string>
+    <string name="mcp_problem_tools_list_failed">tools/list 失败（status=%1$d）</string>
+    <string name="mcp_problem_tools_list_not_json">tools/list 的回应不是 JSON</string>
+    <string name="mcp_problem_tools_list_error">tools/list 出错：%1$s</string>
+    <string name="mcp_problem_tools_list_cursor">tools/list 的分页游标重复了</string>
+    <string name="mcp_problem_tools_list_pages">tools/list 超过 %1$d 页</string>
+    <string name="mcp_provider_tools_json">Tools JSON</string>
+    <string name="mcp_server_deleted">这个 MCP 已经被删除了</string>
+    <string name="mcp_name_required">请填名称</string>
+    <string name="mcp_name_too_long">名称最多 %1$d 个字</string>
+    <string name="mcp_url_invalid">地址格式不对，比如 https://example.com/mcp</string>
+    <string name="mcp_url_scheme">地址要以 https:// 或 http:// 开头</string>
+    <string name="mcp_url_no_host">地址里没有主机名</string>
+    <string name="mcp_url_http_loopback_only">http:// 只能连本机（127.0.0.1 或 localhost，配合 adb reverse），其他地址请用 https://</string>
+    <string name="mcp_header_format">请求头要写成「名称: 值」，一行一个：%1$s</string>
+    <string name="mcp_header_reserved">请求头 %1$s 由 App 自己设置，不能填</string>
+    <string name="mcp_token_spaces">令牌不能有空格</string>
+    <string name="mcp_key_spaces">密钥不能有空格</string>
+    <string name="mcp_token_save_failed">令牌没能保存</string>
+</resources>

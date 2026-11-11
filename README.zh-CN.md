@@ -98,7 +98,22 @@ val runtime = AgentRuntime.builder()
 | `agent-a2a` | 可选（纯 JVM）：通过直连的 JSON-RPC/SSE 传输把任务交给远程 A2A agent，并把 agent 本身开放成本地 A2A 端点 |
 | `agent-a2a-client-official` | 可选：同一个客户端，改用官方 A2A Java SDK 做传输 |
 | `agent-acp` | 可选（纯 JVM）：通过 Agent Client Protocol（ACP）把 agent 的会话开放给编辑器等 ACP 客户端，走 stdio 或任意一对流 |
-| `agent-bom` | 对齐以上所有模块的版本 |
+| `agent-bom` | 对齐以上所有模块和下面 app server 两个构件的版本 |
+
+**App server**（实验性）把一个 Android App 做成 agent：一个运行时放在线程、轮次和条目的 JSON-RPC 协议后面，每个前端都是它的
+客户端，其余功能经插件内核接进来。给宿主的指南是 [agent-app-server/README.md](agent-app-server/README.md)（英文），
+`samples/agent-app-sample*` 是四个跑在它上面的 App。
+
+| 构件 | 是什么 |
+|---|---|
+| `agent-app-protocol` | 协议（纯 JVM）：线程、轮次和条目上的请求、通知和审批，前端渲染的状态，以及它的客户端（`ServerClient`） |
+| `agent-app-server` | 服务端（Android）：协议后面的会话、模型、MCP、skill、子 agent 和用量，插件内核（`AppServerPlugin`、`PluginHost`），以及用户安装的插件包；宿主用 `AppServerConfig` 装上它 |
+
+插件是宿主自己的代码（`AppServerPlugin`），一个都不发布。第一方插件（卡片、DeepSeek 的额外功能、操作屏幕、设备工具、画页面、
+记忆、画图、计划、A2A）是 [Bothy](https://github.com/NoHarry/bothy) App 的源码模块，编进那个 App，不作为 Maven 构件发布，改它们不用给本仓发版；
+它们的源码随 Bothy 的下一个版本公开。
+核心不引用任何插件的包，也不带只有插件才用的运行时模块（`agent-a2a`、`agent-a2a-client-official`、`agent-android-use`、
+`agent-device-capabilities`；`ciCheck` 里的 `checkAppServerLayering`）。
 
 Android App 依赖 `agent-runtime-android`；服务端、桌面工具或测试依赖 `agent-runtime`。可选模块最多依赖 `agent-api`。agent 循环已收进 runtime 内部，`samples/minimal` 展示只配置模型的最小宿主。
 
@@ -107,6 +122,7 @@ Android App 依赖 `agent-runtime-android`；服务端、桌面工具或测试�
 从 0.5.0 起，Thread / Turn / Item 主线 API 和 `cc.noharry.agent.spi` 的主要扩展接口进入稳定承诺。高级配置和诊断仍标为实验性，迁移说明记录在 [CHANGELOG](CHANGELOG.md) 里。
 
 - 标了 `@ExperimentalAgentRuntimeApi` 或 `@ExperimentalA2aClientApi` 的声明最可能变化，需要 opt-in（不加时，运行时的会编译报错，A2A 客户端的只是警告）。
+- App server 的构件（`agent-app-protocol`、`agent-app-server`）整体是实验性的；入口（`ServerClient`、`AppServer`、`AppServerConfig`、`AppServerPlugin`）标了 `@ExperimentalAppServerApi`，不加 opt-in 时是警告。
 - 标了 `@InternalAgentRuntimeApi` 的声明不算 API：只给运行时自己的模块和测试用，任何版本都可能改或删。
 - 每个模块的公开 API 都记录在它的 `api/*.api` 里，CI 会和代码比对，API 的任何变化都不会悄悄发生。
 

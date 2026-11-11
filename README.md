@@ -109,11 +109,28 @@ of your own (a scripted one standing in for an on-device model), tools from your
 | `agent-a2a` | Optional (plain JVM): delegate tasks to remote A2A agents over a direct JSON-RPC/SSE transport, and expose the agent as a local A2A endpoint |
 | `agent-a2a-client-official` | Optional: the same client over the official A2A Java SDK |
 | `agent-acp` | Optional (plain JVM): serve the agent's threads over the Agent Client Protocol (ACP) to editors and other ACP clients, on stdio or any stream |
-| `agent-bom` | One version for all of the above |
+| `agent-bom` | One version for all of the above and the app server's two artifacts below |
 
 An Android app depends on `agent-runtime-android`; a server, desktop tool or test uses `agent-runtime`. Optional
 modules depend at most on `agent-api`. The loop implementation is internal to `agent-runtime`; `samples/minimal`
 shows a host with only a model.
+
+**The app server** (experimental) makes an Android app an agent: one runtime behind a JSON-RPC protocol of threads,
+turns and items, which every front end reaches as a client, and a plugin kernel the rest comes through. Its guide for
+hosts is [agent-app-server/README.md](agent-app-server/README.md); `samples/agent-app-sample*` are four apps on it.
+
+| Artifact | What it is |
+|---|---|
+| `agent-app-protocol` | The protocol (plain JVM): requests, notifications and approvals over threads, turns and items, the state a front end renders, and its client (`ServerClient`) |
+| `agent-app-server` | The server (Android): sessions, models, MCP, skills, subagents and usage behind the protocol, the plugin kernel (`AppServerPlugin`, `PluginHost`) and plugin packages a person installs; a host installs it with an `AppServerConfig` |
+
+Plugins are a host's own code (`AppServerPlugin`); none is published. The first-party ones (cards, DeepSeek's extras,
+operating the screen, the device's tools, drawn pages, memory, pictures, plans, A2A) are source modules of the
+[Bothy](https://github.com/NoHarry/bothy) app, built into it rather than published as Maven artifacts, so they change
+without a release of this one; their source is published with Bothy's next release.
+The core names no plugin's package and carries none of the runtime modules only a plugin brings (`agent-a2a`,
+`agent-a2a-client-official`, `agent-android-use`, `agent-device-capabilities`; `checkAppServerLayering`, part of
+`ciCheck`).
 
 ## API stability
 
@@ -122,6 +139,9 @@ stable. Advanced diagnostic and tuning APIs remain experimental. The [changelog]
 
 - Declarations marked `@ExperimentalAgentRuntimeApi` or `@ExperimentalA2aClientApi` are the likeliest to change, and
   ask for an opt-in (without one, the runtime's are a compile error and the A2A client's a warning).
+- The app server's artifacts (`agent-app-protocol`, `agent-app-server`) are experimental as a whole; their entry points
+  (`ServerClient`, `AppServer`, `AppServerConfig`, `AppServerPlugin`) carry `@ExperimentalAppServerApi`, whose opt-in,
+  without one, is a warning.
 - Declarations marked `@InternalAgentRuntimeApi` are not API: they are there for the runtime's own modules and tests,
   and may change or go in any release.
 - The public API of every module is recorded in its `api/*.api`, which CI compares with the code, so no change to it

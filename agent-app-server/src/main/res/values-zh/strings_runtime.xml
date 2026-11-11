@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_tool_exec_js">执行短脚本并按依赖调用工具；独立开关，skill 不会自动开启。</string>
+    <string name="runtime_tool_search_tools">按语义发现 MCP 工具并加载参数定义。</string>
+    <string name="runtime_tool_list_dir">列出工作区、skill 和 MCP 目录。</string>
+    <string name="runtime_tool_read_file">读取工作区内容、skill 和工具定义。</string>
+    <string name="runtime_tool_grep">搜索工作区文件内容。</string>
+    <string name="runtime_tool_write_file">写入工作区文件。</string>
+    <string name="runtime_tool_edit_file">修改工作区文件。</string>
+    <string name="runtime_tool_update_todo">维护任务步骤与进度。</string>
+    <string name="runtime_tool_ask_async">提出问题后继续执行；回答进入后续请求，不回复也不等待。</string>
+    <string name="runtime_tool_ask">向用户提出澄清问题并等待回复。</string>
+    <string name="runtime_tool_web_fetch">获取网页内容；模型服务自带可见搜索工具时会隐藏，开了网页打不开时的抓取兜底除外。</string>
+    <string name="runtime_tool_web_search">联网搜索，结果模型和日志都看得到；连接配置选用模型服务的搜索接口时才出现。</string>
+    <string name="runtime_tool_spawn_agent">把可以并行的耗时任务交给后台子助手；由主助手自己决定要不要用。</string>
+    <string name="runtime_tool_wait_agent">等待后台子助手，返回各自的进度或结果。</string>
+    <string name="runtime_tool_cancel_agent">停掉不再需要或卡住的后台子助手。</string>
+    <string name="runtime_tool_finish">结束任务并返回答复，运行协议必需。</string>
+    <string name="runtime_answer_not_sent">回答未发送</string>
+    <string name="runtime_answer_session_busy">任务已结束且当前会话正在执行其他任务</string>
+    <string name="runtime_voice_steering_title">语音追加</string>
+    <string name="runtime_subagent_report_title">后台任务</string>
+    <string name="runtime_status_chat">闲聊 · %1$s</string>
+</resources>

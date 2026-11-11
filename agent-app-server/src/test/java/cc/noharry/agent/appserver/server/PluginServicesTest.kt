@@ -1,0 +1,155 @@
+package cc.noharry.agent.appserver.server
+
+import android.app.Application
+import android.os.Looper
+import androidx.test.core.app.ApplicationProvider
+import cc.noharry.agent.appserver.model.ScriptedModel
+import cc.noharry.agent.appserver.protocol.ClientInfo
+import cc.noharry.agent.appserver.protocol.ConfirmationMode
+import cc.noharry.agent.appserver.protocol.ConversationItem
+import cc.noharry.agent.appserver.protocol.Empty
+import cc.noharry.agent.appserver.protocol.OverlayCommand
+import cc.noharry.agent.appserver.protocol.PresentationRequests
+import cc.noharry.agent.appserver.protocol.RunSettingsParams
+import cc.noharry.agent.appserver.protocol.ServerNotifications
+import cc.noharry.agent.appserver.protocol.SettingsRequests
+import cc.noharry.agent.appserver.protocol.TextParams
+import cc.noharry.agent.appserver.protocol.TextResult
+import cc.noharry.agent.appserver.protocol.client.ServerClient
+import cc.noharry.agent.appserver.protocol.client.ServerState
+import cc.noharry.agent.appserver.protocol.jsonrpc.RequestMethod
+import java.time.Duration
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
+
+/**
+ * What a plugin reaches of the server through its context, as a client would see it: requests answered by the
+ * server's routes and another plugin's, turns started and recorded, words heard, and the assistant on screen when no
+ * client presents it. (Its own SDK level: the server's singletons are fresh.)
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [30], application = Application::class)
+class PluginServicesTest {
+    private val app: Application = ApplicationProvider.getApplicationContext()
+    private val scope = CoroutineScope(Dispatchers.Main)
+    private lateinit var client: ServerClient
+
+    @Test
+    fun aPluginReachesTheConversationThroughItsContext() {
+        start()
+        val ctx = Probe.ctx
+        // A setting through the server's own route, and a request another plugin answers.
+        onMain { ctx.request(SettingsRequests.RUN_SET, RunSettingsParams(confirmationMode = ConfirmationMode.DENY_ALL)) }
+        onMain { client.state.first { it.confirmationMode == ConfirmationMode.DENY_ALL } }
+        assertEquals("echo: hi", onMain { ctx.request(ECHO, TextParams("hi")) }.text)
+        // A turn started by the plugin, followed through watch.
+        var seen: ServerState? = null
+        val stop = onMain { ctx.turns.watch { seen = it } }
+        turn { ctx.turns.start("hello") }
+        onMain { client.state.first { !it.isRunning } }
+        assertFalse(ctx.turns.running)
+        assertEquals("hello", seen?.items?.filterIsInstance<ConversationItem.TurnHeader>()?.last()?.fullText)
+        assertEquals("You said hello", lastAnswer())
+        onMain { stop() }
+        // Words heard while nothing runs are a turn of their own.
+        turn { ctx.speech.heard("again") }
+        assertEquals("You said again", lastAnswer())
+        // A turn something else answered is kept as one of the conversation's (written to it in the background).
+        onMain { ctx.turns.record("how are you", "fine", "companion", speak = false) }
+        val recent = onMain {
+            var latest = ctx.turns.recentExchanges(1)
+            while (latest.lastOrNull()?.first != "how are you") {
+                delay(IDLE_MS)
+                latest = ctx.turns.recentExchanges(1)
+            }
+            latest
+        }
+        assertEquals(listOf("how are you" to "fine"), recent)
+        // A new conversation starts empty.
+        onMain { ctx.turns.newConversation() }
+        assertTrue(onMain { ctx.turns.recentExchanges() }.isEmpty())
+        noAssistantOnScreen(ctx.assistant)
+    }
+
+    /** With no client presenting the assistant, its requests answer at once. */
+    private fun noAssistantOnScreen(assistant: Assistant) {
+        assertFalse(assistant.ready)
+        assertFalse(assistant.inFront)
+        assertNull(onMain { assistant.ask(PresentationRequests.ANDROID_USE_BEGIN, Empty) })
+        assertEquals("no assistant on screen", onMain { assistant.card(OverlayCommand.SHOW) })
+        assertFalse(onMain { suspendCoroutine { answer -> assistant.wake("test") { answer.resume(it) } } })
+    }
+
+    private fun start() {
+        AppServer.install(
+            app,
+            AppServerConfig(name = "services-test", plugins = listOf(Probe, Echo), simulatedModel = { SCRIPT }, simulatedBackend = true),
+        )
+        client = ServerClient(AppServer.connect(app), ClientInfo("services-test"), scope = scope)
+        onMain { client.connect() }
+    }
+
+    /** [block] starts a turn; returns once it completed. */
+    private fun turn(block: () -> Unit) = onMain {
+        val ended = scope.async(start = CoroutineStart.UNDISPATCHED) {
+            client.notifications.first { it.method == ServerNotifications.TURN_COMPLETED.name }
+        }
+        block()
+        ended.await()
+    }
+
+    private fun lastAnswer(): String =
+        client.state.value.items.filterIsInstance<ConversationItem.MessageItem>().last { it.final }.content
+
+    /** [block] on the main thread, which the test is: the main looper is turned until it is done. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun <T> onMain(block: suspend () -> T): T {
+        val running = scope.async { block() }
+        val until = System.currentTimeMillis() + WAIT_MS
+        while (!running.isCompleted && System.currentTimeMillis() < until) {
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(IDLE_MS))
+            Thread.sleep(IDLE_MS)
+        }
+        return running.getCompleted()
+    }
+
+    /** Keeps the context the server gave it. */
+    private object Probe : AppServerPlugin {
+        override val id = "probe"
+        lateinit var ctx: PluginContext
+
+        override fun apply(ctx: PluginContext) {
+            this.ctx = ctx
+        }
+    }
+
+    /** A request of its own. */
+    private object Echo : AppServerPlugin {
+        override val id = "echo"
+
+        override fun apply(ctx: PluginContext) = ctx.routes { on(ECHO) { TextResult("echo: ${it.text}") } }
+    }
+
+    private companion object {
+        val ECHO = RequestMethod("test/echo", TextParams.serializer(), TextResult.serializer())
+        val SCRIPT = ScriptedModel { otherwise { answer("You said " + it.trim()) } }
+        const val WAIT_MS = 20_000L
+        const val IDLE_MS = 5L
+    }
+}

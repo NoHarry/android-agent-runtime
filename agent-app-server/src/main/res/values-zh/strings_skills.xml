@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Subagents and their types, adding a skill, the built-in skills, and background task lines. -->
+<resources>
+    <string name="skills_subagent_started">后台任务「%1$s」开始（%2$s）</string>
+    <string name="skills_subagent_stalled">后台任务「%1$s」%2$d 秒没有进展</string>
+    <string name="skills_subagent_stalled_latest">后台任务「%1$s」%2$d 秒没有进展，最近：%3$s</string>
+    <string name="skills_subagent_resumed">后台任务「%1$s」又有进展了</string>
+    <string name="skills_subagent_finished">后台任务「%1$s」%2$s：%3$s</string>
+</resources>
