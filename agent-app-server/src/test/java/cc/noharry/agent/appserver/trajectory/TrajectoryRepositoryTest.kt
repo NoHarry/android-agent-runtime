@@ -18,7 +18,6 @@ import cc.noharry.agent.spi.SessionEventQuery
 import cc.noharry.agent.spi.SessionEventType
 import java.io.File
 import java.nio.file.Files
-import java.util.Collections
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -510,7 +509,8 @@ class TrajectoryRepositoryTest {
         private val readerForCall: ((Int) -> RuntimeMultiSessionRuntimeStub)? = null,
     ) {
         @Volatile var failReads: Boolean = false
-        val changedSessions = Collections.synchronizedList(mutableListOf<String>())
+        // Counted by the test while loads on other threads add to it: a copy-on-write list is safe to iterate.
+        val changedSessions = java.util.concurrent.CopyOnWriteArrayList<String>()
         val baseRoot: File = Files.createTempDirectory("trajectory-repo-").toFile()
         private val readerCalls = AtomicInteger(0)
         val readerCallCount: Int get() = readerCalls.get()
