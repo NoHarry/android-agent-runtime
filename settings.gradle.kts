@@ -1,3 +1,4 @@
+// guide:start repositories
 pluginManagement {
     repositories {
         google()
@@ -11,14 +12,16 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // -PsamplesFromMavenLocal: the extensions sample builds against what publishToMavenLocal wrote, as an app would;
-        // cc.noharry comes from there only.
-        if (providers.gradleProperty("samplesFromMavenLocal").orNull.let { it != null && it != "false" }) {
-            exclusiveContent {
-                forRepository { mavenLocal() }
-                filter { includeGroup("cc.noharry") }
-            }
-        }
+    }
+}
+// guide:end repositories
+
+// -PsamplesFromMavenLocal: the samples build against what publishToMavenLocal wrote, as an app would; cc.noharry comes
+// from there only.
+if (providers.gradleProperty("samplesFromMavenLocal").orNull.let { it != null && it != "false" }) {
+    dependencyResolutionManagement.repositories.exclusiveContent {
+        forRepository { dependencyResolutionManagement.repositories.mavenLocal() }
+        filter { includeGroup("cc.noharry") }
     }
 }
 

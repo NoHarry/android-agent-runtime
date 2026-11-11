@@ -35,9 +35,24 @@ internal class PackageInstaller(
     private val now: () -> Long = System::currentTimeMillis,
     /** The host's most seconds for one call of a package's script tool, whatever the tool asks. */
     private val maxScriptSeconds: Int = DEFAULT_MAX_SCRIPT_SECONDS,
+    /** Whether the app includes the sandbox scripts run in (agent-exec-js); a package with script tools needs it. */
+    private val scriptsAvailable: Boolean = JsSandbox.available,
+    /**
+     * The names the host's other tool servers go by now (its tool providers, the configured MCP servers, the running
+     * plugins', the server's own), on [main]: a package's tools may not go by one of them.
+     */
+    private val otherToolServers: () -> Set<String> = { emptySet() },
 ) {
     private val pending = LinkedHashMap<String, Pending>()
     private val changes = Mutex()
+
+    /**
+     * The tool server names the installed packages' tools go by ([packageToolServers]), as of the last install or
+     * removal: an MCP server the person adds takes none of them.
+     */
+    @Volatile
+    var toolServerNames: Set<String> = emptySet()
+        private set
 
     /**
      * At the process's start, on the main thread: every installed package to the kernel; one that fails, or whose record
@@ -56,6 +71,12 @@ internal class PackageInstaller(
                 logNotStarted(record.id, failed)
             }
         }
+        noteToolServerNames()
+    }
+
+    /** On [main]: what [toolServerNames] says, from the packages registered now. */
+    private fun noteToolServerNames() {
+        toolServerNames = host.plugins().filterIsInstance<PackagePlugin>().flatMapTo(hashSetOf()) { it.manifest?.let(::packageToolServers).orEmpty() }
     }
 
     private fun addDamaged(plugin: UnreadablePackage) = try {
@@ -72,6 +93,8 @@ internal class PackageInstaller(
         val checked = withContext(io) { checkPackage(bytes) }
         val manifest = checked.manifest
         if (!checked.signed && !trust.allowUnsigned) refuse(PackageProblem.UNSIGNED_NOT_ALLOWED)
+        if (manifest.tools.isNotEmpty() && !scriptsAvailable) refuse(PackageProblem.SCRIPTS_UNAVAILABLE, JsSandbox.MISSING)
+        withContext(main) { checkToolServers(manifest) }
         val installed = withContext(main) { host.plugin(manifest.id) }
         if (installed != null && installed !is InstalledPackage) refuse(PackageProblem.ID_TAKEN, manifest.id)
         if (installed is UnreadablePackage) throw UnreadablePackage.damage()
@@ -105,8 +128,13 @@ internal class PackageInstaller(
         val record = withContext(io) { store.record(id) }
         if (record?.version != waiting.fromVersion) refuse(PackageProblem.INSTALL_EXPIRED, "what is installed changed")
         record?.let { checkUpdate(it, waiting.checked) }
+        // Another package, or a server the person added, may have taken a name since the check.
+        withContext(main) { checkToolServers(waiting.checked.manifest) }
         install(waiting.checked, values, kept)
-        withContext(main) { host.views() }
+        withContext(main) {
+            noteToolServerNames()
+            host.views()
+        }
     }
 
     /** Stops the package [id] and deletes its files and secrets; a plugin built into the host is refused. */
@@ -119,7 +147,10 @@ internal class PackageInstaller(
             secrets.clear(id)
             forgetSkills(skills)
         }
-        withContext(main) { host.views() }
+        withContext(main) {
+            noteToolServerNames()
+            host.views()
+        }
     }
 
     private suspend fun install(checked: CheckedPackage, values: Map<String, String>, kept: Map<String, String>) {
@@ -159,6 +190,20 @@ internal class PackageInstaller(
         } catch (failed: Exception) {
             Log.w(LOG_TAG, "package $id: the version before did not start again: ${failed.javaClass.simpleName}")
         }
+    }
+
+    /**
+     * Refuses [manifest] when a name its tools would go by ([packageToolServers]) is another installed package's or one
+     * of [otherToolServers]: a run would give its tools another name, one that changes with what else is installed.
+     */
+    private fun checkToolServers(manifest: PackageManifest) {
+        val names = packageToolServers(manifest)
+        if (names.isEmpty()) return
+        host.plugins().filterIsInstance<PackagePlugin>().filter { it.id != manifest.id }.forEach { other ->
+            val shared = other.manifest?.let(::packageToolServers).orEmpty().intersect(names)
+            shared.firstOrNull()?.let { refuse(PackageProblem.TOOL_SERVER_TAKEN, "$it (${other.id})") }
+        }
+        names.intersect(otherToolServers()).firstOrNull()?.let { refuse(PackageProblem.TOOL_SERVER_TAKEN, it) }
     }
 
     /** An update: signed by the key the first install recorded, and not older than what is installed. */

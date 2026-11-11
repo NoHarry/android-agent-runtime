@@ -5,6 +5,7 @@ import cc.noharry.agent.appserver.protocol.A2aTaskStatus
 import cc.noharry.agent.appserver.protocol.RunActivity
 import cc.noharry.agent.appserver.protocol.RunOutcome
 import cc.noharry.agent.appserver.protocol.RunResult
+import java.util.Locale
 
 fun formatWorkedDuration(durationMs: Long): String {
     val totalSeconds = (durationMs / MILLIS_PER_SECOND).coerceAtLeast(0L)
@@ -13,7 +14,8 @@ fun formatWorkedDuration(durationMs: Long): String {
     val seconds = totalSeconds % SECONDS_PER_MINUTE
     return when {
         hours > 0 -> "${hours}h ${minutes}m ${seconds}s"
-        minutes > 0 -> "${minutes}m ${"%02d".format(seconds)}s"
+        // ASCII digits whatever the device's locale, as the rest of the label.
+        minutes > 0 -> "${minutes}m ${"%02d".format(Locale.ROOT, seconds)}s"
         else -> "${seconds}s"
     }
 }

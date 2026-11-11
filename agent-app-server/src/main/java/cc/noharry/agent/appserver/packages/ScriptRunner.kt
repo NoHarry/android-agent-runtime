@@ -2,7 +2,8 @@
 
 package cc.noharry.agent.appserver.packages
 
-import cc.noharry.agent.exec.js.ZiplineExecEngine
+import cc.noharry.agent.appserver.tools.failureText
+import cc.noharry.agent.appserver.tools.isCallFailure
 import cc.noharry.agent.spi.ExecEngine
 import cc.noharry.agent.spi.ExecRequest
 import cc.noharry.agent.spi.ExecResult
@@ -65,14 +66,15 @@ internal class ScriptGrant(
 )
 
 /**
- * Runs one call of a package's script tool in the sandbox ([ExecEngine], QuickJS through Zipline by default): the
- * call's arguments checked against the tool's input schema, then the script with `run(input)` called and its return
- * value read back as JSON; a thrown error is the tool's failure, as the model reads it, and so is running over the
- * call's time ([ScriptLimits.secondsFor], host calls included), named in seconds. The script reaches the host
- * only through `host.http` and `host.tool` (each a host call through the engine's bridge, [ScriptBridge]) and
- * `host.log` (lines kept in the sandbox and written to the app's log when the call ends). The engine runs the script
- * again from the start after each host call with the earlier answers replayed, so a script must make the same calls
- * each time (no time or random numbers in them); one that does not stops with an error.
+ * Runs one call of a package's script tool in the sandbox ([ExecEngine]: QuickJS through Zipline, when the app includes
+ * agent-exec-js, [JsSandbox]; without it the call fails saying so): the call's arguments checked against the tool's
+ * input schema, then the script with `run(input)` called and its return value read back as JSON; a thrown error is the
+ * tool's failure, as the model reads it, and so is running over the call's time ([ScriptLimits.secondsFor], host calls
+ * included), named in seconds, and anything the engine itself throws. The script reaches the host only through
+ * `host.http` and `host.tool` (each a host call through the engine's bridge, [ScriptBridge]) and `host.log` (lines kept
+ * in the sandbox and written to the app's log when the call ends). The engine runs the script again from the start
+ * after each host call with the earlier answers replayed, so a script must make the same calls each time (no time or
+ * random numbers in them); one that does not stops with an error.
  */
 internal class ScriptRunner(
     private val grant: ScriptGrant,
@@ -80,9 +82,11 @@ internal class ScriptRunner(
     private val hostTools: ScriptHostTools,
     private val log: (String) -> Unit,
     private val limits: ScriptLimits = ScriptLimits(),
-    private val engine: () -> ExecEngine = { ZiplineExecEngine(limits.hostCalls, limits.memoryBytes) },
+    /** The sandbox for each call; null when the app does not include agent-exec-js ([JsSandbox]). */
+    private val engine: (() -> ExecEngine)? = if (JsSandbox.available) ({ JsSandbox.engine(limits.hostCalls, limits.memoryBytes) }) else null,
 ) {
     suspend fun call(tool: ManifestTool, script: String, argumentsJson: String, context: ToolCallContext): ToolCallResult {
+        val engine = engine ?: return failure(JsSandbox.MISSING)
         val input = try {
             input(tool, argumentsJson)
         } catch (refused: ScriptRefusal) {
@@ -92,7 +96,13 @@ internal class ScriptRunner(
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(seconds.toLong())
         val bridge = ScriptBridge(http, hostTools, deadline, context)
         val request = ExecRequest(context.runId, scriptCode(script, input, limits), TimeUnit.SECONDS.toMillis(seconds.toLong()), outputTokens(limits))
-        val result = withContext(Dispatchers.IO) { engine().run(request, bridge) }
+        val result = try {
+            withContext(Dispatchers.IO) { engine().run(request, bridge) }
+        } catch (error: Throwable) {
+            // The engine itself failed (under a JVM, QuickJS's native library missing, say): the call fails saying so.
+            if (!error.isCallFailure()) throw error
+            return failure("the script engine failed: ${error.failureText().take(MAX_ERROR_CHARS)}")
+        }
         return finish(tool, result, seconds)
     }
 
@@ -111,8 +121,14 @@ internal class ScriptRunner(
 
     private fun finish(tool: ManifestTool, result: ExecResult, seconds: Int): ToolCallResult {
         if (!result.ok) {
-            val timedOut = result.errorCode == RuntimeErrorCode.EXEC_TIMEOUT.wireCode
-            return failure(if (timedOut) "the script ran over its time ($seconds s)" else "the script failed: ${result.message.take(MAX_ERROR_CHARS)}")
+            return failure(
+                when (result.errorCode) {
+                    RuntimeErrorCode.EXEC_TIMEOUT.wireCode -> "the script ran over its time ($seconds s)"
+                    // QuickJS did not load, or would misread numbers in this process: no script runs here.
+                    RuntimeErrorCode.EXEC_ENGINE_NOT_CONFIGURED.wireCode -> "the script engine cannot run here: ${result.message.take(MAX_ERROR_CHARS)}"
+                    else -> "the script failed: ${result.message.take(MAX_ERROR_CHARS)}"
+                },
+            )
         }
         val envelope = try {
             Json.parseToJsonElement(result.output) as? JsonObject

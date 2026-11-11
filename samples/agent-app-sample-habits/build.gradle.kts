@@ -35,8 +35,11 @@ kotlin {
     jvmToolchain(17)
     // The app server is experimental: its entry points ask for this opt-in.
     compilerOptions.optIn.add("cc.noharry.agent.appserver.protocol.ExperimentalAppServerApi")
+    // And what a plugin goes further with (HabitListPlugin's line for each run's context) asks for this one.
+    compilerOptions.optIn.add("cc.noharry.agent.appserver.AppServerPluginApi")
 }
 
+// guide:start dependencies
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:2.1.5")
     implementation(project(":agent-app-server"))
@@ -46,4 +49,5 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.12.2")
     testImplementation("androidx.test:core:1.5.0")
 }
+// guide:end dependencies
 // guide:end build-file

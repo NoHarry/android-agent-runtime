@@ -3927,8 +3927,10 @@ public final class cc/noharry/agent/appserver/protocol/PackageProblem : java/lan
 	public static final field NO_MANIFEST Lcc/noharry/agent/appserver/protocol/PackageProblem;
 	public static final field OLDER_VERSION Lcc/noharry/agent/appserver/protocol/PackageProblem;
 	public static final field PUBLISHER_KEY_CHANGED Lcc/noharry/agent/appserver/protocol/PackageProblem;
+	public static final field SCRIPTS_UNAVAILABLE Lcc/noharry/agent/appserver/protocol/PackageProblem;
 	public static final field START_FAILED Lcc/noharry/agent/appserver/protocol/PackageProblem;
 	public static final field STORAGE_FAILED Lcc/noharry/agent/appserver/protocol/PackageProblem;
+	public static final field TOOL_SERVER_TAKEN Lcc/noharry/agent/appserver/protocol/PackageProblem;
 	public static final field TOO_LARGE Lcc/noharry/agent/appserver/protocol/PackageProblem;
 	public static final field TOO_MANY_FILES Lcc/noharry/agent/appserver/protocol/PackageProblem;
 	public static final field UNKNOWN_FORMAT Lcc/noharry/agent/appserver/protocol/PackageProblem;

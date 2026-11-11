@@ -21,8 +21,8 @@ import org.junit.rules.TemporaryFolder
 
 /**
  * What the publishing tool (tools/agent-plugin/agentplugin.py) builds is what the server takes: packages it built and
- * signed (kept here, their keys thrown away), the one with scripts run in the real engine, and, where python3 and
- * openssl are installed, both examples built now.
+ * signed (kept here, their keys thrown away), the one with scripts run in the real engine, the timer sample's built
+ * from its directory, and, where python3 and openssl are installed, both examples built now.
  */
 class PackageToolTest {
     @get:Rule
@@ -59,6 +59,19 @@ class PackageToolTest {
         assertTrue(far.resultJson, "latitude: above 90" in far.resultJson)
         val effects = runBlocking { provider.listTools() }.map { it.effectKind }
         assertEquals(listOf(RuntimeEffectKind.READ_ONLY.name, RuntimeEffectKind.READ_ONLY.name, RuntimeEffectKind.UNKNOWN.name), effects)
+    }
+
+    @Test
+    fun theTimerSamplesPackageIsBuiltFromItsDirectoryAndSignedByThePublisherItTrusts() {
+        val checked = checkPackage(TIMER_PACKAGE.readBytes())
+        val built = checked.files - PackageFormat.SIGNATURE
+        val source = readPackageDirectory(TIMER_PACKAGE_DIR)
+        assertEquals(source.keys, built.keys)
+        source.forEach { (path, bytes) -> assertTrue("$path differs from the built package's", bytes.contentEquals(built.getValue(path))) }
+        val trusted = Regex("""KITCHEN_PUBLISHER\s*=\s*((?:"[0-9a-f]+"\s*\+?\s*)+)""").find(TIMER_CONFIG.readText())!!.groupValues[1]
+        assertEquals(Regex("[0-9a-f]+").findAll(trusted).joinToString("") { it.value }, checked.publisherKey)
+        // A package that asks for nothing: no permissions member at all.
+        assertTrue(checked.manifest.network.isEmpty() && checked.manifest.secrets.isEmpty() && checked.manifest.hostTools.isEmpty())
     }
 
     @Test
@@ -137,5 +150,10 @@ class PackageToolTest {
         val TOOL = File("../tools/agent-plugin/agentplugin.py")
         val EXAMPLE = File("../tools/agent-plugin/example")
         val EXAMPLE_SCRIPTS = File("../tools/agent-plugin/example-scripts")
+
+        /** The timer sample's package: its directory, what was built from it, and the config that trusts its publisher. */
+        val TIMER_PACKAGE_DIR = File("../samples/agent-app-sample-timer/package")
+        val TIMER_PACKAGE = File("../samples/agent-app-sample-timer/src/test/resources/com.example.kitchen.measures-1.0.0.agentplugin")
+        val TIMER_CONFIG = File("../samples/agent-app-sample-timer/src/main/java/cc/noharry/agent/appserver/sample/timer/TimerApplication.kt")
     }
 }

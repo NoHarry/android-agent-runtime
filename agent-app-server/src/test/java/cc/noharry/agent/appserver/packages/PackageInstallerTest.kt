@@ -15,8 +15,15 @@ import cc.noharry.agent.appserver.protocol.PluginView
 import cc.noharry.agent.appserver.server.AppServerConfig
 import cc.noharry.agent.appserver.server.AppServerPlugin
 import cc.noharry.agent.appserver.server.PluginContext
+import cc.noharry.agent.appserver.runtime.AppHost
+import cc.noharry.agent.appserver.runtime.otherToolServerNames
 import cc.noharry.agent.appserver.server.PluginHost
+import cc.noharry.agent.appserver.server.PluginMcpServer
 import cc.noharry.agent.appserver.server.PluginSwitches
+import cc.noharry.agent.spi.ToolCallContext
+import cc.noharry.agent.spi.ToolCallResult
+import cc.noharry.agent.spi.ToolDescriptor
+import cc.noharry.agent.spi.ToolProvider
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -272,6 +279,66 @@ class PackageInstallerTest {
     }
 
     @Test
+    fun twoInstalledPackagesNeverGoByOneToolServerName() = runBlocking {
+        val (_, installer) = server()
+        // Another publisher's package whose id ends as the installed one's: its script tools would be mcp__trains__….
+        val other = scriptFiles().withId("org.other.trains")
+        val waiting = installer.check(build(other))
+        install(installer, build(scriptFiles()))
+        assertProblem(PackageProblem.TOOL_SERVER_TAKEN, "trains (com.example.trains)") { installer.check(build(other)) }
+        // Checked again when confirmed: the name was free when it was checked, not now.
+        assertProblem(PackageProblem.TOOL_SERVER_TAKEN, "trains (com.example.trains)") {
+            installer.confirm(PluginConfirmParams(waiting.installId, mapOf("apiKey" to "k1"), acknowledgeUntrusted = true))
+        }
+        // Its MCP server's name is taken too, by the same name: `<last segment>_<server id>`.
+        assertProblem(PackageProblem.TOOL_SERVER_TAKEN, "trains_trains (com.example.trains)") { installer.check(build(files().withId("org.other.trains"))) }
+        // An update of the installed one keeps its names; a package whose names are others' installs.
+        installer.check(build(scriptFiles().withVersion("1.3.0")))
+        assertTrue(install(installer, build(scriptFiles().withId("org.other.buses"))).running)
+        assertEquals(setOf("trains", "trains_trains", "buses", "buses_trains"), installer.toolServerNames)
+    }
+
+    @Test
+    fun aPackageDoesNotTakeANameTheHostsOtherToolServersGoBy() = runBlocking {
+        val (_, installer) = server(otherToolServers = setOf("trains"))
+        assertProblem(PackageProblem.TOOL_SERVER_TAKEN, "trains") { installer.check(build(scriptFiles())) }
+        // Without script tools it goes by trains_trains only.
+        assertTrue(install(installer, build()).running)
+    }
+
+    @Test
+    fun theNamesAPackageMayNotTakeAreTheHostsTheMcpListsAndItsPluginsButNoPackages() = runBlocking {
+        AppHost.install(tools = { listOf(named("notes")) })
+        try {
+            val pantry = object : AppServerPlugin {
+                override val id = "pantry"
+                override fun apply(ctx: PluginContext) {
+                    ctx.tools { _, _ -> listOf(named("shelf")) }
+                    ctx.mcpServers(listOf(PluginMcpServer("Pantry Stock", "Pantry", "https://pantry.example.com/mcp")))
+                }
+            }
+            val host = PluginHost(app, listOf(pantry), switches, Dispatchers.Unconfined).apply { startAll() }
+            val installer = PackageInstaller(host, PackageStore(plugins), secrets, PackageTrust(), Dispatchers.Unconfined, Dispatchers.Unconfined)
+            install(installer, build(scriptFiles()))
+            val names = otherToolServerNames(app, host)
+            assertTrue(names.toString(), names.containsAll(setOf("notes", "shelf", "pantry_stock", "tools_json")))
+            assertTrue(names.toString(), names.none { it.startsWith("trains") })
+        } finally {
+            AppHost.install(tools = { emptyList() })
+        }
+    }
+
+    @Test
+    fun aPackageWithScriptToolsNeedsTheSandboxInTheApp() = runBlocking {
+        val (_, installer) = server(scriptsAvailable = false)
+        assertProblem(PackageProblem.SCRIPTS_UNAVAILABLE, "scripts need agent-exec-js, which this app does not include") {
+            installer.check(build(scriptFiles()))
+        }
+        // Skills, rules and MCP servers need no sandbox.
+        assertTrue(install(installer, build()).running)
+    }
+
+    @Test
     fun aCheckedPackageWaitsAQuarterOfAnHourAtMost() = runBlocking {
         val installer = server().second
         val checked = installer.check(build())
@@ -280,12 +347,18 @@ class PackageInstallerTest {
     }
 
     /** A host with one plugin of its own and the packages installed so far, as a process starts it. */
-    private fun server(trust: PackageTrust = PackageTrust(), maxScriptSeconds: Int = DEFAULT_MAX_SCRIPT_SECONDS): Pair<PluginHost, PackageInstaller> {
+    private fun server(
+        trust: PackageTrust = PackageTrust(),
+        maxScriptSeconds: Int = DEFAULT_MAX_SCRIPT_SECONDS,
+        scriptsAvailable: Boolean = true,
+        otherToolServers: Set<String> = emptySet(),
+    ): Pair<PluginHost, PackageInstaller> {
         val host = PluginHost(app, listOf(builtIn), switches, Dispatchers.Unconfined)
         host.startAll()
         val installer = PackageInstaller(
             host, PackageStore(plugins), secrets, trust, Dispatchers.Unconfined, Dispatchers.Unconfined,
-            now = { clock }, maxScriptSeconds = maxScriptSeconds,
+            now = { clock }, maxScriptSeconds = maxScriptSeconds, scriptsAvailable = scriptsAvailable,
+            otherToolServers = { otherToolServers },
         )
         installer.loadInstalled()
         return host to installer
@@ -295,6 +368,17 @@ class PackageInstallerTest {
         val checked = installer.check(bytes)
         return installer.confirm(PluginConfirmParams(checked.installId, mapOf("apiKey" to "k1"), acknowledgeUntrusted = true))
             .single { it.id == checked.pkg.id }
+    }
+
+    /** These files with plugin.json naming [id]. */
+    private fun Map<String, ByteArray>.withId(id: String): Map<String, ByteArray> =
+        this + (PackageFormat.MANIFEST to String(getValue(PackageFormat.MANIFEST)).replace("\"com.example.trains\"", "\"$id\"").toByteArray())
+
+    /** A provider with no tools, named [id]. */
+    private fun named(id: String) = object : ToolProvider {
+        override val providerId = id
+        override suspend fun listTools() = emptyList<ToolDescriptor>()
+        override suspend fun callTool(toolName: String, argumentsJson: String, context: ToolCallContext) = ToolCallResult(true, "{}")
     }
 
     /** These files with plugin.json at [version]. */
@@ -313,7 +397,7 @@ class PackageInstallerTest {
         override fun apply(ctx: PluginContext) = Unit
     }
 
-    private suspend fun assertProblem(problem: PackageProblem, block: suspend () -> Unit) {
+    private suspend fun assertProblem(problem: PackageProblem, detail: String? = null, block: suspend () -> Unit) {
         val refused = try {
             block()
             null
@@ -321,6 +405,7 @@ class PackageInstallerTest {
             failed
         }
         assertEquals(refused?.message, problem, refused?.problem)
+        detail?.let { assertEquals(it, refused?.detail) }
     }
 
     /** Secrets that fail to save the new key ([failSave]), or let a plugin that reads it fail to start once ([failStart]). */

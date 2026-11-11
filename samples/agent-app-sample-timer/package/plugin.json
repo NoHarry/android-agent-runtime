@@ -1,0 +1,23 @@
+{
+  "format": 1,
+  "id": "com.example.kitchen.measures",
+  "name": "Kitchen measures",
+  "version": "1.0.0",
+  "publisher": "Example Co.",
+  "description": "Converts kitchen measures: one tool, written as a script, that needs no permission.",
+  "minServer": "0.5.0",
+  "tools": [
+    {
+      "name": "cups_to_ml",
+      "description": "Millilitres in a number of US cups, rounded to whole millilitres.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "cups": { "type": "number", "exclusiveMinimum": 0, "maximum": 100 } },
+        "required": ["cups"],
+        "additionalProperties": false
+      },
+      "script": "scripts/cups_to_ml.js",
+      "readOnly": true
+    }
+  ]
+}

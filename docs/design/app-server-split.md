@@ -172,8 +172,10 @@ They are protocol types and ship with it; the two artifacts' public API names no
   plugin runs.
 - **Keys are not encrypted.** Model profiles' keys, MCP servers' keys and plugin packages' secrets are kept as plain
   text in the app's private storage (the latter two in its no-backup storage).
-- **`agent-exec-js` is always carried**, behind `BuiltInFeatures.scripts` (and plugin packages' script tools): whether
-  it becomes `compileOnly` for a host that leaves both off is open.
+- **`agent-exec-js` is the host's to add.** The server is compiled against it (`compileOnly`) and finds it by its
+  engine's class name, which its consumer rules keep; it does not carry it, as QuickJS is about 4 MB of an APK. Without
+  it, `AppServer.install` refuses `BuiltInFeatures.scripts`, `plugins/install` a package with script tools, and a
+  script tool of a package installed before fails its calls saying so.
 
 ## 10. In scope, and reserved for later
 

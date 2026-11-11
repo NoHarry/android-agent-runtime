@@ -260,8 +260,9 @@ internal class NativeToolUseController(
             return pause.outcome
         } catch (error: CancellationException) {
             throw error
-        } catch (error: RuntimeException) {
-            execFailedResult(RuntimeErrorCode.EXEC_FAILED.wireCode, error.message ?: "Exec failed.", retryable = true)
+        } catch (error: Throwable) {
+            if (!error.isCallFailure()) throw error
+            execFailedResult(RuntimeErrorCode.EXEC_FAILED.wireCode, error.callFailureMessage("Exec failed."), retryable = error is Exception)
         }
         summaryBuilder.recordToolResult(event.name, resultJson)
         if (!toolUseResult(resultJson).ok) {
@@ -604,8 +605,10 @@ internal class NativeToolUseController(
             if (permitAlreadyHeld) execute() else toolExecutionLimiter.withPermit(execute)
         } catch (error: CancellationException) {
             throw error
-        } catch (error: RuntimeException) {
-            BackendOutcome(backendFailedResult(error.message ?: "MCP provider call failed.", retryable = true))
+        } catch (error: Throwable) {
+            // Whatever the provider threw, an Error or a checked exception too, fails this call alone.
+            if (!error.isCallFailure()) throw error
+            BackendOutcome(backendFailedResult(error.callFailureMessage("MCP provider call failed."), retryable = error is Exception))
         }
         failureBreaker.record(context.runId, qualifiedName, toolUse.argumentsJson, backendToolCallResult(outcome.json), outcome.serviceAnswered)
         return outcome.json

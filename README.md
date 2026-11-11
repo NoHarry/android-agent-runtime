@@ -103,7 +103,7 @@ of your own (a scripted one standing in for an on-device model), tools from your
 | `agent-runtime` | The runtime and host facade (plain JVM): `AgentRuntimeBuilder`, OpenAI- and Anthropic-compatible model clients, MCP, `functionTools`, skills, subagents, sessions and memory, web search and fetch, hooks and policy, and the workspace's virtual file system |
 | `agent-runtime-android` | The Android layer: `AndroidAgentRuntime.builder(context)`, SQLite sessions, the app-private event log, and mounting a folder the user picks through the Storage Access Framework |
 | `agent-api` | Android-neutral Thread / Turn / Item contracts and stable model, tool, hook and event-log extension interfaces |
-| `agent-exec-js` | Optional: `exec_js`, sandboxed JavaScript (QuickJS through Zipline) that can call tools |
+| `agent-exec-js` | Optional: `exec_js`, sandboxed JavaScript (QuickJS through Zipline) that can call tools; the app server's scripts (plugin packages' tools written in JavaScript) need it too |
 | `agent-device-capabilities` | Optional: calendar, notification and media tools |
 | `agent-android-use` | Optional: observe and operate the screen through an accessibility service |
 | `agent-a2a` | Optional (plain JVM): delegate tasks to remote A2A agents over a direct JSON-RPC/SSE transport, and expose the agent as a local A2A endpoint |

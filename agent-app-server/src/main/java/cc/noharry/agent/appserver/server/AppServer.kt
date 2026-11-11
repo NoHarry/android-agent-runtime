@@ -6,6 +6,7 @@ import androidx.annotation.RawRes
 import cc.noharry.agent.appserver.BootReceiver
 import cc.noharry.agent.appserver.mcp.PluginMcpServers
 import cc.noharry.agent.appserver.model.ProviderAdapter
+import cc.noharry.agent.appserver.packages.JsSandbox
 import cc.noharry.agent.appserver.packages.PackageInstaller
 import cc.noharry.agent.appserver.packages.PackageSecrets
 import cc.noharry.agent.appserver.packages.PackageStore
@@ -24,6 +25,7 @@ import cc.noharry.agent.appserver.runtime.BuiltInFeatures
 import cc.noharry.agent.appserver.runtime.DEFAULT_SCENE
 import cc.noharry.agent.appserver.runtime.HostModels
 import cc.noharry.agent.appserver.runtime.Persona
+import cc.noharry.agent.appserver.runtime.otherToolServerNames
 import cc.noharry.agent.appserver.runtime.PreviousExchange
 import cc.noharry.agent.spi.ToolProvider
 import cc.noharry.agent.appserver.runtime.ProviderPresets
@@ -161,6 +163,9 @@ object AppServer {
         private set
 
     fun install(app: Application, config: AppServerConfig) {
+        check(!config.builtIns.scripts || JsSandbox.available) {
+            "builtIns.scripts: ${JsSandbox.MISSING}; add cc.noharry:agent-exec-js to the app's dependencies"
+        }
         this.config = config
         installHost(config)
         ApprovalSettings.init(app, config.approvals)
@@ -183,6 +188,7 @@ object AppServer {
             plugins, PackageStore(app), PackageSecrets(app), trust,
             forgetSkills = { names -> names.forEach { forgetRuntimeSkillChoice(app, it) } },
             maxScriptSeconds = config.maxScriptToolSeconds,
+            otherToolServers = { otherToolServerNames(app, plugins) },
         )
         packages = installer
         installServer(app, plugins, installer)

@@ -13,7 +13,21 @@ called out; a patch release does not break it.
   `agent-app-server/README.md`; `samples/agent-app-sample`, `-notes`, `-timer` and `-habits` are apps on it, and
   `tools/agent-plugin` makes plugin packages. No plugin is published: a host writes its own, and the first-party ones
   (cards, DeepSeek's extras, operating the screen, the device's tools, drawn pages, memory, pictures, plans, A2A) are
-  source modules of the Bothy app, not Maven artifacts; their source is published with Bothy's next release.
+  source modules of the Bothy app, not Maven artifacts; their source is published with Bothy's next release. Scripts
+  (plugin packages' tools written in JavaScript, and `exec_js`) run in `agent-exec-js`, which a host that wants them
+  adds: the server does not carry its native code, about 4 MB of an APK.
+
+- **A tool provider that throws anything fails only its call.** A `ToolProvider.callTool` that throws an `Error`
+  (`UnsatisfiedLinkError`, `NoClassDefFoundError`, `ExceptionInInitializerError`) or a checked exception fails that
+  call as a `RuntimeException` did: the model reads `BACKEND_CALL_FAILED` with the error's kind and message, and the
+  run goes on. In 0.4.0 the run failed. So does an `ExecEngine.run` (`EXEC_FAILED`), and a provider's `listTools` or
+  `initialize` that throws counts as having no tools. Cancellation and `OutOfMemoryError` still end the run.
+
+- **`agent-exec-js` runs no script where QuickJS would misread numbers.** QuickJS reads numbers with the C library's
+  `strtod`, which follows the process's numeric locale: a JVM started under one that writes 0,5 read `12.5` as `12`.
+  `ZiplineExecEngine` checks once per process and, there, answers each run with `EXEC_ENGINE_NOT_CONFIGURED` saying to
+  start the JVM with `LC_NUMERIC=C`. Android reads numbers the same in every locale. A QuickJS that does not load
+  (Zipline's Android build under a JVM) answers so too, where it threw an `Error`.
 
 - **A remote A2A task that refuses is `REJECTED`, not `FAILED`.** `A2aTask.Status` gains `REJECTED` (a new
   constant: a host's exhaustive `when` over the statuses needs a branch), terminal like `FAILED`; the direct client and

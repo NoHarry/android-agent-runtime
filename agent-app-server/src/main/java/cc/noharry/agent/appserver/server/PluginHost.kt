@@ -20,7 +20,9 @@ import cc.noharry.agent.appserver.runtime.RunIntake
 import cc.noharry.agent.appserver.runtime.RuntimeSession
 import cc.noharry.agent.appserver.runtime.RuntimeVoice
 import cc.noharry.agent.appserver.runtime.VoicePort
+import cc.noharry.agent.appserver.runtime.toolServerName
 import cc.noharry.agent.appserver.session.ApprovalSettings
+import cc.noharry.agent.appserver.tools.isCallFailure
 import cc.noharry.agent.SteerResult
 import cc.noharry.agent.spi.RuntimeContextProvider
 import cc.noharry.agent.spi.RuntimeHook
@@ -185,6 +187,26 @@ class PluginHost(
 
     /** The plugin registered as [id], or null. */
     internal fun plugin(id: String): AppServerPlugin? = plugins.firstOrNull { it.id == id }
+
+    /** Every plugin registered, running or not. */
+    internal fun plugins(): List<AppServerPlugin> = plugins.toList()
+
+    /**
+     * The names the tool servers of the running plugins that [included] picks go by in a run: their MCP servers', their
+     * tool servers' and their tool providers' (each provider made once here, for its id; one that fails to be made is
+     * left out).
+     */
+    internal fun runningToolServerNames(context: Context, included: (AppServerPlugin) -> Boolean): Set<String> =
+        running.filterKeys { id -> plugin(id)?.let(included) == true }.values.flatMapTo(hashSetOf()) { plugin ->
+            plugin.mcpServers.map { toolServerName(it.name) } + plugin.toolServers.map { it.id } + plugin.tools.flatMap { registration ->
+                try {
+                    registration.provide(context, emptyList()).map { it.providerId }
+                } catch (failed: Throwable) {
+                    if (!failed.isCallFailure()) throw failed
+                    emptyList()
+                }
+            }
+        }
 
     /**
      * Registers [plugin] while the server runs, and starts it (and what was waiting for it) when it is on and what it

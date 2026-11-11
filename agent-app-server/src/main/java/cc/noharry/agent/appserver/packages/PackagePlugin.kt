@@ -130,7 +130,7 @@ internal class PackagePlugin(
             val headers = server.headers.mapValues { (_, value) -> substituteSecrets(value, values) ?: return@mapNotNull null }
             val query = server.secretQuery.mapValues { (_, secret) -> values[secret]?.takeIf(String::isNotEmpty) ?: return@mapNotNull null }
             PluginMcpServer(
-                name = "${id.substringAfterLast('.')}_${server.id}",
+                name = packageMcpServerName(id, server.id),
                 label = server.label,
                 url = server.baseUrl,
                 headers = { headers },
@@ -183,7 +183,26 @@ internal fun scriptToolProvider(
     val limits = ScriptLimits(maxSeconds = maxSeconds)
     val runner = ScriptRunner(grant, ScriptHttp(grant, limits, client), ScriptHostTools(grant.hostTools, host), log, limits)
     val tools = manifest.tools.map { ScriptTool(it, checked.scriptText(it)) }
-    return ScriptToolProvider(toolServerName(manifest.id.substringAfterLast('.')), manifest.name, tools, trusted, runner)
+    return ScriptToolProvider(scriptToolServerName(manifest.id), manifest.name, tools, trusted, runner)
+}
+
+/**
+ * The tool server package [id]'s script tools go by in a run, the middle of their full names (`mcp__<it>__<tool>`):
+ * the id's last segment (`com.example.pantry.recipes` → `recipes`), as the server writes a tool server's name.
+ */
+internal fun scriptToolServerName(id: String): String = toolServerName(id.substringAfterLast('.'))
+
+/** The name package [id]'s MCP server [serverId] goes by: `<the id's last segment>_<serverId>` (`recipes_api`). */
+internal fun packageMcpServerName(id: String, serverId: String): String = toolServerName("${id.substringAfterLast('.')}_$serverId")
+
+/**
+ * Every tool server name [manifest]'s tools go by in a run: its script tools' ([scriptToolServerName]) and its MCP
+ * servers' ([packageMcpServerName]). No two installed packages share one, and none is a name the host's other tool
+ * servers have at install ([PackageInstaller]), so a package's tools keep their names.
+ */
+internal fun packageToolServers(manifest: PackageManifest): Set<String> = buildSet {
+    if (manifest.tools.isNotEmpty()) add(scriptToolServerName(manifest.id))
+    manifest.mcpServers.forEach { add(packageMcpServerName(manifest.id, it.id)) }
 }
 
 /** A package's skill as the model reads it: one path segment, the package's id before it. */

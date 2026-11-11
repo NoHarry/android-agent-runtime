@@ -257,6 +257,14 @@ enum class PackageProblem {
      * or comes without tools.
      */
     BAD_TOOL,
+    /**
+     * A name its tools would go by (`mcp__<name>__…`: its id's last segment for its script tools,
+     * `<last segment>_<server id>` for an MCP server) is another installed package's (named in the detail) or one of the
+     * host's other tool servers': a package with another last segment has to be used, or the other one removed.
+     */
+    TOOL_SERVER_TAKEN,
+    /** It has tools written as scripts, and the app does not include the sandbox they run in (agent-exec-js). */
+    SCRIPTS_UNAVAILABLE,
     /** None, or more than one, of url, file and data; or an address that is not HTTPS. */
     BAD_SOURCE,
     /** The package could not be fetched. */
