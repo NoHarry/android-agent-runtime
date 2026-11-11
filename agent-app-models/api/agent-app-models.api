@@ -1,0 +1,115 @@
+public final class cc/noharry/agent/appserver/models/ModelsPlugin : cc/noharry/agent/appserver/server/AppServerPlugin {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/models/ModelsPlugin;
+	public fun apply (Lcc/noharry/agent/appserver/server/PluginContext;)V
+	public fun clearWhileOff (Landroid/app/Application;Lcc/noharry/agent/appserver/server/DataClearing;)Z
+	public fun getId ()Ljava/lang/String;
+	public fun getNeeds ()Ljava/util/Set;
+	public fun getRequired ()Z
+}
+
+public final class cc/noharry/agent/appserver/models/deepseek/DeepSeekAdapter : cc/noharry/agent/appserver/model/ProviderAdapter {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/models/deepseek/DeepSeekAdapter;
+	public static final field SERVICE_ID Ljava/lang/String;
+	public fun balance (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun check (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun checked (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ServiceCheckView;
+	public fun classify (Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ModelFailure;)Lcc/noharry/agent/appserver/model/ModelFailureKind;
+	public fun facts (Lcc/noharry/agent/appserver/model/ModelService;Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ModelFacts;
+	public fun getServices ()Ljava/util/List;
+	public fun hasLookup (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderConfig;Lcc/noharry/agent/appserver/model/ProviderProfile;)Z
+	public fun listModels (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun lookup (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderConfig;Lcc/noharry/agent/appserver/model/ProviderProfile;)Lcc/noharry/agent/appserver/model/WebLookup;
+	public fun nativeUpdates (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderConfig;Lcc/noharry/agent/appserver/model/ProviderProfile;)Z
+	public fun price (Ljava/lang/String;)Lcc/noharry/agent/appserver/protocol/ModelPrice;
+	public fun routes (Landroid/content/Context;)Ljava/util/List;
+	public fun serviceOf (Ljava/lang/String;)Lcc/noharry/agent/appserver/model/ModelService;
+	public fun shareKeys (Ljava/util/List;)Ljava/util/List;
+}
+
+public final class cc/noharry/agent/appserver/models/deepseek/DeepSeekAmount {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcc/noharry/agent/appserver/models/deepseek/DeepSeekAmount;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/models/deepseek/DeepSeekAmount;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcc/noharry/agent/appserver/models/deepseek/DeepSeekAmount;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrency ()Ljava/lang/String;
+	public final fun getGranted ()Ljava/lang/String;
+	public final fun getToppedUp ()Ljava/lang/String;
+	public final fun getTotal ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/appserver/models/deepseek/DeepSeekBalance {
+	public fun <init> (ZLjava/util/List;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (ZLjava/util/List;)Lcc/noharry/agent/appserver/models/deepseek/DeepSeekBalance;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/models/deepseek/DeepSeekBalance;ZLjava/util/List;ILjava/lang/Object;)Lcc/noharry/agent/appserver/models/deepseek/DeepSeekBalance;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAmounts ()Ljava/util/List;
+	public final fun getAvailable ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/appserver/models/deepseek/DeepSeekBalanceKt {
+	public static final fun fetchDeepSeekBalance (Ljava/lang/String;Lokhttp3/OkHttpClient;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun fetchDeepSeekBalance$default (Ljava/lang/String;Lokhttp3/OkHttpClient;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun view (Lcc/noharry/agent/appserver/models/deepseek/DeepSeekBalance;)Lcc/noharry/agent/appserver/protocol/BalanceView;
+}
+
+public final class cc/noharry/agent/appserver/models/deepseek/DeepSeekCheck {
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/Finding;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcc/noharry/agent/appserver/protocol/Finding;
+	public final fun copy (Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/Finding;)Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;Ljava/lang/String;Lcc/noharry/agent/appserver/protocol/Finding;ILjava/lang/Object;)Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNote ()Lcc/noharry/agent/appserver/protocol/Finding;
+	public final fun getPassed ()Z
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/appserver/models/deepseek/DeepSeekLookupKt {
+	public static final fun isDeepSeek (Lcc/noharry/agent/appserver/model/ProviderProfile;)Z
+	public static final fun isDeepSeekUrl (Ljava/lang/String;)Z
+}
+
+public final class cc/noharry/agent/appserver/models/deepseek/DeepSeekProbe {
+	public fun <init> (Ljava/lang/String;Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;
+	public final fun component3 ()Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;
+	public final fun component4 ()Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;
+	public final fun component5 ()J
+	public final fun copy (Ljava/lang/String;Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;J)Lcc/noharry/agent/appserver/models/deepseek/DeepSeekProbe;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/models/deepseek/DeepSeekProbe;Ljava/lang/String;Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;JILjava/lang/Object;)Lcc/noharry/agent/appserver/models/deepseek/DeepSeekProbe;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBalance ()Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;
+	public final fun getCheckedAt ()J
+	public final fun getFingerprint ()Ljava/lang/String;
+	public final fun getPassthrough ()Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;
+	public final fun getTools ()Lcc/noharry/agent/appserver/models/deepseek/DeepSeekCheck;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/appserver/models/deepseek/DeepSeekProbeKt {
+	public static final fun describe (Lcc/noharry/agent/appserver/models/deepseek/DeepSeekProbe;)Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/appserver/models/deepseek/DeepSeekProbes {
+	public static final field INSTANCE Lcc/noharry/agent/appserver/models/deepseek/DeepSeekProbes;
+	public final fun check (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun current (Landroid/content/Context;Lcc/noharry/agent/appserver/model/ProviderProfile;Ljava/lang/String;)Lcc/noharry/agent/appserver/models/deepseek/DeepSeekProbe;
+	public final fun launch (Lkotlin/jvm/functions/Function1;)V
+	public final fun save (Landroid/content/Context;Ljava/lang/String;Lcc/noharry/agent/appserver/models/deepseek/DeepSeekProbe;)V
+	public final fun saved (Landroid/content/Context;Ljava/lang/String;)Lcc/noharry/agent/appserver/models/deepseek/DeepSeekProbe;
+}
+

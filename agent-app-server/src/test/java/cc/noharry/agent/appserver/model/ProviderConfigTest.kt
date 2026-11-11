@@ -134,8 +134,8 @@ class ProviderConfigTest {
             mapOf(
                 "AGENT_RUNTIME_LIVE_PROVIDER" to "openai",
                 "OPENAI_API_KEY" to "",
-                "OPENAI_MODEL" to DEFAULT_OPENAI_MODEL,
-                "OPENAI_BASE_URL" to DEFAULT_OPENAI_BASE_URL,
+                "OPENAI_MODEL" to "",
+                "OPENAI_BASE_URL" to "",
                 "OPENAI_ENDPOINT" to "chat_completions",
                 "OPENAI_SERVER_SIDE_SEARCH" to "true",
                 "OPENAI_SEARCH_CAPABILITY" to "openai-chat-options",

@@ -298,7 +298,3 @@ internal const val BUILD_CONFIG_EXPECTED_SOURCE =
     "the host app's model service presets (ProviderPresets)"
 @cc.noharry.agent.appserver.AppServerPluginApi
 const val DEFAULT_LOCAL_API_KEY = "local"
-internal const val DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
-internal const val DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
-internal const val DEFAULT_ANTHROPIC_MODEL = "claude-3-5-haiku-latest"
-internal const val DEFAULT_ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1"

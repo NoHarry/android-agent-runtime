@@ -9,6 +9,8 @@ import cc.noharry.agent.appserver.model.ModelPreset
 import cc.noharry.agent.appserver.model.ProviderAdapter
 import cc.noharry.agent.appserver.model.ProviderProfile
 import cc.noharry.agent.appserver.protocol.Finding
+import cc.noharry.agent.appserver.protocol.ModelFacts
+import cc.noharry.agent.appserver.protocol.ModelPrice
 import cc.noharry.agent.appserver.protocol.ServerFeatures
 import cc.noharry.agent.appserver.skills.RuntimeSkill
 import cc.noharry.agent.appserver.skills.SubagentKind
@@ -332,7 +334,17 @@ internal object AppHost {
     @Volatile
     private var ownAdapters: List<ProviderAdapter> = emptyList()
 
-    /** What the running plugins know of model services beyond chat ([ProviderAdapter]); none by default. */
+    /** The host's facts of models, by id, over their services' ([cc.noharry.agent.appserver.server.AppServerConfig.modelFacts]). */
+    @Volatile
+    var modelFacts: Map<String, ModelFacts> = emptyMap()
+        private set
+
+    /** The host's prices of models, by id, over their services' ([cc.noharry.agent.appserver.server.AppServerConfig.modelPrices]). */
+    @Volatile
+    var modelPrices: Map<String, ModelPrice> = emptyMap()
+        private set
+
+    /** What the host and the running plugins know of model services ([ProviderAdapter]); none by default. */
     val providerAdapters: List<ProviderAdapter> get() = ownAdapters + additions.providerAdapters
 
     /** What the running plugins add ([cc.noharry.agent.appserver.server.PluginHost]). */
@@ -375,7 +387,11 @@ internal object AppHost {
         simulatedModel: (() -> ModelClient)? = this.simulatedModel,
         replayCheck: ReplayCheck = this.replayCheck,
         unaskedTools: Set<String> = this.unaskedTools,
+        modelFacts: Map<String, ModelFacts> = this.modelFacts,
+        modelPrices: Map<String, ModelPrice> = this.modelPrices,
     ) {
+        this.modelFacts = modelFacts
+        this.modelPrices = modelPrices
         this.unaskedTools = unaskedTools
         this.tools = tools
         this.rules = rules

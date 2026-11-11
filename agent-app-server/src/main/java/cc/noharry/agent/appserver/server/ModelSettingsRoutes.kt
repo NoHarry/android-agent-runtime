@@ -8,6 +8,7 @@ import cc.noharry.agent.appserver.model.contextWindowOverride
 import cc.noharry.agent.appserver.model.defaultContextWindow
 import cc.noharry.agent.appserver.model.hasWebLookup
 import cc.noharry.agent.appserver.model.loadModelImageInput
+import cc.noharry.agent.appserver.model.modelFacts
 import cc.noharry.agent.appserver.model.saveContextWindow
 import cc.noharry.agent.appserver.model.saveModelImageInput
 import cc.noharry.agent.appserver.protocol.Empty
@@ -19,9 +20,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Model and service settings beyond the profile: each model's context window and image input, and web search / the
- * fetch fallback through a service's lookup APIs ([ProviderAdapter][cc.noharry.agent.appserver.model.ProviderAdapter]);
- * a service's own requests are its adapter's.
+ * Model and service settings beyond the profile: each model's context window and image input with what is known of it,
+ * and web search / the fetch fallback through a service's lookup APIs
+ * ([ProviderAdapter][cc.noharry.agent.appserver.model.ProviderAdapter]); the services themselves are [ServiceRoutes].
  */
 internal class ModelSettingsRoutes(private val app: Context) : RouteModule {
     override fun RouteTable.install() {
@@ -33,8 +34,9 @@ internal class ModelSettingsRoutes(private val app: Context) : RouteModule {
                         ModelSettingsView(
                             model = model,
                             windowOverride = contextWindowOverride(app, profile),
-                            defaultWindow = defaultContextWindow(model),
+                            defaultWindow = defaultContextWindow(profile.baseUrl, model),
                             imageInput = loadModelImageInput(app, profile),
+                            facts = modelFacts(profile.baseUrl, model),
                         )
                     },
                 )

@@ -84,8 +84,8 @@ internal class ModelWords private constructor(
 }
 
 /**
- * A screen may show the thinking as it comes, for the user to read; DeepSeek thinks in English for an English system
- * prompt and keeps to it even when told there. This line, last in the run's own context, comes right before it starts
+ * A screen may show the thinking as it comes, for the user to read; a model may think in English for an English system
+ * prompt and keep to it even when told there. This line, last in the run's own context, comes right before it starts
  * thinking; at the start of that context it is followed only now and then.
  */
 internal const val THINK_IN_CHINESE = "本轮的思考过程（thinking）全程用简体中文写，不要用英文。"

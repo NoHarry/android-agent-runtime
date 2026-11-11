@@ -4,7 +4,7 @@
 > `cc.noharry:agent-app-server` and `cc.noharry:agent-app-protocol` and marked experimental: what this guide describes
 > can change in a minor release, and their entry points (`ServerClient`, `AppServer`, `AppServerConfig`,
 > `AppServerPlugin`) ask for an opt-in, `@ExperimentalAppServerApi`. Plugins are yours to write (see [Plugins](#plugins));
-> none is published.
+> one is published, `cc.noharry:agent-app-models`, the model services ([Model services](#model-services)).
 
 ## What it is
 
@@ -26,7 +26,8 @@ own off and on in its test). A test keeps the quotes in step with them.
 ## Add it to your app
 
 Depend on `cc.noharry:agent-app-server` and `cc.noharry:agent-app-protocol`, on Maven Central from 0.5.0 and in
-`agent-bom` with the runtime's other modules. Before a version is released, build it from this repository's source:
+`agent-bom` with the runtime's other modules, and on `cc.noharry:agent-app-models` for what is known of the common
+model services ([Model services](#model-services)). Before a version is released, build it from this repository's source:
 check the repository out beside your project, add `includeBuild("../android-agent-runtime")` to your
 `settings.gradle.kts`, and depend on the same coordinates at `VERSION_NAME` of this repository's `gradle.properties`;
 Gradle builds them, and the runtime modules they need, from the source. The samples, which build in this repository,
@@ -207,8 +208,11 @@ its foreground service (see [A service with no screen](#a-service-with-no-screen
 A release build shrinks with R8 and needs no rules of the app's own for the server. kotlinx.serialization (the
 protocol's types), Zipline, OkHttp and coroutines bring their rules in their artifacts, and so do the runtime's
 modules: `agent-app-server` lets R8 build an app that leaves `agent-exec-js` out, and `agent-exec-js` keeps its
-engine's class name, which the server looks up to know whether scripts can run. The server finds nothing else by name
-and loads no service. CI shrinks the bare sample's release with R8 (`minifyReleaseWithR8`) on every check:
+engine's class name, which the server looks up to know whether scripts can run. Beyond that, the server finds by name
+only the plugins a library declares in its manifest ([Plugins a library brings](#plugins-a-library-brings)), and its
+rules keep every plugin with its name. CI shrinks the bare sample's release with R8 (`minifyReleaseWithR8`) on every
+check, and the notes sample's, which depends on `agent-app-models`, checking that the plugin its manifest declares is
+in the release under its name (`checkReleaseDiscoveredPlugins`):
 
 <!-- quote: samples/agent-app-sample/build.gradle.kts release -->
 ```kotlin
@@ -245,11 +249,12 @@ KDoc is in the sources and javadoc jars published beside each artifact, which an
 | Package | Module | Names |
 |---|---|---|
 | `cc.noharry.agent.appserver` | `agent-app-server` | `AppServerPluginApi` |
-| `cc.noharry.agent.appserver.server` | `agent-app-server` | `AppServer`, `AppServerConfig`, `AppServerPlugin`, `PluginContext`, `PluginSkill`, `PluginMcpServer`, `PluginToolServer`, `PublishedState`, `RouteModule` |
+| `cc.noharry.agent.appserver.server` | `agent-app-server` | `AppServer`, `AppServerConfig`, `AppServerPlugin`, `PluginContext`, `PluginDiscovery`, `PluginSkill`, `PluginMcpServer`, `PluginToolServer`, `PublishedState`, `RouteModule` |
 | `cc.noharry.agent.appserver.runtime` | `agent-app-server` | `Persona`, `BuiltInFeatures`, `RunAddOns`, `RunFacts`, `HostModels`, `VoicePort`, `ProviderPresets`, `ReplayCheck` |
-| `cc.noharry.agent.appserver.model` | `agent-app-server` | `ModelPreset`, `ScriptedModel` |
+| `cc.noharry.agent.appserver.model` | `agent-app-server` | `ModelPreset`, `ScriptedModel`, `ProviderAdapter`, `ModelService`, `ServiceEndpoint`, `ServiceModel`, `ErrorRule`, `ModelFailure`, `ModelFailureKind`, `modelFacts`, `modelPrice` |
+| `cc.noharry.agent.appserver.models` | `agent-app-models` | `ModelsPlugin` |
 | `cc.noharry.agent.appserver.skills` | `agent-app-server` | `RuntimeSkill` |
-| `cc.noharry.agent.appserver.protocol` | `agent-app-protocol` | `ExperimentalAppServerApi`, `ClientInfo`, `ClientCapabilities`, `ClientRequests`, `SettingsRequests`, `PluginRequests`, `ServerNotifications`, `TurnStartParams`, `TextParams`, `TurnInterruptParams`, `ThreadIdParams`, `ThreadStartResult`, `ThreadListResult`, `ThreadSnapshot`, `SessionSummary`, `Empty`, `ApprovalRequest`, `ApprovalDecision`, `ApprovalRespondParams`, `ConfirmationMode`, `ConfirmationStatus`, `RunSettingsParams`, `ProviderCreateParams`, `ProviderCreateResult`, `ModelSelectParams`, `ModelProvider`, `ProviderEndpoint`, `PluginSetParams`, `PluginListResult`, `PluginView`, `PluginInstallParams`, `PluginInstallResult`, `PluginConfirmParams`, `PluginRemoveParams`, `PackageView`, `PackageRefusal`, `PackageProblem`, `ConversationItem` (with `TurnHeader`, `MessageItem`, `ToolCallItem`, `ConfirmationItem`, `RuntimePhaseItem`), `TranscriptRole`, `ToolCallStatus` |
+| `cc.noharry.agent.appserver.protocol` | `agent-app-protocol` | `ExperimentalAppServerApi`, `ClientInfo`, `ClientCapabilities`, `ClientRequests`, `SettingsRequests`, `PluginRequests`, `ServerNotifications`, `TurnStartParams`, `TextParams`, `TurnInterruptParams`, `ThreadIdParams`, `ThreadStartResult`, `ThreadListResult`, `ThreadSnapshot`, `SessionSummary`, `Empty`, `ApprovalRequest`, `ApprovalDecision`, `ApprovalRespondParams`, `ConfirmationMode`, `ConfirmationStatus`, `RunSettingsParams`, `ProviderCreateParams`, `ProviderCreateResult`, `ModelSelectParams`, `ModelProvider`, `ProviderEndpoint`, `PluginSetParams`, `PluginListResult`, `PluginView`, `PluginInstallParams`, `PluginInstallResult`, `PluginConfirmParams`, `PluginRemoveParams`, `PackageView`, `PackageRefusal`, `PackageProblem`, `ConversationItem` (with `TurnHeader`, `MessageItem`, `ToolCallItem`, `ConfirmationItem`, `RuntimePhaseItem`), `TranscriptRole`, `ToolCallStatus`, `ModelFacts`, `ModelPrice`, `PriceBook`, `ServiceRequests`, `ServiceView` |
 | `cc.noharry.agent.appserver.protocol.client` | `agent-app-protocol` | `ServerClient`, `ServerState` |
 | `cc.noharry.agent.appserver.protocol.jsonrpc` | `agent-app-protocol` | `JsonRpcNotification`, `JsonRpcException`, `ProtocolJson` |
 | `cc.noharry.agent.spi` | the runtime's `agent-api`, which `agent-app-server` brings | `ToolProvider`, `ToolDescriptor`, `ToolCallResult`, `ToolCallContext`, `RuntimeHook`, `HookDecision`, `HookContext`, `ToolUse` |
@@ -259,7 +264,8 @@ Names not in the table are Android's, Kotlin's and `kotlinx.coroutines`' (`MainS
 `first`, `withTimeoutOrNull`, `Mutex`), or the samples' own, each in its sample's package: `NotesTools`,
 `AskBeforeSavingSecrets`, `NoteStatsPlugin`, `ModelChoice`, `transcript()` and `lastAnswer()` in the notes app;
 `TimerAgent`, `TimerTools`, `TimerScript`, `timerConfig()` and `KITCHEN_PUBLISHER` in the timer; `HabitsAgent`,
-`HabitsTools`, `HabitStore`, `RESET_TOOL`, `HabitListPlugin`, `HabitsScript` and `habitsConfig()` in the habits app.
+`HabitsTools`, `HabitStore`, `RESET_TOOL`, `HabitListPlugin`, `HabitsScript` and `habitsConfig()` in the habits app;
+`ExampleAdapter` and `ExamplePlugin` in `agent-app-models`' tests.
 
 ## A first agent in one file
 
@@ -1330,15 +1336,158 @@ Set `android:allowBackup="false"` unless you want those in the person's backups.
 - **In a test**: give `simulatedModel` a `ModelClient` of your own that notes each request's `tools` (and `system`)
   and passes the request on to your `ScriptedModel`.
 
+## Model services
+
+A profile is a base URL, a model, a key and an endpoint kind: Chat Completions or Responses on an OpenAI-compatible
+service, or the Anthropic Messages API. The server speaks those three wire protocols itself, and that is all
+`agent-app-server` knows of models.
+
+**With `agent-app-server` alone**, a profile reaches any compatible service (a `ModelPreset`, a profiles file, or one
+the person adds), and nothing is known of any service or model:
+
+- a model's context window is 128K tokens, and it is sent pictures, until the person sets otherwise for it;
+- a profile has no base URL until one is given;
+- its model list is the wire protocol's own: `GET <base URL>/models`, with a bearer key, or with `x-api-key` and
+  `anthropic-version` on the Messages API;
+- prices come from models.dev when a client asks for a sync (`usage/syncPrices`), or the person types them;
+- a failed call carries the stable code the wire protocols give it: HTTP 401 and 403 `PROVIDER_AUTH_FAILED`, 402 and
+  `insufficient_quota` `PROVIDER_QUOTA_EXCEEDED`, `context_length_exceeded` `PROVIDER_CONTEXT_WINDOW_EXCEEDED`, 429 and
+  `rate_limit_error` `PROVIDER_RATE_LIMITED`, other 5xx and `overloaded_error` `PROVIDER_SERVER_ERROR`, 408, 504 and a
+  call that timed out `PROVIDER_TIMEOUT`; quota, context window and auth failures are not tried again.
+
+`CoreWithoutServicesTest` runs a turn this way against a service on the test's own machine.
+
+**With `agent-app-models`**, the server knows the common services. Add the dependency; its plugin (`models`) is loaded
+without your listing it ([Plugins a library brings](#plugins-a-library-brings)):
+
+<!-- published: samples/agent-app-sample-notes/build.gradle.kts models-dependency -->
+```kotlin
+// The model services (DeepSeek, OpenAI, Anthropic and more): loaded by default, named nowhere in the app's code.
+implementation("cc.noharry:agent-app-models")
+```
+
+It brings an adapter per service (`ProviderAdapter`), and for a profile on a service's host the server then has:
+
+- **Connection defaults**: each service's endpoints, the first its default, and where a person gets a key
+  (`services/list` gives them to a screen that offers the services). A profile whose id is a service's id and that has
+  no base URL takes the service's endpoint for its wire and, without a model, the service's first model.
+- **The model list** from the service's own list, without a prefix its ids carry; for a service that documents none,
+  the models in the data.
+- **Facts per model** (`ModelFacts`): context window, output limit, whether it reads pictures, calls tools and
+  reasons, and its reasoning efforts. The server uses the window (the usage shown, compaction at 80 percent) and the
+  picture switch's default; all of them are in `modelSettings/read`, for a screen to show. A model on a host no adapter
+  knows (a relay's, its name perhaps behind a prefix such as `relay/`) gets the facts of the service that lists it.
+- **Prices**, per million tokens, in the service's currency (`USD` or `CNY`, with `asOf`): `usage/read` prices every
+  model a service lists, before models.dev. `PriceBook.costUsd(model, usage)` converts yuan at the book's rate.
+- **Failures** read as each service's error pages say (a balance run dry, a context window exceeded, an overloaded
+  service), before the wire protocols' reading.
+- **DeepSeek's extras**: its search and page fetch APIs for `web_search` and pages that refuse the device, its own
+  history updates on its Anthropic-compatible endpoint, its balance (`services/balance`), the check of a relay that may
+  have DeepSeek behind it (`services/check`, `services/checked`), and one key for every profile on its host.
+
+The services, from the module's data file (`services.json`, each value with the official page it was read from and
+the day; a test keeps this table equal to it):
+
+<!-- services:start -->
+| Service | `id` | Endpoints, the default first | Models in the data, with facts and prices | Model list |
+|---|---|---|---|---|
+| DeepSeek | `deepseek` | chat_completions `https://api.deepseek.com`<br>messages `https://api.deepseek.com/anthropic` | `deepseek-flash`, `deepseek-v4-pro` (CNY) | `https://api.deepseek.com/models` |
+| OpenAI | `openai` | responses `https://api.openai.com/v1`<br>chat_completions `https://api.openai.com/v1` | `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6.1-terra`, `gpt-6-luna` (USD) | `<base URL>/models` |
+| Anthropic | `anthropic` | messages `https://api.anthropic.com/v1` | `claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-5-5`, `claude-fable-5-2` (USD) | `<base URL>/models` |
+| Google Gemini | `gemini` | chat_completions `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-4-carbon`, `gemini-4-argon`, `gemini-3.8-flash`, `gemini-3.5-flash-lite` (USD) | `<base URL>/models` |
+| xAI | `xai` | chat_completions `https://api.x.ai/v1` (global)<br>chat_completions `https://us.api.x.ai/v1` (us)<br>responses `https://api.x.ai/v1` (global) | `grok-4.7`, `grok-4.3` (USD) | `<base URL>/models` |
+| OpenRouter | `openrouter` | chat_completions `https://openrouter.ai/api/v1` | none: its own list has them | `<base URL>/models` |
+| Groq | `groq` | chat_completions `https://api.groq.com/openai/v1` | `openai/gpt-oss-120b`, `openai/gpt-oss-20b` (USD) | `<base URL>/models` |
+| Moonshot (Kimi) | `moonshot` | chat_completions `https://api.moonshot.cn/v1` (cn)<br>chat_completions `https://api.moonshot.ai/v1` (global) | `kimi-k3.1-pro`, `kimi-k3.1-pro-highspeed`, `kimi-k3` (CNY) | `<base URL>/models` |
+| Zhipu (GLM) | `zhipu` | chat_completions `https://open.bigmodel.cn/api/paas/v4` (cn)<br>chat_completions `https://api.z.ai/api/paas/v4` (global) | `glm-5.3`, `glm-5.3-flash`, `glm-5.3-flashx` (CNY) | none documented: the models in the data |
+| Alibaba Cloud Model Studio (Qwen) | `dashscope` | chat_completions `https://dashscope.aliyuncs.com/compatible-mode/v1` (cn)<br>chat_completions `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` (global) | `qwen3.8-max`, `qwen3.7-plus`, `qwen3.8-flash` (CNY) | none documented: the models in the data |
+| Volcengine Ark (Doubao) | `volcengine` | chat_completions `https://ark.cn-beijing.volces.com/api/v3` (cn) | `doubao-seed-2-1-pro-260915`, `doubao-seed-2-1-lite-260915`, `doubao-seed-2-1-turbo-260628`, `doubao-seed-evolving` (CNY) | `<base URL>/models` |
+| MiniMax | `minimax` | chat_completions `https://api.minimax.cn/v1` (cn)<br>chat_completions `https://api.minimax.io/v1` (global) | `MiniMax-M3.1-Flash`, `MiniMax-M3` (CNY) | `<base URL>/models` |
+| SiliconFlow | `siliconflow` | chat_completions `https://api.siliconflow.cn/v1` (cn)<br>chat_completions `https://api.siliconflow.com/v1` (global) | `deepseek-ai/DeepSeek-V4-Flash`, `zai-org/GLM-5.2`, `moonshotai/Kimi-K2.7-Code` (CNY) | `<base URL>/models` |
+<!-- services:end -->
+
+<!-- real-services:start -->
+**Run against the services themselves:** none yet; every service above is covered by tests against a local mock of its documented answers (`ServicesMockTest`) only.
+<!-- real-services:end -->
+
+`./gradlew :agent-app-models:realServiceTest` runs each service whose key is in `AGENT_E2E_<ID>_KEY` (the service's
+id in capitals: `AGENT_E2E_DEEPSEEK_KEY`), optionally with `AGENT_E2E_<ID>_MODEL`, `_BASE_URL` and `_ENDPOINT`: it
+lists the models, runs a plain turn and one that calls a tool, and checks their usage and cost. It is never part of the
+build's checks, skips a service without a key, and prints no key.
+
+What a service's pages leave out is not in the data, and the server keeps its default for it. Prices and models change
+on the services' own schedule: the data is as of the day it names, and a scheduled change (Gemini 4's prices double on
+2026-12-01) is noted in the file, not applied.
+
+**Overriding facts and prices.** The host's own, by model id, win over a service's, fact by fact; the person's own
+settings (a model's window and picture switch, a price typed in) win over both:
+
+<!-- quote: agent-app-models/src/test/java/cc/noharry/agent/appserver/models/OverridesTest.kt host-overrides -->
+```kotlin
+val config = AppServerConfig(
+    name = "notes",
+    // A gateway that serves this model with a smaller window and no pictures, at the price the host pays.
+    modelFacts = mapOf("deepseek-flash" to ModelFacts(contextWindow = 500_000, imageInput = false)),
+    modelPrices = mapOf("deepseek-flash" to ModelPrice(input = 0.2, output = 0.8, currency = "USD")),
+)
+```
+
+`ignoredPlugins = setOf("models")` leaves the module's services out altogether, and a person turns them off and on as
+any plugin (`plugins/set {"id":"models",...}`).
+
+**A service of your own.** A company gateway, a relay or a service the module does not know needs no adapter: it is a
+profile with its base URL. An adapter is for what the server should know of it, as the module's are, in a plugin
+(`ctx.providerAdapter`, with the second opt-in, `@AppServerPluginApi`):
+
+<!-- quote: agent-app-models/src/test/java/cc/noharry/agent/appserver/models/OwnAdapterExampleTest.kt own-adapter -->
+```kotlin
+/** A service the server should know: where it is, its model with its facts and price, how it says a key ran dry. */
+object ExampleAdapter : ProviderAdapter {
+    override val services = listOf(
+        ModelService(
+            id = "example",
+            label = "Example AI",
+            endpoints = listOf(ServiceEndpoint(ProviderEndpoint.CHAT_COMPLETIONS, "https://api.example.com/v1")),
+            keyHint = "Create a key at https://example.com/keys",
+            models = listOf(
+                ServiceModel(
+                    id = "example-chat",
+                    facts = ModelFacts(contextWindow = 256_000, maxOutputTokens = 32_000, imageInput = true, toolCalls = true),
+                    price = ModelPrice(input = 0.5, cacheRead = 0.05, output = 2.0, source = "example", asOf = "2026-11-11"),
+                ),
+            ),
+            errors = listOf(ErrorRule(ModelFailureKind.QUOTA, status = 403, pattern = "credit_exhausted")),
+        ),
+    )
+}
+
+/** Its plugin, which a person can turn off and on like any other. */
+object ExamplePlugin : AppServerPlugin {
+    override val id = "example-service"
+
+    override fun apply(ctx: PluginContext) = ctx.providerAdapter(ExampleAdapter)
+}
+```
+
+A `ModelService` also says, as data, what the server's clients need to know of a service: where it lists its models
+(`modelsUrl`, `listsModels`, `listedIdPrefix`), the usage fields it reports cached input in (`usageFields`), more hosts
+its profiles may be on (`hosts`; `.example.net` takes every host ending with it) and how often a failed call is tried
+again (`retry`). The adapter's members have defaults that read its services; it overrides one to do more: `facts` and
+`price` (DeepSeek prices a version it does not list as its own model of that kind), `listModels` (a list fetched its own
+way), `classify`, and the extras: `lookup`, `nativeUpdates`, `balance`, `check`, `checked`, `shareKeys`, `routes`.
+`modelFacts(baseUrl, model)` and `modelPrice(model)` are what the server takes, the host's over the adapters'.
+
 ## Plugins
 
 A plugin adds to the server from code of your own, and the person can turn it off and on while the app runs (the
 choice is kept on the device). You write it against `agent-app-server` and list it in `AppServerConfig.plugins`; it may
 be a class in your app or a module of its own, which then brings its manifest entries (a receiver, a service, a
-permission) to the hosts that depend on it. No plugin is published with the server. The first-party ones (cards,
-DeepSeek's extras, operating the screen, the device's tools, drawn pages, memory, pictures, plans, A2A) are source
-modules of the Bothy app, built into it and not Maven artifacts; their source is published with Bothy's next
-release. Until then, the plugin below and the habits app's are the examples to start from.
+permission) to the hosts that depend on it. One plugin is published with the server, the model services
+(`agent-app-models`, [Model services](#model-services)), which its manifest brings to every app that depends on it
+([below](#plugins-a-library-brings)). The other first-party ones (cards, operating the screen, the device's tools, drawn
+pages, memory, pictures, plans, A2A) are source modules of the Bothy app, built into it and not Maven artifacts; their
+source is published with Bothy's next release. Until then, the plugin below and the habits app's are the examples to
+start from.
 
 A plugin is an `AppServerPlugin` with an `id` and one `apply(ctx)`; everything it says to its `PluginContext` is taken
 back when it stops:
@@ -1549,6 +1698,27 @@ suspend fun remove(app: Context, id: String) {
   package's names. If a tool provider of yours added in a later version of your app takes one, the package's tools
   go by that name with a digit (`measures2`).
 
+### Plugins a library brings
+
+A library can bring a plugin to every app that depends on it, without the app listing it: an entry in the library's
+`AndroidManifest.xml` names the plugin's class (a Kotlin `object`, or a class with a public constructor that takes
+nothing), and the manifest merger puts it in the app's. `agent-app-models` declares its plugin so:
+
+```xml
+<application>
+    <meta-data
+        android:name="cc.noharry.agent.appserver.models.ModelsPlugin"
+        android:value="cc.noharry.agent.appserver.plugin" />
+</application>
+```
+
+`AppServer.install` loads each plugin the app's manifest declares (`PluginDiscovery`), after the host's own. It is in
+`plugins/list` and switched with `plugins/set` like any plugin. The host leaves one out by its id
+(`AppServerConfig.ignoredPlugins`), and a plugin the host lists itself with the same id is loaded as listed, not
+twice. One that cannot be made (a class that is missing or is not a plugin) is left out, with a warning in the log.
+`agent-app-server`'s consumer rules keep every class that implements `AppServerPlugin` with its name and the way it is
+made, so a release shrunk by R8 finds it too; `checkReleaseDiscoveredPlugins` checks the notes sample's.
+
 ## Going deeper (experimental)
 
 For a host that needs more than plain values, `AppServerConfig` also takes: `presets`
@@ -1567,7 +1737,7 @@ run going on), `assistant` (`Assistant`: the client presenting the assistant on 
 requests and notifications of your own to it), `outsideTurns` (turns for a client outside the app, such as another
 agent's task) and `request` (any protocol request, answered as a client's would be, by the server's routes and the
 running plugins'). The others shape runs and the server, beside those under [Plugins](#plugins): `offer`/`offers`
-(features named to clients), `providerAdapter` (what a model service offers beyond chat), `skillSections`,
+(features named to clients), `providerAdapter` (a model service, [Model services](#model-services)), `skillSections`,
 `prepareInput` and `turnLabel` (what each run gets), `onLocalTurn`, `onAppInFront`, `onPresenterReady` and
 `onClearData` (what happens on the device), and `provide`/`service` (services plugins offer each other). Their KDoc is
 the reference. A host keeps nothing of the server's own objects: what it
@@ -1577,6 +1747,9 @@ needs outside its plugins it reaches through one of its plugins' contexts.
 
 - All of it is experimental for 0.5.0. What this guide names before "Going deeper" is the part meant for every host;
   the rest is for hosts that go deep and is likelier to change.
+- What `agent-app-models` knows of a service is its pages on the day its data names; a service's model list may hold
+  models with no facts or prices in the data, which get the defaults. A model's output limit and reasoning efforts are
+  shown, not sent: the runtime sends what it sends for every model of its wire.
 - The protocol's methods are not yet marked stable or experimental one by one.
 - Keys the person types (model profiles, MCP servers, plugin packages' secrets) are kept unencrypted in your app's
   private storage.

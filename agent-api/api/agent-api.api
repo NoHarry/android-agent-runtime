@@ -2471,10 +2471,13 @@ public final class cc/noharry/agent/spi/reliability/RuntimeErrorCode : java/lang
 	public static final field POLICY_DENIED Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field PROCESS_RESTART_ADMISSION_UNSUPPORTED Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field PROVIDER_AUTH_FAILED Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
+	public static final field PROVIDER_CONTEXT_WINDOW_EXCEEDED Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field PROVIDER_HTTP_ERROR Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
+	public static final field PROVIDER_QUOTA_EXCEEDED Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field PROVIDER_RATE_LIMITED Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field PROVIDER_RESPONSE_MALFORMED Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field PROVIDER_SERVER_ERROR Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
+	public static final field PROVIDER_TIMEOUT Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field PROVIDER_TRANSPORT_FAILED Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field RAW_TRACE_WORKSPACE_FORBIDDEN_IN_RELEASE Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;
 	public static final field READ_BUDGET_EXCEEDED Lcc/noharry/agent/spi/reliability/RuntimeErrorCode;

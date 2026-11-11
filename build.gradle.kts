@@ -225,9 +225,11 @@ subprojects {
 
 // The app server's layering: the core (its protocol and the server) names no plugin's package and carries none of the
 // runtime modules only a plugin brings, so a host that lists no plugin merges neither their code nor their manifests
-// (the accessibility service, calendar and notification permissions). The first-party plugins are source modules of the
-// Bothy app: their packages are named nowhere here; the runtime's optional modules only in their own.
+// (the accessibility service, calendar and notification permissions). The model services' plugin, agent-app-models,
+// is named only in its own module (the notes sample finds it from its manifest, naming nothing); the Bothy app's
+// first-party plugins are named nowhere here; the runtime's optional modules only in their own.
 val APP_SERVER_PLUGIN_PACKAGES = mapOf(
+    "cc.noharry.agent.appserver.models" to listOf("agent-app-models"),
     "cc.noharry.agent.appserver.deepseek" to emptyList(),
     "cc.noharry.agent.appserver.protocol.deepseek" to emptyList(),
     "cc.noharry.agent.appserver.a2ui" to emptyList(),
@@ -244,8 +246,21 @@ val APP_SERVER_PLUGIN_PACKAGES = mapOf(
     "cc.noharry.bothy" to emptyList(),
 )
 
-/** The runtime modules only a plugin brings: none of them on the core's classpaths. */
-val APP_SERVER_CORE_FORBIDDEN = listOf(":agent-a2a", ":agent-a2a-client-official", ":agent-android-use", ":agent-device-capabilities")
+/** The runtime modules only a plugin brings, and the model services' plugin: none of them on the core's classpaths. */
+val APP_SERVER_CORE_FORBIDDEN = listOf(
+    ":agent-a2a", ":agent-a2a-client-official", ":agent-android-use", ":agent-device-capabilities", ":agent-app-models",
+)
+
+/**
+ * Model services and their models, which the app server's core may not name: what is known of them is their adapters'
+ * (agent-app-models). The wire protocols' own names (OpenAI-compatible, Anthropic Messages) are the core's.
+ */
+val MODEL_SERVICE_NAMES = listOf(
+    "deepseek", "moonshot", "kimi", "qwen", "dashscope", "aliyun", "zhipu", "bigmodel", "doubao", "volcengine", "volces",
+    "byteplus", "minimax", "siliconflow", "openrouter", "gemini", "googleapis", "mistral", "claude",
+    """\bglm-""", """\bgpt-""", """\bgrok""", """\bgroq""", """\bmimo\b""", """\bx\.ai\b""", """\bz\.ai\b""",
+    """api\.openai\.com""", """api\.anthropic\.com""",
+)
 
 val checkAppServerLayering by tasks.registering(PackageRulesTask::class) {
     description = "The app server's core names no plugin and carries none of the runtime modules only a plugin brings."
@@ -257,6 +272,12 @@ val checkAppServerLayering by tasks.registering(PackageRulesTask::class) {
     rootDirectory.set(layout.projectDirectory)
     allowedIn.set(APP_SERVER_PLUGIN_PACKAGES)
 }
+val checkCoreServiceNames by tasks.registering(ServiceNamesTask::class) {
+    sources.from(fileTree(rootDir) { include("agent-app-protocol/src/main/**", "agent-app-server/src/main/**") })
+    rootDirectory.set(layout.projectDirectory)
+    names.set(MODEL_SERVICE_NAMES)
+}
+checkAppServerLayering.configure { dependsOn(checkCoreServiceNames) }
 tasks.named("ciCheck") { dependsOn(checkAppServerLayering) }
 // A bare host's release build shrinks with R8 and no rules of its own (the app server's guide says so).
 tasks.named("ciCheck") { dependsOn(":samples:agent-app-sample:minifyReleaseWithR8") }
@@ -285,7 +306,7 @@ if (providers.gradleProperty("samplesFromMavenLocal").orNull.let { it != null &&
     project(":samples").subprojects.filter { it.name.startsWith("agent-app-sample") }.forEach { sample ->
         sample.configurations.configureEach {
             resolutionStrategy.dependencySubstitution {
-                listOf("agent-app-protocol", "agent-app-server", "agent-exec-js").forEach {
+                listOf("agent-app-protocol", "agent-app-server", "agent-app-models", "agent-exec-js").forEach {
                     substitute(project(":$it")).using(module("$group:$it:$sdkVersion"))
                 }
             }

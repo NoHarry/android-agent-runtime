@@ -15,6 +15,8 @@ import cc.noharry.agent.appserver.model.ModelPreset
 import cc.noharry.agent.appserver.model.ScriptedModel
 import cc.noharry.agent.appserver.protocol.ConfirmationMode
 import cc.noharry.agent.appserver.protocol.ExperimentalAppServerApi
+import cc.noharry.agent.appserver.protocol.ModelFacts
+import cc.noharry.agent.appserver.protocol.ModelPrice
 import cc.noharry.agent.appserver.protocol.ServerInfo
 import cc.noharry.agent.appserver.protocol.client.ServerState
 import cc.noharry.agent.appserver.protocol.jsonrpc.JsonRpcNotification
@@ -84,8 +86,15 @@ interface PublishedState {
  * rather than on the selected profile (a client switches with `run/set`; picking a profile switches to it).
  *
  * The server's own features beyond what its protocol needs are off until [builtIns] turns them on, and plugins add more
- * ([plugins]: modules of their own, such as cards, a model service's extras, operating the screen, the device's tools,
- * plans or A2A; which are on is kept on the device). [debugSockets], for the host's developers and off by default: the server also
+ * ([plugins]: modules of their own, such as cards, model services, operating the screen, the device's tools, plans or
+ * A2A; which are on is kept on the device). A library may declare a plugin in its manifest, which the server then loads
+ * without its being listed ([PluginDiscovery]; `agent-app-models` does): [ignoredPlugins] names those of them, by id,
+ * the server leaves out, and one the host lists itself is loaded as listed.
+ *
+ * What is known of models (their context window, whether they read pictures, and more: [ModelFacts]) and their prices
+ * come from the adapters of the model services the running plugins know; [modelFacts] and [modelPrices], by model id,
+ * win over them (a fact given here over the service's, field by field), and the person's own settings (a model's window
+ * or picture switch, a price typed in) win over both. [debugSockets], for the host's developers and off by default: the server also
  * listens on two abstract local sockets of this device, `<name>` (the protocol, one JSON message per line) and
  * `<name>-acp` (the Agent Client Protocol, for an editor), which only this app, adb's shell and root may connect to; a
  * host turns it on in its debug builds only (the server does not check that the build is debuggable), since the shell
@@ -134,6 +143,9 @@ class AppServerConfig(
     val trustedPublishers: Set<String> = emptySet(),
     val allowUnsignedPackages: Boolean = false,
     val maxScriptToolSeconds: Int = 30,
+    val ignoredPlugins: Set<String> = emptySet(),
+    val modelFacts: Map<String, ModelFacts> = emptyMap(),
+    val modelPrices: Map<String, ModelPrice> = emptyMap(),
 ) {
     init {
         require(maxScriptToolSeconds >= 1) { "maxScriptToolSeconds must be at least 1." }
@@ -170,7 +182,7 @@ object AppServer {
         installHost(config)
         ApprovalSettings.init(app, config.approvals)
         RuntimeSession.startWith(simulated = config.simulatedBackend)
-        val plugins = PluginHost(app, config.plugins)
+        val plugins = PluginHost(app, config.plugins + PluginDiscovery.find(app, config))
         plugins.onChange = { additions ->
             AppHost.install(additions = additions)
             // Started after a reboot only while a running plugin asks (plans, a host's own).
@@ -270,6 +282,7 @@ fun coreModules(app: Context): List<RouteModule> = listOf(
     McpRoutes(app),
     UsageRoutes(app),
     ModelSettingsRoutes(app),
+    ServiceRoutes(app),
     AppRoutes(app),
     FileRoutes(app),
     PluginRoutes(app, { AppServer.pluginHost }, { AppServer.packages }),

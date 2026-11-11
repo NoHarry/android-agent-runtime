@@ -16,13 +16,17 @@ fun parseContextWindow(text: String): Long? {
 fun normalizeProviderModels(models: List<String>): List<String> =
     models.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
 
-/** One model of a profile: the context window set for it (null: its default), the default, and whether it takes images. */
+/**
+ * One model of a profile: the context window set for it (null: its default), the default, whether it takes images, and
+ * what is known of it ([facts]: its service's, with the host's own over them; read only, not saved).
+ */
 @Serializable
 data class ModelSettingsView(
     val model: String,
     val windowOverride: Long? = null,
     val defaultWindow: Long = 0,
     val imageInput: Boolean = true,
+    val facts: ModelFacts = ModelFacts(),
 )
 
 /** The profile (as [ProviderEditState] names it) and the models whose settings are asked for. */
@@ -37,7 +41,7 @@ data class ModelSettingsResult(val models: List<ModelSettingsView>)
 data class ModelSettingsSaveParams(val profile: ProviderEditState, val models: List<ModelSettingsView>)
 
 /**
- * 联网搜索 and the fetch fallback for the active profile: whether it searches through a service's search API, whether it
+ * Web search and the fetch fallback for the active profile: whether it searches through a service's search API, whether it
  * has a search of its own, whether pages refused by the device go through a service's fetch API, and whether any
  * profile has a key for those ([lookupKey]).
  */

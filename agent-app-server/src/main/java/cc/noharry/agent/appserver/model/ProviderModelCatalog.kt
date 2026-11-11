@@ -6,12 +6,16 @@ import cc.noharry.agent.appserver.runtime.AppHost
 import java.security.MessageDigest
 import org.json.JSONArray
 
-/** Saved model candidates; selecting the active model remains a separate composer action. */
+/**
+ * The models a profile offers: those last fetched for it, else those its service's list names ([ModelService.models]);
+ * selecting the active model remains a separate composer action.
+ */
 internal fun loadProviderModels(context: Context, profile: ProviderEditState): List<String> {
     // The on-device profile offers the models the app can download, each picked like any other model.
     if (AppHost.models.owns(profile.profileId)) return AppHost.models.models(profile.profileId)
     val raw = context.getSharedPreferences(PROVIDER_MODELS_PREFS, Context.MODE_PRIVATE)
-        .getString(providerModelsKey(profile), null) ?: return emptyList()
+        .getString(providerModelsKey(profile), null)
+        ?: return serviceAt(profile.baseUrl)?.second?.models.orEmpty().map { it.id }
     return runCatching {
         val array = JSONArray(raw)
         normalizeProviderModels((0 until array.length()).map { array.getString(it) })

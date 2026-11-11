@@ -23,8 +23,9 @@ runs what CI runs:
   in `api/agent-app-server-levels.txt`, which `tools/app-server-api/api_dump.py` writes and checks (Python 3). When you
   change it on purpose, run `./gradlew apiDump`, commit the new dump, and note any breaking change in `CHANGELOG.md`.
 - **The app server's layering** (`checkAppServerLayering`): its core names no plugin's package (the first-party
-  plugins are source modules of the Bothy app) and carries none of the runtime modules only a plugin brings (`agent-a2a*`,
-  `agent-android-use`, `agent-device-capabilities`).
+  plugins but the model services are source modules of the Bothy app) and no model service or its models
+  (`checkCoreServiceNames`), and carries none of the modules only a plugin brings (`agent-a2a*`, `agent-android-use`,
+  `agent-device-capabilities`, `agent-app-models`).
 - **Android API level**: the JVM modules run on Android from API 23, so their main classes are checked against
   Android 23's API (`animalsnifferMain`; the kernel and the runtime may also use what `desugar_jdk_libs_nio` 2.1.5 adds
   but Android 26 has itself), and the Android libraries run lint, whose errors (such as `NewApi`) fail.
@@ -33,12 +34,14 @@ runs what CI runs:
 
 CI also publishes every artifact to the local Maven repository, then builds, tests and runs `samples/extensions`
 against the published `agent-runtime` and the BOM, and builds the apps on the app server against the published
-`agent-app-server` and `agent-app-protocol`, testing the two tested offline (`./gradlew publishToMavenLocal`, then the
+`agent-app-server`, `agent-app-protocol` and `agent-app-models`, testing the two tested offline (`./gradlew publishToMavenLocal`, then the
 same tasks with `-PsamplesFromMavenLocal`), so published dependency metadata that leaves out what a host needs fails
 there.
 
 Device tests (`./gradlew :agent-runtime-android:connectedDebugAndroidTest`, `:agent-exec-js:connectedDebugAndroidTest`)
-need a connected device.
+need a connected device. `./gradlew :agent-app-models:realServiceTest` runs the model services themselves, each whose
+key is in the environment (`AGENT_E2E_<SERVICE>_KEY`; see the host guide's "Model services"); it is never part of
+`ciCheck`.
 
 ## Rules of the codebase
 

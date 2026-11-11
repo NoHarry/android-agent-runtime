@@ -93,8 +93,9 @@ configurations.matching { it.name.endsWith("UnitTestRuntimeClasspath") }.configu
     }
 }
 
-// GuideSnippetsTest reads the host guide, the package tool's README, the samples' code and the root build files the guide
-// quotes, and the version, and PackageToolTest the timer sample's package: a change to any of them runs the tests again.
+// GuideSnippetsTest reads the host guide, the package tool's README, the samples' code, the model services' examples and
+// the root build files the guide quotes, and the version, and PackageToolTest the timer sample's package: a change to any
+// of them runs the tests again.
 tasks.withType<Test>().configureEach {
     inputs.file("README.md").withPropertyName("hostGuide")
     inputs.file("../tools/agent-plugin/README.md").withPropertyName("packageToolGuide")
@@ -104,6 +105,7 @@ tasks.withType<Test>().configureEach {
     inputs.files(
         fileTree("../samples") { include("agent-app-sample*/build.gradle.kts", "agent-app-sample*/src/**", "agent-app-sample*/package/**") },
     ).withPropertyName("guideSamples")
+    inputs.files(fileTree("../agent-app-models/src/test") { include("**/*.kt") }).withPropertyName("guideModelsExamples")
 }
 
 // QuickJS reads numbers (literals, parseFloat, JSON.parse) with the C library's strtod, which follows the process's

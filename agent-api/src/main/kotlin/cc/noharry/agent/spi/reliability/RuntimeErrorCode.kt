@@ -19,6 +19,12 @@ enum class RuntimeErrorCode(
     PROVIDER_AUTH_FAILED("PROVIDER_AUTH_FAILED"),
     PROVIDER_RATE_LIMITED("PROVIDER_RATE_LIMITED"),
     PROVIDER_SERVER_ERROR("PROVIDER_SERVER_ERROR"),
+    /** The account behind the key has no balance or quota left: asking again does not help until it is topped up. */
+    PROVIDER_QUOTA_EXCEEDED("PROVIDER_QUOTA_EXCEEDED"),
+    /** The request does not fit the model's context window. */
+    PROVIDER_CONTEXT_WINDOW_EXCEEDED("PROVIDER_CONTEXT_WINDOW_EXCEEDED"),
+    /** The service did not answer in time. */
+    PROVIDER_TIMEOUT("PROVIDER_TIMEOUT"),
     PROVIDER_HTTP_ERROR("PROVIDER_HTTP_ERROR"),
     PROVIDER_TRANSPORT_FAILED("PROVIDER_TRANSPORT_FAILED"),
     PROVIDER_RESPONSE_MALFORMED("PROVIDER_RESPONSE_MALFORMED"),

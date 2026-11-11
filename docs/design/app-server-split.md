@@ -1,8 +1,8 @@
 # The app server
 
-Status: experimental. The protocol and the server are two published artifacts, `agent-app-protocol` and
-`agent-app-server`, in `agent-bom`; their entry points ask for an opt-in, `@ExperimentalAppServerApi`, and may change
-in a minor release.
+Status: experimental. The protocol, the server and the model services are three published artifacts,
+`agent-app-protocol`, `agent-app-server` and `agent-app-models`, in `agent-bom`; their entry points ask for an opt-in,
+`@ExperimentalAppServerApi`, and may change in a minor release.
 
 The app server makes an Android app an agent: one agent runtime behind a JSON-RPC protocol of threads, turns and
 items, in the style of Codex's app-server. The app is its host: it installs the server when its process starts and says,
@@ -14,17 +14,19 @@ hosts is `agent-app-server/README.md`, and plugins a person downloads are in `pl
 
 - **Here.** `agent-app-protocol` (plain JVM: the protocol, the state a front end renders, and its client
   `ServerClient`), `agent-app-server` (Android: sessions, models, MCP, skills, subagents, usage, the plugin kernel and
-  plugin packages), four apps on it (`samples/agent-app-sample`, `-notes`, `-timer`, `-habits`), `tools/agent-plugin`
+  plugin packages), `agent-app-models` (Android: the model services' plugin, section 9), four apps on it
+  (`samples/agent-app-sample`, `-notes`, `-timer`, `-habits`), `tools/agent-plugin`
   (makes plugin packages) and `tools/app-server-api` (lists the server's API by level). They pass `ciCheck` like the
   rest of the repository: source rules, API dumps, Android API level checks, lint, unit tests. CI also builds the
   samples against what `publishToMavenLocal` wrote (`-PsamplesFromMavenLocal`), so published metadata that leaves out
   what a host needs fails there.
-- **The first-party plugins** (cards, DeepSeek's extras with their protocol half, operating the screen, the device's
-  tools, drawn pages, memory, pictures, plans, A2A) are source modules of the Bothy app, built into it and not Maven
-  artifacts; their source is published with Bothy's next release. Each is a Gradle module with its own tests and API
+- **The other first-party plugins** (cards, operating the screen, the device's tools, drawn pages, memory, pictures,
+  plans, A2A) are source modules of the Bothy app, built into it and not Maven artifacts; their source is published with
+  Bothy's next release. Each is a Gradle module with its own tests and API
   dump, depends only on the published artifacts and on the other plugins, and names nothing of Bothy, so it can be
   built on its own.
-- **No plugin is published.** A host writes its own (`AppServerPlugin`), or a person installs a package.
+- **One plugin is published**, the model services (`agent-app-models`), which an app that depends on it gets without
+  listing it. Otherwise a host writes its own (`AppServerPlugin`), or a person installs a package.
 
 ## 2. The API and its levels
 
@@ -128,22 +130,30 @@ in the app's private storage; the guide lists where.
   `TOOL_UNAVAILABLE` on a call, and calls it again once it is back.
 - **Clients** see plugins with `plugins/list`, switch them with `plugins/set`, and are told of a change by
   `server/features`.
+- **Plugins a library brings.** A library declares a plugin in its manifest (`<meta-data android:name="<class>"
+  android:value="cc.noharry.agent.appserver.plugin"/>`); `PluginDiscovery` loads each the app's merged manifest
+  declares after the host's own, leaving out those `AppServerConfig.ignoredPlugins` names and any whose id the host
+  lists itself. The server's consumer rules keep every `AppServerPlugin` class with its name and how it is made; the
+  notes sample's release, shrunk by R8, is checked for it (`checkReleaseDiscoveredPlugins`, part of `ciCheck`).
 - **What is not a plugin.** The core (sessions, models, MCP, skills, subagents, usage) is always there. Its state is
   held in process-wide objects (`AppHost`, `RuntimeSession` and others), so there is one server per process.
 
 ## 7. Layering
 
 - `checkAppServerLayering` (part of `ciCheck`): the core names no plugin's package (the first-party plugins' packages are
-  listed in the root build file).
-- `checkCoreDependencies`: none of `agent-a2a`, `agent-a2a-client-official`, `agent-android-use` or
-  `agent-device-capabilities` is on the core's classpaths, so a host that lists no plugin merges neither their code
-  nor their manifests (an accessibility service, calendar and notification permissions). A plugin that needs one brings
-  it in its own module.
+  listed in the root build file; `agent-app-models`' only in its own module).
+- `checkCoreServiceNames` (run with it): the core's sources (`agent-app-protocol` and `agent-app-server`, `src/main`)
+  name no model service and none of its models or hosts (`MODEL_SERVICE_NAMES` in the root build file); the wire
+  protocols' own names (OpenAI-compatible, Anthropic Messages) are the core's.
+- `checkCoreDependencies`: none of `agent-a2a`, `agent-a2a-client-official`, `agent-android-use`,
+  `agent-device-capabilities` or `agent-app-models` is on the core's classpaths, so a host that lists no plugin merges
+  neither their code nor their manifests (an accessibility service, calendar and notification permissions). A plugin
+  that needs one brings it in its own module.
 
 ## 8. What the plugins take from the published protocol
 
-The plugins' own requests are declared in their modules where they can be (DeepSeek's in its protocol module), but some
-plugins' protocol halves are in `agent-app-protocol`, shared with the front ends that show them, and `ServerState`
+The plugins' own requests are declared in their modules where they can be, but some plugins' protocol halves are in
+`agent-app-protocol`, shared with the front ends that show them, and `ServerState`
 folds their sections. Besides the shared basics (`Empty`, `Finding`, `FindingCode`, `SaveResult`, `DoneResult`,
 `FeatureRequests`, `SettingsRequests`, `ServerFeatures`, `PresentationRequests`, `PresentationNotifications`,
 `ConfirmationMode`, `jsonrpc.*`):
@@ -151,7 +161,7 @@ folds their sections. Besides the shared basics (`Empty`, `Finding`, `FindingCod
 | Plugin | In `agent-app-protocol` | `ServerState` |
 |---|---|---|
 | Cards | `view.WidgetCard`, `CardItem`, `CardItemKind`, `CardLayout`, `CardProgress`, `Offer`, `OfferOption`, `ChoiceOffer`, `ChoiceOption`, `SliderOffer`, `SwitchOffer`, `Control`, `BoundCall`, `ReplyWords` and their helpers | `offers` |
-| DeepSeek | `BalanceView`, `BalanceAmountView`, `ModelProvider`, `ProviderEndpoint` | |
+| Model services | `ServiceRequests` (`services/list`, `services/balance`, `services/check`, `services/checked`), `ServiceView`, `ServiceEndpointView`, `ServiceListResult`, `ProviderConnection`, `ServiceBalanceParams`, `ServiceBalanceResult`, `ServiceCheckParams`, `ServiceCheckView`, `ServiceCheckPart`, `BalanceView`, `BalanceAmountView`, `ModelFacts` | |
 | Screen operation | `AndroidUseState`, `AndroidUseView`, `CapabilityRequests`, `PointParams`, `DragParams` | |
 | Pictures | `ImageModelRequests`, `ImageModelConfig`, `ImageModelProblem`, `ImageModelSaveResult`, `ImageTryResult`, `ModelListResult`, `GeneratedImageResult`, `GeneratedPicture`, `view.IMAGE_GENERATE_TOOL`, `view.GENERATED_IMAGES_DIR` | `offerPictures` |
 | Memory | `MemoryRequests`, `MemoryView`, `UserMemory`, `MemoryCategory`, `MemorySource`, `MemoryWriteResult`, the `MAX_MEMOR*` limits | `memory` |
@@ -160,24 +170,50 @@ folds their sections. Besides the shared basics (`Empty`, `Finding`, `FindingCod
 | A2A | `A2aProfile`, `A2aModuleState`, `A2aTaskStatus`, `A2aOutcome`, `A2aInputSource`, `A2aClientState`, `A2aClientItem`, `DelegationView`, `DelegationStage`, `DelegationStep`, `DELEGATION_TURN_LABEL` | `delegations` |
 | The device's tools | nothing beyond the basics | |
 
-They are protocol types and ship with it; the two artifacts' public API names no type of a plugin module.
+They are protocol types and ship with it; the two artifacts' public API names no type of a plugin module. The model
+services' requests are generic (a service's id is a parameter), so a client on the plain JVM uses them for DeepSeek's
+balance and relay check without the Android artifact; the core answers them from the adapters of the services it
+knows (`ServiceRoutes`) and refuses them for a service none knows.
 
-## 9. Known limits
+## 9. Model services
 
-- **Model facts as code.** Some of what differs between models is in the core as code rather than data a host can
-  replace: DeepSeek's price aliases (`usage/ModelUsage.kt`), its context window (`model/ContextWindowConfig.kt`) and
-  its cache-token field names (`usage/TokenUsage.kt`).
-- **Protocol values of plugins a host may not list**, such as `FindingCode.MODEL_DEEPSEEK_AVAILABLE`, the
-  `FindingCode.MEMORY_REFUSED_*` codes and `RuntimeDemoState` (`DemoSection`), are in the protocol whether or not the
-  plugin runs.
+- **The core speaks wire protocols, not services.** `agent-app-server` has three clients (OpenAI Chat Completions,
+  OpenAI Responses, the Anthropic Messages API) and knows no service: alone, it gives every model a 128K window and
+  pictures, a profile no base URL or model until one is given, the wire's own model list, models.dev prices on a sync,
+  and the stable failure codes the wire protocols' statuses and error codes give (`ModelFailures.kt`).
+- **Adapters say what is known.** A `ProviderAdapter` (from a plugin, `PluginContext.providerAdapter`) brings
+  `ModelService`s: endpoints (the first the default) and key hint, models with `ModelFacts` and `ModelPrice` (currency,
+  `asOf`), and, as data, the quirks the generic clients need (`modelsUrl`, `listsModels`, `listedIdPrefix`,
+  `usageFields`, `hosts`, `errors`, `retry`). The core asks the adapter of the service at a profile's host, and for a
+  model on an unknown host (a relay) the service that lists it by name. Its defaults read the data; an adapter overrides
+  them for behaviour (DeepSeek's pricing of versions it does not list, its lookups, native updates, balance and check).
+- **Who wins.** The person's settings (a model's window and picture switch, a typed price) over the host's
+  (`AppServerConfig.modelFacts`, `modelPrices`), over the adapters'. The facts the server uses are the window (usage,
+  compaction) and the picture switch's default; output limits and reasoning efforts are shown, and requests send what
+  the runtime sends for every model of its wire. A service's `retry` sets the run's model retries (no service in the
+  data documents one).
+- **`agent-app-models`** holds the adapters of thirteen services, their facts in `services.json` (each value with the
+  official page it was read from and the day, checked by `ServiceCatalogTest`; the guide's table is kept equal to it by
+  `GuideServicesTableTest`), DeepSeek's extras in code, tests against a local mock of each service's documented answers
+  (`ServicesMockTest`), and a test against the services themselves for a person with keys (`realServiceTest`, never in
+  `ciCheck`).
+
+## 10. Known limits
+
+- **Protocol values of plugins a host may not list**, such as the `FindingCode.MEMORY_REFUSED_*` codes and
+  `RuntimeDemoState` (`DemoSection`), are in the protocol whether or not the plugin runs.
 - **Keys are not encrypted.** Model profiles' keys, MCP servers' keys and plugin packages' secrets are kept as plain
   text in the app's private storage (the latter two in its no-backup storage).
 - **`agent-exec-js` is the host's to add.** The server is compiled against it (`compileOnly`) and finds it by its
   engine's class name, which its consumer rules keep; it does not carry it, as QuickJS is about 4 MB of an APK. Without
   it, `AppServer.install` refuses `BuiltInFeatures.scripts`, `plugins/install` a package with script tools, and a
   script tool of a package installed before fails its calls saying so.
+- **Model facts are a snapshot.** What `agent-app-models` knows is the services' pages on the day its data names;
+  facts a service's own list reports (DeepSeek's, OpenRouter's, Volcengine's carry context windows and prices) are not
+  read, a price that depends on the hour or the prompt's length is its first tier, and a service's error carried in a
+  successful answer (MiniMax, OpenRouter mid-stream) is not read as a failure.
 
-## 10. In scope, and reserved for later
+## 11. In scope, and reserved for later
 
 - **Built:** the plugin kernel, plugins a host builds in, and plugin packages a person installs (declarative ones and
   tools written as scripts in the sandbox), with the trust and permissions of `plugin-packages.md`.

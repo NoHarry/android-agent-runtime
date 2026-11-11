@@ -75,14 +75,16 @@ data class ProviderEditState(
     val profileOptions: List<ProviderProfileOption> = emptyList(),
     val modelOptions: List<String> = emptyList(),
     val variantOptions: List<String> = emptyList(),
-    /** The model's own default variant, when it has one (DeepSeek: none). */
+    /** The model's own default variant, when it has one (thinking off, for a model that thinks unless told not to). */
     val defaultVariant: String? = null,
     val hasApiKey: Boolean = false,
+    /** The id of the model service the profile reaches ([ServiceView.id]), when an adapter knows it; blank otherwise. */
+    val service: String = "",
 )
 
 /**
- * The variant menu's options and the one shown chosen. A model with a default of its own (DeepSeek's thinking level:
- * none) shows that default chosen and offers no separate Default, which would send the same; other models keep Default
+ * The variant menu's options and the one shown chosen. A model with a default of its own (a thinking level of none)
+ * shows that default chosen and offers no separate Default, which would send the same; other models keep Default
  * (no variant sent).
  */
 fun ProviderEditState.variantChoices(): Pair<List<String>, String> {
@@ -194,11 +196,11 @@ data class TokenUsageState(
 
     /**
      * Cache hit rate over total input tokens (including cache read/write when the
-     * provider reports them separately, e.g. Anthropic).
+     * provider reports them separately, as the Anthropic Messages API does).
      *
-     * Anthropic reports `input_tokens` excluding cache fields, so warm-cache
-     * responses often have `cache_read >> input` and `cache_creation == 0`. The
-     * old formula `read / (read + write)` then always shows 100%.
+     * The Messages API reports `input_tokens` excluding cache fields, so warm-cache
+     * responses often have `cache_read >> input` and `cache_creation == 0`; a rate of
+     * `read / (read + write)` would then always show 100%.
      */
     val cacheHitRate: Int?
         get() {

@@ -1,6 +1,8 @@
 package cc.noharry.agent.appserver.usage
 import android.content.Context
+import cc.noharry.agent.appserver.model.modelPrice
 import cc.noharry.agent.appserver.protocol.DEFAULT_USD_TO_CNY
+import cc.noharry.agent.appserver.protocol.USD
 import cc.noharry.agent.appserver.protocol.ModelPrice
 import cc.noharry.agent.appserver.protocol.ModelUsage
 import cc.noharry.agent.appserver.protocol.PriceBook
@@ -87,27 +89,25 @@ object UsageStore {
     }
 
     /**
-     * Fetches models.dev and prices every model seen in the ledger plus [extraModels]; hand-typed prices stay.
-     * Calls [done] on the store thread with how many were matched, or the failure.
+     * Prices every model seen in the ledger plus [extraModels]: from the host's or its service's list where one has it
+     * ([modelPrice]), else from models.dev, fetched only for those; hand-typed prices stay. Calls [done] on the store
+     * thread with how many were matched, or the failure.
      */
     internal fun syncPrices(extraModels: Collection<String>, done: (Result<Pair<Int, Int>>) -> Unit) = io.execute {
         ensureLoaded()
         val result = runCatching {
-            val catalog = fetchModelsDev()
             val models = (mutableUsage.value.values.flatMap { it.keys } + extraModels).filter { it != "unknown" }.toSet()
             val prices = mutablePrices.value.prices.toMutableMap()
-            var matched = 0
-            models.forEach { model ->
-                if (prices[model]?.manual == true) return@forEach
-                val price = matchModelsDevPrice(catalog, model)
-                if (price != null) {
-                    prices[model] = price
-                    matched++
-                }
-            }
+            val open = models.filter { prices[it]?.manual != true }
+            val known = open.mapNotNull { model -> modelPrice(model)?.let { model to it } }.toMap()
+            prices += known
+            val rest = open.filter { it !in known }
+            val catalog = if (rest.isEmpty()) null else fetchModelsDev()
+            val synced = rest.mapNotNull { model -> catalog?.let { matchModelsDevPrice(it, model) }?.let { model to it } }.toMap()
+            prices += synced
             mutablePrices.value = mutablePrices.value.copy(prices = prices, syncedAtEpochMillis = System.currentTimeMillis())
             savePrices()
-            matched to models.size
+            (known.size + synced.size) to models.size
         }
         done(result)
     }
@@ -195,6 +195,8 @@ internal fun priceBookJson(book: PriceBook): String = buildJsonObject {
                 put("source", price.source)
                 price.pricedAs?.let { put("pricedAs", it) }
                 put("manual", price.manual)
+                put("currency", price.currency)
+                price.asOf?.let { put("asOf", it) }
             }
         }
     }
@@ -216,6 +218,8 @@ internal fun parsePriceBook(text: String): PriceBook {
             source = source.first,
             pricedAs = entry["pricedAs"]?.jsonPrimitive?.content ?: source.second,
             manual = entry["manual"]?.jsonPrimitive?.content == "true" || entry["source"] == null || source.first.isEmpty(),
+            currency = entry["currency"]?.jsonPrimitive?.content ?: USD,
+            asOf = entry["asOf"]?.jsonPrimitive?.content,
         )
     }?.toMap().orEmpty()
     return PriceBook(
@@ -226,8 +230,8 @@ internal fun parsePriceBook(text: String): PriceBook {
 }
 
 /**
- * A stored source as (provider, priced as): a book written before sources were data kept 「models.dev · deepseek」,
- * 「…（按 deepseek-flash）」 when priced at another model, or 「手填」 for one typed in (blank provider).
+ * A stored source as (provider, priced as): a book written before sources were data kept 「models.dev · <provider>」,
+ * 「…（按 <model>）」 when priced at another model, or 「手填」 for one typed in (blank provider).
  */
 private fun storedSource(stored: String?): Pair<String, String?> {
     val text = stored.orEmpty()

@@ -34,12 +34,19 @@ data class ProviderConfig(
     val streamEnabled: Boolean =
         activeProfile.streamEnabled ?: activeProfile.endpoint.defaultStream ?: resolveStreamEnabled(values)
 
+    /**
+     * The client a run on [profile] talks to its model with: the host's own for its models, else the wire protocol's,
+     * whose failures carry the stable code of what they were ([ProviderAdapter.classify]).
+     */
     fun client(
         profile: ProviderProfile,
         stream: Boolean,
         diagnostics: AppDiagnostics? = null,
     ): ModelClient =
-        if (AppHost.models.owns(profile.id)) AppHost.models.client(profile, stream, diagnostics) else when (profile.provider) {
+        if (AppHost.models.owns(profile.id)) AppHost.models.client(profile, stream, diagnostics) else wireClient(profile, stream, diagnostics).classifiedAt(profile.baseUrl)
+
+    private fun wireClient(profile: ProviderProfile, stream: Boolean, diagnostics: AppDiagnostics?): ModelClient =
+        when (profile.provider) {
             ModelProvider.ANTHROPIC -> AnthropicModelClient(
                 apiKeyProvider = { effectiveApiKey(profile) },
                 model = profile.model,
@@ -71,7 +78,7 @@ data class ProviderConfig(
         if (AppHost.models.owns(profile.id)) {
             AppHost.models.isReady(profile)
         } else {
-            profile.model.isNotBlank() && effectiveApiKey(profile).isNotBlank()
+            profile.model.isNotBlank() && profile.baseUrl.isNotBlank() && effectiveApiKey(profile).isNotBlank()
         }
 
     fun isReady(provider: ModelProvider): Boolean =
@@ -117,6 +124,7 @@ data class ProviderConfig(
             endpoint = profile.endpoint,
             manualProfileEnabled = manualProfileEnabled,
             profileOptions = profiles.map { it.toOption(activeProfileId) },
+            service = serviceAt(profile.baseUrl)?.second?.id.orEmpty(),
         )
 
     fun editState(provider: ModelProvider): ProviderEditState =
@@ -137,6 +145,7 @@ data class ProviderConfig(
     fun missingFinding(profile: ProviderProfile): Finding {
         if (AppHost.models.owns(profile.id)) return AppHost.models.missing(profile)
         if (profile.model.isBlank()) return finding(FindingCode.MODEL_CHOOSE_MODEL_FIRST)
+        if (profile.baseUrl.isBlank()) return finding(FindingCode.MODEL_MISSING_BASE_URL, profile.displayLabel)
         return finding(FindingCode.MODEL_MISSING_API_KEY, profile.displayLabel, expectedPaths.joinToString(separator = "\n"))
     }
 
@@ -144,6 +153,7 @@ data class ProviderConfig(
     fun missingMessage(context: Context, profile: ProviderProfile): String {
         if (AppHost.models.owns(profile.id)) return AppHost.models.missingMessage(context, profile)
         if (profile.model.isBlank()) return context.getString(R.string.model_choose_model_first)
+        if (profile.baseUrl.isBlank()) return context.getString(R.string.model_missing_base_url, profile.displayLabel)
         val paths = expectedPaths.joinToString(separator = "\n")
         return context.getString(R.string.model_missing_api_key, profile.displayLabel, paths)
     }
@@ -176,6 +186,7 @@ data class ProviderConfig(
             val profiles = providerProfiles(baseValues)
                 .withSavedProfiles(savedProfileState.overrides)
                 .withSharedKeys()
+                .withServiceDefaults()
                 .let { AppHost.models.withProfiles(context, it) }
             val selection = resolveProviderSelection(
                 values = baseValues,

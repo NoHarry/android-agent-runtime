@@ -7,15 +7,22 @@ import cc.noharry.agent.appserver.protocol.PriceSyncResult
 import cc.noharry.agent.appserver.protocol.UsageData
 import cc.noharry.agent.appserver.protocol.UsageRequests
 import cc.noharry.agent.appserver.usage.UsageStore
+import cc.noharry.agent.appserver.usage.withKnownPrices
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Usage and cost: the ledger and prices, hand-set prices and the rate, and a models.dev sync. */
+/**
+ * Usage and cost: the ledger and prices (each model's as the server takes it: typed in, else the host's or its
+ * service's, else synced), hand-set prices and the rate, and a sync.
+ */
 internal class UsageRoutes(private val app: Context) : RouteModule {
     override fun RouteTable.install() {
-        on(UsageRequests.READ) { UsageStore.read().let { (days, prices) -> UsageData(days, prices) } }
+        on(UsageRequests.READ) {
+            val (days, prices) = UsageStore.read()
+            UsageData(days, prices.withKnownPrices(days.values.flatMap { it.keys }))
+        }
         on(UsageRequests.SET_PRICE) {
             UsageStore.setManualPrice(it.model, it.price)
             Empty

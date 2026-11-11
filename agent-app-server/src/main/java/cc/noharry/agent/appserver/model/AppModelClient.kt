@@ -124,7 +124,7 @@ private class ModelRoundRecovery(private val request: ModelRequest) {
         finalTodoUpdate && toolCalls.all { it == UPDATE_TODO_TOOL_NAME }
 }
 
-/** [nativeTools]: backend tools load into the tool list (a service's native updates, such as DeepSeek's tool_addition) instead of going through call_tool. */
+/** [nativeTools]: backend tools load into the tool list (a service's native updates, such as a `tool_addition` in history) instead of going through call_tool. */
 internal fun appSystemPrompt(sessionContext: String, nativeTools: Boolean = false, words: ModelWords = AppHost.words): String {
     val rules = coreRules(words).let { if (nativeTools) it.replace(CALL_TOOL_LINE, NATIVE_TOOL_LINE) else it }
     val prompt = AppHost.persona.identity + "\n\n" + rules

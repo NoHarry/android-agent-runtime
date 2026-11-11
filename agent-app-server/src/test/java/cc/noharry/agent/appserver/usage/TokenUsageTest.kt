@@ -31,17 +31,18 @@ class TokenUsageTest {
     }
 
     @Test
-    fun parsesDeepSeekCacheHitAndMissTokens() {
+    fun parsesAServicesOwnCacheHitAndMissFields() {
         val delta = parseTokenUsage(
             """
                 {"usage":{
                   "prompt_tokens":150,
                   "completion_tokens":20,
                   "total_tokens":170,
-                  "prompt_cache_hit_tokens":100,
-                  "prompt_cache_miss_tokens":50
+                  "cache_hit_tokens":100,
+                  "cache_miss_tokens":50
                 }}
             """.trimIndent(),
+            listOf(cc.noharry.agent.appserver.model.UsageFields("cache_hit_tokens", "cache_miss_tokens")),
         )
 
         assertNotNull(delta)

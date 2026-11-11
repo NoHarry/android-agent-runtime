@@ -13,7 +13,8 @@ An embeddable agent runtime for Android and the JVM. Gradle project at the repos
 | `agent-acp` | Optional module (JVM): the Agent Client Protocol (ACP) over the thread API; design in `docs/design/acp.md` |
 | `agent-exec-js`, `agent-device-capabilities`, `agent-android-use`, `agent-a2a-client-official` | Optional modules (Android) |
 | `agent-bom` | Version alignment |
-| `agent-app-protocol`, `agent-app-server` | The app server (experimental, published): its protocol (JVM) and the server with its plugin kernel (Android); host guide in `agent-app-server/README.md`. Its first-party plugins are source modules of the Bothy app, not here and not Maven artifacts (their source is published with Bothy's next release) |
+| `agent-app-protocol`, `agent-app-server` | The app server (experimental, published): its protocol (JVM) and the server with its plugin kernel (Android); host guide in `agent-app-server/README.md`. Its first-party plugins but one are source modules of the Bothy app, not here and not Maven artifacts (their source is published with Bothy's next release) |
+| `agent-app-models` | The model services' plugin (experimental, published, loaded from its manifest): an adapter per service, their facts and prices as data (`src/main/resources/.../services.json`, each value with its official source and date), DeepSeek's extras; `realServiceTest` runs the services themselves with keys from the environment |
 | `samples/` | `quickstart-jvm`, `acp-jvm`, `quickstart-android`, `minimal`, `extensions` (offline; its test runs in CI), and the apps on the app server `agent-app-sample`, `-notes`, `-timer`, `-habits` (the last two tested offline) (not published) |
 | `buildSrc/` | `SourceRulesTask`, `PackageRulesTask` and `ForbiddenDependenciesTask` (the app server's layering) |
 | `tools/` | Python helpers and fixtures; `agent-runtime` tests read `tools/fixtures`; `agent-plugin` makes plugin packages, `app-server-api` lists the app server's API by level |
@@ -22,8 +23,9 @@ An embeddable agent runtime for Android and the JVM. Gradle project at the repos
 ## Rules
 
 - Packages are `cc.noharry.agent.*`; Maven coordinates `cc.noharry:<module>`.
-- The app server's core (`agent-app-protocol`, `agent-app-server`) names no plugin's package and carries none of
-  `agent-a2a*`, `agent-android-use` or `agent-device-capabilities` (`checkAppServerLayering`). Its public
+- The app server's core (`agent-app-protocol`, `agent-app-server`) names no plugin's package, no model service or its
+  models (`checkCoreServiceNames`: what is known of a service is `agent-app-models`' data) and carries none of
+  `agent-a2a*`, `agent-android-use`, `agent-device-capabilities` or `agent-app-models` (`checkAppServerLayering`). Its public
   API has three levels, listed in `agent-app-server/api/agent-app-server-levels.txt`: a host's, `@AppServerPluginApi`
   for plugin modules, `@InternalAppServerApi` for other modules' tests only; new declarations are `internal`. The
   app server's entry points carry `@ExperimentalAppServerApi`.
@@ -54,5 +56,8 @@ An embeddable agent runtime for Android and the JVM. Gradle project at the repos
 - `agent-app-server`'s unit tests run plugin packages' scripts in real QuickJS (Zipline's JVM build replaces the Android
   one on the unit-test classpath); QuickJS reads numbers with the C library's `strtod`, so the test task pins
   `LC_NUMERIC=C`.
+- A service fact or price goes in `agent-app-models`' `services.json` with the official page it was read from; a value
+  no official page states is left out (the server's default applies). `ServiceCatalogTest` checks every source is on
+  the service's own site, and `GuideServicesTableTest` that the guide's table is the data.
 - A regex runs on Android's engine on a device and on the JVM's in unit tests: Android refuses a bare closing brace
   (`}`) the JVM accepts, as a crash when the pattern is built. Escape it.

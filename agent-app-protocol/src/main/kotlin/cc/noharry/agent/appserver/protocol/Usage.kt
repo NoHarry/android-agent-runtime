@@ -22,22 +22,33 @@ data class ModelUsage(
     )
 }
 
-/** USD per million tokens. A missing cache price bills those tokens at the input price. */
+/**
+ * A model's price per million tokens, in [currency] (`USD` or `CNY`). A missing cache price bills those tokens at the
+ * input price.
+ */
 @Serializable
 data class ModelPrice(
     val input: Double,
     val output: Double,
     val cacheRead: Double? = null,
     val cacheWrite: Double? = null,
-    /** The models.dev provider it came from ("deepseek"); blank when typed in. */
+    /**
+     * Where it came from: the id of the model service whose own list it is (its adapter's data), or the models.dev
+     * provider whose listing it is; blank when typed in.
+     */
     val source: String = "",
-    /** The model whose price it is, when this model had none of its own (DeepSeek's flash models at deepseek-flash). */
+    /** The model whose price it is, when this model had none of its own and is priced as that one. */
     val pricedAs: String? = null,
     /** Typed in Settings: a sync never overwrites it. */
     val manual: Boolean = false,
+    /** The currency the prices are in. */
+    val currency: String = USD,
+    /** The day ([java.time.LocalDate] text) the service's list said so, when it came from one. */
+    val asOf: String? = null,
 )
 
-fun ModelUsage.costUsd(price: ModelPrice): Double {
+/** What [this] usage cost at [price], in the price's currency. */
+fun ModelUsage.cost(price: ModelPrice): Double {
     val fresh = (inputTokens - cacheReadTokens - cacheWriteTokens).coerceAtLeast(0)
     return (
         fresh * price.input +
@@ -58,6 +69,20 @@ data class PriceBook(
     val syncedAtEpochMillis: Long? = null,
 )
 
+/** [amount] of [currency] in US dollars at this book's rate; null for a currency other than USD and CNY. */
+fun PriceBook.usd(amount: Double, currency: String): Double? = when (currency.uppercase()) {
+    USD -> amount
+    CNY -> amount / usdToCny
+    else -> null
+}
+
+/**
+ * What [usage] of [model] cost in US dollars at this book's price for it; null when the model has no price, or one in
+ * a currency the book does not convert.
+ */
+fun PriceBook.costUsd(model: String, usage: ModelUsage): Double? =
+    prices[model]?.let { price -> usd(usage.cost(price), price.currency) }
+
 /** Usage and cost: the ledger and the price book. */
 @Serializable
 data class UsageData(val days: UsageDays = emptyMap(), val prices: PriceBook = PriceBook())
@@ -77,7 +102,7 @@ data class ModelPriceParams(val model: String, val price: ModelPrice? = null)
 @Serializable
 data class RateParams(val usdToCny: Double)
 
-/** How a models.dev sync went: [matched] of [total] models priced, or why it failed. */
+/** How a price sync went: [matched] of [total] models priced, or why it failed. */
 @Serializable
 data class PriceSyncResult(val matched: Int = 0, val total: Int = 0, val failure: String? = null)
 
@@ -87,9 +112,18 @@ object UsageRequests {
     val SET_PRICE = RequestMethod("usage/setPrice", ModelPriceParams.serializer(), Empty.serializer())
     val SET_RATE = RequestMethod("usage/setRate", RateParams.serializer(), Empty.serializer())
 
-    /** Prices every model in the ledger (and the one in use) from models.dev; hand-typed prices stay. */
+    /**
+     * Prices every model in the ledger (and the one in use): from its service's own list where a model service's adapter
+     * has one, else from models.dev; hand-typed prices stay.
+     */
     val SYNC_PRICES = RequestMethod("usage/syncPrices", Empty.serializer(), PriceSyncResult.serializer())
 }
 
 const val DEFAULT_USD_TO_CNY = 7.2
+
+/** [ModelPrice.currency] of prices in US dollars. */
+const val USD = "USD"
+
+/** [ModelPrice.currency] of prices in Chinese yuan. */
+const val CNY = "CNY"
 private const val TOKENS_PER_MILLION = 1_000_000.0
