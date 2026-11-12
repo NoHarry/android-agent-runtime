@@ -3,7 +3,7 @@
 All notable changes are listed here. The project is 0.x: a minor release may break the API, and every break is
 called out; a patch release does not break it.
 
-## Unreleased (0.5.0)
+## 0.5.0 (2026-11-12)
 
 - **The app server (experimental).** Two new artifacts, in `agent-bom`: `agent-app-protocol` (plain JVM) and
   `agent-app-server` (Android) make an Android app an agent, one runtime behind a JSON-RPC protocol of threads, turns

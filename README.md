@@ -13,10 +13,6 @@ app's process: a sandboxed workspace the agent reads and writes, tools from your
 and subagents, hooks and policy around every tool call, and durable sessions. Bring any OpenAI- or
 Anthropic-compatible model.
 
-> **0.5.0 is not published yet.** This branch uses the new Thread / Turn / Item API. Build from source or run
-> `./gradlew publishToMavenLocal` and add `mavenLocal()` to your repositories. Maven Central still has 0.4.0;
-> its API differs from these examples. See the [migration guide](CHANGELOG.md#unreleased-050).
-
 ## What you get
 
 - **The agent loop, on the device.** Native tool calling with streaming, thinking, prompt caching and server-side web
@@ -36,7 +32,7 @@ Anthropic-compatible model.
 
 ```kotlin
 dependencies {
-    implementation(platform("cc.noharry:agent-bom:0.5.0-SNAPSHOT"))
+    implementation(platform("cc.noharry:agent-bom:0.5.0"))
     implementation("cc.noharry:agent-runtime-android") // an Android app
     // implementation("cc.noharry:agent-runtime")      // the JVM: a server, a desktop tool, tests
 }

@@ -54,9 +54,9 @@ class GuideSnippetsTest {
     /** [line] as an app outside this repository writes it: a module of this repository by its published coordinates. */
     private fun published(line: String): String = PROJECT.replace(line) { "\"$GROUP:${it.groupValues[1]}\"" }
 
-    /** The version this repository releases next: its VERSION_NAME, less `-SNAPSHOT`. */
+    /** The release a reader depends on: the one on Maven Central, `RELEASED_VERSION` in gradle.properties. */
     private fun releaseVersion(): String =
-        File(android, "gradle.properties").readLines().single { it.startsWith("VERSION_NAME=") }.substringAfter('=').removeSuffix("-SNAPSHOT")
+        File(android, "gradle.properties").readLines().single { it.startsWith("RELEASED_VERSION=") }.substringAfter('=')
 
     /** The fenced blocks of [lines], each with the quote line right above it, if any. */
     private fun blocks(lines: List<String>): List<Block> {

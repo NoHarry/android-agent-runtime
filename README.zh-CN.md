@@ -10,8 +10,6 @@
 
 **可嵌入的 agent 运行时（agent harness），面向 Android 和 JVM。** 它在你的 App 进程里跑一整套 agent 循环：agent 能读写的沙箱工作区、来自你自己代码和 MCP 服务的工具、skill 和子 agent、包在每次工具调用外面的 hook 与策略，以及可持久化的会话。模型用任何 OpenAI 或 Anthropic 兼容的接口都行。
 
-> **0.5.0 尚未发布。** 本分支已使用新的 Thread / Turn / Item API，破坏性变更和迁移对照见 [CHANGELOG](CHANGELOG.md)。
-
 ## 有什么
 
 - **在设备上跑的 agent 循环。** 原生工具调用，支持流式输出、思考过程、prompt 缓存和服务端联网搜索（看模型厂商是否提供）；带重试、预算控制，以及把旧对话摘要压缩的上下文压缩。
@@ -22,15 +20,11 @@
 - **持久化会话。** 每个会话一份只追加的事件日志，运行可恢复，Android 上用 SQLite 存会话。
 - **可选模块。** 通过无障碍服务操作别的 App（Android Use）、能调用工具的沙箱 JavaScript、日历和通知工具，以及 A2A 客户端和服务端。
 
-> 本分支面向尚未发布的 0.5.0，新 API 使用 Thread / Turn / Item。请源码接入，或先运行
-> `./gradlew publishToMavenLocal` 并在宿主仓库配置 `mavenLocal()`。Maven Central 当前仍是 0.4.0，
-> 与下方示例的 API 不同；迁移对照见 [CHANGELOG](CHANGELOG.md)。
-
 ## 安装
 
 ```kotlin
 dependencies {
-    implementation(platform("cc.noharry:agent-bom:0.5.0-SNAPSHOT"))
+    implementation(platform("cc.noharry:agent-bom:0.5.0"))
     implementation("cc.noharry:agent-runtime-android") // Android App
     // implementation("cc.noharry:agent-runtime")      // JVM：服务端、桌面工具、测试
 }

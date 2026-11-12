@@ -70,6 +70,6 @@ to build: `apiCheck` and `apiDump` run it with `python3`. Their tests: `cd tools
 ## Releasing
 
 Push a tag `vX.Y.Z`: the release workflow checks the build and uploads `X.Y.Z` to the Maven Central Portal, where it
-waits for a manual Publish. Then date `CHANGELOG.md`'s entry and move `VERSION_NAME` in `gradle.properties` on to the
-next snapshot. The README's Maven Central badge follows the release by itself. Tags `v*` cannot be moved or deleted (a
+waits for a manual Publish. Then date `CHANGELOG.md`'s entry, set `RELEASED_VERSION` in `gradle.properties` to the release (the version the
+READMEs and the host guide name) and move `VERSION_NAME` on to the next snapshot. The README's Maven Central badge follows the release by itself. Tags `v*` cannot be moved or deleted (a
 ruleset): to tag a failed release again, disable that ruleset first.
