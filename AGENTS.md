@@ -13,7 +13,7 @@ An embeddable agent runtime for Android and the JVM. Gradle project at the repos
 | `agent-acp` | Optional module (JVM): the Agent Client Protocol (ACP) over the thread API; design in `docs/design/acp.md` |
 | `agent-exec-js`, `agent-device-capabilities`, `agent-android-use`, `agent-a2a-client-official` | Optional modules (Android) |
 | `agent-bom` | Version alignment |
-| `agent-app-protocol`, `agent-app-server` | The app server (experimental, published): its protocol (JVM) and the server with its plugin kernel (Android); host guide in `agent-app-server/README.md`. Its first-party plugins but one are source modules of the Bothy app, not here and not Maven artifacts (their source is published with Bothy's next release) |
+| `agent-app-protocol`, `agent-app-server` | The app server (experimental, published): its protocol (JVM) and the server with its plugin kernel (Android); host guide in `agent-app-server/README.md`. Its first-party plugins but three (`agent-app-models`, and the screen's and the device tools' in `agent-android-use` and `agent-device-capabilities`) are source modules of the Bothy app, not here and not Maven artifacts (their source is published with Bothy's next release) |
 | `agent-app-models` | The model services' plugin (experimental, published, loaded from its manifest): an adapter per service, their facts and prices as data (`src/main/resources/.../services.json`, each value with its official source and date), DeepSeek's extras; `realServiceTest` runs the services themselves with keys from the environment |
 | `samples/` | `quickstart-jvm`, `acp-jvm`, `quickstart-android`, `minimal`, `extensions` (offline; its test runs in CI), and the apps on the app server `agent-app-sample`, `-notes`, `-timer`, `-habits` (the last two tested offline) (not published) |
 | `buildSrc/` | `SourceRulesTask`, `PackageRulesTask` and `ForbiddenDependenciesTask` (the app server's layering) |
@@ -25,11 +25,15 @@ An embeddable agent runtime for Android and the JVM. Gradle project at the repos
 - Packages are `cc.noharry.agent.*`; Maven coordinates `cc.noharry:<module>`.
 - The app server's core (`agent-app-protocol`, `agent-app-server`) names no plugin's package, no model service or its
   models (`checkCoreServiceNames`: what is known of a service is `agent-app-models`' data) and carries none of
-  `agent-a2a*`, `agent-android-use`, `agent-device-capabilities` or `agent-app-models` (`checkAppServerLayering`). Its public
-  API has three levels, listed in `agent-app-server/api/agent-app-server-levels.txt`: a host's, `@AppServerPluginApi`
+  `agent-a2a*`, `agent-android-use`, `agent-device-capabilities` or `agent-app-models` (`checkAppServerLayering`).
+  `agent-android-use` and `agent-device-capabilities` carry a plugin each (their `appserver` package, declared in their
+  manifest): they compile against the server (`compileOnly`) and never carry it (`checkNoAppServerDependency`), only
+  that package and their tests name it, and their tests but the plugin's also run without it (`testWithoutAppServer`).
+- The server's public API has three levels, listed in `agent-app-server/api/agent-app-server-levels.txt`: a host's, `@AppServerPluginApi`
   for plugin modules, `@InternalAppServerApi` for other modules' tests only; new declarations are `internal`. The
   app server's entry points carry `@ExperimentalAppServerApi`.
-- No Android API in the JVM modules. Optional modules depend at most on `agent-api`; the runtime depends on none.
+- No Android API in the JVM modules. Optional modules depend at most on `agent-api` (the two with an app server plugin
+  also compile against the server, never carrying it); the runtime depends on none.
 - First-party providers declare `providerConcurrency` explicitly.
 - Files at most 1000 lines, functions at most 50 (`checkSourceRules`).
 - Public API changes need `./gradlew apiDump` (every published module but the BOM has an `api/*.api`;

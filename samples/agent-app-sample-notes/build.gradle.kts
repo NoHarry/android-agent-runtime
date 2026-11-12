@@ -8,7 +8,9 @@ plugins {
  * A second app on the app server, written against its public API alone: a notes assistant with a tool provider of its
  * own, rules, a gate that asks before clearing every note, a model service the build may carry, one screen (which also
  * connects another model and answers approvals), and a foreground service that takes a request with no screen at all.
- * It depends on agent-app-models, so the server knows the common model services; its code names none of them.
+ * It depends on agent-app-models, so the server knows the common model services, and on agent-device-capabilities, so
+ * the model reaches the device's calendar, notifications and media; its code names none of them: their plugins come
+ * from those modules' manifests.
  *
  * The model service: -PnotesModelBaseUrl=https://… -PnotesModel=… -PnotesModelKey=… (or the same keys in
  * ~/.gradle/gradle.properties). Empty by default: the person then connects one on the screen. A key built in is in the
@@ -46,8 +48,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildTypes {
-        // R8 with no rules of the app's own, as the bare sample: the model services' plugin, found from its manifest,
-        // is kept by the server's rules (CI checks it, checkReleaseDiscoveredPlugins).
+        // R8 with no rules of the app's own, as the bare sample: the plugins found from the manifest (the model
+        // services', the device tools') are kept by the server's rules (CI checks it, checkReleaseDiscoveredPlugins).
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
@@ -69,6 +71,10 @@ dependencies {
     // The model services (DeepSeek, OpenAI, Anthropic and more): loaded by default, named nowhere in the app's code.
     implementation(project(":agent-app-models"))
     // guide:end models-dependency
+    // guide:start device-tools-dependency
+    // The device's calendar, notifications and media, and their plugin (device-tools): loaded by default, named nowhere.
+    implementation(project(":agent-device-capabilities"))
+    // guide:end device-tools-dependency
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
 }
 
@@ -100,7 +106,9 @@ abstract class DiscoveredPluginsCheck : DefaultTask() {
         val entries = Regex("""<meta-data\s[^>]*>""").findAll(manifest.get().asFile.readText()).map { it.value }
         val declared = entries.filter { """android:value="cc.noharry.agent.appserver.plugin"""" in it }
             .mapNotNull { Regex("""android:name="([^"]+)"""").find(it)?.groupValues?.get(1) }.toSortedSet()
-        check(declared.isNotEmpty()) { "The notes release's merged manifest declares no plugin; agent-app-models declares one." }
+        check(declared.containsAll(EXPECTED)) {
+            "The notes release's merged manifest declares $declared, not all of $EXPECTED (agent-app-models' and agent-device-capabilities')."
+        }
         val lines = mapping.get().asFile.readLines()
         val seeds = mapping.get().asFile.resolveSibling("seeds.txt").readLines()
         declared.forEach { name ->
@@ -121,6 +129,8 @@ abstract class DiscoveredPluginsCheck : DefaultTask() {
 
     private companion object {
         const val MODELS_DATA = "cc/noharry/agent/appserver/models/services.json"
+        /** The plugins the notes app's dependencies declare: the model services', and the device tools'. */
+        val EXPECTED = setOf("cc.noharry.agent.appserver.models.ModelsPlugin", "cc.noharry.agent.device.appserver.DeviceToolsPlugin")
     }
 }
 

@@ -167,6 +167,23 @@ implementation("cc.noharry:agent-exec-js")
   such a tool from a package installed before fails with `scripts need agent-exec-js, which this app does not
   include`, and `AppServer.install` throws for `BuiltInFeatures(scripts = true)`. Its skills, rules and MCP servers
   need nothing more.
+- **Operating the screen and the device's tools.** Two of the runtime's modules bring a plugin for the server with
+  them, loaded without your listing it ([Plugins a library brings](#plugins-a-library-brings)):
+  `cc.noharry:agent-android-use` (plugin `android-use`: the model taps, swipes and types through the module's
+  accessibility service, behind the person's switch, and runs are told the app in front) and
+  `cc.noharry:agent-device-capabilities` (plugin `device-tools`: the device's calendar, notifications and media as
+  three tool servers in the MCP list, the calendar and notifications off until the person switches them on, as they
+  ask for permissions). Each module's manifest brings what it needs (the accessibility service; the calendar and
+  notification permissions). The notes app adds the device's tools:
+
+<!-- published: samples/agent-app-sample-notes/build.gradle.kts device-tools-dependency -->
+```kotlin
+// The device's calendar, notifications and media, and their plugin (device-tools): loaded by default, named nowhere.
+implementation("cc.noharry:agent-device-capabilities")
+```
+
+  Neither module carries the server: an app that uses one with the runtime alone gets its tools and never loads its
+  plugin.
 
 Your manifest needs the Internet permission and your `Application` class. The server adds one receiver of its own,
 `BootReceiver`, off unless a running plugin asks for the app to start after a reboot (`PluginContext.startOnBoot`); a
@@ -1520,12 +1537,12 @@ way), `classify`, and the extras: `lookup`, `nativeUpdates`, `balance`, `check`,
 A plugin adds to the server from code of your own, and the person can turn it off and on while the app runs (the
 choice is kept on the device). You write it against `agent-app-server` and list it in `AppServerConfig.plugins`; it may
 be a class in your app or a module of its own, which then brings its manifest entries (a receiver, a service, a
-permission) to the hosts that depend on it. One plugin is published with the server, the model services
-(`agent-app-models`, [Model services](#model-services)), which its manifest brings to every app that depends on it
-([below](#plugins-a-library-brings)). The other first-party ones (cards, operating the screen, the device's tools, drawn
-pages, memory, pictures, plans, A2A) are source modules of the Bothy app, built into it and not Maven artifacts; their
-source is published with Bothy's next release. Until then, the plugin below and the habits app's are the examples to
-start from.
+permission) to the hosts that depend on it. Three plugins come with published modules, each brought by its manifest to
+every app that depends on the module ([below](#plugins-a-library-brings)): the model services (`agent-app-models`,
+[Model services](#model-services)), operating the screen (`agent-android-use`) and the device's tools
+(`agent-device-capabilities`). The other first-party ones (cards, drawn pages, memory, pictures, plans, A2A) are source
+modules of the Bothy app, built into it and not Maven artifacts; their source is published with Bothy's next release.
+Until then, the plugin below and the habits app's are the examples to start from.
 
 A plugin is an `AppServerPlugin` with an `id` and one `apply(ctx)`; everything it says to its `PluginContext` is taken
 back when it stops:
@@ -1740,7 +1757,15 @@ suspend fun remove(app: Context, id: String) {
 
 A library can bring a plugin to every app that depends on it, without the app listing it: an entry in the library's
 `AndroidManifest.xml` names the plugin's class (a Kotlin `object`, or a class with a public constructor that takes
-nothing), and the manifest merger puts it in the app's. `agent-app-models` declares its plugin so:
+nothing), and the manifest merger puts it in the app's. Three of the runtime's modules do:
+
+| Add | Plugin (id) | What the app gets |
+|---|---|---|
+| `agent-app-models` | `ModelsPlugin` (`models`) | What is known of the common model services ([Model services](#model-services)) |
+| `agent-android-use` | `AndroidUsePlugin` (`android-use`) | Operating the screen: the tools `mcp__android_use__android_observe` and `android_action` in each run while the person's switch is on and the accessibility service is bound (the person turns the service on in the system's settings; an app that may write secure settings, a platform-signed one, lists it itself), the switch's request `tools/setAndroidUse` and its state in the preferences, and the app in front named to each run and to other plugins (`foregroundApp`) |
+| `agent-device-capabilities` | `DeviceToolsPlugin` (`device-tools`) | The device's calendar, notifications and media as tool servers in the MCP list (`device_calendar`, `device_notification`, `device_media`; the first two off until the person switches them on), a pause with nothing playing sent to the app in front, and reading the media volume without asking (`{"action":"get"}`; setting it asks as any act does) |
+
+`agent-app-models` declares its plugin so:
 
 ```xml
 <application>
@@ -1759,8 +1784,16 @@ when they need a plugin it does not have or fail to start, a library's plugin th
 is left out, and one that fails to start stays off: `plugins/list` shows either with its `problem` (`NEEDS_MISSING`
 with the ids it needs, `START_FAILED` with why), and the log has a warning. `agent-app-server`'s consumer rules keep
 every class that implements `AppServerPlugin` with its name and the way it is made, so a release shrunk by R8 finds it
-too; `checkReleaseDiscoveredPlugins` checks the notes sample's, and that its release carries the models plugin's data
-file (`services.json`), without which that plugin does not start and says so.
+too; `checkReleaseDiscoveredPlugins` checks the notes sample's (the models' and the device tools'), and that its
+release carries the models plugin's data file (`services.json`), without which that plugin does not start and says so.
+
+`agent-android-use` and `agent-device-capabilities` are compiled against the server without carrying it: their
+published dependencies do not include it, and nothing in them but the plugin names it. An app that uses one with the
+runtime alone has the manifest entry, which nothing reads, and never loads the plugin's class; their consumer rules
+let R8 build such an app without the server's classes. CI checks it: neither module's runtime classpath reaches the
+server, and each module's tests but the plugin's run again where the server is missing (`testWithoutAppServer`).
+Their rows' titles are the module's string resources (`device_tools_calendar`, `device_tools_notifications`,
+`device_tools_media`, in English and Chinese), which your app replaces by declaring the same names.
 
 ## Going deeper (experimental)
 

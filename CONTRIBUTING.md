@@ -23,9 +23,12 @@ runs what CI runs:
   in `api/agent-app-server-levels.txt`, which `tools/app-server-api/api_dump.py` writes and checks (Python 3). When you
   change it on purpose, run `./gradlew apiDump`, commit the new dump, and note any breaking change in `CHANGELOG.md`.
 - **The app server's layering** (`checkAppServerLayering`): its core names no plugin's package (the first-party
-  plugins but the model services are source modules of the Bothy app) and no model service or its models
+  plugins but three are source modules of the Bothy app) and no model service or its models
   (`checkCoreServiceNames`), and carries none of the modules only a plugin brings (`agent-a2a*`, `agent-android-use`,
-  `agent-device-capabilities`, `agent-app-models`).
+  `agent-device-capabilities`, `agent-app-models`). The other way round, `agent-android-use` and
+  `agent-device-capabilities` carry a plugin each without carrying the server (`checkNoAppServerDependency`): only their
+  `appserver` package and their tests name it, and their tests but the plugin's run again without it
+  (`testWithoutAppServer`).
 - **Android API level**: the JVM modules run on Android from API 23, so their main classes are checked against
   Android 23's API (`animalsnifferMain`; the kernel and the runtime may also use what `desugar_jdk_libs_nio` 2.1.5 adds
   but Android 26 has itself), and the Android libraries run lint, whose errors (such as `NewApi`) fail.
@@ -34,7 +37,7 @@ runs what CI runs:
 
 CI also publishes every artifact to the local Maven repository, then builds, tests and runs `samples/extensions`
 against the published `agent-runtime` and the BOM, and builds the apps on the app server against the published
-`agent-app-server`, `agent-app-protocol` and `agent-app-models`, testing the two tested offline (`./gradlew publishToMavenLocal`, then the
+`agent-app-server`, `agent-app-protocol`, `agent-app-models` and `agent-device-capabilities`, testing the two tested offline (`./gradlew publishToMavenLocal`, then the
 same tasks with `-PsamplesFromMavenLocal`), so published dependency metadata that leaves out what a host needs fails
 there.
 
@@ -47,8 +50,8 @@ key is in the environment (`AGENT_E2E_<SERVICE>_KEY`; see the host guide's "Mode
 
 - `agent-api`, `agent-runtime` and `agent-a2a` are plain JVM modules. Android APIs go in
   `agent-runtime-android` or an Android optional module.
-- Optional modules depend at most on `agent-api` (or `agent-a2a` for its own adapters);
-  the runtime depends on none of them.
+- Optional modules depend at most on `agent-api` (or `agent-a2a` for its own adapters); the two with an app server
+  plugin also compile against the server (`compileOnly`), never carrying it. The runtime depends on none of them.
 - Every first-party `ToolProvider` and `ModelClient` declares its `providerConcurrency` explicitly, even where the
   default would do; a test checks it.
 - Messages a host may show its users have English defaults and a way to replace them (see `McpClientMessages`).

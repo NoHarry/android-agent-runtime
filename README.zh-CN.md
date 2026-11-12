@@ -93,8 +93,8 @@ val runtime = AgentRuntime.builder()
 | `agent-runtime-android` | Android 层：`AndroidAgentRuntime.builder(context)`、SQLite 会话、App 私有的事件日志，以及把用户通过 SAF 选的文件夹挂进工作区 |
 | `agent-api` | 与 Android 无关的 Thread / Turn / Item 契约，以及模型、工具、hook 和事件日志扩展接口 |
 | `agent-exec-js` | 可选：`exec_js`，能调用工具的沙箱 JavaScript（Zipline 里的 QuickJS）；app server 的脚本（插件包里用 JavaScript 写的工具）也要它 |
-| `agent-device-capabilities` | 可选：日历、通知和媒体控制工具 |
-| `agent-android-use` | 可选：通过无障碍服务看屏幕、操作屏幕 |
+| `agent-device-capabilities` | 可选：日历、通知和媒体控制工具；有 app server 时还带它们的插件（`device-tools`），默认加载 |
+| `agent-android-use` | 可选：通过无障碍服务看屏幕、操作屏幕；有 app server 时还带它的插件（`android-use`），默认加载 |
 | `agent-a2a` | 可选（纯 JVM）：通过直连的 JSON-RPC/SSE 传输把任务交给远程 A2A agent，并把 agent 本身开放成本地 A2A 端点 |
 | `agent-a2a-client-official` | 可选：同一个客户端，改用官方 A2A Java SDK 做传输 |
 | `agent-acp` | 可选（纯 JVM）：通过 Agent Client Protocol（ACP）把 agent 的会话开放给编辑器等 ACP 客户端，走 stdio 或任意一对流 |
@@ -111,10 +111,11 @@ val runtime = AgentRuntime.builder()
 | `agent-app-models` | 可选（Android）：模型服务插件，放进依赖就默认加载：DeepSeek（含余额、搜索和中转检测）、OpenAI、Anthropic、Google Gemini、xAI、OpenRouter、Groq、月之暗面（Kimi）、智谱（GLM）、阿里云百炼（通义千问）、火山方舟（豆包）、MiniMax 和硅基流动，每家的接入地址、模型参数和价格，以及错误怎么归类 |
 
 核心只说线协议（OpenAI Chat Completions 和 Responses、Anthropic Messages API），不认识任何一家服务：只用核心时，
-配置文件一样能连任何兼容的服务，参数取保守的默认值。`agent-app-models` 是唯一发布的插件；宿主自己的插件是它自己的代码
-（`AppServerPlugin`）。其余第一方插件（卡片、操作屏幕、设备工具、画页面、记忆、画图、计划、A2A）是
-[Bothy](https://github.com/NoHarry/bothy) App 的源码模块，编进那个 App，不作为 Maven 构件发布，改它们不用给本仓发版；
-它们的源码随 Bothy 的下一个版本公开。
+配置文件一样能连任何兼容的服务，参数取保守的默认值。有三个发布的模块自带插件，App 依赖它们后服务端不用列出就会加载：
+`agent-app-models`，以及操作屏幕的 `agent-android-use` 和设备工具的 `agent-device-capabilities`（这两个只编译时依赖服务端，
+只用运行时的 App 照样用它们的工具，不需要服务端）。宿主自己的插件是它自己的代码（`AppServerPlugin`）。其余第一方插件
+（卡片、画页面、记忆、画图、计划、A2A）是 [Bothy](https://github.com/NoHarry/bothy) App 的源码模块，编进那个 App，
+不作为 Maven 构件发布，改它们不用给本仓发版；它们的源码随 Bothy 的下一个版本公开。
 核心不引用任何插件的包，也不出现任何一家模型服务的名字，并且不带只有插件才用的模块（`agent-a2a`、`agent-a2a-client-official`、
 `agent-android-use`、`agent-device-capabilities`、`agent-app-models`；`ciCheck` 里的 `checkAppServerLayering`）。
 

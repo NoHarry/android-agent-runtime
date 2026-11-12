@@ -147,3 +147,24 @@ public final class cc/noharry/agent/androiduse/ForegroundApp {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class cc/noharry/agent/androiduse/appserver/AndroidUsePlugin : cc/noharry/agent/appserver/server/AppServerPlugin {
+	public static final field INSTANCE Lcc/noharry/agent/androiduse/appserver/AndroidUsePlugin;
+	public fun apply (Lcc/noharry/agent/appserver/server/PluginContext;)V
+	public fun clearWhileOff (Landroid/app/Application;Lcc/noharry/agent/appserver/server/DataClearing;)Z
+	public fun getId ()Ljava/lang/String;
+	public fun getNeeds ()Ljava/util/Set;
+	public fun getRequired ()Z
+}
+
+public final class cc/noharry/agent/androiduse/appserver/AndroidUsePluginKt {
+	public static final field ANDROID_USE_TOOL_SERVER Ljava/lang/String;
+	public static final fun androidUseRoutes (Landroid/content/Context;)Lcc/noharry/agent/appserver/server/RouteModule;
+}
+
+public final class cc/noharry/agent/androiduse/appserver/AndroidUseSwitchKt {
+	public static final fun loadAndroidUseEnabled (Landroid/content/Context;)Z
+	public static final fun repairAndroidUse (Landroid/content/Context;JJLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun repairAndroidUse$default (Landroid/content/Context;JJLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun saveAndroidUseEnabled (Landroid/content/Context;Z)V
+}
+

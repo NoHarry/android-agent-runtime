@@ -61,3 +61,18 @@ public final class cc/noharry/agent/device/DeviceNotificationMcpProvider : cc/no
 	public fun listTools (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class cc/noharry/agent/device/appserver/DeviceToolsPlugin : cc/noharry/agent/appserver/server/AppServerPlugin {
+	public static final field INSTANCE Lcc/noharry/agent/device/appserver/DeviceToolsPlugin;
+	public fun apply (Lcc/noharry/agent/appserver/server/PluginContext;)V
+	public fun clearWhileOff (Landroid/app/Application;Lcc/noharry/agent/appserver/server/DataClearing;)Z
+	public fun getId ()Ljava/lang/String;
+	public fun getNeeds ()Ljava/util/Set;
+	public fun getRequired ()Z
+}
+
+public final class cc/noharry/agent/device/appserver/DeviceToolsPluginKt {
+	public static final field DEVICE_CALENDAR_TOOL_SERVER Ljava/lang/String;
+	public static final field DEVICE_MEDIA_TOOL_SERVER Ljava/lang/String;
+	public static final field DEVICE_NOTIFICATIONS_TOOL_SERVER Ljava/lang/String;
+}
+
