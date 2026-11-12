@@ -107,6 +107,22 @@ class ModelsPluginTest {
         assertEquals(ServiceCatalog.services.filterNot { it.listsModels }.map { it.id }, views.filterNot { it.listsModels }.map { it.id })
     }
 
+    /** A screen words where to get a key itself, in its own language, from each service's key page per region. */
+    @Test
+    fun theListGivesEachServicesKeyPagesByRegion() = runBlocking {
+        val plugins = PluginHost(app, listOf(ModelsPlugin), main = Dispatchers.Unconfined)
+        plugins.startAll()
+        AppServerTesting.running(plugins.additions)
+        val views = call(ServiceRequests.LIST, Empty).services.associateBy { it.id }
+
+        assertEquals(ServiceCatalog.services.associate { it.id to it.keyPages }, views.mapValues { it.value.keyPages })
+        assertEquals(
+            mapOf("cn" to "https://platform.kimi.com/console/api-keys", "global" to "https://platform.kimi.ai/console/api-keys"),
+            views.getValue("moonshot").keyPages,
+        )
+        assertEquals(mapOf("" to "https://platform.deepseek.com/api_keys"), views.getValue("deepseek").keyPages)
+    }
+
     private suspend fun services(): List<String> = call(ServiceRequests.LIST, Empty).services.map { it.id }
 
     private suspend fun <P, R> call(method: RequestMethod<P, R>, params: P): R {

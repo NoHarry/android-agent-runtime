@@ -17,6 +17,9 @@
         }
       ],
       "keyHint": "Create an API key at https://platform.deepseek.com/api_keys",
+      "keyPages": {
+        "": "https://platform.deepseek.com/api_keys"
+      },
       "modelsUrl": "https://api.deepseek.com/models",
       "usageFields": {
         "cacheHit": "prompt_cache_hit_tokens",
@@ -105,6 +108,9 @@
         }
       ],
       "keyHint": "Create an API key at https://platform.openai.com/settings/organization/api-keys",
+      "keyPages": {
+        "": "https://platform.openai.com/settings/organization/api-keys"
+      },
       "errors": [
         {
           "kind": "QUOTA",
@@ -231,6 +237,9 @@
         }
       ],
       "keyHint": "Create an API key at https://platform.claude.com/settings/keys",
+      "keyPages": {
+        "": "https://platform.claude.com/settings/keys"
+      },
       "errors": [
         {
           "kind": "CONTEXT_WINDOW",
@@ -357,6 +366,9 @@
         }
       ],
       "keyHint": "Create an API key at https://aistudio.google.com/apikey",
+      "keyPages": {
+        "": "https://aistudio.google.com/apikey"
+      },
       "listedIdPrefix": "models/",
       "errors": [
         {
@@ -526,6 +538,9 @@
         }
       ],
       "keyHint": "Create an API key at https://console.x.ai/team/default/api-keys",
+      "keyPages": {
+        "": "https://console.x.ai/team/default/api-keys"
+      },
       "defaultModel": "grok-4.3",
       "defaultModelReason": "'Fast, reliable model with strong tool calling and instruction following capabilities', cheaper than grok-4.7 (https://docs.x.ai/developers/models/grok-4.3).",
       "currency": "USD",
@@ -595,6 +610,9 @@
         }
       ],
       "keyHint": "Create an API key at https://openrouter.ai/keys",
+      "keyPages": {
+        "": "https://openrouter.ai/keys"
+      },
       "errors": [
         {
           "kind": "QUOTA",
@@ -622,6 +640,9 @@
         }
       ],
       "keyHint": "Create an API key at https://console.groq.com/keys",
+      "keyPages": {
+        "": "https://console.groq.com/keys"
+      },
       "errors": [
         {
           "kind": "QUOTA",
@@ -701,6 +722,10 @@
         }
       ],
       "keyHint": "Create an API key at https://platform.kimi.com/console/api-keys (international: https://platform.kimi.ai/console/api-keys); the two sites' keys are not interchangeable",
+      "keyPages": {
+        "cn": "https://platform.kimi.com/console/api-keys",
+        "global": "https://platform.kimi.ai/console/api-keys"
+      },
       "errors": [
         {
           "kind": "QUOTA",
@@ -847,6 +872,10 @@
         }
       ],
       "keyHint": "Create an API key at https://bigmodel.cn/usercenter/proj-mgmt/apikeys (international: https://z.ai/manage-apikey/apikey-list)",
+      "keyPages": {
+        "cn": "https://bigmodel.cn/usercenter/proj-mgmt/apikeys",
+        "global": "https://z.ai/manage-apikey/apikey-list"
+      },
       "listsModels": false,
       "errors": [
         {
@@ -995,6 +1024,10 @@
         ".ap-southeast-1.maas.aliyuncs.com": "global"
       },
       "keyHint": "Create an API key at https://bailian.console.aliyun.com/cn-beijing/model/settings/api-key (international: https://modelstudio.console.alibabacloud.com/ap-southeast-1/settings/api-key); a key works only in the region it was made in",
+      "keyPages": {
+        "cn": "https://bailian.console.aliyun.com/cn-beijing/model/settings/api-key",
+        "global": "https://modelstudio.console.alibabacloud.com/ap-southeast-1/settings/api-key"
+      },
       "listsModels": false,
       "errors": [
         {
@@ -1138,6 +1171,9 @@
         }
       ],
       "keyHint": "Create an API key at https://ark.volcengine.com/region:cn-beijing/apiKey",
+      "keyPages": {
+        "": "https://ark.volcengine.com/region:cn-beijing/apiKey"
+      },
       "errors": [
         {
           "kind": "QUOTA",
@@ -1281,6 +1317,10 @@
         }
       ],
       "keyHint": "Create an API key at https://platform.minimax.cn/user-center/basic-information/interface-key (international: https://platform.minimax.io/user-center/basic-information/interface-key)",
+      "keyPages": {
+        "cn": "https://platform.minimax.cn/user-center/basic-information/interface-key",
+        "global": "https://platform.minimax.io/user-center/basic-information/interface-key"
+      },
       "errors": [
         {
           "kind": "QUOTA",
@@ -1399,6 +1439,10 @@
         }
       ],
       "keyHint": "Create an API key at https://cloud.siliconflow.cn/account/ak (international: https://cloud.siliconflow.com/account/ak)",
+      "keyPages": {
+        "cn": "https://cloud.siliconflow.cn/account/ak",
+        "global": "https://cloud.siliconflow.com/account/ak"
+      },
       "usageFields": {
         "cacheHit": "prompt_cache_hit_tokens",
         "cacheMiss": "prompt_cache_miss_tokens"

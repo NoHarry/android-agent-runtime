@@ -231,8 +231,8 @@ public final class cc/noharry/agent/appserver/model/ModelPreset {
 }
 
 public final class cc/noharry/agent/appserver/model/ModelService {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/Set;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLjava/lang/String;Lcc/noharry/agent/appserver/model/UsageFields;Ljava/util/List;Lcc/noharry/agent/appserver/model/RetryPolicy;ZZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/Set;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLjava/lang/String;Lcc/noharry/agent/appserver/model/UsageFields;Ljava/util/List;Lcc/noharry/agent/appserver/model/RetryPolicy;ZZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/Set;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLjava/lang/String;Lcc/noharry/agent/appserver/model/UsageFields;Ljava/util/List;Lcc/noharry/agent/appserver/model/RetryPolicy;ZZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/Set;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ZLjava/lang/String;Lcc/noharry/agent/appserver/model/UsageFields;Ljava/util/List;Lcc/noharry/agent/appserver/model/RetryPolicy;ZZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun defaultEndpointFor (Lcc/noharry/agent/appserver/protocol/ModelProvider;)Lcc/noharry/agent/appserver/model/ServiceEndpoint;
 	public final fun endpointFor (Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;)Lcc/noharry/agent/appserver/model/ServiceEndpoint;
 	public static synthetic fun endpointFor$default (Lcc/noharry/agent/appserver/model/ModelService;Lcc/noharry/agent/appserver/protocol/ModelProvider;Lcc/noharry/agent/appserver/protocol/ProviderEndpoint;ILjava/lang/Object;)Lcc/noharry/agent/appserver/model/ServiceEndpoint;
@@ -247,6 +247,7 @@ public final class cc/noharry/agent/appserver/model/ModelService {
 	public final fun getHosts ()Ljava/util/Set;
 	public final fun getId ()Ljava/lang/String;
 	public final fun getKeyHint ()Ljava/lang/String;
+	public final fun getKeyPages ()Ljava/util/Map;
 	public final fun getLabel ()Ljava/lang/String;
 	public final fun getListedIdPrefix ()Ljava/lang/String;
 	public final fun getListsModels ()Z
