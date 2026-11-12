@@ -9,9 +9,9 @@ An embeddable agent runtime for Android and the JVM. Gradle project at the repos
 | `agent-api` | Stable conversation contracts and extension interfaces (JVM) |
 | `agent-runtime` | The runtime facade and internal agent loop (JVM): model clients, MCP (`cc.noharry.agent.mcp`), the workspace VFS (`cc.noharry.agent.vfs`), `functionTools`, sessions, hooks |
 | `agent-runtime-android` | Android layer: SQLite sessions, app-private event log, `AndroidAgentRuntime.builder`, SAF mounts (`cc.noharry.agent.vfs.saf`) |
-| `agent-a2a` | Optional module (JVM): A2A client, direct transport and server |
+| `agent-a2a` | Optional module (JVM): A2A clients (direct, A2A 0.3; over the official A2A Java SDK, A2A 1.0, which it compiles against and the app adds) and server |
 | `agent-acp` | Optional module (JVM): the Agent Client Protocol (ACP) over the thread API; design in `docs/design/acp.md` |
-| `agent-exec-js`, `agent-device-capabilities`, `agent-android-use`, `agent-a2a-client-official` | Optional modules (Android) |
+| `agent-exec-js`, `agent-device-capabilities`, `agent-android-use` | Optional modules (Android) |
 | `agent-bom` | Version alignment |
 | `agent-app-protocol`, `agent-app-server` | The app server (experimental, published): its protocol (JVM) and the server with its plugin kernel (Android); host guide in `agent-app-server/README.md`. Its first-party plugins but three (`agent-app-models`, and the screen's and the device tools' in `agent-android-use` and `agent-device-capabilities`) are source modules of the Bothy app, not here and not Maven artifacts (their source is published with Bothy's next release) |
 | `agent-app-models` | The model services' plugin (experimental, published, loaded from its manifest): an adapter per service, their facts and prices as data (`src/main/resources/.../services.json`, each value with its official source and date), DeepSeek's extras; `realServiceTest` runs the services themselves with keys from the environment |
@@ -25,7 +25,7 @@ An embeddable agent runtime for Android and the JVM. Gradle project at the repos
 - Packages are `cc.noharry.agent.*`; Maven coordinates `cc.noharry:<module>`.
 - The app server's core (`agent-app-protocol`, `agent-app-server`) names no plugin's package, no model service or its
   models (`checkCoreServiceNames`: what is known of a service is `agent-app-models`' data) and carries none of
-  `agent-a2a*`, `agent-android-use`, `agent-device-capabilities` or `agent-app-models` (`checkAppServerLayering`).
+  `agent-a2a`, `agent-android-use`, `agent-device-capabilities` or `agent-app-models` (`checkAppServerLayering`).
   `agent-android-use` and `agent-device-capabilities` carry a plugin each (their `appserver` package, declared in their
   manifest): they compile against the server (`compileOnly`) and never carry it (`checkNoAppServerDependency`), only
   that package and their tests name it, and their tests but the plugin's also run without it (`testWithoutAppServer`).

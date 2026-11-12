@@ -1,3 +1,7 @@
+# R8 rules for an Android app that uses agent-a2a, read from this jar. The rules below are for the official client
+# (cc.noharry.agent.a2a.official), whose official A2A Java SDK the app adds itself; in an app without it they match
+# nothing, and the official client's classes, which nothing else here names, are removed with what they reference.
+
 # The official SDK's shared HTTP artifact contains a JDK-only fallback. This adapter always
 # injects AndroidA2AHttpClient, so these fallback references are unreachable and removed by R8.
 -dontwarn java.net.http.HttpClient$Builder

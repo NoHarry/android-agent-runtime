@@ -95,8 +95,7 @@ val runtime = AgentRuntime.builder()
 | `agent-exec-js` | 可选：`exec_js`，能调用工具的沙箱 JavaScript（Zipline 里的 QuickJS）；app server 的脚本（插件包里用 JavaScript 写的工具）也要它 |
 | `agent-device-capabilities` | 可选：日历、通知和媒体控制工具；有 app server 时还带它们的插件（`device-tools`），默认加载 |
 | `agent-android-use` | 可选：通过无障碍服务看屏幕、操作屏幕；有 app server 时还带它的插件（`android-use`），默认加载 |
-| `agent-a2a` | 可选（纯 JVM）：通过直连的 JSON-RPC/SSE 传输把任务交给远程 A2A agent，并把 agent 本身开放成本地 A2A 端点 |
-| `agent-a2a-client-official` | 可选：同一个客户端，改用官方 A2A Java SDK 做传输 |
+| `agent-a2a` | 可选（纯 JVM）：把任务交给远程 A2A agent，并把 agent 本身开放成本地 A2A 端点。两个客户端：直连的 JSON-RPC/SSE 客户端（A2A 0.3），以及基于官方 A2A Java SDK 的客户端（A2A 1.0），后者的 SDK 由 App 自己加（[见下](#官方-a2a-客户端)） |
 | `agent-acp` | 可选（纯 JVM）：通过 Agent Client Protocol（ACP）把 agent 的会话开放给编辑器等 ACP 客户端，走 stdio 或任意一对流 |
 | `agent-bom` | 对齐以上所有模块和下面 app server 三个构件的版本 |
 
@@ -116,10 +115,35 @@ val runtime = AgentRuntime.builder()
 只用运行时的 App 照样用它们的工具，不需要服务端）。宿主自己的插件是它自己的代码（`AppServerPlugin`）。其余第一方插件
 （卡片、画页面、记忆、画图、计划、A2A）是 [Bothy](https://github.com/NoHarry/bothy) App 的源码模块，编进那个 App，
 不作为 Maven 构件发布，改它们不用给本仓发版；它们的源码随 Bothy 的下一个版本公开。
-核心不引用任何插件的包，也不出现任何一家模型服务的名字，并且不带只有插件才用的模块（`agent-a2a`、`agent-a2a-client-official`、
+核心不引用任何插件的包，也不出现任何一家模型服务的名字，并且不带只有插件才用的模块（`agent-a2a`、
 `agent-android-use`、`agent-device-capabilities`、`agent-app-models`；`ciCheck` 里的 `checkAppServerLayering`）。
 
 Android App 依赖 `agent-runtime-android`；服务端、桌面工具或测试依赖 `agent-runtime`。可选模块最多依赖 `agent-api`。agent 循环已收进 runtime 内部，`samples/minimal` 展示只配置模型的最小宿主。
+
+### 官方 A2A 客户端
+
+`agent-a2a` 编译时依赖官方 A2A Java SDK 1.1.0.Final，但不把它带进来，所以直连客户端（`DirectA2aClientModule`）什么都不用加。
+要用 `OfficialA2aClientModule` 的 App 自己加上这个 SDK，并去掉它的 `a2a-java-sdk-common`（`agent-a2a` 自带一份 Android
+能接受的拷贝）；在 Android 上，SDK 的几个 jakarta jar 带着同样的声明文件，App 留一份即可：
+
+```kotlin
+dependencies {
+    implementation("cc.noharry:agent-a2a")
+    implementation("org.a2aproject.sdk:a2a-java-sdk-client:1.1.0.Final") {
+        exclude(group = "org.a2aproject.sdk", module = "a2a-java-sdk-common")
+    }
+    implementation("org.a2aproject.sdk:a2a-java-sdk-http-client-android:1.1.0.Final") {
+        exclude(group = "org.a2aproject.sdk", module = "a2a-java-sdk-common")
+    }
+}
+
+android {
+    packaging { resources.pickFirsts += setOf("META-INF/LICENSE.md", "META-INF/NOTICE.md", "META-INF/beans.xml") }
+}
+```
+
+没有 SDK 时，`OfficialA2aClientModule()` 抛出 `IllegalStateException`，指明要加的这两个构件；用 R8 压缩的 release 只要引用了它就编不过。
+SDK 在 Android 上要的 R8 规则随 `agent-a2a` 的 jar 一起来。Android 7.0 以下，SDK 需要开启 core library desugaring，和运行时在 8.0 以下一样。
 
 ## API 稳定性
 

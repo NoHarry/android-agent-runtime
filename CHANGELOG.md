@@ -32,6 +32,34 @@ called out; a patch release does not break it.
   (`ANDROID_USE_TOOL_SERVER`). The screen's plugin lists its accessibility service with the system and repairs one the
   system never binds only where the app may write secure settings.
 
+- **Breaking: one A2A artifact.** `agent-a2a-client-official` is no longer published. Its client,
+  `OfficialA2aClientModule` (same package, `cc.noharry.agent.a2a.official`), is in `agent-a2a`, which stays a plain JVM
+  jar: it is compiled against the official A2A Java SDK without carrying it, so an app that uses only the direct client
+  gets none of the SDK's dependencies (about 6 MB of jars: protobuf, Google's common protos, gson, jakarta APIs), and an
+  app that wants the official client adds the SDK itself. The two speak different versions of A2A: the direct client
+  A2A 0.3 (`message/send`, `tasks/get`), the official one A2A 1.0 (`SendMessage`, `GetTask`), as before. A 0.4.0 user
+  of `agent-a2a-client-official` replaces that dependency (and drops it from any BOM-managed list) with:
+
+  ```kotlin
+  implementation("cc.noharry:agent-a2a")
+  implementation("org.a2aproject.sdk:a2a-java-sdk-client:1.1.0.Final") {
+      exclude(group = "org.a2aproject.sdk", module = "a2a-java-sdk-common")
+  }
+  implementation("org.a2aproject.sdk:a2a-java-sdk-http-client-android:1.1.0.Final") {
+      exclude(group = "org.a2aproject.sdk", module = "a2a-java-sdk-common")
+  }
+  ```
+
+  and declares the `INTERNET` permission itself, which that artifact's manifest added. Its code does not change, nor
+  does the packaging block an Android app already needed for the SDK's jakarta jars (the README has it).
+  `agent-a2a` has its own copy of `a2a-java-sdk-common`'s classes, which Android accepts (the upstream jar's
+  `package-info` clashes with `a2a-java-sdk-spec`'s), and the R8 rules the SDK needs on Android, which now come in
+  its jar (`META-INF/proguard/agent-a2a.pro`). Without the SDK, `OfficialA2aClientModule()` throws
+  `IllegalStateException` naming the artifacts to add, and an app shrunk by R8 that names it fails to build, R8 naming
+  the SDK's missing classes; an app that names only the direct client builds and runs as before. The official
+  client's classes are checked against Android 23 with core library desugaring (the SDK hands it `java.util.function`
+  callbacks, which Android has from 7.0), the rest of `agent-a2a` against Android 23 alone.
+
 - **The model services (experimental).** A third app server artifact, `agent-app-models`, in `agent-bom`: one plugin
   (`ModelsPlugin`, id `models`) with an adapter for each of DeepSeek, OpenAI, Anthropic, Google Gemini, xAI,
   OpenRouter, Groq, Moonshot (Kimi), Zhipu (GLM), Alibaba Cloud Model Studio (Qwen), Volcengine Ark (Doubao), MiniMax
@@ -89,8 +117,8 @@ called out; a patch release does not break it.
   (Zipline's Android build under a JVM) answers so too, where it threw an `Error`.
 
 - **A remote A2A task that refuses is `REJECTED`, not `FAILED`.** `A2aTask.Status` gains `REJECTED` (a new
-  constant: a host's exhaustive `when` over the statuses needs a branch), terminal like `FAILED`; the direct client and
-  `agent-a2a-client-official` report a task in the `rejected` state with it, where both reported `FAILED`. On the
+  constant: a host's exhaustive `when` over the statuses needs a branch), terminal like `FAILED`; the direct and the
+  official clients report a task in the `rejected` state with it, where both reported `FAILED`. On the
   serving side, `A2aOutput.Result` says what its states mean: `COMPLETED`, the task ended with an answer, which may
   say that part of it was not done; `REJECTED`, the agent found it cannot proceed.
 
@@ -358,8 +386,8 @@ recompile their callers. Kernel loop, scheduler, tool-registry and prompt intern
   classes remain available for Kotlin compatibility within the new package layout; the 0.4.x package migration
   still requires rebuilding hosts.
 - **`agent-a2a` is a plain JVM library** (a jar, not an Android library), so a server or desktop host can use the A2A
-  client and server too. An Android app that uses it without `agent-a2a-client-official` now
-  declares the `INTERNET` permission itself, which the library's manifest used to add.
+  client and server too. An Android app that uses it now declares the `INTERNET` permission itself, which the
+  library's manifest used to add.
 - **A2A on Android 6 (API 23).** The direct and official A2A clients' failures were made with a constructor Android only
   has from API 24, and request headers were copied with `Map.forEach` (API 24 too): on Android 6 a refused endpoint
   crashed the host instead of returning a failure, and requests failed without core library desugaring.
@@ -467,8 +495,8 @@ recompile their callers. Kernel loop, scheduler, tool-registry and prompt intern
   is), and before Android 8.0 too. `calendar.create_event` adds to the device's primary calendar it may write, else the
   first, unless `calendarId` names one (finding it needs READ_CALENDAR as well); nothing listed the ids it required.
 - **Dependencies users compile against.** `agent-runtime` exposes `kotlinx-serialization-json` (its API takes and
-  returns `JsonObject`) and `agent-a2a-client-official` exposes `agent-a2a` (its module is an `A2aClientModule`) as API
-  dependencies; 0.4.0 published them as runtime-only, so code using those types did not compile.
+  returns `JsonObject`) as an API dependency; 0.4.0 published it as runtime-only, so code using those types did not
+  compile.
 - **Nothing in Chinese unless the device is.** Text the runtime sent in Chinese whatever the app (behaviour change):
   - The `finish` tool's description is English.
   - `web_fetch` asked every site for Chinese pages; it now asks in the app's language (language and region), then

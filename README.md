@@ -106,8 +106,7 @@ of your own (a scripted one standing in for an on-device model), tools from your
 | `agent-exec-js` | Optional: `exec_js`, sandboxed JavaScript (QuickJS through Zipline) that can call tools; the app server's scripts (plugin packages' tools written in JavaScript) need it too |
 | `agent-device-capabilities` | Optional: calendar, notification and media tools; with the app server, also their plugin (`device-tools`), loaded by default |
 | `agent-android-use` | Optional: observe and operate the screen through an accessibility service; with the app server, also its plugin (`android-use`), loaded by default |
-| `agent-a2a` | Optional (plain JVM): delegate tasks to remote A2A agents over a direct JSON-RPC/SSE transport, and expose the agent as a local A2A endpoint |
-| `agent-a2a-client-official` | Optional: the same client over the official A2A Java SDK |
+| `agent-a2a` | Optional (plain JVM): delegate tasks to remote A2A agents, and expose the agent as a local A2A endpoint. Two clients: a direct JSON-RPC/SSE one speaking A2A 0.3, and one over the official A2A Java SDK speaking A2A 1.0, whose SDK the app adds ([below](#the-official-a2a-client)) |
 | `agent-acp` | Optional (plain JVM): serve the agent's threads over the Agent Client Protocol (ACP) to editors and other ACP clients, on stdio or any stream |
 | `agent-bom` | One version for all of the above and the app server's three artifacts below |
 
@@ -134,8 +133,35 @@ code (`AppServerPlugin`). The other first-party ones (cards, drawn pages, memory
 modules of the [Bothy](https://github.com/NoHarry/bothy) app, built into it rather than published as Maven artifacts,
 so they change without a release of this one; their source is published with Bothy's next release.
 The core names no plugin's package and no model service, and carries none of the runtime modules only a plugin brings
-(`agent-a2a`, `agent-a2a-client-official`, `agent-android-use`, `agent-device-capabilities`, `agent-app-models`;
+(`agent-a2a`, `agent-android-use`, `agent-device-capabilities`, `agent-app-models`;
 `checkAppServerLayering`, part of `ciCheck`).
+
+### The official A2A client
+
+`agent-a2a` is compiled against the official A2A Java SDK 1.1.0.Final without carrying it, so the direct client
+(`DirectA2aClientModule`) needs nothing more. An app that uses `OfficialA2aClientModule` adds the SDK, without its
+`a2a-java-sdk-common` (`agent-a2a` has its own copy, which Android accepts); on Android the SDK's jakarta jars carry the
+same notice files, of which the app keeps one:
+
+```kotlin
+dependencies {
+    implementation("cc.noharry:agent-a2a")
+    implementation("org.a2aproject.sdk:a2a-java-sdk-client:1.1.0.Final") {
+        exclude(group = "org.a2aproject.sdk", module = "a2a-java-sdk-common")
+    }
+    implementation("org.a2aproject.sdk:a2a-java-sdk-http-client-android:1.1.0.Final") {
+        exclude(group = "org.a2aproject.sdk", module = "a2a-java-sdk-common")
+    }
+}
+
+android {
+    packaging { resources.pickFirsts += setOf("META-INF/LICENSE.md", "META-INF/NOTICE.md", "META-INF/beans.xml") }
+}
+```
+
+Without the SDK, `OfficialA2aClientModule()` throws an `IllegalStateException` naming these artifacts, and a release
+shrunk by R8 that names it does not build. The SDK's R8 rules come in `agent-a2a`'s jar. Below Android 7.0 the SDK
+needs core library desugaring, as the runtime does below 8.0.
 
 ## API stability
 

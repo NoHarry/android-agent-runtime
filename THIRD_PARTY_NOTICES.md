@@ -10,7 +10,7 @@ transitive dependencies and the versions your build actually packages.
 
 ## Committed third-party files
 
-### A2A Java SDK sources (`agent-a2a-client-official`)
+### A2A Java SDK sources (`agent-a2a`)
 
 Seven small classes from A2A Java SDK `1.1.0.Final` (Apache License 2.0) are included as source; see that module's
 `THIRD_PARTY_NOTICES.md`. Upstream: <https://github.com/a2aproject/a2a-java>
@@ -20,8 +20,9 @@ Seven small classes from A2A Java SDK `1.1.0.Final` (Apache License 2.0) are inc
 - **JavaScript execution** (`agent-exec-js`): `app.cash.zipline:zipline` — Apache License 2.0
   (<https://github.com/cashapp/zipline>). The Zipline Android artifact includes native QuickJS libraries, distributed
   upstream under the MIT license (<https://bellard.org/quickjs/>).
-- **A2A** (`agent-a2a-client-official`): A2A Java SDK client artifacts and Protocol Buffers — Apache License 2.0
-  (<https://github.com/a2aproject/a2a-java>) and BSD 3-Clause (<https://github.com/protocolbuffers/protobuf>).
+- **A2A** (`agent-a2a`'s official client, whose SDK the app adds): A2A Java SDK client artifacts and Protocol Buffers —
+  Apache License 2.0 (<https://github.com/a2aproject/a2a-java>) and BSD 3-Clause
+  (<https://github.com/protocolbuffers/protobuf>).
 - **SAF mounts** (`agent-runtime-android`): AndroidX DocumentFile — Apache License 2.0 (<https://github.com/androidx/androidx>).
 - **Kotlin coroutines and serialization** — Apache License 2.0 (<https://github.com/Kotlin/kotlinx.coroutines>,
   <https://github.com/Kotlin/kotlinx.serialization>).

@@ -24,15 +24,17 @@ runs what CI runs:
   change it on purpose, run `./gradlew apiDump`, commit the new dump, and note any breaking change in `CHANGELOG.md`.
 - **The app server's layering** (`checkAppServerLayering`): its core names no plugin's package (the first-party
   plugins but three are source modules of the Bothy app) and no model service or its models
-  (`checkCoreServiceNames`), and carries none of the modules only a plugin brings (`agent-a2a*`, `agent-android-use`,
+  (`checkCoreServiceNames`), and carries none of the modules only a plugin brings (`agent-a2a`, `agent-android-use`,
   `agent-device-capabilities`, `agent-app-models`). The other way round, `agent-android-use` and
   `agent-device-capabilities` carry a plugin each without carrying the server (`checkNoAppServerDependency`): only their
   `appserver` package and their tests name it, and their tests but the plugin's run again without it
   (`testWithoutAppServer`).
 - **Android API level**: the JVM modules run on Android from API 23, so their main classes are checked against
   Android 23's API (`animalsnifferMain`; the kernel and the runtime may also use what `desugar_jdk_libs_nio` 2.1.5 adds
-  but Android 26 has itself), and the Android libraries run lint, whose errors (such as `NewApi`) fail.
-- **Unit tests** of every module, the samples' included, and the samples' builds. Some of the app server's tests run
+  but Android 26 has itself; so may `agent-a2a`'s official client, `animalsnifferOfficialClient`, as the SDK it runs on
+  needs Android 7.0 or desugaring), and the Android libraries run lint, whose errors (such as `NewApi`) fail.
+- **Unit tests** of every module, the samples' included, and the samples' builds. `agent-a2a`'s but the official
+  client's run again without the official SDK (`testWithoutOfficialSdk`). Some of the app server's tests run
   `tools/agent-plugin/agentplugin.py` where `python3` and `openssl` are installed.
 
 CI also publishes every artifact to the local Maven repository, then builds, tests and runs `samples/extensions`
@@ -50,8 +52,9 @@ key is in the environment (`AGENT_E2E_<SERVICE>_KEY`; see the host guide's "Mode
 
 - `agent-api`, `agent-runtime` and `agent-a2a` are plain JVM modules. Android APIs go in
   `agent-runtime-android` or an Android optional module.
-- Optional modules depend at most on `agent-api` (or `agent-a2a` for its own adapters); the two with an app server
-  plugin also compile against the server (`compileOnly`), never carrying it. The runtime depends on none of them.
+- Optional modules depend at most on `agent-api`; the two with an app server plugin also compile against the server
+  (`compileOnly`), and `agent-a2a` against the official A2A Java SDK, never carrying them. The runtime depends on none
+  of them.
 - Every first-party `ToolProvider` and `ModelClient` declares its `providerConcurrency` explicitly, even where the
   default would do; a test checks it.
 - Messages a host may show its users have English defaults and a way to replace them (see `McpClientMessages`).
