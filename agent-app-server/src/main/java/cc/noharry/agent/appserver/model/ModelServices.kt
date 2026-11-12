@@ -94,6 +94,7 @@ class ModelService(
         balance = balance,
         relayCheck = relayCheck,
         defaultModel = defaultModel.orEmpty(),
+        listsModels = listsModels,
     )
 
     override fun toString(): String = "ModelService($id)"

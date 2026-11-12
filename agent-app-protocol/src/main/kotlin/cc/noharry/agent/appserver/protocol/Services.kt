@@ -45,6 +45,8 @@ data class ServiceEndpointView(val endpoint: ProviderEndpoint, val baseUrl: Stri
  * default), where a person gets a key ([keyHint], plain text), the models its list names ([models]) and the one a
  * profile that names none takes on its default endpoint ([defaultModel], blank for none), and whether it answers
  * [ServiceRequests.BALANCE] ([balance]) and [ServiceRequests.CHECK] ([relayCheck], for a relay that may have it behind).
+ * [listsModels] false: the service has no model list, so [SettingsRequests.PROVIDER_FETCH_MODELS] answers with [models]
+ * without asking it, and a list fetched says nothing of a key.
  */
 @Serializable
 data class ServiceView(
@@ -56,6 +58,7 @@ data class ServiceView(
     val balance: Boolean = false,
     val relayCheck: Boolean = false,
     val defaultModel: String = "",
+    val listsModels: Boolean = true,
 )
 
 @Serializable
