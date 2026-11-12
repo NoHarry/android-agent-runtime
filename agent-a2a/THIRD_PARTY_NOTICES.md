@@ -1,6 +1,7 @@
 # Third-party notices
 
-This module depends on A2A Java SDK `1.1.0.Final`, licensed under Apache-2.0.
+This module's official client (`cc.noharry.agent.a2a.official`) is compiled against A2A Java SDK `1.1.0.Final`,
+licensed under Apache-2.0, which an app that uses that client adds.
 
 The upstream `a2a-java-sdk-common` artifact and `a2a-java-sdk-spec` artifact both
 contain `org.a2aproject.sdk.util.package-info`, which Android rejects as a

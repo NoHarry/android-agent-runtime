@@ -153,7 +153,7 @@ in the app's private storage; the guide lists where.
 - `checkCoreServiceNames` (run with it): the core's sources (`agent-app-protocol` and `agent-app-server`, `src/main`)
   name no model service and none of its models or hosts (`MODEL_SERVICE_NAMES` in the root build file); the wire
   protocols' own names (OpenAI-compatible, Anthropic Messages) are the core's.
-- `checkCoreDependencies`: none of `agent-a2a`, `agent-a2a-client-official`, `agent-android-use`,
+- `checkCoreDependencies`: none of `agent-a2a`, `agent-android-use`,
   `agent-device-capabilities` or `agent-app-models` is on the core's classpaths, so a host that lists no plugin merges
   neither their code nor their manifests (an accessibility service, calendar and notification permissions). A plugin
   that needs one brings it in its own module.

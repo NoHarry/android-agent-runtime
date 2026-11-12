@@ -26,7 +26,7 @@ val ONLINE_LINT_CHECKS = setOf(
 )
 
 /** Modules that do not see agent-api, where its opt-in markers are unknown. */
-val MODULES_WITHOUT_AGENT_API = setOf("agent-a2a", "agent-a2a-client-official", "agent-app-protocol")
+val MODULES_WITHOUT_AGENT_API = setOf("agent-a2a", "agent-app-protocol")
 
 /** The Kotlin standard library the artifacts ask for: the oldest whose API they use (apiVersion 2.1). */
 val KOTLIN_LIBRARIES_VERSION = "2.1.21"
@@ -66,8 +66,8 @@ subprojects {
             compilerOptions.optIn.add("cc.noharry.agent.spi.InternalAgentRuntimeApi")
             compilerOptions.optIn.add("cc.noharry.agent.spi.ExperimentalAgentRuntimeApi")
         }
-        // Tests reach the runtime's internal seams (InternalAgentRuntimeApi); agent-a2a, its client and the app server's
-        // protocol don't see agent-api.
+        // Tests reach the runtime's internal seams (InternalAgentRuntimeApi); agent-a2a and the app server's protocol
+        // don't see agent-api.
         if (name.endsWith("TestKotlin") && project.name !in MODULES_WITHOUT_AGENT_API) {
             compilerOptions.optIn.add("cc.noharry.agent.spi.InternalAgentRuntimeApi")
             compilerOptions.optIn.add("cc.noharry.agent.spi.ExperimentalAgentRuntimeApi")
@@ -250,14 +250,12 @@ val APP_SERVER_PLUGIN_PACKAGES = mapOf(
     "cc.noharry.agent.appserver.image" to emptyList(),
     "cc.noharry.agent.appserver.plans" to emptyList(),
     "cc.noharry.agent.appserver.a2a" to emptyList(),
-    "cc.noharry.agent.a2a" to listOf("agent-a2a", "agent-a2a-client-official"),
+    "cc.noharry.agent.a2a" to listOf("agent-a2a"),
     "cc.noharry.bothy" to emptyList(),
 )
 
 /** The runtime modules only a plugin brings, and the model services' plugin: none of them on the core's classpaths. */
-val APP_SERVER_CORE_FORBIDDEN = listOf(
-    ":agent-a2a", ":agent-a2a-client-official", ":agent-android-use", ":agent-device-capabilities", ":agent-app-models",
-)
+val APP_SERVER_CORE_FORBIDDEN = listOf(":agent-a2a", ":agent-android-use", ":agent-device-capabilities", ":agent-app-models")
 
 /** The runtime modules that carry a plugin for the app server, compiled against it, and that plugin's package. */
 val MODULES_WITH_A_PLUGIN = mapOf(

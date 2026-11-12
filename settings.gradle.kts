@@ -37,7 +37,6 @@ include(":agent-exec-js")
 include(":agent-device-capabilities")
 include(":agent-android-use")
 include(":agent-a2a")
-include(":agent-a2a-client-official")
 include(":agent-acp")
 // One version for all of them.
 include(":agent-bom")
