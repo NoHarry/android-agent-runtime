@@ -27,7 +27,7 @@ class ServiceCatalogTest {
         data.services.forEach { service ->
             val domains = OFFICIAL.getValue(service.id)
             val sources = listOf(service.source, service.pricesSource) + service.models.map { it.source } + service.errors.map { it.source } +
-                listOfNotNull(service.retry?.source) + Regex("""https://\S+""").findAll(service.keyHint).map { it.value.trimEnd(')', ';', ',') } +
+                listOfNotNull(service.retry?.source) + Regex("""https://\S+""").findAll(service.keyHint).map { it.value.trimEnd(')', ';', ',') } + service.keyPages.values +
                 service.priceLists.map { it.source } + service.models.flatMap { model -> model.prices.map { it.source } + model.requestOutputSource } +
                 Regex("""https://[^\s)]+""").findAll(service.defaultModelReason).map { it.value.trimEnd('.', ',', ';') }
             sources.filter { it.isNotEmpty() }.forEach { source ->
@@ -78,6 +78,27 @@ class ServiceCatalogTest {
             }
             service.errors.forEach { rule -> assertTrue(service.id, rule.status != null || rule.pattern != null) }
         }
+    }
+
+    /**
+     * A screen words its own sentence around a service's key page: every region a service is reached in has one (its own,
+     * else the service's one for every region, under a blank region), each a page the free-text hint names too, and a
+     * service whose regions are separate sites (their keys made, and only working, on their own site) has one per region.
+     */
+    @Test
+    fun everyRegionOfAServiceHasTheKeyPageItsHintNames() {
+        services.forEach { service ->
+            val regions = service.endpoints.map { it.region }.toSet()
+            assertTrue(service.id, service.keyPages.isNotEmpty())
+            service.keyPages.forEach { (region, page) ->
+                assertTrue("${service.id} $region", region.isEmpty() || region in regions)
+                assertTrue("${service.id} $page", page.startsWith("https://") && page in service.keyHint)
+            }
+            regions.forEach { region -> assertTrue("${service.id} $region", (service.keyPages[region] ?: service.keyPages[""]) != null) }
+        }
+        val separateSites = services.filter { service -> service.keyPages.values.distinct().size > 1 }.map { it.id }
+        assertEquals(listOf("moonshot", "zhipu", "dashscope", "minimax", "siliconflow"), separateSites)
+        assertEquals(mapOf("" to "https://console.x.ai/team/default/api-keys"), ServiceCatalog.service("xai").keyPages)
     }
 
     @Test

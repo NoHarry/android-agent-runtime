@@ -42,9 +42,11 @@ data class ServiceEndpointView(val endpoint: ProviderEndpoint, val baseUrl: Stri
 
 /**
  * A model service an adapter of the server knows: its [id] and [label], the [endpoints] it speaks (the first is its
- * default), where a person gets a key ([keyHint], plain text), the models its list names ([models]) and the one a
- * profile that names none takes on its default endpoint ([defaultModel], blank for none), and whether it answers
- * [ServiceRequests.BALANCE] ([balance]) and [ServiceRequests.CHECK] ([relayCheck], for a relay that may have it behind).
+ * default), where a person gets a key ([keyHint], plain text; [keyPages], the page where a key is made by the region of
+ * the endpoints it is for, a blank region for all of them, for a client that words its own sentence around it), the
+ * models its list names ([models]) and the one a profile that names none takes on its default endpoint ([defaultModel],
+ * blank for none), and whether it answers [ServiceRequests.BALANCE] ([balance]) and [ServiceRequests.CHECK]
+ * ([relayCheck], for a relay that may have it behind).
  * [listsModels] false: the service has no model list, so [SettingsRequests.PROVIDER_FETCH_MODELS] answers with [models]
  * without asking it, and a list fetched says nothing of a key.
  */
@@ -59,6 +61,7 @@ data class ServiceView(
     val relayCheck: Boolean = false,
     val defaultModel: String = "",
     val listsModels: Boolean = true,
+    val keyPages: Map<String, String> = emptyMap(),
 )
 
 @Serializable

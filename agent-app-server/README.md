@@ -1376,8 +1376,10 @@ It brings an adapter per service (`ProviderAdapter`), and for a profile on a ser
 
 - **Connection defaults**: each service's endpoints, the first its default, its default model (the general model that
   calls tools on its default endpoint, the cheaper tier where the service's docs make one; the data file says why for
-  each) and where a person gets a key (`services/list` gives them to a screen that offers the services). A profile
-  whose id is a service's id and that has no base URL takes the base URL of the service's endpoint of its kind when the
+  each) and where a person gets a key (`services/list` gives them to a screen that offers the services: `keyHint`, a
+  sentence in English, and `keyPages`, the page where a key is made per region, a blank region for every one, for a
+  screen that words its own sentence; Moonshot, Zhipu, Model Studio, MiniMax and SiliconFlow have a site per region,
+  whose keys work only there). A profile whose id is a service's id and that has no base URL takes the base URL of the service's endpoint of its kind when the
   host gave one, else of the service's default endpoint for its wire, and, on that default endpoint and without a
   model, the default model. What the host or the person gave is never replaced.
 - **The model list** from the service's own list, without a prefix its ids carry; for a service that documents none,

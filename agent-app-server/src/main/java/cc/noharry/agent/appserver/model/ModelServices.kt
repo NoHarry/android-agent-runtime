@@ -16,7 +16,8 @@ import java.time.LocalDate
  * A model service an adapter knows ([ProviderAdapter.services]): who it is ([id], [label]); how a profile reaches it
  * ([endpoints], the first its default: a profile whose base URL is on one of their hosts, or on one of [hosts], is on
  * it; a host of [hosts] that starts with a dot takes every host ending with it); where a person gets a key ([keyHint],
- * plain text); its models ([models], each with what is known of it and its prices) and the one a profile that names
+ * plain text, and [keyPages], the page where a key is made, by the region of the endpoints it is for, blank for all of
+ * them, for a screen that words its own sentence around it); its models ([models], each with what is known of it and its prices) and the one a profile that names
  * none takes ([defaultModel]); and, as data, what the server's generic clients need to know of it: where it lists its
  * models ([modelsUrl], an OpenAI-compatible list asked with a bearer key wherever the profile's endpoint is; null lists
  * at `<base URL>/models` with the profile's wire, and [listsModels] false offers [models] alone), a prefix its list puts
@@ -46,6 +47,7 @@ class ModelService(
     val asOf: String = "",
     val defaultModel: String? = null,
     val hostRegions: Map<String, String> = emptyMap(),
+    val keyPages: Map<String, String> = emptyMap(),
 ) {
     init {
         require(id.isNotBlank() && label.isNotBlank()) { "A model service needs an id and a label." }
@@ -95,6 +97,7 @@ class ModelService(
         relayCheck = relayCheck,
         defaultModel = defaultModel.orEmpty(),
         listsModels = listsModels,
+        keyPages = keyPages,
     )
 
     override fun toString(): String = "ModelService($id)"

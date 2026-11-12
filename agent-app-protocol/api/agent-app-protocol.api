@@ -6443,9 +6443,10 @@ public final class cc/noharry/agent/appserver/protocol/ServiceRequests {
 
 public final class cc/noharry/agent/appserver/protocol/ServiceView {
 	public static final field Companion Lcc/noharry/agent/appserver/protocol/ServiceView$Companion;
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/List;ZZLjava/lang/String;Z)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/List;ZZLjava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/List;ZZLjava/lang/String;ZLjava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/List;ZZLjava/lang/String;ZLjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/util/Map;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/util/List;
 	public final fun component4 ()Ljava/lang/String;
@@ -6454,14 +6455,15 @@ public final class cc/noharry/agent/appserver/protocol/ServiceView {
 	public final fun component7 ()Z
 	public final fun component8 ()Ljava/lang/String;
 	public final fun component9 ()Z
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/List;ZZLjava/lang/String;Z)Lcc/noharry/agent/appserver/protocol/ServiceView;
-	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ServiceView;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/List;ZZLjava/lang/String;ZILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ServiceView;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/List;ZZLjava/lang/String;ZLjava/util/Map;)Lcc/noharry/agent/appserver/protocol/ServiceView;
+	public static synthetic fun copy$default (Lcc/noharry/agent/appserver/protocol/ServiceView;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/List;ZZLjava/lang/String;ZLjava/util/Map;ILjava/lang/Object;)Lcc/noharry/agent/appserver/protocol/ServiceView;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBalance ()Z
 	public final fun getDefaultModel ()Ljava/lang/String;
 	public final fun getEndpoints ()Ljava/util/List;
 	public final fun getId ()Ljava/lang/String;
 	public final fun getKeyHint ()Ljava/lang/String;
+	public final fun getKeyPages ()Ljava/util/Map;
 	public final fun getLabel ()Ljava/lang/String;
 	public final fun getListsModels ()Z
 	public final fun getModels ()Ljava/util/List;
