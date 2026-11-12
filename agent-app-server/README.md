@@ -1792,8 +1792,9 @@ published dependencies do not include it, and nothing in them but the plugin nam
 runtime alone has the manifest entry, which nothing reads, and never loads the plugin's class; their consumer rules
 let R8 build such an app without the server's classes. CI checks it: neither module's runtime classpath reaches the
 server, and each module's tests but the plugin's run again where the server is missing (`testWithoutAppServer`).
-Their rows' titles are the module's string resources (`device_tools_calendar`, `device_tools_notifications`,
-`device_tools_media`, in English and Chinese), which your app replaces by declaring the same names.
+The device tools' rows are titled by `agent-device-capabilities`' string resources (`device_tools_calendar`,
+`device_tools_notifications`, `device_tools_media`, in English and Chinese), which your app replaces by declaring the
+same names.
 
 ## Going deeper (experimental)
 
