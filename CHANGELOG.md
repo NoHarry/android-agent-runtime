@@ -11,11 +11,26 @@ called out; a patch release does not break it.
   plugin packages a person installs. Both are experimental and may change in a minor release: their entry points carry
   `@ExperimentalAppServerApi`, whose opt-in, without one, is a warning. The guide for hosts is
   `agent-app-server/README.md`; `samples/agent-app-sample`, `-notes`, `-timer` and `-habits` are apps on it, and
-  `tools/agent-plugin` makes plugin packages. No plugin is published: a host writes its own, and the first-party ones
-  (cards, operating the screen, the device's tools, drawn pages, memory, pictures, plans, A2A) are source modules of
-  the Bothy app, not Maven artifacts; their source is published with Bothy's next release. Scripts (plugin packages'
-  tools written in JavaScript, and `exec_js`) run in `agent-exec-js`, which a host that wants them adds: the server does
-  not carry its native code, about 4 MB of an APK.
+  `tools/agent-plugin` makes plugin packages. A host writes plugins of its own; the first-party ones but the model
+  services, operating the screen and the device's tools (below) are source modules of the Bothy app (cards, drawn
+  pages, memory, pictures, plans, A2A), not Maven artifacts; their source is published with Bothy's next release.
+  Scripts (plugin packages' tools written in JavaScript, and `exec_js`) run in `agent-exec-js`, which a host that wants
+  them adds: the server does not carry its native code, about 4 MB of an APK.
+
+- **Operating the screen and the device's tools on the app server come with their modules.** `agent-android-use`
+  carries `AndroidUsePlugin` (id `android-use`, package `cc.noharry.agent.androiduse.appserver`) and
+  `agent-device-capabilities` carries `DeviceToolsPlugin` (id `device-tools`, package
+  `cc.noharry.agent.device.appserver`), each declared in the module's manifest, so an app that depends on the module
+  and on `agent-app-server` has the plugin without listing it (`plugins/list`, `plugins/set`,
+  `AppServerConfig.ignoredPlugins`). Both are experimental (`@ExperimentalAppServerApi`). Neither module carries the
+  server: it is compiled against it only, so their published dependencies are unchanged, and an app with the runtime
+  alone never loads the plugin (CI runs each module's tests where the server is missing, `testWithoutAppServer`). Their
+  consumer rules tell R8 not to look for the server's classes. `agent-device-capabilities` gains three string
+  resources (`device_tools_calendar`, `device_tools_notifications`, `device_tools_media`, English and Chinese), the
+  rows' titles, which an app replaces with its own; the tool servers' ids are `device_calendar`,
+  `device_notification` and `device_media` (`DEVICE_*_TOOL_SERVER`), that of the screen's tools `android_use`
+  (`ANDROID_USE_TOOL_SERVER`). The screen's plugin lists its accessibility service with the system and repairs one the
+  system never binds only where the app may write secure settings.
 
 - **The model services (experimental).** A third app server artifact, `agent-app-models`, in `agent-bom`: one plugin
   (`ModelsPlugin`, id `models`) with an adapter for each of DeepSeek, OpenAI, Anthropic, Google Gemini, xAI,

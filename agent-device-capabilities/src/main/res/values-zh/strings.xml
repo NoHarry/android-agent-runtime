@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="device_tools_calendar">设备日历</string>
+    <string name="device_tools_notifications">设备通知</string>
+    <string name="device_tools_media">设备媒体</string>
+</resources>

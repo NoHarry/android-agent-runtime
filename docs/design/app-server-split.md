@@ -20,13 +20,17 @@ hosts is `agent-app-server/README.md`, and plugins a person downloads are in `pl
   rest of the repository: source rules, API dumps, Android API level checks, lint, unit tests. CI also builds the
   samples against what `publishToMavenLocal` wrote (`-PsamplesFromMavenLocal`), so published metadata that leaves out
   what a host needs fails there.
-- **The other first-party plugins** (cards, operating the screen, the device's tools, drawn pages, memory, pictures,
-  plans, A2A) are source modules of the Bothy app, built into it and not Maven artifacts; their source is published with
-  Bothy's next release. Each is a Gradle module with its own tests and API
-  dump, depends only on the published artifacts and on the other plugins, and names nothing of Bothy, so it can be
-  built on its own.
-- **One plugin is published**, the model services (`agent-app-models`), which an app that depends on it gets without
-  listing it. Otherwise a host writes its own (`AppServerPlugin`), or a person installs a package.
+- **Operating the screen and the device's tools** are plugins in the runtime's own modules, `agent-android-use`
+  (`AndroidUsePlugin`, `cc.noharry.agent.androiduse.appserver`) and `agent-device-capabilities` (`DeviceToolsPlugin`,
+  `cc.noharry.agent.device.appserver`), beside the tools they mount. Those modules are compiled against
+  `agent-app-server` (`compileOnly`) and do not carry it (section 7).
+- **The other first-party plugins** (cards, drawn pages, memory, pictures, plans, A2A) are source modules of the Bothy
+  app, built into it and not Maven artifacts; their source is published with Bothy's next release. Each is a Gradle
+  module with its own tests and API dump, depends only on the published artifacts and on the other plugins, and names
+  nothing of Bothy, so it can be built on its own.
+- **Three plugins come with published modules**, the model services (`agent-app-models`), operating the screen and the
+  device's tools, each of which an app that depends on its module gets without listing it. Otherwise a host writes its
+  own (`AppServerPlugin`), or a person installs a package.
 
 ## 2. The API and its levels
 
@@ -137,7 +141,8 @@ in the app's private storage; the guide lists where.
   discovered plugin whose needs the app does not meet is left out and one that fails to start stays off, each shown in
   `plugins/list` with its `problem`; the host's own still fail fast. The server's consumer rules keep every
   `AppServerPlugin` class with its name and how it is made; the notes sample's release, shrunk by R8, is checked for it
-  and for the models plugin's data file (`checkReleaseDiscoveredPlugins`, part of `ciCheck`).
+  (the models' and the device tools' plugins) and for the models plugin's data file (`checkReleaseDiscoveredPlugins`,
+  part of `ciCheck`).
 - **What is not a plugin.** The core (sessions, models, MCP, skills, subagents, usage) is always there. Its state is
   held in process-wide objects (`AppHost`, `RuntimeSession` and others), so there is one server per process.
 
@@ -152,6 +157,14 @@ in the app's private storage; the guide lists where.
   `agent-device-capabilities` or `agent-app-models` is on the core's classpaths, so a host that lists no plugin merges
   neither their code nor their manifests (an accessibility service, calendar and notification permissions). A plugin
   that needs one brings it in its own module.
+- **The other way round.** `agent-android-use` and `agent-device-capabilities` carry a plugin each, compiled against
+  the server and never carrying it, so a host with the runtime alone is as before: their published dependencies stay
+  `agent-api`'s (`checkNoAppServerDependency`: neither `agent-app-server` nor `agent-app-protocol` is on their runtime
+  classpaths), only the plugin's package and the modules' tests name the server, and nothing else in the module names
+  that package (`checkAppServerLayering`), so nothing but `PluginDiscovery` loads the plugin. Each module's tests but
+  the plugin's run again on a classpath without the server's modules, where the plugin's class cannot load
+  (`testWithoutAppServer`, part of `ciCheck`). Their consumer rules have R8 not look for the server's classes; the
+  server's keep the plugin where the server is.
 
 ## 8. What the plugins take from the published protocol
 
@@ -165,13 +178,13 @@ folds their sections. Besides the shared basics (`Empty`, `Finding`, `FindingCod
 |---|---|---|
 | Cards | `view.WidgetCard`, `CardItem`, `CardItemKind`, `CardLayout`, `CardProgress`, `Offer`, `OfferOption`, `ChoiceOffer`, `ChoiceOption`, `SliderOffer`, `SwitchOffer`, `Control`, `BoundCall`, `ReplyWords` and their helpers | `offers` |
 | Model services | `ServiceRequests` (`services/list`, `services/balance`, `services/check`, `services/checked`), `ServiceView`, `ServiceEndpointView`, `ServiceListResult`, `ProviderConnection`, `ServiceBalanceParams`, `ServiceBalanceResult`, `ServiceCheckParams`, `ServiceCheckView`, `ServiceCheckPart`, `BalanceView`, `BalanceAmountView`, `ModelFacts` | |
-| Screen operation | `AndroidUseState`, `AndroidUseView`, `CapabilityRequests`, `PointParams`, `DragParams` | |
+| Screen operation (`agent-android-use`) | `AndroidUseState`, `AndroidUseView`, `CapabilityRequests`, `PointParams`, `DragParams` | |
 | Pictures | `ImageModelRequests`, `ImageModelConfig`, `ImageModelProblem`, `ImageModelSaveResult`, `ImageTryResult`, `ModelListResult`, `GeneratedImageResult`, `GeneratedPicture`, `view.IMAGE_GENERATE_TOOL`, `view.GENERATED_IMAGES_DIR` | `offerPictures` |
 | Memory | `MemoryRequests`, `MemoryView`, `UserMemory`, `MemoryCategory`, `MemorySource`, `MemoryWriteResult`, the `MAX_MEMOR*` limits | `memory` |
 | Pages | `PageRequests`, `PageReadResult`, `view.SHOW_HTML_TOOL`, `view.DRAWN_PAGE`, `view.DRAWN_PAGES_DIR` | |
 | Plans | `Plan`, `PlanDraft`, `PlanAction`, `PlanTrigger`, `PlanEnd`, `PlanKind`, `PlanFiring`, `PlanWatch`, `WatchMode`, `WatchOp`, `PlanNoticeEntry`, `PlanRanParams`, `SubscriptionState`, `nextDueMillis`, `repeatAt`, `listing` | `plans`, `planHistory`, `planFeeds` |
 | A2A | `A2aProfile`, `A2aModuleState`, `A2aTaskStatus`, `A2aOutcome`, `A2aInputSource`, `A2aClientState`, `A2aClientItem`, `DelegationView`, `DelegationStage`, `DelegationStep`, `DELEGATION_TURN_LABEL` | `delegations` |
-| The device's tools | nothing beyond the basics | |
+| The device's tools (`agent-device-capabilities`) | nothing beyond the basics | |
 
 They are protocol types and ship with it; the two artifacts' public API names no type of a plugin module. The model
 services' requests are generic (a service's id is a parameter), so a client on the plain JVM uses them for DeepSeek's

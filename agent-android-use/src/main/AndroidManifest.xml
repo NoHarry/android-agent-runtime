@@ -20,5 +20,11 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/android_use_accessibility_service" />
         </service>
+        <!-- Operating the screen on the app server: an app that also depends on agent-app-server gets the plugin without
+             listing it (PluginDiscovery). Nothing else reads this entry, so an app without the server never loads the
+             class. -->
+        <meta-data
+            android:name="cc.noharry.agent.androiduse.appserver.AndroidUsePlugin"
+            android:value="cc.noharry.agent.appserver.plugin" />
     </application>
 </manifest>

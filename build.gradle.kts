@@ -227,16 +227,24 @@ subprojects {
 // runtime modules only a plugin brings, so a host that lists no plugin merges neither their code nor their manifests
 // (the accessibility service, calendar and notification permissions). The model services' plugin, agent-app-models,
 // is named only in its own module (the notes sample finds it from its manifest, naming nothing); the Bothy app's
-// first-party plugins are named nowhere here; the runtime's optional modules only in their own.
+// first-party plugins are named nowhere here; the runtime's optional modules only in their own. Two of those carry a
+// plugin of their own (agent-android-use, agent-device-capabilities): only its package (and the module's tests) names
+// the server, and nothing else in the module names that package, so a host without the server never loads it.
+val ANDROID_USE_PLUGIN_DIRS = listOf("agent-android-use/src/main/kotlin/cc/noharry/agent/androiduse/appserver", "agent-android-use/src/test")
+val DEVICE_PLUGIN_DIRS = listOf("agent-device-capabilities/src/main/kotlin/cc/noharry/agent/device/appserver", "agent-device-capabilities/src/test")
 val APP_SERVER_PLUGIN_PACKAGES = mapOf(
+    "cc.noharry.agent.appserver" to listOf("agent-app-protocol", "agent-app-server", "agent-app-models") +
+        listOf("", "-notes", "-timer", "-habits").map { "samples/agent-app-sample$it" } + ANDROID_USE_PLUGIN_DIRS + DEVICE_PLUGIN_DIRS,
     "cc.noharry.agent.appserver.models" to listOf("agent-app-models"),
     "cc.noharry.agent.appserver.deepseek" to emptyList(),
     "cc.noharry.agent.appserver.protocol.deepseek" to emptyList(),
     "cc.noharry.agent.appserver.a2ui" to emptyList(),
     "cc.noharry.agent.appserver.androiduse" to emptyList(),
     "cc.noharry.agent.androiduse" to listOf("agent-android-use"),
+    "cc.noharry.agent.androiduse.appserver" to ANDROID_USE_PLUGIN_DIRS,
     "cc.noharry.agent.appserver.device" to emptyList(),
     "cc.noharry.agent.device" to listOf("agent-device-capabilities"),
+    "cc.noharry.agent.device.appserver" to DEVICE_PLUGIN_DIRS,
     "cc.noharry.agent.appserver.pages" to emptyList(),
     "cc.noharry.agent.appserver.memory" to emptyList(),
     "cc.noharry.agent.appserver.image" to emptyList(),
@@ -250,6 +258,15 @@ val APP_SERVER_PLUGIN_PACKAGES = mapOf(
 val APP_SERVER_CORE_FORBIDDEN = listOf(
     ":agent-a2a", ":agent-a2a-client-official", ":agent-android-use", ":agent-device-capabilities", ":agent-app-models",
 )
+
+/** The runtime modules that carry a plugin for the app server, compiled against it, and that plugin's package. */
+val MODULES_WITH_A_PLUGIN = mapOf(
+    ":agent-android-use" to "cc.noharry.agent.androiduse.appserver",
+    ":agent-device-capabilities" to "cc.noharry.agent.device.appserver",
+)
+
+/** The app server's modules, which a module with a plugin compiles against and never carries. */
+val APP_SERVER_MODULES = listOf(":agent-app-server", ":agent-app-protocol")
 
 /**
  * Model services and their models, which the app server's core may not name: what is known of them is their adapters'
@@ -299,6 +316,35 @@ listOf(":agent-app-protocol" to listOf("compileClasspath", "runtimeClasspath"),
     }
 }
 
+// A module with a plugin for the app server compiles against the server and never carries it: none of the server's
+// modules is on its runtime classpaths, the ones its published dependencies are made from. Its tests but the plugin's
+// run again where the server is missing (testWithoutAppServer, part of ciCheck): the unit tests' classpath without the
+// server's modules' outputs, where the plugin's class cannot load, so a test that passes there loaded none of it.
+MODULES_WITH_A_PLUGIN.forEach { (path, pluginPackage) ->
+    project(path).afterEvaluate {
+        val carried = tasks.register<ForbiddenDependenciesTask>("checkNoAppServerDependency") {
+            modulePath.set(path)
+            forbidden.set(APP_SERVER_MODULES)
+            listOf("debugRuntimeClasspath", "releaseRuntimeClasspath").forEach { classpath ->
+                found.addAll(configurations.named(classpath).flatMap { it.incoming.resolutionResult.rootComponent.map(::projectsReachedFrom) })
+            }
+        }
+        checkAppServerLayering.configure { dependsOn(carried) }
+        val serverOutputs = APP_SERVER_MODULES.map { rootProject.project(it).layout.buildDirectory.get().asFile }
+        val withoutServer = tasks.register<Test>("testWithoutAppServer") {
+            group = "verification"
+            description = "The module's tests but its app server plugin's, on a classpath without the app server."
+            val unitTests = tasks.named<Test>("testDebugUnitTest")
+            testClassesDirs = files(unitTests.map { it.testClassesDirs })
+            classpath = files(unitTests.map { it.classpath }).filter { file -> serverOutputs.none(file::startsWith) }
+            filter.excludeTestsMatching("$pluginPackage.*")
+            systemProperty("agent.withoutAppServer", "true")
+        }
+        tasks.named("check") { dependsOn(withoutServer) }
+        rootProject.tasks.named("ciCheck") { dependsOn(withoutServer) }
+    }
+}
+
 // -PsamplesFromMavenLocal: the apps on the app server build against what publishToMavenLocal wrote, as an app outside
 // this repository does: their dependencies on the app server's modules become its published artifacts.
 if (providers.gradleProperty("samplesFromMavenLocal").orNull.let { it != null && it != "false" }) {
@@ -306,7 +352,7 @@ if (providers.gradleProperty("samplesFromMavenLocal").orNull.let { it != null &&
     project(":samples").subprojects.filter { it.name.startsWith("agent-app-sample") }.forEach { sample ->
         sample.configurations.configureEach {
             resolutionStrategy.dependencySubstitution {
-                listOf("agent-app-protocol", "agent-app-server", "agent-app-models", "agent-exec-js").forEach {
+                listOf("agent-app-protocol", "agent-app-server", "agent-app-models", "agent-exec-js", "agent-device-capabilities").forEach {
                     substitute(project(":$it")).using(module("$group:$it:$sdkVersion"))
                 }
             }

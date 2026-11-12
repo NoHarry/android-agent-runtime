@@ -104,8 +104,8 @@ of your own (a scripted one standing in for an on-device model), tools from your
 | `agent-runtime-android` | The Android layer: `AndroidAgentRuntime.builder(context)`, SQLite sessions, the app-private event log, and mounting a folder the user picks through the Storage Access Framework |
 | `agent-api` | Android-neutral Thread / Turn / Item contracts and stable model, tool, hook and event-log extension interfaces |
 | `agent-exec-js` | Optional: `exec_js`, sandboxed JavaScript (QuickJS through Zipline) that can call tools; the app server's scripts (plugin packages' tools written in JavaScript) need it too |
-| `agent-device-capabilities` | Optional: calendar, notification and media tools |
-| `agent-android-use` | Optional: observe and operate the screen through an accessibility service |
+| `agent-device-capabilities` | Optional: calendar, notification and media tools; with the app server, also their plugin (`device-tools`), loaded by default |
+| `agent-android-use` | Optional: observe and operate the screen through an accessibility service; with the app server, also its plugin (`android-use`), loaded by default |
 | `agent-a2a` | Optional (plain JVM): delegate tasks to remote A2A agents over a direct JSON-RPC/SSE transport, and expose the agent as a local A2A endpoint |
 | `agent-a2a-client-official` | Optional: the same client over the official A2A Java SDK |
 | `agent-acp` | Optional (plain JVM): serve the agent's threads over the Agent Client Protocol (ACP) to editors and other ACP clients, on stdio or any stream |
@@ -126,11 +126,13 @@ hosts is [agent-app-server/README.md](agent-app-server/README.md); `samples/agen
 | `agent-app-models` | Optional (Android): the model services' plugin, loaded by default once on the classpath: DeepSeek (with its balance, search and relay check), OpenAI, Anthropic, Google Gemini, xAI, OpenRouter, Groq, Moonshot (Kimi), Zhipu (GLM), Alibaba Cloud Model Studio (Qwen), Volcengine Ark (Doubao), MiniMax and SiliconFlow: where each is reached, its models' facts and prices, how its failures read |
 
 The core speaks the wire protocols (OpenAI Chat Completions and Responses, the Anthropic Messages API) and knows no
-service: with it alone a profile reaches any compatible service, with conservative defaults. `agent-app-models` is the
-one plugin published; a host's own plugins are its code (`AppServerPlugin`). The other first-party ones (cards,
-operating the screen, the device's tools, drawn pages, memory, pictures, plans, A2A) are source modules of the
-[Bothy](https://github.com/NoHarry/bothy) app, built into it rather than published as Maven artifacts, so they change
-without a release of this one; their source is published with Bothy's next release.
+service: with it alone a profile reaches any compatible service, with conservative defaults. Three published modules
+bring a plugin that the server loads once the app depends on them, unlisted: `agent-app-models`, and
+`agent-android-use` and `agent-device-capabilities` for operating the screen and the device's tools (those two only
+compile against the server, so an app with the runtime alone gets their tools without it). A host's own plugins are its
+code (`AppServerPlugin`). The other first-party ones (cards, drawn pages, memory, pictures, plans, A2A) are source
+modules of the [Bothy](https://github.com/NoHarry/bothy) app, built into it rather than published as Maven artifacts,
+so they change without a release of this one; their source is published with Bothy's next release.
 The core names no plugin's package and no model service, and carries none of the runtime modules only a plugin brings
 (`agent-a2a`, `agent-a2a-client-official`, `agent-android-use`, `agent-device-capabilities`, `agent-app-models`;
 `checkAppServerLayering`, part of `ciCheck`).

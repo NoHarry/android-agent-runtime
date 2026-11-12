@@ -70,7 +70,7 @@ abstract class BareManifestCheck : DefaultTask() {
         report.get().asFile.writeText((listOf("permissions:") + permissions + "components:" + components).joinToString("\n"))
         check(extra.isEmpty()) {
             "agent-app-sample's merged manifest has what a bare host did not ask for: $extra. A host gets operating the " +
-                "screen and the device's tools only from plugins it lists, whose modules bring their manifests."
+                "screen and the device's tools only from the modules that bring them, with their manifests."
         }
     }
 

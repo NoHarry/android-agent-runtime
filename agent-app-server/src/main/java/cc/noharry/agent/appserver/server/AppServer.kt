@@ -89,7 +89,8 @@ interface PublishedState {
  * The server's own features beyond what its protocol needs are off until [builtIns] turns them on, and plugins add more
  * ([plugins]: modules of their own, such as cards, model services, operating the screen, the device's tools, plans or
  * A2A; which are on is kept on the device). A library may declare a plugin in its manifest, which the server then loads
- * without its being listed ([PluginDiscovery]; `agent-app-models` does): [ignoredPlugins] names those of them, by id,
+ * without its being listed ([PluginDiscovery]; `agent-app-models`, `agent-android-use` and `agent-device-capabilities`
+ * do): [ignoredPlugins] names those of them, by id,
  * the server leaves out, and one the host lists itself is loaded as listed.
  *
  * What is known of models (their context window, whether they read pictures, and more: [ModelFacts]) and their prices

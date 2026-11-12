@@ -137,7 +137,8 @@ interface RunAddOns {
  * subagent settings). One left off is not offered to the model, has no row on the basic tools page and no requests or
  * state of its own, so a client cannot turn it on. Plans, operating the screen, the device's calendar, notifications and
  * media, cards, drawn pages, pictures and what the model remembers about the person are plugins in modules of their
- * own, which a host lists ([cc.noharry.agent.appserver.server.AppServerConfig.plugins]); a plugin asks for the app to
+ * own, which a host lists ([cc.noharry.agent.appserver.server.AppServerConfig.plugins]) or whose module's manifest
+ * declares them ([cc.noharry.agent.appserver.server.PluginDiscovery]); a plugin asks for the app to
  * start after a reboot ([cc.noharry.agent.appserver.server.PluginContext.startOnBoot]).
  */
 class BuiltInFeatures(

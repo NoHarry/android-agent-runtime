@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The device tools' rows in the app server's MCP list (DeviceToolsPlugin); an app replaces them with its own. -->
+    <string name="device_tools_calendar">Device Calendar</string>
+    <string name="device_tools_notifications">Device Notifications</string>
+    <string name="device_tools_media">Device Media</string>
+</resources>

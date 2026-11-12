@@ -10,4 +10,13 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
     </queries>
+
+    <application>
+        <!-- The device's tools on the app server: an app that also depends on agent-app-server gets the plugin without
+             listing it (PluginDiscovery). Nothing else reads this entry, so an app without the server never loads the
+             class. -->
+        <meta-data
+            android:name="cc.noharry.agent.device.appserver.DeviceToolsPlugin"
+            android:value="cc.noharry.agent.appserver.plugin" />
+    </application>
 </manifest>
