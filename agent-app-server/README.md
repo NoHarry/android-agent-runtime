@@ -1381,7 +1381,8 @@ It brings an adapter per service (`ProviderAdapter`), and for a profile on a ser
   host gave one, else of the service's default endpoint for its wire, and, on that default endpoint and without a
   model, the default model. What the host or the person gave is never replaced.
 - **The model list** from the service's own list, without a prefix its ids carry; for a service that documents none,
-  the models in the data.
+  the models in the data, given without asking the service (`ServiceView.listsModels` false), so there a list fetched
+  proves nothing of a key: a screen that checks one sends a request of the service's own.
 - **Facts per model** (`ModelFacts`): context window, output limit (the documented ceiling of one answer), whether it
   reads pictures, calls tools and reasons, its reasoning efforts, and the output its requests ask for
   (`requestOutputTokens`), set only where the service's own default would cut answers short: Volcengine Ark answers

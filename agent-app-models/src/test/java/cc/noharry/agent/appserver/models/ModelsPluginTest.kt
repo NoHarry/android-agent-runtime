@@ -92,6 +92,21 @@ class ModelsPluginTest {
         assertEquals(ServiceCatalog.services.size, services().size)
     }
 
+    /**
+     * A screen that checks a key learns from `services/list` which services have no model list (Zhipu, Model Studio):
+     * there the model list is the data's, fetched without asking the service, so it proves nothing of a key.
+     */
+    @Test
+    fun theListSaysWhichServicesHaveNoModelList() = runBlocking {
+        val plugins = PluginHost(app, listOf(ModelsPlugin), main = Dispatchers.Unconfined)
+        plugins.startAll()
+        AppServerTesting.running(plugins.additions)
+        val views = call(ServiceRequests.LIST, Empty).services
+
+        assertEquals(listOf("zhipu", "dashscope"), views.filterNot { it.listsModels }.map { it.id })
+        assertEquals(ServiceCatalog.services.filterNot { it.listsModels }.map { it.id }, views.filterNot { it.listsModels }.map { it.id })
+    }
+
     private suspend fun services(): List<String> = call(ServiceRequests.LIST, Empty).services.map { it.id }
 
     private suspend fun <P, R> call(method: RequestMethod<P, R>, params: P): R {
