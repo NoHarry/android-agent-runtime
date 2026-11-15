@@ -67,6 +67,40 @@ class ToolNoteTest {
         assertEquals(history.drop(1), sent.drop(1))
     }
 
+    @Test fun theNextRunOfTheThreadSendsTheCallAsTheRunThatMadeItDid() = runBlocking {
+        val call = ModelEvent.ToolCall("c7", "set_climate", """{"temperature":22,"say":"Cooling it down."}""")
+        val history = listOf(
+            ModelMessage("assistant", "", toolCallId = "c7", toolName = "set_climate", toolArgumentsJson = """{"temperature":22}"""),
+            ModelMessage("tool", "{}", toolCallId = "c7", toolName = "set_climate"),
+        )
+        val first = RecordingModel(call)
+        val made = AppModelClient(first)
+        made.complete(ModelRequest(emptyList(), listOf(ModelTool("set_climate", OBJECT_SCHEMA)))).toList()
+        made.complete(ModelRequest(history)).toList()
+
+        // Each run builds its own model client.
+        val next = RecordingModel()
+        AppModelClient(next).complete(ModelRequest(history)).toList()
+
+        assertTrue(next.requests.single().messages[0].toolArgumentsJson!!.contains("Cooling it down."))
+        assertEquals(first.requests.last().messages, next.requests.single().messages)
+    }
+
+    @Test fun anotherCallWithTheSameIdDoesNotGetTheNote() = runBlocking {
+        val model = RecordingModel(ModelEvent.ToolCall("call:0", "set_climate", """{"temperature":18,"say":"Colder."}"""))
+        val client = AppModelClient(model)
+        client.complete(ModelRequest(emptyList(), listOf(ModelTool("set_climate", OBJECT_SCHEMA)))).toList()
+        // Some services number their calls from zero in every conversation.
+        val other = listOf(
+            ModelMessage("assistant", "", toolCallId = "call:0", toolName = "set_climate", toolArgumentsJson = """{"temperature":26}"""),
+            ModelMessage("assistant", "", toolCallId = "call:0", toolName = "set_seat", toolArgumentsJson = """{"temperature":18}"""),
+        )
+
+        client.complete(ModelRequest(other)).toList()
+
+        assertEquals(other, model.requests.last().messages)
+    }
+
     @Test fun aHostWithoutANoteLeavesRequestsAndCallsAsTheyAre() = runBlocking {
         AppHost.install(runs = RunAddOns.NONE)
         val model = RecordingModel(ModelEvent.ToolCall("c1", "set_climate", """{"say":"x","temperature":24}"""))

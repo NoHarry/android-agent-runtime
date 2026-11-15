@@ -35,7 +35,8 @@ class ToolNote(val field: String, val description: String, val applies: (toolNam
 
 /**
  * The notes the model wrote on its tool calls ([RunAddOns.toolNote]), taken off the calls before the runtime sees them
- * and kept here for the host, which asks by the call as it then starts: its tool and arguments.
+ * and kept here: for the host, which asks by the call as it then starts (its tool and arguments), and for the model's
+ * later requests, which show it the calls as it wrote them.
  */
 @cc.noharry.agent.appserver.AppServerPluginApi
 object ToolNotes {
@@ -50,10 +51,32 @@ object ToolNotes {
     @Synchronized
     fun of(toolName: String, argumentsJson: String): String? = notes[key(toolName, argumentsJson)]
 
+    /**
+     * The notes by call, for the requests that show the model its own calls: a later run of the thread is another
+     * model client and has to send the calls as the earlier one did, or the provider's prompt cache stops matching at
+     * the first of them. A call is its id together with its tool and arguments, because some services repeat ids
+     * from one conversation to the next. Kept in the order they were last written or read, so a thread that is still
+     * running keeps its own; a restarted process has none.
+     */
+    private val written = object : LinkedHashMap<String, String>(256, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>): Boolean = size > MAX_WRITTEN
+    }
+
+    /** [argumentsJson] is the call's without the note, as the runtime keeps it. */
+    @Synchronized
+    internal fun wrote(callId: String, toolName: String, argumentsJson: String, text: String) {
+        if (callId.isNotBlank()) written["$callId ${key(toolName, argumentsJson)}"] = text
+    }
+
+    @Synchronized
+    internal fun written(callId: String, toolName: String, argumentsJson: String): String? =
+        if (callId.isBlank()) null else written["$callId ${key(toolName, argumentsJson)}"]
+
     private fun key(toolName: String, argumentsJson: String): String =
         "$toolName ${runCatching { Json.parseToJsonElement(argumentsJson) }.getOrNull()?.sorted() ?: argumentsJson}"
 
     private const val MAX_NOTES = 64
+    private const val MAX_WRITTEN = 4096
 }
 
 private fun String.jsonObject(): JsonObject? = runCatching { Json.parseToJsonElement(this) as? JsonObject }.getOrNull()

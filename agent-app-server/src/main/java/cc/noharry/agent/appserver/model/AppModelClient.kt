@@ -42,14 +42,11 @@ internal class AppModelClient(
 
     private var recordedFirstRound = false
 
-    /** What the model wrote in the host's note field, by call id: its later requests show it its own calls whole. */
-    private val notes = java.util.concurrent.ConcurrentHashMap<String, String>()
-
     /** The call as the runtime gets it, without the note, which goes to [ToolNotes] for the host. */
     private fun takeNote(note: ToolNote, call: ModelEvent.ToolCall): ModelEvent.ToolCall {
         val text = note.of(call.argumentsJson) ?: return call
         val bare = call.copy(argumentsJson = note.without(call.argumentsJson))
-        notes[call.id] = text
+        ToolNotes.wrote(bare.id, bare.name, bare.argumentsJson, text)
         ToolNotes.put(bare.name, bare.argumentsJson, text)
         return bare
     }
@@ -62,7 +59,7 @@ internal class AppModelClient(
         onPromptPrefix?.invoke(PromptPrefix.compare(request))
         val round = ModelRoundRecovery(request)
         val note = AppHost.runs.toolNote()
-        val events = delegate.complete(if (note == null) request else request.withToolNote(note, notes))
+        val events = delegate.complete(if (note == null) request else request.withToolNote(note))
         (firstEventMillis?.let(events::withFirstEventTimeout) ?: events).collect { event ->
             when (event) {
                 is ModelEvent.ToolCall -> {
@@ -287,12 +284,14 @@ const val ON_DEVICE_FIRST_EVENT_TIMEOUT_MS = 240_000L
 
 /** The request as the model reads it: the note field on the tools that take it, and on the calls it wrote one for. */
 @OptIn(ExperimentalAgentRuntimeApi::class)
-private fun ModelRequest.withToolNote(note: ToolNote, written: Map<String, String>): ModelRequest = copy(
+private fun ModelRequest.withToolNote(note: ToolNote): ModelRequest = copy(
     tools = tools.map { if (note.applies(it.name)) it.copy(schemaJson = note.inSchema(it.schemaJson)) else it },
     messages = messages.map { message ->
-        val text = message.toolCallId?.let(written::get)
+        val id = message.toolCallId
+        val name = message.toolName
         val arguments = message.toolArgumentsJson
-        if (text == null || arguments == null || message.role == "tool") message
-        else message.copy(toolArgumentsJson = note.with(arguments, text))
+        val text = if (id == null || name == null || arguments == null || message.role == "tool") null
+        else ToolNotes.written(id, name, arguments)
+        if (text == null || arguments == null) message else message.copy(toolArgumentsJson = note.with(arguments, text))
     },
 )

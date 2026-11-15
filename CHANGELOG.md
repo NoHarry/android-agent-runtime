@@ -3,6 +3,13 @@
 All notable changes are listed here. The project is 0.x: a minor release may break the API, and every break is
 called out; a patch release does not break it.
 
+## Unreleased
+
+- **The app server: a host's note on tool calls no longer breaks the prompt cache between runs.** What the model wrote
+  in the note field (`RunAddOns.toolNote`) is put back on its earlier calls in the next run of the thread too, not
+  only within the run that made them, so the provider's cache keeps matching past those calls. A restarted process
+  has no notes, and the first run after it sends the earlier calls without them.
+
 ## 0.5.0 (2026-11-12)
 
 - **The app server (experimental).** Two new artifacts, in `agent-bom`: `agent-app-protocol` (plain JVM) and
