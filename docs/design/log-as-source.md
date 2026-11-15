@@ -1,6 +1,7 @@
 # The session log as the source
 
-Status: proposal. Nothing here is built except where a step says so.
+Status: decided. This is the overview; the build spec, with every decision, the record catalogue and the units of
+work, is `log-as-source-detail.md`. Step 1 is done; the rest ships in one release, SDK 0.6.0.
 
 The rule this document works towards: **everything the system knows about a conversation is derived from one
 append-only log of that conversation.** The next request to the model, the transcript a front end shows, the list of
@@ -48,7 +49,7 @@ it. It is written beside the stores that do, by a recorder that swallows its own
 | Items a front end shows | `TranscriptStore` in memory, restored from `turns.jsonl` with other ids | Not derivable: thinking, steering, approvals are lost on restore |
 | Completion outcome, obligation ledger, run evidence | reliability files, `debug-run-evidence` | Only outside the log |
 | Approvals: the decision, its scope, remembered domains, the mode in force | memory, `*.thread.json`, preferences | Only the outcome reaches a tool result |
-| The model's note on a call (`say`) | process memory | Only outside the log (step 1 changes this) |
+| The model's note on a call (`say`) | the logged call and the history (step 1) | In the log |
 | Tool activation | memory, partly re-derived from history | Only outside the log |
 | Usage ledger | `model-usage/usage-ledger.json` | Duplicated for runs; side calls (voice judge, companion) exist only there |
 | Sub-agents: board, pending reports | memory, `subagents.jsonl` | Only outside the log; an undelivered report is lost on restart |
@@ -94,7 +95,7 @@ server register theirs:
 | Thread state: status, pending question, approvals and remembered domains | `*.thread.json`, pending-confirmation memory |
 | Items and turns, with ids derived from the event's place in the log | turn snapshots, `turns.jsonl`, `TranscriptStore` restore |
 | Conversation list and titles | `meta.json` |
-| Usage | the usage ledger's run rows |
+| Usage | the usage ledger (runs and side calls) |
 | Run outcome and evidence | reliability result, `debug-run-evidence` |
 | Sub-agent board and deliveries | `AppSubagents` memory, `subagents.jsonl` |
 
@@ -106,42 +107,45 @@ scratch equals the live one; a run killed at each write point reopens to a consi
 
 ## Order of work
 
-Each step leaves the system working and is released on its own. Steps 1–3 are inside the runtime and the app server;
-4 changes the protocol; 5 reaches into plugins and Bothy.
+Each step leaves the system working; none is released on its own. All of them ship together in SDK 0.6.0 and the
+Bothy release built on it, since the Maven quota favours one release. The steps are broken into units of work in
+`log-as-source-detail.md` section 12. Steps 1–3 are inside the runtime and the app server; 4 changes the protocol;
+5 reaches into plugins and Bothy.
 
 1. **The model's call, as written.** The note a host adds to tool calls stays in the logged call and in the history;
-   it is taken off where the tool runs. No side store. *(In progress.)*
+   it is taken off where the tool runs. No side store. *(Done: `64db6cf`, `3387071`.)*
 2. **Make the log trustworthy.** Appends that fail are errors, not counts. Redact instead of reject. A thread-wide
    sequence. Log the request as sent and the output as received (raw arguments, reasoning, replay state). Log the
    events that have no record today: confirmation asked and decided (with scope and the mode in force), blocked, retry,
    compaction (as a replace with the summary), the run's outcome and failure message. Flush before a request and
-   before an acting tool. Additive to the event schema; no reader changes yet.
+   before an acting tool. The record format is new (v3, one log per thread), written beside the old stores until the
+   readers move.
 3. **History from the log.** The next request is built by the history projection; `history.json` and
-   `loop-history.json` become snapshots of it. The byte-equal test lands here. Resume and recovery read the log.
-   Existing threads keep their `history.json` as a seed: a thread whose log does not cover its history starts its log
-   with one imported-history event.
+   `loop-history.json` go (a projection's own snapshot is a disposable cache). The byte-equal test lands here. Resume
+   and recovery read the log. Existing threads are imported once into the new log and their old files deleted.
 4. **The app server's view from the log.** Items, turns, the list and titles are projections; `turns.jsonl` goes.
-   Item ids become stable (a protocol change: `ConversationItem.id` is a number counted in memory today). Turns with no
-   run (companion, spoken lines, a startup failure) become logged spans of their own. Old conversations are imported
-   once from `turns.jsonl`, marked as imported, without thinking or approvals, as they are shown today.
+   Item ids become stable: `ConversationItem.id` stays a number, derived from the log instead of counted in memory;
+   the protocol's other changes are additive. Turns with no run (companion, spoken lines, a startup failure) become
+   logged spans of their own. Old conversations are imported once from `turns.jsonl`, marked as imported, without
+   thinking or approvals, as they are shown today.
 5. **Host and plugin facts.** One `PluginContext` call appends a namespaced fact to the thread's log, and one host
    stream takes what belongs to no thread (a plan firing with the app closed). Plans, cards, A2A delegations, voice and
    usage of side calls move to it; their files become caches. Generated images go to the attachment store.
 6. **Sub-agents as threads.** A child run is its own log linked from the parent's; the board and pending reports are
    projections, so a report survives a restart.
 
-## Costs and open questions
+## Costs
 
-- **Public surface.** New `SessionEventType` constants and payload fields are additive but break exhaustive `when`
-  over the (experimental) enum. Step 4 changes the protocol's item ids. Step 5 adds plugin API.
-- **Size.** Logging requests as sent repeats the history in every request event, as today. dsh avoids it by logging
-  the header once and deriving the messages; step 3 makes the same possible here (log the header and what was added,
-  not the whole request). Until then the log grows as it does now.
-- **Privacy.** A complete log holds everything said and heard. Redaction must be exact enough to keep events, and the
-  log stays in no-backup storage. Voice facts need limits: what was judged and spoken, not audio and not every partial.
-- **Latency.** A flush before each request and acting tool is an fsync on the turn's path (dsh pays it). Measure on
-  the tablet before fixing the policy; a group commit shared by concurrent threads may be needed.
-- **Two releases or one.** The Maven quota favours few releases. Steps 2 and 3 can ship together; 4 needs Bothy's
-  front ends changed with it.
-- **How much of step 5 is worth it.** Plans and A2A delegations have real crash windows today; voice history is new
-  information nobody reads yet.
+- **Public surface.** The session event types and payloads are replaced (v3), the host-supplied `SessionEventLog`
+  and `SessionHistory` go, the protocol gains optional fields, plugins gain a facts API. Every change is listed in
+  `log-as-source-detail.md` section 9.
+- **Size.** Requests are logged as dsh logs them: the header when it changes, a digest per request, and what was
+  added; the messages are derived. The log no longer repeats the history in every request.
+- **Privacy.** A complete log holds everything said and heard. Known credentials are redacted in place, the log stays
+  in no-backup storage, and voice facts are limited to what was handed to the assistant, judged and spoken: no audio,
+  no partials, no side talk.
+- **Latency.** A flush before each request and acting tool is an fsync on the turn's path (dsh pays it), in group
+  commits shared by all threads. It is measured on the tablet against thresholds that change the policy
+  (`log-as-source-detail.md` section 11).
+- **One release.** Everything ships in 0.6.0, step 5 included: plans and A2A delegations have real crash windows
+  today, and voice history is kept within the limits above.
