@@ -99,7 +99,9 @@ interface RunAddOns {
 
     /**
      * A field the model may fill on a tool call with words for the user as the work goes, which the host's voice says;
-     * null for none. The model reads it on every tool [ToolNote.applies] to; no tool receives it ([ToolNotes] has it).
+     * null for none. The model reads it on every tool [ToolNote.applies] to; no tool receives it ([ToolNotes] has it for
+     * the host as the call starts). The session keeps the calls as the model wrote them, note included, so its later
+     * requests send them back unchanged, after a restart too; with null they are sent as logged all the same.
      */
     fun toolNote(): ToolNote? = null
 

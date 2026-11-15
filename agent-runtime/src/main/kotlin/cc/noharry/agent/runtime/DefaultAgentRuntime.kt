@@ -155,6 +155,7 @@ internal class DefaultAgentRuntime(
     /** Gets pages web_fetch's own request could not (see [WebFetchFallback]). */
     private val webFetchFallback: WebFetchFallback? = null,
     private val loopSettings: LoopSettings = LoopSettings(),
+    private val toolArguments: ToolArguments = ToolArguments.AS_WRITTEN,
 ) : AgentRuntime {
     private val turnApprovals = java.util.concurrent.ConcurrentHashMap<String, suspend (PendingConfirmation) -> cc.noharry.agent.ApprovalState>()
     private val closed = AtomicBoolean(false)
@@ -244,6 +245,7 @@ internal class DefaultAgentRuntime(
         subagents = subagents,
         nativeWebSearchEnabled = webSearchProvider != null,
         loopSettings = loopSettings,
+        toolArguments = toolArguments,
     )
     private val userInputResumeController = UserInputResumeController(
         runStateController = runStateController,

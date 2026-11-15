@@ -154,6 +154,7 @@ class AgentRuntimeBuilder {
     internal var lessons: Boolean = true
     internal var toolDomains: ToolDomainNaming = ToolDomainIndexer.CONVENTIONS
     internal var protocolRules: ProtocolRules = ProtocolRules.DEFAULT
+    internal var toolArguments: ToolArguments = ToolArguments.AS_WRITTEN
     internal var deferredBackendTools: Boolean = false
     internal var nativeDeferredTools: Boolean = false
     internal var runContextAsSystem: Boolean = false
@@ -454,6 +455,16 @@ class AgentRuntimeBuilder {
      */
     fun protocolRules(rules: ProtocolRules): AgentRuntimeBuilder = apply {
         protocolRules = rules
+    }
+
+    /**
+     * What tools receive of the calls the model writes ([ToolArguments]): for a host that asks the model for fields no
+     * tool takes. The session keeps each call as the model wrote it; tools, hooks, checks and events get [arguments]'
+     * answer. A subagent's runtime, which the host builds, takes its own.
+     */
+    @ExperimentalAgentRuntimeApi
+    fun toolArguments(arguments: ToolArguments): AgentRuntimeBuilder = apply {
+        toolArguments = arguments
     }
 
     /** How tools are grouped into the areas the prompt lists for the model ([ToolDomainNaming]). */

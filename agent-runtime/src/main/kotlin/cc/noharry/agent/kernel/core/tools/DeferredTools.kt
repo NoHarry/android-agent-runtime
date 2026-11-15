@@ -53,7 +53,10 @@ internal fun DynamicToolSet.unwrapCallTool(call: ModelEvent.ToolCall): ModelEven
     return call.copy(name = resolveToolName(name), argumentsJson = arguments)
 }
 
-/** Puts the calls in [wireCalls] (by call id) back to the call_tool form the model sent; results keep the real tool. */
+/**
+ * Puts the calls in [wireCalls] (by call id) back to the form the model sent (call_tool, and fields their tools do not
+ * receive); results keep the real tool.
+ */
 internal fun List<ModelMessage>.withWireCalls(wireCalls: Map<String, ModelEvent.ToolCall>): List<ModelMessage> =
     if (wireCalls.isEmpty()) this else map { message ->
         val wire = message.toolCallId?.let(wireCalls::get)
@@ -68,6 +71,11 @@ internal fun RoundOutcome.withWireCalls(wireCalls: Map<String, ModelEvent.ToolCa
     is RoundOutcome.Finished -> copy(messages = messages.withWireCalls(wireCalls))
     is RoundOutcome.NeedsUserInput -> copy(messages = messages.withWireCalls(wireCalls))
     is RoundOutcome.ToolResults -> copy(messages = messages.withWireCalls(wireCalls))
+    // The paused call is not a message yet: it keeps the written form for the messages made of it later.
+    is RoundOutcome.RequiresConfirmation -> copy(
+        messages = messages.withWireCalls(wireCalls),
+        pendingToolUse = pendingToolUse?.let { pending -> wireCalls[pending.toolCallId]?.let { pending.copy(written = it) } ?: pending },
+    )
     else -> this
 }
 

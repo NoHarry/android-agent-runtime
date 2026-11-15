@@ -17,11 +17,9 @@ class ToolNote(val field: String, val description: String, val applies: (toolNam
         return if (field in root) JsonObject(root - field).toString() else argumentsJson
     }
 
-    /** These arguments with [text] in the field, as the model wrote them. */
-    internal fun with(argumentsJson: String, text: String): String {
-        val root = argumentsJson.jsonObject() ?: return argumentsJson
-        return JsonObject(root + (field to JsonPrimitive(text))).toString()
-    }
+    /** Whether a tool's own parameter schema has a property of this name: then the field is that tool's input. */
+    internal fun isOwnedBy(schemaJson: String): Boolean =
+        (schemaJson.jsonObject()?.get("properties") as? JsonObject)?.containsKey(field) == true
 
     /** A tool's parameter schema with the field added, or as it was when it is not an object schema. */
     internal fun inSchema(schemaJson: String): String {
@@ -34,9 +32,9 @@ class ToolNote(val field: String, val description: String, val applies: (toolNam
 }
 
 /**
- * The notes the model wrote on its tool calls ([RunAddOns.toolNote]), taken off the calls before the runtime sees them
- * and kept here: for the host, which asks by the call as it then starts (its tool and arguments), and for the model's
- * later requests, which show it the calls as it wrote them.
+ * The notes the model wrote on its tool calls ([RunAddOns.toolNote]), for the host, which asks by the call as it starts:
+ * its tool and its arguments, without the note, as the tool receives them. The session keeps each call as the model
+ * wrote it, note included, and the model's later requests send it from there; what is kept here serves only the host.
  */
 @cc.noharry.agent.appserver.AppServerPluginApi
 object ToolNotes {
@@ -44,6 +42,7 @@ object ToolNotes {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>): Boolean = size > MAX_NOTES
     }
 
+    /** [argumentsJson] are the call's as its tool receives them. */
     @Synchronized
     internal fun put(toolName: String, argumentsJson: String, text: String) { notes[key(toolName, argumentsJson)] = text }
 
@@ -51,32 +50,10 @@ object ToolNotes {
     @Synchronized
     fun of(toolName: String, argumentsJson: String): String? = notes[key(toolName, argumentsJson)]
 
-    /**
-     * The notes by call, for the requests that show the model its own calls: a later run of the thread is another
-     * model client and has to send the calls as the earlier one did, or the provider's prompt cache stops matching at
-     * the first of them. A call is its id together with its tool and arguments, because some services repeat ids
-     * from one conversation to the next. Kept in the order they were last written or read, so a thread that is still
-     * running keeps its own; a restarted process has none.
-     */
-    private val written = object : LinkedHashMap<String, String>(256, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>): Boolean = size > MAX_WRITTEN
-    }
-
-    /** [argumentsJson] is the call's without the note, as the runtime keeps it. */
-    @Synchronized
-    internal fun wrote(callId: String, toolName: String, argumentsJson: String, text: String) {
-        if (callId.isNotBlank()) written["$callId ${key(toolName, argumentsJson)}"] = text
-    }
-
-    @Synchronized
-    internal fun written(callId: String, toolName: String, argumentsJson: String): String? =
-        if (callId.isBlank()) null else written["$callId ${key(toolName, argumentsJson)}"]
-
     private fun key(toolName: String, argumentsJson: String): String =
         "$toolName ${runCatching { Json.parseToJsonElement(argumentsJson) }.getOrNull()?.sorted() ?: argumentsJson}"
 
     private const val MAX_NOTES = 64
-    private const val MAX_WRITTEN = 4096
 }
 
 private fun String.jsonObject(): JsonObject? = runCatching { Json.parseToJsonElement(this) as? JsonObject }.getOrNull()

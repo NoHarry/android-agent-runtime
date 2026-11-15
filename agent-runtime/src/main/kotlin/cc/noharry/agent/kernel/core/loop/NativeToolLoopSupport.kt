@@ -272,6 +272,8 @@ internal sealed interface RoundOutcome {
         val usedObligationCorrection: Boolean = false,
         /** True when this round injected an empty-completion continue nudge (no tools / no finish). */
         val usedEmptyCompletionContinue: Boolean = false,
+        /** The round's calls as the checks that compare calls read them, by call id, where [messages] differ ([takeUp]). */
+        val comparedCalls: Map<String, ModelEvent.ToolCall> = emptyMap(),
     ) : RoundOutcome
 }
 

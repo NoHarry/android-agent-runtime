@@ -33,9 +33,9 @@ internal fun RoundOutcome.withPausedCallSignature(signature: String?): RoundOutc
         copy(pendingToolUse = pendingToolUse.copy(thinkingSignature = signature))
     } else this
 
-/** The paused call as the model made it: its thinking, signature and what it said before it. */
+/** The paused call as the model made it: as it wrote the call, its thinking, signature and what it said before it. */
 internal fun PendingNativeToolUse.toCallMessage(): ModelMessage =
-    ModelEvent.ToolCall(toolCallId, toolUse.toolName, toolUse.argumentsJson)
+    (written ?: ModelEvent.ToolCall(toolCallId, toolUse.toolName, toolUse.argumentsJson))
         .toAssistantToolCallMessage(reasoningContent, thinkingSignature)
         .copy(assistantText = assistantText)
 

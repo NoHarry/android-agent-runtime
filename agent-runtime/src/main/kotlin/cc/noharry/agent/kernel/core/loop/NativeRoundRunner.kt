@@ -1,6 +1,7 @@
 @file:OptIn(cc.noharry.agent.spi.ExperimentalAgentRuntimeApi::class)
 
 package cc.noharry.agent.kernel.core.loop
+import cc.noharry.agent.runtime.ToolArguments
 import cc.noharry.agent.spi.NarrationCheck
 import cc.noharry.agent.spi.ToolUse
 import cc.noharry.agent.spi.model.ModelClient
@@ -29,7 +30,6 @@ import cc.noharry.agent.kernel.core.tools.ToolExecutionLimiter
 import cc.noharry.agent.kernel.core.tools.cancelledToolResult
 import cc.noharry.agent.kernel.core.tools.invalidCallToolResult
 import cc.noharry.agent.kernel.core.tools.requiresObligationLedger
-import cc.noharry.agent.kernel.core.tools.unwrapCallTool
 import cc.noharry.agent.kernel.core.tools.withWireCalls
 import cc.noharry.agent.kernel.core.trace.LoopSessionRecorder
 import cc.noharry.agent.kernel.core.trace.ModelCallProbe
@@ -59,6 +59,8 @@ internal class NativeRoundRunner(
     private val userReachable: Boolean = true,
     /** Which final answers only announce what the agent will do ([NarrationCheck]). */
     private val narrationCheck: NarrationCheck = RuntimeNarrationCheck,
+    /** What tools receive of the calls the model writes ([takeUp]). */
+    private val toolArguments: ToolArguments = ToolArguments.AS_WRITTEN,
 ) {
     private val userInteraction = NativeUserInteraction(steeringQueue)
     private val readOnlyBatchExecutor = NativeReadOnlyToolBatchExecutor(toolUseController, sessionRecorder)
@@ -115,6 +117,7 @@ internal class NativeRoundRunner(
         summaryBuilder.recordToolRegistrySignals(toolSet)
         val callUsage = ModelCallUsage()
         val wireCalls = mutableMapOf<String, ModelEvent.ToolCall>()
+        val comparedCalls = mutableMapOf<String, ModelEvent.ToolCall>()
         try {
             budgetTracker.beginModelCall()
             sessionRecorder.recordModelRequest(toolContext, modelRequest)
@@ -137,7 +140,7 @@ internal class NativeRoundRunner(
                         val identified = uniqueToolCall(event, seenToolCallIds)
                         cancellationHistory.observe(identified, thinking.toString(), thinkingSignature)
                         if (immediateOutcome == null) {
-                            pendingToolCalls += toolSet.unwrapCallTool(identified)?.also { wireCalls[it.id] = identified } ?: identified
+                            pendingToolCalls += toolArguments.takeUp(identified, toolSet, wireCalls, comparedCalls)
                         }
                         return@roundEvents
                     }
@@ -190,7 +193,8 @@ internal class NativeRoundRunner(
                 }
         } catch (error: CancellationException) {
             modelProbe.finish(SESSION_MODEL_CALL_STATUS_CANCELLED)
-            val legalRoundMessages = toolResults + cancellationHistory.roundMessagesForCancellation(toolResults)
+            // The calls that finished before the cut keep the form the model wrote, as those it never reached do.
+            val legalRoundMessages = toolResults.withWireCalls(wireCalls) + cancellationHistory.roundMessagesForCancellation(toolResults)
             if (legalRoundMessages.isNotEmpty()) {
                 throw LegalHistoryCancellationException(legalRoundMessages, error)
             }
@@ -202,7 +206,7 @@ internal class NativeRoundRunner(
                 failure = ToolLoopFailure(error.code.wireCode, error.message, error.recoverable),
                 modelFailure = true,
                 toolResultsCommitted = toolResults.isNotEmpty(),
-                messages = toolResults.toList(),
+                messages = toolResults.withWireCalls(wireCalls).toList(),
             )
         } catch (error: RuntimeException) {
             modelProbe.finish(SESSION_MODEL_CALL_STATUS_FAILED, RuntimeErrorCode.MODEL_LOOP_FAILED.wireCode)
@@ -240,7 +244,7 @@ internal class NativeRoundRunner(
                 wireCalls = wireCalls,
             ),
         )
-        immediateOutcome?.let { return it }
+        immediateOutcome?.let { return it.withComparedCalls(comparedCalls) }
         budgetTracker.afterRoundFailure()?.let { return RoundOutcome.Failed(it) }
         return when {
             toolResults.isNotEmpty() -> RoundOutcome.ToolResults(toolResults)
@@ -257,7 +261,7 @@ internal class NativeRoundRunner(
                 summaryBuilder = summaryBuilder,
                 publicEvents = publicEvents,
             )
-        }
+        }.withComparedCalls(comparedCalls)
     }
 
     private fun recordUsage(

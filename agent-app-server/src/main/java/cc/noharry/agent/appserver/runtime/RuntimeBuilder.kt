@@ -187,23 +187,23 @@ internal fun buildRuntime(
     val wrapTools = AppHost.runs.toolWrapper(context, sessionContext, useSimulatedModel)
     // Every tool provider the run mounts, as the run has it, for the gate on the tools that act.
     val servers = mutableListOf<ToolProvider>()
+    val model = AppModelClient(
+        delegate = if (useSimulatedModel) {
+            AppHost.simulatedModel?.invoke() ?: FixtureModelClient()
+        } else {
+            config.client(profile, streamEnabled, diagnostics, requestOutputTokens(context, config.editState(profile)))
+        },
+        // Only a stream sends its first event early; a whole reply can take longer than the watchdog.
+        // The on-device server may still be loading the model when the first call goes out.
+        firstEventMillis = (AppHost.models.firstEventTimeoutMs(profile) ?: FIRST_EVENT_TIMEOUT_MS)
+            .takeIf { streamEnabled && !useSimulatedModel },
+        onModelRequestTools = evidenceRecorder?.let { recorder ->
+            { names -> recorder.recordFirstRoundTools(names) }
+        },
+        onPromptPrefix = diagnostics::recordPromptPrefix,
+    )
     return runtimeAssembly(
-    model =
-        AppModelClient(
-            delegate = if (useSimulatedModel) {
-                AppHost.simulatedModel?.invoke() ?: FixtureModelClient()
-            } else {
-                config.client(profile, streamEnabled, diagnostics, requestOutputTokens(context, config.editState(profile)))
-            },
-            // Only a stream sends its first event early; a whole reply can take longer than the watchdog.
-            // The on-device server may still be loading the model when the first call goes out.
-            firstEventMillis = (AppHost.models.firstEventTimeoutMs(profile) ?: FIRST_EVENT_TIMEOUT_MS)
-                .takeIf { streamEnabled && !useSimulatedModel },
-            onModelRequestTools = evidenceRecorder?.let { recorder ->
-                { names -> recorder.recordFirstRoundTools(names) }
-            },
-            onPromptPrefix = diagnostics::recordPromptPrefix,
-        ),
+    model = model,
     prompt = prompt.system,
     workspace = workspaceVfs(context, workspaceRoot, skills),
     eventLogRoot = sessionEventLogRoot,
@@ -232,6 +232,8 @@ internal fun buildRuntime(
         runContextAsSystem = nativeUpdates,
     )))
     .protocolRules(AppHost.runs.protocolRules())
+    // The host's note on tool calls ([RunAddOns.toolNote]) stays on the calls the session keeps; tools get them without it.
+    .toolArguments(model)
     .webSearch(webSearch)
     .webFetchFallback(fetchFallback)
     .sessionToolActivations(appSessionToolActivations)

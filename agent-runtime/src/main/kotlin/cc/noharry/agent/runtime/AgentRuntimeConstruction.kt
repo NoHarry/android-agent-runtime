@@ -190,6 +190,7 @@ internal fun AgentRuntimeBuilder.createRuntime(
         webSearchProvider = webSearchProvider,
         webFetchFallback = webFetchFallback,
         loopSettings = loopSettings,
+        toolArguments = toolArguments,
     )
 }
 

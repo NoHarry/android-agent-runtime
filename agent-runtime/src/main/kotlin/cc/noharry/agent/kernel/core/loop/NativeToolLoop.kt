@@ -7,6 +7,7 @@ import cc.noharry.agent.runtime.DefaultTraceRedactor
 import cc.noharry.agent.runtime.RuntimeMemorySelection
 
 import cc.noharry.agent.runtime.LoopSettings
+import cc.noharry.agent.runtime.ToolArguments
 import cc.noharry.agent.spi.*
 import cc.noharry.agent.spi.model.*
 import cc.noharry.agent.spi.reliability.*
@@ -68,6 +69,7 @@ internal class NativeToolLoop(
     /** The host's kinds of subagent, offered as spawn_agent's `agent`. */
     private val subagentTypes: List<NativeSubagentType> = emptyList(),
     private val loopSettings: LoopSettings = LoopSettings(),
+    toolArguments: ToolArguments = ToolArguments.AS_WRITTEN,
 ) {
     private val obligationLedger = RuntimeObligationLedger()
 
@@ -112,6 +114,7 @@ internal class NativeToolLoop(
         textNeedsFinish = textNeedsFinish,
         userReachable = userReachable,
         narrationCheck = loopSettings.narration,
+        toolArguments = toolArguments,
     )
     private val memoryRetriever = loopSettings.memory
     private val finishResponseRetryRuns = mutableSetOf<String>()
@@ -246,7 +249,7 @@ internal class NativeToolLoop(
     private fun emitProbeRoundOutcome(roundIndex: Int, outcome: RoundOutcome) {
         try {
             if (outcome is RoundOutcome.ToolResults) {
-                emitProbeToolRound(roundIndex, outcome.messages)
+                emitProbeToolRound(roundIndex, outcome.comparedMessages())
             }
             probeSink.emitModelRoundEnd(roundIndex, probeRoundStatus(outcome))
         } catch (_: Exception) {
@@ -489,7 +492,7 @@ internal class NativeToolLoop(
                     }
                     messages += round.messages
                     sessionRecorder.appendMessages(toolContext, round.messages)
-                    repeatedCalls.after(round.messages)?.let { appendRuntimeNotice(messages, toolContext, it) }
+                    repeatedCalls.after(round.comparedMessages())?.let { appendRuntimeNotice(messages, toolContext, it) }
                     val compacted = compactAfterRound(runId, messages, systemPrompt, { toolRegistry.tools(toolContext).modelTools },
                         conversationCompactor, sessionHistory, historyCompactor, budgetTracker, toolContext, sessionRecorder, publicEvents)
                     if (compacted.messages !== messages) messages.clear().also { messages += compacted.messages }

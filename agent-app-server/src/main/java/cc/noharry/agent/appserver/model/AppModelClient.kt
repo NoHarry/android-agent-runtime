@@ -8,6 +8,7 @@ import cc.noharry.agent.appserver.runtime.ModelWords
 import cc.noharry.agent.appserver.runtime.PromptPrefix
 import cc.noharry.agent.appserver.runtime.append
 import cc.noharry.agent.appserver.session.SESSION_QUERY_INDEX_PATH
+import cc.noharry.agent.runtime.ToolArguments
 import cc.noharry.agent.spi.ExperimentalAgentRuntimeApi
 import cc.noharry.agent.spi.ProviderConcurrencyDeclaration
 import cc.noharry.agent.spi.model.ModelClient
@@ -29,26 +30,43 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
+/**
+ * The model as the app server's runs reach it. With the host's note ([cc.noharry.agent.appserver.runtime.RunAddOns.toolNote])
+ * it offers the model the note field on the tools that take it and, as the runtime's [ToolArguments], takes the field off
+ * the calls at the tool boundary: the runtime keeps each call as the model wrote it, note included, in the session's
+ * event log and in the history later requests send, so they go back to the model exactly as logged, in this run, the
+ * next and after a restart.
+ */
 internal class AppModelClient(
     private val delegate: ModelClient,
     private val onModelRequestTools: ((List<String>) -> Unit)? = null,
     private val onPromptPrefix: ((String) -> Unit)? = null,
     /** [withFirstEventTimeout] for a streamed call; null for none. */
     private val firstEventMillis: Long? = null,
-) : ModelClient {
+) : ModelClient, ToolArguments {
     @OptIn(ExperimentalAgentRuntimeApi::class)
     override val providerConcurrency: ProviderConcurrencyDeclaration =
         ProviderConcurrencyDeclaration.serialized()
 
     private var recordedFirstRound = false
 
-    /** The call as the runtime gets it, without the note, which goes to [ToolNotes] for the host. */
-    private fun takeNote(note: ToolNote, call: ModelEvent.ToolCall): ModelEvent.ToolCall {
-        val text = note.of(call.argumentsJson) ?: return call
-        val bare = call.copy(argumentsJson = note.without(call.argumentsJson))
-        ToolNotes.wrote(bare.id, bare.name, bare.argumentsJson, text)
-        ToolNotes.put(bare.name, bare.argumentsJson, text)
-        return bare
+    /** The note the latest request offered the model; the calls it answers with are read with it, not a later one. */
+    @Volatile private var requestNote: ToolNote? = null
+
+    /**
+     * What a tool receives of a call: its arguments without the note, which goes to [ToolNotes] for the host under the
+     * call as it runs (its tool and these arguments). The note is the field on the call itself or, for a call_tool call,
+     * on the call_tool call or inside the arguments it passes. A tool whose own schema ([schemaJson]) has a property of
+     * that name keeps it as its input.
+     */
+    override fun forTool(call: ModelEvent.ToolCall, written: ModelEvent.ToolCall, schemaJson: String?): String {
+        val note = requestNote ?: return call.argumentsJson
+        val owns = schemaJson?.let(note::isOwnedBy) == true
+        val arguments = if (owns) call.argumentsJson else note.without(call.argumentsJson)
+        val onCall = if (owns) null else note.of(call.argumentsJson)
+        val text = onCall ?: if (written == call) null else note.of(written.argumentsJson)
+        text?.let { ToolNotes.put(call.name, arguments, it) }
+        return arguments
     }
 
     override fun complete(request: ModelRequest): Flow<ModelEvent> = flow {
@@ -59,13 +77,13 @@ internal class AppModelClient(
         onPromptPrefix?.invoke(PromptPrefix.compare(request))
         val round = ModelRoundRecovery(request)
         val note = AppHost.runs.toolNote()
+        requestNote = note
         val events = delegate.complete(if (note == null) request else request.withToolNote(note))
         (firstEventMillis?.let(events::withFirstEventTimeout) ?: events).collect { event ->
             when (event) {
                 is ModelEvent.ToolCall -> {
-                    val call = note?.let { takeNote(it, event) } ?: event
-                    round.recordToolCall(call.name, call.argumentsJson)
-                    emit(call)
+                    round.recordToolCall(event.name, note?.without(event.argumentsJson) ?: event.argumentsJson)
+                    emit(event)
                 }
                 is ModelEvent.ThinkingDelta -> {
                     emit(event)
@@ -282,16 +300,11 @@ internal const val FIRST_EVENT_TIMEOUT_MS = 20_000L
 @cc.noharry.agent.appserver.AppServerPluginApi
 const val ON_DEVICE_FIRST_EVENT_TIMEOUT_MS = 240_000L
 
-/** The request as the model reads it: the note field on the tools that take it, and on the calls it wrote one for. */
+/**
+ * The request as the model reads it: the note field on the tools that take it. Its messages are the session's as logged,
+ * the model's earlier calls with the notes it wrote on them.
+ */
 @OptIn(ExperimentalAgentRuntimeApi::class)
 private fun ModelRequest.withToolNote(note: ToolNote): ModelRequest = copy(
     tools = tools.map { if (note.applies(it.name)) it.copy(schemaJson = note.inSchema(it.schemaJson)) else it },
-    messages = messages.map { message ->
-        val id = message.toolCallId
-        val name = message.toolName
-        val arguments = message.toolArgumentsJson
-        val text = if (id == null || name == null || arguments == null || message.role == "tool") null
-        else ToolNotes.written(id, name, arguments)
-        if (text == null || arguments == null) message else message.copy(toolArgumentsJson = note.with(arguments, text))
-    },
 )

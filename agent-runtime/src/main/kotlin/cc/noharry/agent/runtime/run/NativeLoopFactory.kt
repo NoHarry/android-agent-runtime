@@ -20,6 +20,7 @@ import cc.noharry.agent.kernel.core.context.HistoryCompactor
 import cc.noharry.agent.kernel.core.context.SessionHistoryStore
 import cc.noharry.agent.kernel.core.loop.LoopBudgetConfig
 import cc.noharry.agent.runtime.LoopSettings
+import cc.noharry.agent.runtime.ToolArguments
 import cc.noharry.agent.kernel.core.loop.ModelRetryConfig
 import cc.noharry.agent.kernel.core.loop.NativeLoopOutcome
 import cc.noharry.agent.kernel.core.loop.NativeLoopSummary
@@ -90,6 +91,7 @@ internal class NativeLoopFactory(
     private val subagents: Subagents? = null,
     private val nativeWebSearchEnabled: Boolean = false,
     private val loopSettings: LoopSettings = LoopSettings(),
+    private val toolArguments: ToolArguments = ToolArguments.AS_WRITTEN,
 ) {
     /** Unique per runtime instance. */
     val runtimeInstanceId: String = UUID.randomUUID().toString()
@@ -323,6 +325,7 @@ internal class NativeLoopFactory(
             userReachable = !childRun,
             nativeWebSearchEnabled = nativeWebSearchEnabled,
             loopSettings = loopSettings,
+            toolArguments = toolArguments,
         )
 
     private fun materializer(): VirtualFileMaterializer =

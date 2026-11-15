@@ -1,6 +1,7 @@
 package cc.noharry.agent.kernel.core.loop
 import cc.noharry.agent.spi.AgentEvent
 import cc.noharry.agent.spi.ToolUse
+import cc.noharry.agent.spi.model.ModelEvent
 import cc.noharry.agent.spi.model.ModelMessage
 import cc.noharry.agent.spi.reliability.RuntimeResult
 import cc.noharry.agent.kernel.core.tools.MaterializerContext
@@ -29,6 +30,7 @@ internal sealed interface NativeLoopOutcome {
 }
 
 internal data class PendingNativeToolUse(
+    /** The call as it runs, as hooks and the approval read it. */
     val toolUse: ToolUse,
     val context: MaterializerContext,
     val backendToolName: String? = null,
@@ -42,4 +44,6 @@ internal data class PendingNativeToolUse(
     val assistantText: String = "",
     /** A hook wants the person's own answer for this call; no policy or earlier yes gives it. */
     val alwaysAsk: Boolean = false,
+    /** The call as the model wrote it, when it runs in another form ([toolUse]): the history shows the model this one. */
+    val written: ModelEvent.ToolCall? = null,
 )

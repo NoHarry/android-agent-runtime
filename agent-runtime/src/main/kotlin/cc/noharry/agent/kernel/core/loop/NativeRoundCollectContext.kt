@@ -18,7 +18,7 @@ internal data class RoundCollectContext(
     val allowFinishResponseRetry: Boolean = false,
     val allowObligationCorrection: Boolean = false,
     val obligationLedger: RuntimeObligationLedger = RuntimeObligationLedger(),
-    /** call_tool calls unwrapped this round, by call id, so their messages keep the form the model sent. */
+    /** This round's calls that run in another form than the model wrote them, by call id, so their messages keep it. */
     val wireCalls: MutableMap<String, ModelEvent.ToolCall> = mutableMapOf(),
 ) {
     private var reasoningConsumed = false

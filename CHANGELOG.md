@@ -5,10 +5,27 @@ called out; a patch release does not break it.
 
 ## Unreleased
 
-- **The app server: a host's note on tool calls no longer breaks the prompt cache between runs.** What the model wrote
-  in the note field (`RunAddOns.toolNote`) is put back on its earlier calls in the next run of the thread too, not
-  only within the run that made them, so the provider's cache keeps matching past those calls. A restarted process
-  has no notes, and the first run after it sends the earlier calls without them.
+- **The app server: a host's note on tool calls is kept with the call.** The session keeps each call as the model wrote
+  it, the note field (`RunAddOns.toolNote`) included: the event log records it so, and the next request of the run,
+  the next run of the thread and the first run after a restart send it back unchanged, a call that waited for
+  approval or one that had finished when its turn was cut short too, so the provider's prompt cache keeps matching
+  past those calls. The note comes off where the tool runs: tools, gates and approvals, the protocol's tool call items and
+  the checks that compare calls read the call without it, and `ToolNotes.of` finds it under the call as it starts,
+  now also for a call made through `call_tool` (written on `call_tool` or inside the arguments it passes). The calls
+  that answer a request are read with the note that request offered. A tool whose own schema has a property of that
+  name, listed or reached through `call_tool`, gets it as its input and no note is taken from it. Threads logged
+  before keep working as they are.
+- **What tools receive of the calls the model writes (experimental).** `AgentRuntimeBuilder.toolArguments` takes a
+  `ToolArguments`, for a host that asks the model for fields no tool takes: given each call as it runs, the call as
+  the model wrote it and the tool's own schema (a tool reached through `call_tool` included), it returns the
+  arguments the tool receives. The runtime keeps the call as the model wrote it in the session's event log and the
+  history its later requests send, and gives the tool, hooks, approvals, argument checks, events and repeated-call
+  checks the arguments it returns.
+- **Every host using `call_tool`: the model reads its `call_tool` calls back as it wrote them in more cases.** A
+  `call_tool` call that waited for approval, and one that had finished when its turn was cut short during a later call
+  of the same round, go back to the model as `call_tool` with the arguments it wrote, where they went back as the tool
+  they named. The repeated-call check compares `call_tool` calls by the tool they name and the arguments it receives,
+  so fields the model adds on the `call_tool` call itself, which no tool receives, no longer make two calls differ.
 
 ## 0.5.0 (2026-11-12)
 

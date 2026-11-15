@@ -338,6 +338,7 @@ public final class cc/noharry/agent/runtime/AgentRuntimeBuilder {
 	public final fun skills ([Lcc/noharry/agent/runtime/HostSkill;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun storage (Ljava/io/File;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun subagents (Lcc/noharry/agent/runtime/Subagents;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
+	public final fun toolArguments (Lcc/noharry/agent/runtime/ToolArguments;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun toolDomains (Lcc/noharry/agent/runtime/ToolDomainNaming;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun tools (Ljava/util/List;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
 	public final fun tools ([Lcc/noharry/agent/spi/ToolProvider;)Lcc/noharry/agent/runtime/AgentRuntimeBuilder;
@@ -787,6 +788,15 @@ public final class cc/noharry/agent/runtime/Subagents {
 	public final fun onStatus (Lkotlin/jvm/functions/Function1;)V
 	public final fun setConfig (Lcc/noharry/agent/runtime/SubagentConfig;)V
 	public final fun statuses (Ljava/lang/String;)Ljava/util/List;
+}
+
+public abstract interface class cc/noharry/agent/runtime/ToolArguments {
+	public static final field Companion Lcc/noharry/agent/runtime/ToolArguments$Companion;
+	public abstract fun forTool (Lcc/noharry/agent/spi/model/ModelEvent$ToolCall;Lcc/noharry/agent/spi/model/ModelEvent$ToolCall;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class cc/noharry/agent/runtime/ToolArguments$Companion {
+	public final fun getAS_WRITTEN ()Lcc/noharry/agent/runtime/ToolArguments;
 }
 
 public abstract interface class cc/noharry/agent/runtime/ToolDomainNaming {
